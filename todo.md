@@ -1,0 +1,4 @@
+- [ ] Add gemini cli mcp https://apidog.com/blog/gemini-mcp-claude-code/ or https://github.com/jezweb/gemini-cli-advisor-for-claude-code/tree/main/archive/gemini-dev-partnership with either:
+	- [ ] Edited Commands to offload work to gemini?
+	- [ ] Subagents with their own context folders
+- [ ] When competing task, if something doesn't go as planned, either create a new task or ? BE TRANSPARENT, if you did something to fix it, say so
