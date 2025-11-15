@@ -25,30 +25,60 @@ This is a **template repository** for bootstrapping new Claude Code project envi
 - **Iteration space** for improving template patterns
 - **Reference documentation** for the `.claude/` folder structure and conventions
 
+## Repository Structure
+
+```
+claude_code_environment/
+├── templates/              # Copyable project templates
+│   ├── base/               # Minimal, any project type
+│   ├── data-engineering/   # ETL pipelines, data processing
+│   ├── bi-dashboard/       # Power BI, reporting, visualization
+│   ├── hybrid/             # Combined data + BI
+│   └── experimental/       # Work-in-progress templates
+├── docs/                   # Documentation
+│   ├── template-guide.md       # How to use templates
+│   ├── template-overview10.md  # Comprehensive reference
+│   ├── development.md          # Contributing guide
+│   └── todo.md                 # Development tasks
+├── CLAUDE.md               # This file
+└── README.md               # User documentation
+```
+
 ## Key Files
 
-### template_overview10.md
-**Comprehensive template documentation** (52KB) containing:
+### templates/
+**Copyable template folders** - Each contains complete `.claude/` structure:
+- **base/**: Minimal setup for any project type
+- **data-engineering/**: Python, SQL, testing standards for data pipelines
+- **bi-dashboard/**: DAX, M, Power BI best practices for dashboards
+- **hybrid/**: All standards from both data-engineering and bi-dashboard
+- **experimental/**: New templates under development
 
-- Quick start minimal setup (5 minutes)
-- Full environment patterns for different project types
-- Task management system details (JSON schema, difficulty scoring, status values)
-- Command file examples (breakdown.md, complete-task.md, sync-tasks.md, update-tasks.md)
+### docs/template-guide.md
+**User-facing guide** for choosing and using templates:
+- Template selection criteria
+- Customization checklist
+- Usage workflows
+- Common scenarios
+
+### docs/template-overview10.md
+**Comprehensive reference** (52KB) containing:
+- Quick start minimal setup
+- Full environment patterns for all template types
+- Task management system details
+- Command file examples
 - Context file templates
-- Tool integration guidance (Gemini API for research/analysis, Claude for implementation)
-- Hierarchical task breakdown workflow
+- Tool integration guidance
 
-**When to reference**:
-- User asks how to create a new environment
-- User asks about task management conventions
-- User asks about command patterns or `.claude/` folder structure
-- Explaining how different project types should be set up
+### docs/development.md
+**Contributor guide** for maintaining this repository:
+- Adding new templates
+- Updating existing templates
+- Testing procedures
+- Standards file guidelines
 
-### todo.md
-Current development tasks for this repository (Gemini MCP integration, etc.)
-
-### .vscode/settings.json
-Power Query configuration for this workspace
+### docs/todo.md
+Current development tasks for this repository
 
 ## Environment Template Pattern
 
@@ -128,25 +158,29 @@ project/
 ## Working in This Repository
 
 ### Adding New Templates
-1. Document new pattern in `template_overview10.md` under "Environment Types"
-2. Include folder structure, typical commands, and context files
-3. Explain when to use this template type
-4. Add example initialization questions if applicable
+1. Copy `templates/base/` to `templates/experimental/[new-name]/`
+2. Add technology-specific standards to `.claude/context/standards/`
+3. Create example tasks relevant to template type
+4. Update template's CLAUDE.md and README.md
+5. Document in `docs/template-guide.md`
+6. After testing, promote to `templates/[new-name]/`
+
+See `docs/development.md` for detailed guide.
 
 ### Updating Task Management System
 1. Changes to task schema must update:
-   - Task structure documentation in `template_overview10.md`
-   - Example JSON schemas
-   - Command file examples (breakdown.md, complete-task.md, sync-tasks.md)
-   - Validation rules documentation
+   - All template reference files (`validation-rules.md`, `difficulty-guide.md`)
+   - All command files (`breakdown.md`, `complete-task.md`, etc.)
+   - Example tasks in all templates
+   - Documentation in `docs/template-overview10.md`
 
 ### Testing Templates
 When user requests to test a template:
-1. Create temporary directory structure
-2. Generate files based on template pattern
-3. Validate structure matches documentation
-4. Test command patterns with sample tasks
-5. Confirm task lifecycle (Pending → In Progress → Finished, including breakdown/auto-completion)
+1. Copy template to temporary directory
+2. Run `@.claude/commands/update-tasks.md` to check health
+3. Test task workflow (breakdown, complete, sync)
+4. Verify all file references work
+5. Use in real project if possible
 
 ## README.md Requirements
 
@@ -172,9 +206,10 @@ Based on user's requirements, the README.md should explain:
 
 Since this is a documentation/template repository, there are no build, lint, or test commands. The primary operations are:
 
-- **Read template documentation**: `@template_overview10.md`
-- **Create new project environment**: Apply template patterns to target directory
-- **Update templates**: Edit `template_overview10.md` and validate consistency
+- **Copy template**: `cp -r templates/[type]/* /path/to/new-project/`
+- **Read template guide**: `@docs/template-guide.md`
+- **Read comprehensive reference**: `@docs/template-overview10.md`
+- **Update templates**: Edit files in `templates/`, test, and document
 - **Version control**: Standard git operations for tracking template evolution
 
 ## Repository Conventions
@@ -189,13 +224,20 @@ Since this is a documentation/template repository, there are no build, lint, or 
 
 ## Navigation Rules
 
-- **Creating new environment?** → Reference `template_overview10.md` sections for appropriate template type
-- **Task management questions?** → See "Task Management System" section in `template_overview10.md`
-- **Command pattern examples?** → See "Command File Examples" section (breakdown.md, complete-task.md, sync-tasks.md)
-- **Understanding hierarchy?** → See `reference/breakdown-workflow.md` template
-- **Tool integration?** → See "Tool Routing & Model Selection" section
-- **Repository development tasks?** → Check `todo.md`
+- **Which template to use?** → `@docs/template-guide.md`
+- **Creating new environment?** → Copy from `templates/[type]/` then customize
+- **Task management questions?** → `@docs/template-overview10.md` (Task Management System section)
+- **Command pattern examples?** → Any template's `.claude/commands/` folder
+- **Understanding hierarchy?** → Any template's `.claude/reference/breakdown-workflow.md`
+- **Contributing to repo?** → `@docs/development.md`
+- **Repository development tasks?** → `@docs/todo.md`
 
 ## Current Focus
 
-Maintaining and improving environment templates for efficient Claude Code project bootstrapping. Recent additions include hierarchical task breakdown with automatic parent completion and Gemini API integration patterns.
+Recently reorganized repository structure:
+- Created `templates/` folder with 4 production-ready templates (base, data-engineering, bi-dashboard, hybrid)
+- Moved documentation to `docs/` folder
+- Added comprehensive standards files (Python, SQL, DAX, M, Power BI, Testing)
+- Created template-guide.md and development.md for better usability
+
+Maintaining and improving environment templates for efficient Claude Code project bootstrapping.

@@ -1,0 +1,17 @@
+{
+  "id": "2",
+  "title": "Create initial documentation",
+  "description": "Write README, setup guides, and basic architecture documentation",
+  "difficulty": 3,
+  "status": "Pending",
+  "created_date": "2024-01-15",
+  "updated_date": "2024-01-15",
+  "estimated_hours": 3,
+  "actual_hours": null,
+  "dependencies": ["1"],
+  "subtasks": [],
+  "parent_task": null,
+  "breakdown_history": null,
+  "files_affected": ["README.md", "docs/"],
+  "notes": ""
+}

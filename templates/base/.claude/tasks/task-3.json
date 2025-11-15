@@ -1,0 +1,17 @@
+{
+  "id": "3",
+  "title": "Implement core functionality",
+  "description": "Build the main features and functionality based on project requirements",
+  "difficulty": 5,
+  "status": "Pending",
+  "created_date": "2024-01-15",
+  "updated_date": "2024-01-15",
+  "estimated_hours": 8,
+  "actual_hours": null,
+  "dependencies": ["1", "2"],
+  "subtasks": [],
+  "parent_task": null,
+  "breakdown_history": null,
+  "files_affected": [],
+  "notes": "Main implementation work - will be refined based on specific project needs"
+}

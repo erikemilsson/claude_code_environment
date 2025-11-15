@@ -1,0 +1,17 @@
+{
+  "id": "1",
+  "title": "Setup project structure",
+  "description": "Create basic folder layout, configuration files, and development environment setup",
+  "difficulty": 2,
+  "status": "Pending",
+  "created_date": "2024-01-15",
+  "updated_date": "2024-01-15",
+  "estimated_hours": 2,
+  "actual_hours": null,
+  "dependencies": [],
+  "subtasks": [],
+  "parent_task": null,
+  "breakdown_history": null,
+  "files_affected": [],
+  "notes": "Initial project setup task"
+}
