@@ -1,0 +1,12 @@
+{
+  "id": "5",
+  "title": "Update main README.md to reflect component-based architecture",
+  "description": "Revise README.md to explain the new component-based structure, how components relate to templates, versioning strategy, and migration path from monolithic template_overview10.md. Update examples and getting started guide.",
+  "difficulty": 4,
+  "status": "Pending",
+  "created_date": "2025-11-15",
+  "dependencies": ["1", "2", "3", "4"],
+  "subtasks": [],
+  "parent_task": null,
+  "notes": "Should clearly explain components/ vs templates/ distinction and composition pattern"
+}

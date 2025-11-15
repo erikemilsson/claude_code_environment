@@ -1,0 +1,12 @@
+{
+  "id": "1",
+  "title": "Extract Task Management component from template_overview10.md",
+  "description": "Move all task management related content (commands, schema, difficulty guide, workflow) from the monolithic template_overview10.md into components/task-management/ folder structure. Create schema.json, README.md, and populate commands/ and reference/ subdirectories.",
+  "difficulty": 5,
+  "status": "Pending",
+  "created_date": "2025-11-15",
+  "dependencies": [],
+  "subtasks": [],
+  "parent_task": null,
+  "notes": ""
+}

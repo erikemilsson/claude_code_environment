@@ -1,0 +1,12 @@
+{
+  "id": "2",
+  "title": "Create Documentation/Content template",
+  "description": "Build out templates/documentation-content/ with README.md explaining when to use this template, components.json listing included components, and customizations/ folder with writing style guides, documentation structure patterns, and content review workflows.",
+  "difficulty": 6,
+  "status": "Pending",
+  "created_date": "2025-11-15",
+  "dependencies": ["1"],
+  "subtasks": [],
+  "parent_task": null,
+  "notes": "Should include: writing style guides, technical documentation structure, API documentation patterns, content review workflows, publication/deployment commands"
+}
