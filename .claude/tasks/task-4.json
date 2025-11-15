@@ -1,0 +1,12 @@
+{
+  "id": "4",
+  "title": "Create component README files",
+  "description": "Write comprehensive README.md for components/task-management/ explaining what the component is, how to use it, versioning strategy, and integration examples. Include schema documentation and example task files.",
+  "difficulty": 4,
+  "status": "Pending",
+  "created_date": "2025-11-15",
+  "dependencies": ["1"],
+  "subtasks": [],
+  "parent_task": null,
+  "notes": "Focus on making it easy for templates to include and customize this component"
+}

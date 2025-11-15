@@ -1,0 +1,12 @@
+{
+  "id": "3",
+  "title": "Create Research/Analysis template",
+  "description": "Build out templates/research-analysis/ with README.md, components.json, and customizations/ including literature review structure, hypothesis tracking, experiment design patterns, data analysis workflows, and citation management patterns.",
+  "difficulty": 6,
+  "status": "Pending",
+  "created_date": "2025-11-15",
+  "dependencies": ["1"],
+  "subtasks": [],
+  "parent_task": null,
+  "notes": "Should include: literature review structure, hypothesis tracking, experiment design patterns, data analysis workflows, citation management"
+}
