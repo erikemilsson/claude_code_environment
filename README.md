@@ -4,32 +4,55 @@
 
 ## Quick Start
 
-**In your new project directory:**
+**Simplified workflow - just one command:**
 
 ```bash
-# In Claude Code (VS Code)
-"Create a [template-name] environment from claude_code_environment repo"
+# In Claude Code (VS Code), from your new project directory:
+"Create the environment from claude_code_environment repo using spec: [path/to/spec.md]"
 ```
 
-Claude Code generates a complete `.claude/` structure with:
-- Task management system with automatic breakdown
-- Project-type-specific commands and standards
-- Context files for AI understanding
-- Initial tasks from your specification
+**That's it!** Claude Code will:
+- Automatically detect the right template (Power Query, Research, Documentation, Life Projects, or Base)
+- Extract content from your specification
+- Generate complete `.claude/` structure with:
+  - Task management system with automatic breakdown
+  - Template-specific commands and standards
+  - Context files populated from your spec
+  - Optional: Initial tasks from detected deliverables
 
-**Choose your template:** research-analysis, documentation-content, life-projects, power-query
+**No need to manually choose a template** - smart detection analyzes your specification and selects the best match.
 
 ## How It Works
+
+### Smart Bootstrap (Recommended)
+
+The **smart-bootstrap** command (`.claude/commands/smart-bootstrap.md`) automatically detects the right template:
+
+1. **Reads** your project specification
+2. **Analyzes** content for template signals (keywords, technologies, domain indicators)
+3. **Scores** each template using pattern matching rules
+4. **Selects** highest-scoring template (auto-select if score ≥ 70)
+5. **Extracts** content from spec to populate files
+6. **Generates** complete `.claude/` structure
+
+**Detection confidence levels:**
+- **90-100**: High confidence - auto-select without asking
+- **70-89**: Medium-high - auto-select with explanation
+- **50-69**: Medium - recommend with easy override
+- **< 50**: Low - ask user to choose
+
+### Component-Based Architecture
 
 **Components** (e.g., task-management) provide reusable, versioned functionality.
 **Templates** (e.g., research-analysis) combine components + domain-specific customizations.
 
 At initialization, Claude Code:
-1. Reads template's `components.json`
-2. Includes required components
-3. Adds template customizations
-4. Generates `.claude/` folder in your project
-5. Creates initial tasks from your spec
+1. Detects appropriate template from specification
+2. Reads template's `components.json`
+3. Includes required components
+4. Adds template customizations
+5. Generates `.claude/` folder in your project
+6. Populates files with content from your spec
 
 ## Available Templates
 
@@ -45,8 +68,19 @@ At initialization, Claude Code:
 ## Workflow
 
 1. **Create spec** (Claude Desktop): Discuss project, export to .md file
-2. **Bootstrap** (Claude Code): `"Create [template] environment..."` → generates `.claude/` structure
+2. **Bootstrap** (Claude Code): `"Create the environment from claude_code_environment repo using spec: [path]"`
+   - Smart detection analyzes your spec
+   - Automatically selects appropriate template
+   - Populates files with extracted content
+   - Asks only necessary clarifying questions (if ambiguous)
 3. **Work**: Break down tasks ≥7 difficulty, use commands (`complete-task`, `breakdown`, etc.), auto-tracked progress
+
+### Advanced: Manual Template Selection
+
+If you prefer to choose the template yourself:
+```
+"Use bootstrap.md command to interactively set up [template-name] environment"
+```
 
 ## Generated Structure
 
@@ -75,16 +109,24 @@ your-project/
 
 ## Usage
 
-**Starting a new project:**
+**Starting a new project (recommended):**
 ```
-"Create a [template-name] environment from claude_code_environment repo.
-Here's my specification: [paste/attach spec.md]"
+"Create the environment from claude_code_environment repo using spec: project-spec.md"
 ```
+
+The smart bootstrap will:
+1. Read your specification
+2. Detect template type using pattern matching (see `.claude/reference/template-selection-rules.md`)
+3. Generate environment with content from your spec
+4. Explain detection reasoning
+
+**See example specifications** in `examples/specifications/` to understand detection patterns.
 
 **Maintaining this repo:**
 - **Add component:** Create `components/[name]/` with README, schema, commands/, reference/
 - **Add template:** Create `templates/[name]/` with README, components.json, customizations/
 - **Update component:** Follow semver, update README, test with templates
+- **Update detection:** Modify `.claude/reference/template-selection-rules.md` with new patterns
 
 ## Task Management Quick Reference
 
