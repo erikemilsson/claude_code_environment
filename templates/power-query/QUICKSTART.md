@@ -198,7 +198,10 @@ your-project/
     │   ├── glossary.md           # Generated Phase 0
     │   ├── assumptions.md        # Generated Phase 0
     │   ├── llm-pitfalls.md       # Pre-populated checklist
-    │   └── standards/            # Coding conventions
+    │   ├── power-query.md        # M-code conventions
+    │   ├── naming.md             # Naming rules
+    │   ├── error-handling.md     # Error patterns
+    │   └── critical_rules.md     # Critical development rules
     │
     ├── tasks/                    # Work tracking
     │   ├── task-overview.md

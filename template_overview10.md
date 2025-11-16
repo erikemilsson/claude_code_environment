@@ -303,10 +303,10 @@ project/
     │   ├── llm-pitfalls.md            # Regulatory document checklist
     │   ├── data-architecture.md       # Bronze-Silver-Gold pattern
     │   ├── validation-rules.md        # Task validation criteria
-    │   └── standards/
-    │       ├── power-query.md         # M-code conventions
-    │       ├── naming.md              # Naming rules
-    │       └── error-handling.md      # Error handling patterns
+    │   ├── power-query.md             # M-code conventions
+    │   ├── naming.md                  # Naming rules
+    │   ├── error-handling.md          # Error handling patterns
+    │   └── critical_rules.md          # Critical development rules
     ├── tasks/
     │   ├── _phase-0-status.md         # Phase 0 progress tracker
     │   ├── task-overview.md           # Auto-updated task table
