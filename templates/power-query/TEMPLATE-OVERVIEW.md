@@ -55,12 +55,13 @@ templates/power-query/
 ├── context/                   # PQ-specific context files
 │   ├── overview.md            # Template for project description
 │   ├── llm-pitfalls.md        # Mandatory checklist before implementing
-│   ├── power-query.md         # M-code standards
-│   ├── naming.md              # Naming conventions
-│   ├── error-handling.md      # Error handling patterns
 │   ├── data-architecture.md   # Bronze-Silver-Gold pattern
 │   ├── validation-rules.md    # Task validation criteria
-│   └── critical_rules.md      # Domain-specific gotchas template
+│   ├── critical_rules.md      # Domain-specific gotchas template
+│   └── standards/
+│       ├── power-query.md         # M-code standards
+│       ├── naming.md              # Naming conventions
+│       └── error-handling.md      # Error handling patterns
 │
 ├── reference/                 # Reference documentation
 │   ├── difficulty-guide-pq.md # PQ-specific difficulty scoring

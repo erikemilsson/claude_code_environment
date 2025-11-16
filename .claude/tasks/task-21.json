@@ -3,11 +3,11 @@
   "title": "Document PQ difficulty scoring",
   "description": "Document the Power Query 5-dimension difficulty scoring system as a standalone reference. Explain how it differs from standard 1-10 scoring, when to use multi-dimensional scoring, the 5 dimensions (M syntax complexity, data transformation logic, error handling, performance optimization, business logic complexity), and how to calculate composite scores.",
   "difficulty": 3,
-  "status": "Pending",
+  "status": "Finished",
   "created_date": "2025-11-16",
   "updated_date": "2025-11-16",
   "dependencies": [],
   "subtasks": [],
   "parent_task": null,
-  "notes": ""
+  "notes": "Created comprehensive standalone reference document: templates/power-query/reference/pq-scoring-explained.md\n\nDocument includes:\n1. Comparison of standard vs. multi-dimensional difficulty scoring\n2. When to use each approach\n3. Detailed explanation of all 5 dimensions (Query Dependency Depth, Formula Complexity, Error Surface, Regulatory Precision, Performance Impact)\n4. Step-by-step composite score calculation with worked examples\n5. Benefits of multi-dimensional scoring (objectivity, breakdown targeting, documentation)\n6. Common pitfalls and how to avoid them\n7. Quick reference tables and formulas\n\nThe existing difficulty-guide-pq.md remains unchanged and provides detailed scoring criteria per difficulty level. The new pq-scoring-explained.md serves as the conceptual overview and comparison guide."
 }
