@@ -1,0 +1,13 @@
+{
+  "id": "14",
+  "title": "Extract reusable concepts",
+  "description": "Analyze the Power Query template to identify reusable patterns that could benefit other domain-specific templates. Document concepts like Phase 0 ambiguity resolution, domain-specific pitfalls checklists, multi-dimension difficulty scoring, and critical_rules.md pattern for potential extraction into components.",
+  "difficulty": 6,
+  "status": "Pending",
+  "created_date": "2025-11-16",
+  "updated_date": "2025-11-16",
+  "dependencies": ["10"],
+  "subtasks": [],
+  "parent_task": null,
+  "notes": ""
+}

@@ -1,0 +1,13 @@
+{
+  "id": "13",
+  "title": "Create PQ usage example",
+  "description": "Create a complete usage example showing how to bootstrap a new Power Query project using this template. Include both minimal and comprehensive approaches, show Phase 0 workflow in action, and demonstrate task breakdown for PQ-specific work.",
+  "difficulty": 5,
+  "status": "Pending",
+  "created_date": "2025-11-16",
+  "updated_date": "2025-11-16",
+  "dependencies": ["10"],
+  "subtasks": [],
+  "parent_task": null,
+  "notes": ""
+}

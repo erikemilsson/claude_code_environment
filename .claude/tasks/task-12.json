@@ -1,0 +1,13 @@
+{
+  "id": "12",
+  "title": "Update README.md with PQ information",
+  "description": "Update the main README.md to include Power Query template in the available templates section. Document when to use it, key features (Phase 0 workflow, LLM pitfalls checklist, 5-dimension difficulty scoring), and link to template documentation.",
+  "difficulty": 4,
+  "status": "Pending",
+  "created_date": "2025-11-16",
+  "updated_date": "2025-11-16",
+  "dependencies": ["10"],
+  "subtasks": [],
+  "parent_task": null,
+  "notes": ""
+}

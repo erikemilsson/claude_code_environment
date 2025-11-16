@@ -1,0 +1,13 @@
+{
+  "id": "15",
+  "title": "Create bootstrap command",
+  "description": "Create a slash command or workflow that automates the process of bootstrapping a new project from a template. Should support selecting template type, choosing components, customizing difficulty scoring, and generating the initial .claude/ folder structure.",
+  "difficulty": 6,
+  "status": "Pending",
+  "created_date": "2025-11-16",
+  "updated_date": "2025-11-16",
+  "dependencies": [],
+  "subtasks": [],
+  "parent_task": null,
+  "notes": ""
+}

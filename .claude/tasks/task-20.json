@@ -1,0 +1,13 @@
+{
+  "id": "20",
+  "title": "Create PQ quick reference",
+  "description": "Create a quick reference guide for the Power Query template. Single-page cheat sheet covering: when to use this template, Phase 0 workflow steps, key commands, LLM pitfalls to avoid, difficulty scoring dimensions, and links to full documentation.",
+  "difficulty": 4,
+  "status": "Pending",
+  "created_date": "2025-11-16",
+  "updated_date": "2025-11-16",
+  "dependencies": ["10"],
+  "subtasks": [],
+  "parent_task": null,
+  "notes": ""
+}

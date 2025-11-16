@@ -1,0 +1,13 @@
+{
+  "id": "11",
+  "title": "Update main CLAUDE.md navigation",
+  "description": "Update the main CLAUDE.md file to include navigation to the Power Query template. Add it to the template types section and ensure proper routing instructions for users working with Power Query projects.",
+  "difficulty": 3,
+  "status": "Pending",
+  "created_date": "2025-11-16",
+  "updated_date": "2025-11-16",
+  "dependencies": ["10"],
+  "subtasks": [],
+  "parent_task": null,
+  "notes": ""
+}
