@@ -1,2 +1,10 @@
-settings.json
-excel-pq-symbols.json
+# VS Code extension generated files (user-specific)
+.vscode/excel-pq-symbols.json
+
+# Note: .vscode/settings.json is tracked in this template repo to provide
+# default Power Query extension configuration. In project repos using this
+# template, add .vscode/settings.json to .gitignore for user-specific settings
+
+# macOS system files
+.DS_Store
+**/.DS_Store
