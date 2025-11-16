@@ -27,8 +27,8 @@ This is a **template repository** for bootstrapping new Claude Code project envi
 
 ## Key Files
 
-### template_overview10.md
-**Comprehensive template documentation** (52KB) containing:
+### legacy-template-reference.md
+**Legacy comprehensive template documentation** (52KB, frozen snapshot) containing:
 
 - Quick start minimal setup (5 minutes)
 - Full environment patterns for different project types
@@ -44,8 +44,8 @@ This is a **template repository** for bootstrapping new Claude Code project envi
 - User asks about command patterns or `.claude/` folder structure
 - Explaining how different project types should be set up
 
-### todo.md
-Current development tasks for this repository (Gemini MCP integration, etc.)
+### .claude/tasks/task-overview.md
+Current and completed development tasks for this repository
 
 ### .vscode/settings.json
 Power Query configuration for this workspace
@@ -128,17 +128,17 @@ project/
 ## Working in This Repository
 
 ### Adding New Templates
-1. Document new pattern in `template_overview10.md` under "Environment Types"
-2. Include folder structure, typical commands, and context files
-3. Explain when to use this template type
-4. Add example initialization questions if applicable
+1. Create new template in `templates/[name]/` directory with README.md and components.json
+2. Include folder structure, typical commands, and context files in customizations/
+3. Explain when to use this template type in the README
+4. Add to main README.md under "Available Templates"
 
 ### Updating Task Management System
 1. Changes to task schema must update:
-   - Task structure documentation in `template_overview10.md`
-   - Example JSON schemas
-   - Command file examples (breakdown.md, complete-task.md, sync-tasks.md)
-   - Validation rules documentation
+   - Component documentation in `components/task-management/README.md`
+   - Example JSON schemas in `components/task-management/schema.json`
+   - Command file examples in `components/task-management/commands/`
+   - Validation rules in `components/task-management/reference/validation-rules.md`
 
 ### Testing Templates
 When user requests to test a template:
@@ -159,7 +159,7 @@ Based on user's requirements, the README.md should explain:
    - Reference this repo's templates
    - Provide specification document
    - Claude Code generates `.claude/` environment structure
-3. **Template Types Available**: Link to template_overview10.md sections
+3. **Template Types Available**: See `templates/` directory and README.md
 4. **Benefits**:
    - Version-controlled environment patterns
    - Consistent project setup across multiple projects
@@ -172,15 +172,15 @@ Based on user's requirements, the README.md should explain:
 
 Since this is a documentation/template repository, there are no build, lint, or test commands. The primary operations are:
 
-- **Read template documentation**: `@template_overview10.md`
-- **Create new project environment**: Apply template patterns to target directory
-- **Update templates**: Edit `template_overview10.md` and validate consistency
+- **Read template documentation**: See `templates/[name]/README.md` or `legacy-template-reference.md`
+- **Create new project environment**: Use `.claude/commands/bootstrap.md` or apply template patterns
+- **Update templates**: Modify files in `templates/` and `components/` directories
 - **Version control**: Standard git operations for tracking template evolution
 
 ## Repository Conventions
 
 - **No emojis in documentation** unless explicitly requested by user
-- **Sequential versioning** of template overview (currently v10: `template_overview10.md`)
+- **Component-based architecture** for reusable template elements
 - **Markdown format** for all documentation
 - **JSON format** for task schemas
 - **Command files** use `.md` extension with structured format (Purpose, Context Required, Process, Output Location)
@@ -189,13 +189,13 @@ Since this is a documentation/template repository, there are no build, lint, or 
 
 ## Navigation Rules
 
-- **Creating new environment?** → Reference `template_overview10.md` sections for appropriate template type
-- **Power Query projects?** → See "Power Query Template" section in `template_overview10.md` for Phase 0 workflow, LLM pitfalls checklist, and 5-dimension difficulty scoring
-- **Task management questions?** → See "Task Management System" section in `template_overview10.md`
+- **Creating new environment?** → Use `.claude/commands/bootstrap.md` or reference `templates/[name]/README.md`
+- **Power Query projects?** → See `templates/power-query/README.md` for Phase 0 workflow, LLM pitfalls checklist, and 5-dimension difficulty scoring
+- **Task management questions?** → See "Task Management System" section in `legacy-template-reference.md`
 - **Command pattern examples?** → See "Command File Examples" section (breakdown.md, complete-task.md, sync-tasks.md)
 - **Understanding hierarchy?** → See `reference/breakdown-workflow.md` template
 - **Tool integration?** → See "Tool Routing & Model Selection" section
-- **Repository development tasks?** → Check `todo.md`
+- **Repository development tasks?** → Check `.claude/tasks/task-overview.md`
 
 ## Current Focus
 

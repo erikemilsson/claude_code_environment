@@ -709,6 +709,7 @@ When adding a new component, ensure:
 
 **Related Documentation**:
 - `reusable-template-patterns.md` - Pattern library
-- `template_overview10.md` - Full template specifications
+- `templates/[name]/README.md` - Current template specifications
+- `legacy-template-reference.md` - Historical comprehensive reference (frozen)
 - `breakdown-workflow.md` - Task hierarchy guide
 - `difficulty-guide.md` - Scoring system details
