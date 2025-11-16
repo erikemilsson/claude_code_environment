@@ -1,0 +1,273 @@
+{
+  "template_name": "research-analysis",
+  "version": "1.0.0",
+  "description": "Template for research and analysis projects with literature review structure, hypothesis tracking, experiment design patterns, data analysis workflows, and citation management",
+  "included_components": [
+    {
+      "name": "task-management",
+      "path": "../../components/task-management",
+      "version": "1.0.0",
+      "required": true,
+      "description": "Hierarchical task tracking with automatic parent completion, difficulty-based breakdown requirements, and status validation"
+    }
+  ],
+  "customizations": [
+    {
+      "category": "standards",
+      "files": [
+        {
+          "name": "literature-review-structure.md",
+          "path": "customizations/standards/literature-review-structure.md",
+          "destination": ".claude/context/standards/literature-review.md",
+          "description": "Standards for conducting systematic literature reviews including search strategies, screening criteria, and synthesis methods"
+        },
+        {
+          "name": "hypothesis-tracking.md",
+          "path": "customizations/standards/hypothesis-tracking.md",
+          "destination": ".claude/context/standards/hypothesis-tracking.md",
+          "description": "Framework for formulating, documenting, testing, and tracking research hypotheses"
+        },
+        {
+          "name": "experiment-design-patterns.md",
+          "path": "customizations/standards/experiment-design-patterns.md",
+          "destination": ".claude/context/standards/experiment-design.md",
+          "description": "Templates for designing rigorous experiments including RCTs, factorial designs, and observational studies"
+        },
+        {
+          "name": "citation-management.md",
+          "path": "customizations/standards/citation-management.md",
+          "destination": ".claude/context/standards/citation-format.md",
+          "description": "Standards for tracking, formatting, and managing research citations and references"
+        }
+      ]
+    },
+    {
+      "category": "workflows",
+      "files": [
+        {
+          "name": "data-analysis-workflow.md",
+          "path": "customizations/workflows/data-analysis-workflow.md",
+          "destination": ".claude/commands/conduct-analysis.md",
+          "description": "Structured workflow for data exploration, cleaning, transformation, analysis, and validation"
+        },
+        {
+          "name": "literature-review-workflow.md",
+          "path": "customizations/workflows/literature-review-workflow.md",
+          "destination": ".claude/commands/review-literature.md",
+          "description": "Systematic workflow for conducting literature reviews from search to synthesis"
+        }
+      ]
+    },
+    {
+      "category": "reference",
+      "files": [
+        {
+          "name": "data-analysis-checklist.md",
+          "path": "customizations/reference/data-analysis-checklist.md",
+          "destination": ".claude/reference/data-analysis-checklist.md",
+          "description": "Comprehensive checklist for validating data quality, analysis methods, and result interpretation"
+        },
+        {
+          "name": "statistical-methods-guide.md",
+          "path": "customizations/reference/statistical-methods-guide.md",
+          "destination": ".claude/reference/statistical-methods.md",
+          "description": "Reference guide for selecting appropriate statistical methods based on data characteristics and research questions"
+        }
+      ]
+    }
+  ],
+  "directory_structure": {
+    ".claude": {
+      "commands": [
+        "complete-task.md (from task-management)",
+        "breakdown.md (from task-management)",
+        "sync-tasks.md (from task-management)",
+        "update-tasks.md (from task-management)",
+        "conduct-analysis.md (from customizations)",
+        "review-literature.md (from customizations)"
+      ],
+      "context": {
+        "overview.md": "Research project overview (created during initialization)",
+        "standards": [
+          "literature-review.md (from customizations)",
+          "hypothesis-tracking.md (from customizations)",
+          "experiment-design.md (from customizations)",
+          "citation-format.md (from customizations)"
+        ],
+        "validation-rules.md": "Research validation rules (created during initialization)"
+      },
+      "tasks": [
+        "task-overview.md (auto-generated)",
+        "task-*.json (created as needed)"
+      ],
+      "reference": [
+        "difficulty-guide.md (from task-management)",
+        "breakdown-workflow.md (from task-management)",
+        "data-analysis-checklist.md (from customizations)",
+        "statistical-methods.md (from customizations)"
+      ]
+    },
+    "research": {
+      "literature": "Literature reviews and notes (created as needed)",
+      "data": "Raw and processed datasets (created as needed)",
+      "experiments": "Experiment designs and results (created as needed)",
+      "analysis": "Analysis scripts and notebooks (created as needed)",
+      "hypotheses": "Hypothesis documentation (created as needed)",
+      "publications": "Papers, reports, presentations (created as needed)"
+    }
+  },
+  "initialization_questions": [
+    {
+      "question": "What type of research will this project focus on?",
+      "options": [
+        "Academic research (thesis, dissertation, paper)",
+        "Data science and analytics",
+        "Experimental research (lab, clinical trials)",
+        "Market and business research",
+        "Mixed methods research"
+      ],
+      "impact": "Determines which research workflows and standards to emphasize"
+    },
+    {
+      "question": "What is your research methodology?",
+      "options": [
+        "Quantitative (statistical analysis, experiments)",
+        "Qualitative (interviews, case studies, ethnography)",
+        "Mixed methods (both quantitative and qualitative)",
+        "Computational (simulations, modeling)",
+        "Literature-based (meta-analysis, systematic review)"
+      ],
+      "impact": "Influences analysis workflows, documentation standards, and tool recommendations"
+    },
+    {
+      "question": "What tools will you use for data analysis?",
+      "options": [
+        "Python (pandas, NumPy, scikit-learn)",
+        "R (tidyverse, ggplot2, caret)",
+        "Statistical software (SPSS, SAS, Stata)",
+        "Notebooks (Jupyter, R Markdown, Quarto)",
+        "Other/Multiple tools",
+        "Not decided yet"
+      ],
+      "impact": "Affects data analysis workflow templates and code standards"
+    },
+    {
+      "question": "Will you conduct experiments?",
+      "options": [
+        "Yes - Randomized controlled trials",
+        "Yes - Quasi-experimental designs",
+        "Yes - Observational studies",
+        "No - Analysis of existing data only",
+        "Not decided yet"
+      ],
+      "impact": "Determines emphasis on experiment design templates and ethics documentation"
+    },
+    {
+      "question": "Do you need to conduct a literature review?",
+      "options": [
+        "Yes - Systematic literature review",
+        "Yes - Narrative literature review",
+        "Yes - Meta-analysis",
+        "No - Minimal literature review needed"
+      ],
+      "impact": "Configures literature review workflow depth and citation management needs"
+    },
+    {
+      "question": "What citation format do you need?",
+      "options": [
+        "APA (Psychology, Education, Social Sciences)",
+        "MLA (Humanities, Literature)",
+        "Chicago (History, some Social Sciences)",
+        "IEEE (Engineering, Computer Science)",
+        "Vancouver (Medical, Biological Sciences)",
+        "Harvard",
+        "Other/Multiple formats"
+      ],
+      "impact": "Sets up citation format standards and reference manager configuration"
+    },
+    {
+      "question": "Are you working solo or with a team?",
+      "options": [
+        "Solo researcher",
+        "Small team (2-3 people)",
+        "Large team (4+ people)",
+        "Collaborative multi-institution"
+      ],
+      "impact": "Determines emphasis on collaboration workflows and task coordination"
+    }
+  ],
+  "typical_tasks": [
+    {
+      "title": "Conduct literature review",
+      "difficulty": 7,
+      "tags": ["research", "literature-review"],
+      "note": "High difficulty - should be broken down into search, screening, extraction, synthesis subtasks"
+    },
+    {
+      "title": "Formulate research hypotheses",
+      "difficulty": 5,
+      "tags": ["planning", "hypothesis"]
+    },
+    {
+      "title": "Design experimental protocol",
+      "difficulty": 6,
+      "tags": ["experiment", "methodology"]
+    },
+    {
+      "title": "Collect and clean dataset",
+      "difficulty": 6,
+      "tags": ["data", "preparation"]
+    },
+    {
+      "title": "Perform exploratory data analysis",
+      "difficulty": 5,
+      "tags": ["analysis", "exploration"]
+    },
+    {
+      "title": "Build and validate statistical model",
+      "difficulty": 7,
+      "tags": ["analysis", "modeling"],
+      "note": "High difficulty - should be broken down into model selection, training, validation, interpretation"
+    },
+    {
+      "title": "Write research paper sections",
+      "difficulty": 6,
+      "tags": ["writing", "publication"]
+    },
+    {
+      "title": "Create data visualizations",
+      "difficulty": 4,
+      "tags": ["visualization", "communication"]
+    }
+  ],
+  "dependencies": {
+    "required_tools": [],
+    "recommended_tools": [
+      "Data analysis: Python/R or statistical software",
+      "Version control: Git, DVC for data versioning",
+      "Reference manager: Zotero, Mendeley, or EndNote",
+      "Notebooks: Jupyter, R Markdown, or Quarto",
+      "Collaboration: Git-based workflows, shared notebooks"
+    ]
+  },
+  "integration_notes": {
+    "gemini_api_use_cases": [
+      "Literature search and summarization with grounding enabled",
+      "Market research and competitive analysis",
+      "Research methodology consultation and best practices",
+      "Statistical method selection guidance",
+      "Hypothesis generation from exploratory analysis",
+      "Research paper review and feedback",
+      "Domain expertise for specialized fields"
+    ],
+    "claude_use_cases": [
+      "Data cleaning and transformation code",
+      "Statistical analysis implementation",
+      "Data visualization creation",
+      "Research documentation writing",
+      "Experiment design development",
+      "Analysis script debugging and optimization",
+      "Task breakdown for complex research projects"
+    ]
+  }
+}
