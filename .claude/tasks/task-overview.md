@@ -9,11 +9,11 @@ Auto-generated summary of all tasks. Run `sync-tasks.md` to update.
 **Total Tasks**: 21
 
 **By Status**:
-- Finished: 13 (62%)
-- Pending: 8 (38%)
 - In Progress: 0 (0%)
 - Blocked: 0 (0%)
 - Broken Down: 0 (0%)
+- Finished: 15
+- Pending: 6
 
 **By Difficulty**:
 - Difficulty 3: 4 tasks (3 finished, 1 pending)
@@ -26,14 +26,6 @@ Auto-generated summary of all tasks. Run `sync-tasks.md` to update.
 | ID | Title | Status | Difficulty | Dependencies | Subtasks | Parent |
 |----|-------|--------|-----------|--------------|----------|--------|
 | 1 | Extract Task Management component from template_overview10.md | Finished | 5 | - | - | - |
-| 2 | Create Documentation/Content template | Finished | 6 | 1 | - | - |
-| 3 | Create Research/Analysis template | Finished | 6 | 1 | - | - |
-| 4 | Create component README files | Finished | 4 | 1 | - | - |
-| 5 | Update main README.md to reflect component-based architecture | Finished | 4 | 1, 2, 3, 4 | - | - |
-| 6 | Create context documentation for this repo | Finished | 3 | 1 | - | - |
-| 7 | Create Life Projects template | Finished | 6 | 1 | - | - |
-| 8 | Add Gemini CLI MCP Integration | Finished | 6 | - | - | - |
-| 9 | Improve Task Completion Transparency | Finished | 4 | - | - | - |
 | 10 | Add Power Query Template section to template_overview10.md | Finished | 5 | - | - | - |
 | 11 | Update main CLAUDE.md navigation | Finished | 3 | 10 | - | - |
 | 12 | Update README.md with PQ information | Finished | 4 | 10 | - | - |
@@ -95,3 +87,13 @@ Diff 4 (7)   [███████████░░░░         ] 71% comple
 Diff 5 (4)   [███████████████░        ] 75% complete (3/4)
 Diff 6 (6)   [████████░░░░░░░░        ] 33% complete (2/6)
 ```
+| 2 | Create Documentation/Content template | Finished | 6 | 1 | - | - |
+| 20 | Create PQ quick reference | Pending | 4 | 10 | - | - |
+| 21 | Document PQ difficulty scoring | Finished | 3 | - | - | - |
+| 3 | Create Research/Analysis template | Finished | 6 | 1 | - | - |
+| 4 | Create component README files | Finished | 4 | 1 | - | - |
+| 5 | Update main README.md to reflect component-based architecture | Finished | 4 | 1, 2, 3, 4 | - | - |
+| 6 | Create context documentation for this repo | Finished | 3 | 1 | - | - |
+| 7 | Create Life Projects template | Finished | 6 | 1 | - | - |
+| 8 | Add Gemini CLI MCP Integration | Finished | 6 | - | - | - |
+| 9 | Improve Task Completion Transparency | Finished | 4 | - | - | - |

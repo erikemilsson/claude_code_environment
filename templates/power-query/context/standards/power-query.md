@@ -409,6 +409,6 @@ See `power-query/` directory for implemented queries following these standards.
 
 **Last Updated:** [Template]
 **See Also:**
-- `.claude/context/naming.md` - Detailed naming rules
-- `.claude/context/error-handling.md` - Error handling patterns
+- `.claude/context/standards/naming.md` - Detailed naming rules
+- `.claude/context/standards/error-handling.md` - Error handling patterns
 - `.claude/context/glossary.md` - Variable definitions
