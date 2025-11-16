@@ -1,10 +1,15 @@
 # Claude Code Environment Templates
 
-A version-controlled repository of environment templates for bootstrapping new Claude Code projects.
+A version-controlled repository of modular components and templates for bootstrapping new Claude Code projects.
 
 ## Purpose
 
-This repository contains refined, iterable templates that work alongside project specifications to quickly set up new development environments with Claude Code. Instead of recreating project structure and conventions from scratch, you can leverage these battle-tested patterns to start productive work immediately.
+This repository provides a component-based architecture for creating Claude Code environments. Instead of monolithic template files, it uses:
+
+- **Reusable components** (task-management, data-pipelines, etc.) that can be mixed and matched
+- **Project-type templates** (research-analysis, documentation-content, life-projects) that compose components with domain-specific customizations
+- **Version control** for both components and templates independently
+- **Clear composition patterns** via `components.json` manifests
 
 ## The Problem This Solves
 
@@ -15,7 +20,116 @@ When starting a new project with Claude Code, you need:
 - Technology-specific coding standards
 - Clear separation between AI context and human documentation
 
-Creating these from scratch every time is inefficient. This repository provides version-controlled templates you can iterate on and reuse across multiple projects.
+Creating these from scratch every time is inefficient. This repository provides modular, version-controlled building blocks you can compose and reuse across multiple projects.
+
+## Architecture Overview
+
+### Components vs Templates
+
+```
+components/                    # Reusable, versioned modules
+├── task-management/          # Core task tracking (v1.0.0)
+│   ├── README.md             # Component docs + versioning
+│   ├── schema.json           # Task structure definition
+│   ├── commands/             # Reusable workflows
+│   └── reference/            # Supporting documentation
+
+templates/                     # Project-type environments
+├── research-analysis/        # For research projects
+│   ├── README.md             # When to use, what's included
+│   ├── components.json       # Component dependencies + customizations
+│   └── customizations/       # Template-specific files
+├── documentation-content/    # For docs/writing projects
+└── life-projects/            # For non-tech projects
+```
+
+### How Components and Templates Work Together
+
+1. **Components** = Reusable modules with generic functionality
+   - Versioned independently (semantic versioning)
+   - Can be used by multiple templates
+   - Example: task-management component (v1.0.0)
+
+2. **Templates** = Project-type-specific environments
+   - Declare which components they use (via `components.json`)
+   - Add domain-specific customizations (standards, workflows, commands)
+   - Example: research-analysis template uses task-management + adds hypothesis tracking, literature review workflows, citation standards
+
+3. **Composition** happens at project initialization:
+   ```
+   User requests: "Create research-analysis environment"
+
+   Claude Code:
+   1. Reads templates/research-analysis/components.json
+   2. Includes task-management component (commands + reference docs)
+   3. Adds research-specific customizations (lit review, hypothesis tracking)
+   4. Generates .claude/ structure in target project
+   5. Creates initial tasks based on user's specification
+   ```
+
+## Available Templates
+
+### 1. Research/Analysis Template
+**Path:** `templates/research-analysis/`
+
+For academic research, data science projects, experimental work, and market research.
+
+**Includes:**
+- Task management component (v1.0.0)
+- Literature review structure and workflows
+- Hypothesis tracking framework
+- Experiment design patterns
+- Data analysis workflows (exploration, cleaning, validation)
+- Citation management standards
+- Statistical methods reference guide
+
+**When to use:**
+- Graduate research and dissertations
+- Data science and statistical modeling
+- Experimental research and A/B testing
+- Market and competitive analysis
+
+### 2. Documentation/Content Template
+**Path:** `templates/documentation-content/`
+
+For technical documentation, API docs, content creation, and writing projects.
+
+**Includes:**
+- Task management component (v1.0.0)
+- Writing style guides
+- Documentation structure patterns
+- API documentation standards
+- Content review workflows
+- Publishing command patterns
+- Content review checklists
+
+**When to use:**
+- Technical documentation projects
+- API documentation
+- User guides and tutorials
+- Content creation and editing
+
+### 3. Life Projects Template
+**Path:** `templates/life-projects/`
+
+For everyday non-technical projects like home improvement, event planning, moving, etc.
+
+**Includes:**
+- Task management component (v1.0.0)
+- Project planning standards
+- Budget management guidelines
+- Timeline planning patterns
+- Progress tracking workflows
+- Decision-making processes
+- Vendor evaluation workflows
+- Project brief, budget, and decision log templates
+
+**When to use:**
+- Home renovation or improvement
+- Event planning (weddings, parties)
+- Moving and relocation
+- Personal goal projects
+- Family projects and coordination
 
 ## Typical Workflow
 
@@ -36,56 +150,70 @@ Creating these from scratch every time is inefficient. This repository provides 
 - Begin work using standardized commands
 - Track progress with automatic status updates
 
-## What's Inside
+## Generated Project Structure
 
-### template_overview10.md
-Comprehensive 52KB documentation containing:
-- **Quick Start**: Minimal 5-minute setup for simple projects
-- **Environment Types**: Base, Data Engineering, BI/Dashboard, Hybrid templates
-- **Task Management System**: JSON-based hierarchical task tracking with automatic parent completion
-- **Command Patterns**: Reusable workflow instructions (breakdown, complete-task, sync-tasks, update-tasks)
-- **Context File Templates**: Standards, reference docs, validation rules
-- **Tool Integration**: When to use Gemini API vs Claude native capabilities
-
-### Template Types
-
-#### 1. Base Template
-For general planning, research, and non-technical projects. Includes essential task management and command structure.
-
-#### 2. Data Engineering Template
-For ETL pipelines, data processing, and analytics engineering. Adds Python/Polars standards, SQL conventions, performance optimization patterns.
-
-#### 3. BI/Dashboard Template
-For Power BI, reporting, and visualization projects. Includes DAX patterns, naming conventions, KPI documentation, data source management.
-
-#### 4. Hybrid Template
-Combines elements from multiple templates based on project needs.
-
-### .claude/ Folder Structure
-
-Every generated environment follows this pattern:
+When you use a template, Claude Code generates this structure in your project:
 
 ```
-project/
-├── CLAUDE.md              # Router file (<100 lines, points to context)
-├── README.md              # Human-readable documentation
-└── .claude/               # Claude-specific context
-    ├── commands/          # Reusable task patterns
-    │   ├── complete-task.md    # Start/finish tasks with status tracking
-    │   ├── breakdown.md        # Split complex tasks into subtasks
-    │   ├── sync-tasks.md       # Update task overview
-    │   └── update-tasks.md     # Validate task system health
-    ├── context/           # Project understanding
-    │   ├── overview.md         # Goals, scope, decisions
-    │   ├── standards/          # Tech-specific conventions
-    │   └── validation-rules.md # Task validation rules
-    ├── tasks/             # Work tracking
-    │   ├── task-overview.md    # Auto-generated summary table
-    │   └── task-*.json         # Individual task files
-    └── reference/         # Supporting information
-        ├── difficulty-guide.md      # Task scoring criteria
-        └── breakdown-workflow.md    # Hierarchical task guide
+your-project/
+├── CLAUDE.md                    # Router file (<100 lines, points to context)
+├── README.md                    # Human-readable documentation
+└── .claude/                     # Claude-specific context
+    ├── commands/                # Workflow patterns
+    │   ├── complete-task.md     # From task-management component
+    │   ├── breakdown.md         # From task-management component
+    │   ├── sync-tasks.md        # From task-management component
+    │   ├── update-tasks.md      # From task-management component
+    │   └── [template-specific]  # From template customizations
+    ├── context/                 # Project understanding
+    │   ├── overview.md          # Generated during initialization
+    │   ├── standards/           # From template customizations
+    │   └── validation-rules.md  # Generated during initialization
+    ├── tasks/                   # Work tracking
+    │   ├── task-overview.md     # Auto-generated summary table
+    │   └── task-*.json          # Individual task files
+    └── reference/               # Supporting information
+        ├── difficulty-guide.md       # From task-management component
+        ├── breakdown-workflow.md     # From task-management component
+        └── [template-specific]       # From template customizations
 ```
+
+## Component Composition Pattern
+
+Templates use `components.json` to declare dependencies and customizations:
+
+```json
+{
+  "template_name": "research-analysis",
+  "version": "1.0.0",
+  "included_components": [
+    {
+      "name": "task-management",
+      "path": "../../components/task-management",
+      "version": "1.0.0",
+      "required": true
+    }
+  ],
+  "customizations": [
+    {
+      "category": "standards",
+      "files": [
+        {
+          "name": "literature-review-structure.md",
+          "path": "customizations/standards/literature-review-structure.md",
+          "destination": ".claude/context/standards/literature-review.md"
+        }
+      ]
+    }
+  ]
+}
+```
+
+This pattern allows:
+- **Independent versioning** of components and templates
+- **Selective updates** (update component without changing template)
+- **Composition flexibility** (mix components as needed)
+- **Clear provenance** (know where each file comes from)
 
 ## Key Features
 
@@ -97,24 +225,26 @@ project/
 - **Status Validation**: Consistent state management prevents manual tracking errors
 
 ### Reusable Command Patterns
-- **complete-task.md**: Standard workflow for starting and finishing work (ensures proper status tracking)
+- **complete-task.md**: Standard workflow for starting and finishing work
 - **breakdown.md**: Split high-difficulty tasks with automatic parent status transition
 - **sync-tasks.md**: Update task-overview.md from JSON files
 - **update-tasks.md**: Validate task structure and flag inconsistencies
+- **Template-specific commands**: Domain-specific workflows (e.g., review-literature.md)
 
-### Tool Integration Strategy
-- **Gemini API**: Research, domain analysis, content generation, image analysis, code review
-- **Claude Native**: Code implementation, system design, file operations, project management
-- **Hybrid Workflows**: Gemini researches/analyzes, Claude implements/refactors
+### Version Control
+- **Component versions**: Independent semantic versioning (e.g., task-management v1.0.0)
+- **Template versions**: Track template evolution separately
+- **Backwards compatibility**: MINOR updates don't break existing projects
+- **Migration paths**: MAJOR updates include migration scripts
 
 ## Benefits
 
-1. **Version Control**: Track template evolution over time with Git
-2. **Consistency**: Same proven structure across all your projects
+1. **Modularity**: Components can be updated independently from templates
+2. **Consistency**: Same proven patterns across all your projects
 3. **Efficiency**: Bootstrap new environments in minutes, not hours
 4. **Reduced Errors**: Task breakdown system prevents high-complexity failures
 5. **Context Management**: Lazy-load only relevant files, minimize token usage
-6. **Reusability**: Technology-specific templates for common project types
+6. **Reusability**: Mix and match components for custom project needs
 7. **Automation**: Parent task completion, status synchronization, validation checks
 
 ## How to Use This Repository
@@ -124,25 +254,66 @@ project/
 1. **Clone this repository** (or keep it accessible for reference)
 2. **Create project specification** in Claude Desktop and export to Markdown
 3. **In VS Code**, navigate to your new project directory
-4. **Ask Claude Code** to create an environment based on this repository's templates:
+4. **Ask Claude Code** to create an environment based on a template:
    ```
-   "Create a [Data Engineering/BI/Base/Hybrid] environment based on the
-   claude_code_environment templates. Here's my specification: [paste/attach]"
+   "Create a [research-analysis/documentation-content/life-projects] environment
+   based on the claude_code_environment repository. Here's my specification:
+   [paste/attach specification.md]"
    ```
 5. **Claude Code will**:
-   - Read the appropriate template from `template_overview10.md`
+   - Read the template's components.json
+   - Include required components (task-management, etc.)
+   - Add template-specific customizations
    - Generate `.claude/` folder structure
    - Create initial tasks with difficulty scoring
-   - Set up command files and context documents
    - Provide next steps for validation and task breakdown
 
 ### For Maintaining This Repository
 
-1. **Iterate on templates**: Edit `template_overview10.md` based on lessons learned from real projects
-2. **Version incrementally**: When making major changes, save as `template_overview11.md` etc.
-3. **Test templates**: Create sample environments to validate structure and commands
-4. **Document patterns**: Add new template types or command patterns as you discover useful workflows
-5. **Track improvements**: Use `todo.md` for planned enhancements
+#### Adding New Components
+1. Create `components/[name]/` directory
+2. Add README.md with versioning info
+3. Include schema (if applicable), commands/, reference/
+4. Document integration in component README
+5. Use semantic versioning
+
+#### Adding New Templates
+1. Create `templates/[name]/` directory
+2. Add README.md explaining when to use
+3. Create components.json listing dependencies
+4. Add customizations/ folder with domain-specific files
+5. Document typical tasks and initialization questions
+
+#### Updating Existing Components
+1. Follow semantic versioning (MAJOR.MINOR.PATCH)
+2. Update version in component README
+3. Add version history entry
+4. If breaking changes, provide migration script
+5. Test with existing templates
+
+## Migration from template_overview10.md
+
+This repository previously used a monolithic `template_overview10.md` file (52KB) containing all templates and patterns. The new component-based architecture provides:
+
+**Before (Monolithic):**
+- Single large file with all templates
+- Difficult to version different parts independently
+- No clear reuse mechanism across templates
+- Manual copy-paste for common patterns
+
+**After (Component-Based):**
+- Components versioned independently
+- Templates compose components + customizations
+- Clear reuse via components.json
+- Automatic composition at project initialization
+
+**Migration Path:**
+- `template_overview10.md` remains available for reference
+- New projects should use component-based templates
+- Existing content extracted into:
+  - Task management → `components/task-management/`
+  - Project types → `templates/[type]/`
+  - Domain patterns → `templates/[type]/customizations/`
 
 ## Task Management Quick Reference
 
@@ -170,58 +341,75 @@ project/
 ## Example: From Idea to Working Environment
 
 **User's Initial Request:**
-> "I need to build an ETL pipeline that pulls carbon emissions data from various APIs,
-> processes it with Polars, and loads it into Azure SQL Database for a Power BI dashboard."
+> "I need to conduct a literature review and statistical analysis for my graduate
+> research on carbon emissions forecasting models."
 
 **After Specification in Claude Desktop:**
 - Export detailed requirements document
-- Include API sources, data volume, error handling needs, authentication details
+- Include research questions, methodology, data sources, analysis approach
 
 **In VS Code with Claude Code:**
 ```
-User: "Create a Data Engineering environment for this carbon emissions ETL project.
-       [attaches specification.md]"
+User: "Create a research-analysis environment based on claude_code_environment
+       repository. [attaches specification.md]"
 
 Claude Code:
-1. Reads Data Engineering template from template_overview10.md
-2. Generates .claude/ structure with:
-   - Task 1: "Setup project structure" (difficulty: 3)
-   - Task 2: "Configure API connections" (difficulty: 8) ← flagged for breakdown
-   - Task 3: "Build Polars pipeline" (difficulty: 7) ← flagged for breakdown
-   - Task 4: "Implement Azure SQL loader" (difficulty: 7) ← flagged for breakdown
-   - Task 5: "Create scheduling system" (difficulty: 5)
-3. Creates command files (breakdown.md, complete-task.md, etc.)
-4. Sets up context files with Python/Polars standards
-5. Provides next steps: validate with update-tasks.md, break down tasks 2-4
+1. Reads templates/research-analysis/components.json
+2. Includes task-management component (v1.0.0)
+   - Commands: complete-task, breakdown, sync-tasks, update-tasks
+   - Reference: difficulty-guide, breakdown-workflow, validation-rules
+3. Adds research-specific customizations:
+   - Standards: literature-review, hypothesis-tracking, citation-format
+   - Commands: review-literature, conduct-analysis
+   - Reference: data-analysis-checklist, statistical-methods-guide
+4. Generates .claude/ structure with:
+   - Task 1: "Conduct systematic literature review" (difficulty: 8) ← breakdown required
+   - Task 2: "Formulate research hypotheses" (difficulty: 5)
+   - Task 3: "Collect and clean dataset" (difficulty: 6)
+   - Task 4: "Build forecasting models" (difficulty: 8) ← breakdown required
+   - Task 5: "Validate model performance" (difficulty: 6)
+   - Task 6: "Write research paper" (difficulty: 7) ← breakdown required
+5. Creates context files with research standards
+6. Provides next steps: validate with update-tasks.md, break down tasks 1, 4, 6
 
-User: "@.claude/commands/breakdown.md 2"
+User: "@.claude/commands/breakdown.md 1"
 
 Claude Code:
-- Splits Task 2 into 5 subtasks (difficulty 3-5 each)
-- Sets parent to "Broken Down (0/5 done)" status
+- Splits Task 1 into 6 subtasks:
+  1.1: Define search strategy and keywords (difficulty: 4)
+  1.2: Search academic databases (difficulty: 3)
+  1.3: Screen and filter results (difficulty: 5)
+  1.4: Extract key information (difficulty: 5)
+  1.5: Synthesize findings (difficulty: 6)
+  1.6: Document literature gaps (difficulty: 4)
+- Sets parent to "Broken Down (0/6 done)" status
 - Updates task-overview.md
-- Suggests starting with first subtask
+- Suggests starting with Task 1.1
 
-User: "@.claude/commands/complete-task.md 6" (first subtask)
+User: "@.claude/commands/complete-task.md 7" (Task 1.1)
 
 Claude Code:
-- Confirms task details
+- Confirms task details and dependencies
 - Updates status: Pending → In Progress
-- Performs work (creates API client base class)
+- Performs work (creates search strategy document)
 - Updates status: In Progress → Finished
-- Updates parent progress: "Broken Down (1/5 done)"
-- Suggests next subtask
+- Updates parent progress: "Broken Down (1/6 done)"
+- Suggests next subtask (Task 1.2)
 ```
 
 **Result:**
+- Complete research environment with domain-specific standards
 - Clear task hierarchy with manageable complexity
 - Automatic progress tracking
-- Reduced error risk through subtask breakdown
-- Complete environment ready for productive work
+- Literature review workflows and citation standards
+- Data analysis checklist and statistical methods guide
+- Ready for productive research work
 
 ## Resources
 
-- **Main Template Documentation**: `template_overview10.md`
+- **Component Documentation**: See individual READMEs in `components/[name]/`
+- **Template Documentation**: See individual READMEs in `templates/[name]/`
+- **Legacy Reference**: `template_overview10.md` (monolithic version)
 - **Current Development Tasks**: `todo.md`
 - **AI Context Guide**: `CLAUDE.md` (for Claude Code to understand this repo)
 
@@ -231,8 +419,15 @@ This is a personal template repository, but the patterns are designed to be adap
 
 ## Version History
 
-- **v10** (Current): Hierarchical task management with automatic parent completion, Gemini API integration
-- Earlier versions focused on basic task tracking and command patterns
+### Component-Based Architecture (Current)
+- **Components**: task-management v1.0.0
+- **Templates**: research-analysis v1.0.0, documentation-content v1.0.0, life-projects v1.0.0
+- **Architecture**: Modular composition via components.json
+
+### Monolithic Architecture (Legacy)
+- **v10**: Hierarchical task management, Gemini API integration
+- Earlier versions: Basic task tracking and command patterns
+- Migrated to component-based architecture (November 2025)
 
 ## License
 
