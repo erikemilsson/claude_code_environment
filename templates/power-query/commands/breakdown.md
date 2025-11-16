@@ -1,178 +1,168 @@
-# Command: Breakdown Task (Phase 1)
+# Command: Breakdown High-Difficulty Tasks (Phase 1)
 
 ## Purpose
-Split high-difficulty tasks (≥7) into manageable subtasks (≤6 difficulty each).
+Split tasks with difficulty ≥7 into smaller, manageable subtasks to reduce LLM error risk. Automatically transitions parent task to "Broken Down" status and establishes completion dependency chain.
 
-## Usage
-```
-@.claude/commands/breakdown.md [task_id]
-```
-
-## Prerequisites
-- Task exists and has difficulty ≥7
-- Task status is "Pending" (not started yet)
-- Task is not already broken down
+## Context Required
+- `.claude/tasks/*.json` (all task files)
+- `.claude/context/validation-rules.md`
+- `.claude/reference/difficulty-guide-pq.md`
+- `.claude/context/glossary.md` (for PQ terminology)
+- `.claude/reference/data-contracts.md` (if query task)
+- `.claude/reference/query-manifest.md` (if query task)
 
 ## Process
 
-### 1. Load Task
-Read `.claude/tasks/task-[id].json`:
+### 1. Identify Breakdown Candidate
+- Accept task ID as parameter: `@breakdown.md <task_id>`
+- Read the specified task JSON file
+- **Validate eligibility:**
+  - Task difficulty MUST be ≥7
+  - Task status MUST be "Pending" or "In Progress"
+  - Task MUST NOT already have status "Broken Down" or "Finished"
+  - If invalid, halt with clear error message
 
-**Validation:**
-- Task difficulty is ≥7
-- Task status is "Pending"
-- Task does not already have subtasks
+### 2. Analyze and Plan Breakdown
+- Review task description, requirements, and `files_affected`
+- **Analyze Power Query complexity dimensions:**
+  - Query dependency depth
+  - Formula complexity (M language operators, custom functions)
+  - Error surface (null handling, type conversions, edge cases)
+  - Regulatory precision requirements
+  - Performance considerations (folding, buffering, caching)
+- Identify logical components that can be separated
+- Design subtasks following these rules:
+  - Each subtask difficulty MUST be ≤6
+  - Subtasks MUST cover all original requirements
+  - Subtasks SHOULD be independently testable
+  - Create natural dependency order if needed
+- **Apply PQ breakdown patterns:**
+  - **Pipeline Stages**: Input validation → Core transformation → Error handling → Output validation
+  - **Formula Implementation**: Extract inputs → Implement formula steps → Add conversions → Handle edge cases → Add validation
+  - **Integration Tasks**: Dependency setup → Query A → Query B → Integration logic → End-to-end testing
+- Confirm breakdown plan with user before proceeding
 
-If task difficulty <7:
+### 3. Create Subtask Files
+For each planned subtask:
+- Generate new task ID (next sequential number)
+- Create JSON file: `.claude/tasks/task-{new_id}.json`
+- Set required fields:
+  ```json
+  {
+    "id": "{new_id}",
+    "title": "{subtask_title}",
+    "description": "{detailed_description}",
+    "difficulty": {1-6},
+    "status": "Pending",
+    "created_date": "{YYYY-MM-DD}",
+    "updated_date": "{YYYY-MM-DD}",
+    "parent_task": "{original_task_id}",
+    "dependencies": [{other_subtask_ids_if_needed}],
+    "subtasks": [],
+    "notes": "Created from breakdown of Task {original_task_id}. Context: {relevant files/sections}"
+  }
+  ```
+
+### 4. Update Parent Task to "Broken Down"
+
+This is the CRITICAL step that solves the state ambiguity problem:
+
+- Update original task JSON file:
+  ```json
+  {
+    "status": "Broken Down",
+    "updated_date": "{current_date}",
+    "breakdown_history": "{current_date}",
+    "subtasks": ["{subtask_1_id}", "{subtask_2_id}", ...],
+    "notes": "{original_notes}\n\n[{date}] Task broken down into {N} subtasks: #{ids}. Parent task will auto-complete when all subtasks finish."
+  }
+  ```
+
+### 5. Sync and Report
+- Run `@.claude/commands/sync-tasks.md` to update overview
+- Provide breakdown summary:
+  - Original task ID and title
+  - Number of subtasks created
+  - List of subtask IDs with titles and difficulties
+  - Confirmation that parent is now "Broken Down"
+  - Next recommended action (start first subtask)
+
+## Automatic Completion Logic
+
+**IMPORTANT:** The following logic should be checked by `complete-task.md` whenever marking a subtask as "Finished":
+
 ```
-ℹ️ Task [id] has difficulty [score] (<7)
-
-Breakdown is only recommended for tasks with difficulty ≥7.
-This task can be completed directly with @.claude/commands/complete-task.md [id]
+When marking subtask as "Finished":
+1. Read subtask's `parent_task` field
+2. If parent_task exists:
+   a. Load parent task JSON
+   b. If parent status == "Broken Down":
+      - Check ALL tasks in parent's `subtasks` array
+      - If ALL subtasks have status "Finished":
+        * Update parent status to "Finished"
+        * Set parent updated_date to current date
+        * Add note: "Auto-completed: all subtasks finished"
+        * Report to user: "✅ Parent Task #{id} automatically completed!"
 ```
 
-### 2. Load Context for Task Analysis
-- `.claude/context/glossary.md`
-- `.claude/reference/data-contracts.md` (if query task)
-- `.claude/reference/query-manifest.md` (if query task)
-- `.claude/reference/difficulty-guide-pq.md`
+## Example Breakdown
 
-### 3. Analyze Task Complexity
-Identify complexity dimensions:
-- Query dependency depth
-- Formula complexity
-- Error surface
-- Regulatory precision requirements
-- Performance considerations
-
-### 4. Generate Subtask Breakdown
-
-**Breakdown Strategy:**
-
-**For difficulty 7-8:**
-Create 4-6 subtasks, each difficulty 3-5:
-
-Example for "Implement Gold_Calculate_CFF" (difficulty 8):
-1. Extract and validate input data (difficulty 4)
-2. Implement core CFF formula (difficulty 5)
-3. Add error handling and validation (difficulty 4)
-4. Implement edge case handling (difficulty 3)
-5. Add compliance flag logic (difficulty 4)
-
-**For difficulty 9-10:**
-Create 5-8 subtasks, each difficulty 3-6:
-
-Include additional subtasks for:
-- Ambiguity documentation
-- Unit testing setup
-- Dependency mapping
-- Performance validation
-
-### 5. Create Subtask Files
-
-For each subtask, create new task file `.claude/tasks/task-[new_id].json`:
-
+**Input Task:**
 ```json
 {
-  "id": "[next_sequential_id]",
-  "title": "[Subtask title]",
-  "description": "[Detailed description with context]",
-  "difficulty": [3-6],
+  "id": "5",
+  "title": "Implement Gold_Calculate_CFF query",
+  "difficulty": 8,
   "status": "Pending",
-  "created_date": "[current date]",
-  "dependencies": ["[parent_id_or_sibling_id]"],
-  "subtasks": [],
-  "parent_task": "[parent_id]",
-  "notes": "Subtask of: [parent_title]. Context: [relevant files/sections]"
+  "description": "Build Power Query to calculate Corporate Fossil Fuel percentage with regulatory precision"
 }
 ```
 
-**Subtask Numbering:**
-- Use next sequential task IDs
-- Do NOT nest subtasks (flat hierarchy only)
+**After Breakdown:**
 
-**Dependencies:**
-- First subtask may depend on parent's dependencies
-- Subsequent subtasks depend on previous subtask(s)
-- Establish clear execution order
-
-### 6. Update Parent Task
-
-Modify parent task status:
-
+**Parent Task (task-5.json):**
 ```json
 {
+  "id": "5",
+  "title": "Implement Gold_Calculate_CFF query",
+  "difficulty": 8,
   "status": "Broken Down",
-  "breakdown_date": "[current date]",
-  "subtasks": ["[sub_id_1]", "[sub_id_2]", "[sub_id_3]", ...],
-  "notes": "Split into [N] subtasks. Work on subtasks, not parent."
+  "breakdown_history": "2024-01-15",
+  "subtasks": ["12", "13", "14", "15", "16"],
+  "notes": "[2024-01-15] Task broken down into 5 subtasks: #12-16. Parent will auto-complete when all subtasks finish."
 }
 ```
-
-**Important:** Parent task status is now "Broken Down" and cannot be worked on directly.
-
-### 7. Update Task Overview
-
-Present breakdown summary:
-
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✅ Task [id] Broken Down
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-**Parent Task:** [Title] (difficulty [score])
-**Status:** Broken Down → Work on subtasks instead
 
 **Created Subtasks:**
+- Task 12: "Extract and validate CFF input parameters" (difficulty: 4, parent: "5")
+- Task 13: "Implement core CFF formula calculation" (difficulty: 5, parent: "5")
+- Task 14: "Add error handling for null/missing values" (difficulty: 4, parent: "5")
+- Task 15: "Implement edge case handling (zero denominators, negative values)" (difficulty: 3, parent: "5")
+- Task 16: "Add compliance flag logic and precision rounding" (difficulty: 4, parent: "5")
 
-1. Task [sub_id_1]: [Title] (difficulty [score])
-   - Dependencies: [List]
-   - Ready to start: [Yes/No]
+## Output Location
+- New task JSON files in `.claude/tasks/` (one per subtask)
+- Updated parent task JSON file (status → "Broken Down")
+- Updated `.claude/tasks/task-overview.md` (via sync-tasks)
+- Console report of breakdown results
 
-2. Task [sub_id_2]: [Title] (difficulty [score])
-   - Dependencies: Task [sub_id_1]
-   - Ready to start: After subtask 1
+## Error Handling
+- If task already "Broken Down": "Task #{id} has already been broken down into subtasks #{list}. Use update-tasks.md to modify existing subtasks."
+- If task difficulty <7: "Task #{id} has difficulty {X} which is below the breakdown threshold (7). Breakdown not needed."
+- If task "Finished": "Cannot break down completed task #{id}."
 
-3. Task [sub_id_3]: [Title] (difficulty [score])
-   - Dependencies: Task [sub_id_2]
-   - Ready to start: After subtask 2
+## Power Query Breakdown Guidelines
 
-[... continue for all subtasks]
-
-**Execution Order:**
-[sub_id_1] → [sub_id_2] → [sub_id_3] → ... → Parent auto-completes
-
-**Next Action:**
-@.claude/commands/complete-task.md [first_ready_subtask_id]
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Note: Parent task will automatically complete when all subtasks finish.
-```
-
-### 8. Update Task Overview File
-
-Run sync-tasks to update `.claude/tasks/task-overview.md` with new structure:
-
-```markdown
-## Pending Tasks
-
-| ID | Title | Difficulty | Dependencies | Status |
-|----|-------|------------|--------------|--------|
-| 5 | Implement Gold_Calculate_CFF | 8 | 3,4 | Broken Down 🔵 (0/5 done) |
-| ↳ 12 | Extract and validate CFF inputs | 4 | 3,4 | Pending |
-| ↳ 13 | Implement core CFF formula | 5 | 12 | Pending |
-| ↳ 14 | Add error handling | 4 | 13 | Pending |
-| ↳ 15 | Implement edge case handling | 3 | 13 | Pending |
-| ↳ 16 | Add compliance flag logic | 4 | 14,15 | Pending |
-```
-
-## Breakdown Guidelines
-
-### Subtask Difficulty
-- Target: 3-6 range (sweet spot for LLM execution)
+### Subtask Difficulty Scoring
+- Target: 3-6 range (sweet spot for LLM execution with Power Query)
 - Never create subtasks with difficulty >6
 - If subtask would be >6, break it down further
+- Consider PQ-specific complexity dimensions when scoring:
+  - Query dependency depth
+  - Formula complexity (M language operators, custom functions)
+  - Error surface (null handling, type conversions)
+  - Regulatory precision requirements
+  - Performance considerations (folding, buffering)
 
 ### Subtask Scope
 Each subtask should be:
@@ -181,36 +171,37 @@ Each subtask should be:
 - **Sequential**: Clear order of execution
 - **Context-light**: Doesn't require extensive context from other tasks
 
-### Common Breakdown Patterns
+### Common Power Query Breakdown Patterns
 
 **Pattern A: Pipeline Stages**
 For data transformation tasks:
-1. Input validation
-2. Core transformation
-3. Error handling
-4. Output validation
+1. Input validation (check source structure, required columns)
+2. Core transformation (main M formula implementation)
+3. Error handling (null checks, type validation)
+4. Output validation (verify schema, data quality)
 
 **Pattern B: Formula Implementation**
 For calculation tasks:
-1. Extract/validate inputs
-2. Implement formula steps 1-N
-3. Add unit conversions
-4. Add edge case handling
-5. Add validation checks
+1. Extract/validate inputs (read parameters, validate types)
+2. Implement formula steps 1-N (break complex formulas into stages)
+3. Add unit conversions (normalize units, apply multipliers)
+4. Add edge case handling (zero denominators, negative values, nulls)
+5. Add validation checks (regulatory precision, compliance flags)
 
 **Pattern C: Integration Tasks**
 For multi-query orchestration:
-1. Dependency setup
-2. Query A implementation
-3. Query B implementation
-4. Integration logic
-5. End-to-end testing
+1. Dependency setup (ensure upstream queries exist)
+2. Query A implementation (first dependent query)
+3. Query B implementation (second dependent query)
+4. Integration logic (merge/join operations)
+5. End-to-end testing (validate complete pipeline)
 
 ### Dependency Management
 - Keep dependency chains SHORT (max 2-3 levels)
 - Prefer parallel subtasks over sequential when possible
-- First subtask typically has parent's dependencies
+- First subtask typically inherits parent's dependencies
 - Later subtasks depend on earlier siblings
+- Document query reference dependencies in notes
 
 ## Quality Checks
 
@@ -221,68 +212,16 @@ Before finalizing breakdown:
 - [ ] Execution order is logical
 - [ ] Each subtask is independently completable
 - [ ] Total effort roughly matches original task
-
-## Error Handling
-
-### Task Already Broken Down
-```
-⚠️ Task [id] is already broken down
-
-Subtasks:
-- Task [sub_id_1]: [Title] - Status: [Status]
-- Task [sub_id_2]: [Title] - Status: [Status]
-...
-
-Cannot break down again. Work on subtasks or create new tasks.
-```
-
-### Task In Progress or Finished
-```
-❌ Cannot break down Task [id]: Status is [Status]
-
-Breakdown is only possible for Pending tasks.
-If task needs restructuring, create new tasks manually.
-```
-
-### Task Difficulty Too Low
-```
-ℹ️ Task [id] has difficulty [score] (<7)
-
-Breakdown is typically only needed for high-difficulty tasks (≥7).
-
-This task can likely be completed directly:
-@.claude/commands/complete-task.md [id]
-
-Break down anyway? [Allow but warn]
-```
-
-## Output Files
-- `.claude/tasks/task-[parent_id].json` - Updated with "Broken Down" status
-- `.claude/tasks/task-[sub_id_1].json` - New subtask
-- `.claude/tasks/task-[sub_id_2].json` - New subtask
-- ... (one file per subtask)
-- `.claude/tasks/task-overview.md` - Updated hierarchy
-
-## Auto-Completion Behavior
-
-**Parent Task Auto-Completion:**
-When the LAST subtask is marked "Finished", the parent task automatically:
-1. Status changes: "Broken Down" → "Finished"
-2. Completion date set to last subtask completion date
-3. Hours spent = sum of all subtask hours
-4. No manual intervention needed
-
-**Do NOT:**
-- Manually set parent to "Finished"
-- Work on parent directly
-- Try to complete parent before all subtasks done
+- [ ] M language complexity is distributed evenly
+- [ ] Query folding considerations are documented
+- [ ] Error handling strategy is clear across subtasks
 
 ## Notes
 
 - Breakdown creates ONE LEVEL of hierarchy only (no nested subtasks)
-- Parent tasks track progress: "Broken Down (2/5 done)" 🔵
+- Parent tasks track progress in task-overview.md
 - Maximum subtasks per parent: ~8 (keep manageable)
 - Sequential numbering: No gaps in task IDs
 - Breaking down is permanent (cannot un-break)
 - See `.claude/reference/breakdown-workflow.md` for detailed workflow
-- Subtasks should reference parent in notes
+- Subtasks should reference parent in notes and include relevant file context
