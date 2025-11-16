@@ -3,11 +3,11 @@
   "title": "Create PQ usage example",
   "description": "Create a complete usage example showing how to bootstrap a new Power Query project using this template. Include both minimal and comprehensive approaches, show Phase 0 workflow in action, and demonstrate task breakdown for PQ-specific work.",
   "difficulty": 5,
-  "status": "Pending",
+  "status": "Finished",
   "created_date": "2025-11-16",
   "updated_date": "2025-11-16",
   "dependencies": ["10"],
   "subtasks": [],
   "parent_task": null,
-  "notes": ""
+  "notes": "Created comprehensive USAGE-EXAMPLE.md in templates/power-query/. Includes:\n1. Example 1: Minimal approach (simple data transformation) - 15-minute setup for version control of existing Excel queries\n2. Example 2: Comprehensive approach (EU Battery Regulation) - Full Phase 0 workflow demonstrating ambiguity resolution, artifact generation, and task breakdown\n3. Phase 0 workflow walkthrough - Detailed explanation of all 4 commands (initialize-project, resolve-ambiguities, generate-artifacts, extract-queries)\n4. Task breakdown examples - 3 examples showing when/why to break down tasks based on 5-dimension difficulty scoring\n5. Key takeaways - Decision criteria, ROI calculation (81% time savings), decision tree for breakdowns\nTotal length: 750+ lines with complete code examples, JSON schemas, and real-world scenarios."
 }

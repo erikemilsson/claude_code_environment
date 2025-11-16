@@ -40,16 +40,18 @@ Reason: [Specific issue]
 1. `.claude/context/glossary.md` - Variable definitions and naming rules
 2. `.claude/context/assumptions.md` - All interpretation decisions
 3. `.claude/context/llm-pitfalls.md` - Implementation checklist
-4. `.claude/context/standards/power-query.md` - M code conventions
+4. `.claude/context/power-query.md` - M code conventions
+5. `.claude/context/naming.md` - Naming rules
+6. `.claude/context/error-handling.md` - Error patterns
 
 **Task-Specific Context:**
-5. `.claude/reference/data-contracts.md` - Find schema for this query
-6. `.claude/reference/query-manifest.md` - Find query description
-7. `.claude/reference/dependency-graph.md` - Check dependencies and impact
+7. `.claude/reference/data-contracts.md` - Find schema for this query
+8. `.claude/reference/query-manifest.md` - Find query description
+9. `.claude/reference/dependency-graph.md` - Check dependencies and impact
 
 **If Query Implementation Task:**
-8. Load any dependent query .m files from `power-query/`
-9. Review calculation method docs referenced in task notes
+10. Load any dependent query .m files from `power-query/`
+11. Review calculation method docs referenced in task notes
 
 ### 3. Update Task Status
 Set task status to "In Progress":

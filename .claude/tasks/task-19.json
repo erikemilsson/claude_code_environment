@@ -3,11 +3,11 @@
   "title": "Validate file references",
   "description": "Validate all file path references across Power Query template documentation and command files. Ensure references from CLAUDE.md, README.md, template_overview10.md all point to correct locations in templates/power-query/ structure. Fix any broken links.",
   "difficulty": 3,
-  "status": "Pending",
+  "status": "Finished",
   "created_date": "2025-11-16",
   "updated_date": "2025-11-16",
   "dependencies": ["10", "11", "12"],
   "subtasks": [],
   "parent_task": null,
-  "notes": ""
+  "notes": "Fixed all broken file path references. Issue: documentation referenced context/standards/ subdirectory that doesn't exist. Files (power-query.md, naming.md, error-handling.md, critical_rules.md) are directly in context/ directory. Updated 7 files:\n1. template_overview10.md - Fixed Power Query template structure\n2. templates/power-query/SETUP-GUIDE.md - Fixed directory tree\n3. templates/power-query/FILE-MANIFEST.md - Fixed section headers (3 edits)\n4. templates/power-query/CLAUDE-template.md - Fixed key context files list\n5. templates/power-query/QUICKSTART.md - Fixed directory tree\n6. templates/power-query/STRUCTURE.md - Fixed directory tree\n7. templates/power-query/commands/complete-task.md - Fixed context loading list\nAll references now point to correct locations in templates/power-query/ structure."
 }

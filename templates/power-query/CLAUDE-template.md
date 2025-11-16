@@ -61,7 +61,9 @@ This file will be updated with Phase 1 task execution instructions.
 ## Key Context Files
 - **Project description**: `.claude/context/overview.md` ⚠️ **EDIT THIS FIRST**
 - **LLM pitfalls**: `.claude/context/llm-pitfalls.md` - Pre-populated checklist
-- **Power Query standards**: `.claude/context/standards/` - Coding conventions
+- **Power Query standards**: `.claude/context/power-query.md` - M-code conventions
+- **Naming rules**: `.claude/context/naming.md` - Naming conventions
+- **Error handling**: `.claude/context/error-handling.md` - Error patterns
 
 ## Commands Available
 See `.claude/commands/` for all available commands.

@@ -246,7 +246,7 @@ Context files that Claude loads to understand the project.
 - Dependency rules
 - Status transition rules
 
-### standards/power-query.md
+### context/power-query.md
 **Created by**: Template (pre-populated)
 **Auto-managed**: No (reference document)
 **Purpose**: M-code conventions and patterns
@@ -256,7 +256,7 @@ Context files that Claude loads to understand the project.
 - Performance best practices
 - Example code snippets
 
-### standards/naming.md
+### context/naming.md
 **Created by**: Template (pre-populated)
 **Auto-managed**: No (reference document)
 **Purpose**: Naming conventions enforcement
@@ -267,7 +267,7 @@ Context files that Claude loads to understand the project.
 - Unit suffixes
 - Examples and anti-patterns
 
-### standards/error-handling.md
+### context/error-handling.md
 **Created by**: Template (pre-populated)
 **Auto-managed**: No (reference document)
 **Purpose**: Error handling patterns

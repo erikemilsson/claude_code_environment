@@ -45,10 +45,10 @@ pq-project-starter/
     │   ├── llm-pitfalls.md                   ⚠️ Regulatory doc checklist
     │   ├── data-architecture.md              🏗️ Bronze-silver-gold guide
     │   ├── validation-rules.md               Task validation criteria
-    │   └── standards/                        📐 Code standards
-    │       ├── power-query.md                M-code conventions
-    │       ├── naming.md                     Naming rules
-    │       └── error-handling.md             Error patterns
+    │   ├── power-query.md                    📐 M-code conventions
+    │   ├── naming.md                         Naming rules
+    │   ├── error-handling.md                 Error patterns
+    │   └── critical_rules.md                 Critical development rules
     │
     ├── 📁 tasks/                             📋 Task tracking
     │   ├── _phase-0-status.md                Phase 0 progress tracker
