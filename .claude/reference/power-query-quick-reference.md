@@ -314,7 +314,8 @@ Do you have regulatory/compliance calculations?
 ## Quick Links
 
 **Full Documentation**:
-- Template structure: `template_overview10.md` section 5
+- Template structure: `templates/power-query/README.md`
+- Historical reference: `legacy-template-reference.md` (frozen snapshot)
 - Customization guide: `.claude/reference/template-customization-guide.md`
 - Reusable patterns: `.claude/reference/reusable-template-patterns.md`
 - Breakdown workflow: `.claude/reference/breakdown-workflow.md`

@@ -4,9 +4,10 @@
 Automate the creation of a new Claude Code project environment from templates. Interactively guide through template selection, component choices, and customization options to generate complete `.claude/` folder structure.
 
 ## Context Required
-- `template_overview10.md` - Template specifications
+- `templates/[name]/README.md` - Template specifications
 - `.claude/reference/template-customization-guide.md` - Customization options
 - `.claude/reference/reusable-template-patterns.md` - Pattern library
+- `legacy-template-reference.md` - Historical reference (optional)
 
 ## Process
 
@@ -738,7 +739,7 @@ All files created in user's current project directory:
 5. **Start simple** - When in doubt, recommend simpler template (can upgrade later)
 6. **Create only selected components** - Don't add files user didn't choose
 7. **Populate content** - Don't create empty files, add appropriate starter content
-8. **Be consistent** - Use naming conventions and patterns from template_overview10.md
+8. **Be consistent** - Use naming conventions and patterns from `templates/[name]/README.md`
 9. **Link documentation** - Reference full docs in generated files
 10. **Test structure** - Ensure all cross-references between files are valid
 

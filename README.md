@@ -98,8 +98,15 @@ Here's my specification: [paste/attach spec.md]"
 
 - **Templates:** `templates/[name]/README.md` for detailed docs
 - **Components:** `components/[name]/README.md` for component docs
-- **Legacy reference:** `template_overview10.md` (52KB monolithic version)
-- **Development:** See `todo.md`
+- **Development:** See `.claude/tasks/task-overview.md`
+
+### Legacy Reference
+
+`legacy-template-reference.md` is a **frozen historical snapshot** (52KB) of the original monolithic template documentation. It is:
+- **Not actively maintained** - preserved as-is for historical context
+- **Superseded by** the component-based architecture in `templates/` and `components/`
+- **Useful for** understanding the evolution of template patterns
+- **Not recommended** for new projects - use current templates instead
 
 ---
 

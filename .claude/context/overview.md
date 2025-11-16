@@ -14,8 +14,7 @@ This is a **meta-repository** for Claude Code environment templates. It serves t
 claude_code_environment/
 ├── CLAUDE.md                    # Router file for Claude Code (main entry point)
 ├── README.md                    # Human-readable documentation
-├── template_overview10.md       # Comprehensive template documentation (52KB)
-├── todo.md                      # Current development tasks
+├── legacy-template-reference.md # Comprehensive template documentation (52KB, frozen snapshot)
 ├── components/                  # Reusable, composable components
 │   └── task-management/         # Hierarchical task tracking system
 │       ├── README.md            # Component documentation
@@ -55,14 +54,12 @@ component-name/
 **Current Components:**
 - **task-management**: Hierarchical task tracking with automatic parent completion
 
-**Planned Components** (see todo.md):
-- Documentation/content templates
-- Testing/validation patterns
-- Technology-specific standards (Python, SQL, DAX, M)
+**Template Development:**
+See `.claude/tasks/task-overview.md` for completed work on templates (documentation-content, research-analysis, life-projects, power-query)
 
 ### 2. Template Authoring
 
-Templates in `template_overview10.md` are **composition recipes** that combine components based on project needs:
+Templates in `legacy-template-reference.md` (historical) are **composition recipes** that combine components based on project needs:
 
 - **Base Template**: Task management + minimal structure
 - **Data Engineering Template**: Base + Python standards + SQL conventions
@@ -112,13 +109,11 @@ When changing task schema or workflow:
 
 #### Creating New Template Types
 
-1. Document template in `template_overview10.md`:
-   - Template name and purpose
-   - When to use it
-   - Component composition (which components to include)
-   - Folder structure
-   - Example initialization questions
-2. Add to README.md under "Template Types"
+1. Create template in `templates/[name]/`:
+   - README.md with template name, purpose, when to use it
+   - components.json defining which components to include
+   - customizations/ folder with domain-specific additions
+2. Add to README.md under "Available Templates"
 3. Test by generating a sample environment
 
 #### Testing Templates
@@ -135,11 +130,11 @@ When changing task schema or workflow:
 
 ### Development Workflow for This Repo
 
-1. **Check todo.md** for current focus areas
+1. **Check `.claude/tasks/task-overview.md`** for current focus areas and completed tasks
 2. **Work on tasks** using `.claude/tasks/task-*.json` files
 3. **Use commands** in `.claude/commands/` (complete-task.md, breakdown.md, etc.)
 4. **Update documentation** as templates evolve
-5. **Version major changes**: Save new version as `template_overview11.md` when making breaking changes
+5. **Update templates/**: Modify template READMEs and customizations as needed
 6. **Commit with clear messages**: Describe impact on template generation
 
 ## File Roles
@@ -171,32 +166,31 @@ When changing task schema or workflow:
 
 **Maintenance**: Update when adding new template types or major features
 
-### template_overview10.md
-**Purpose**: Comprehensive template documentation (52KB)
+### legacy-template-reference.md
+**Purpose**: Historical comprehensive template documentation (52KB, frozen snapshot)
 
 **Content**:
 - Quick start (5-minute minimal setup)
-- Environment types (Base, Data Engineering, BI, Hybrid)
-- Task management system (may reference component instead)
+- Environment types (Base, Data Engineering, BI, Hybrid, Power Query)
+- Task management system documentation
 - Command file examples
 - Context file templates
 - Tool integration guidance
 
-**Maintenance**:
-- Iterate based on real project learnings
-- Extract large sections into components as they mature
-- Version incrementally (v11, v12, etc.) for breaking changes
+**Status**: Frozen historical reference
+- Not actively maintained
+- Preserved for understanding template evolution
+- New templates use component-based architecture in templates/
 
-### todo.md
-**Purpose**: Current development tasks for this repository
+### .claude/tasks/
+**Purpose**: Structured task management for this repository
 
 **Content**:
-- Planned component extractions
-- Template improvements
-- Documentation updates
-- Tool integrations (Gemini MCP, etc.)
+- task-overview.md: Summary of all tasks with progress tracking
+- task-*.json: Individual task files with full details
+- Completed tasks archived with notes and outcomes
 
-**Maintenance**: Update as priorities shift
+**Maintenance**: Use commands (complete-task, breakdown, sync-tasks) to manage tasks
 
 ### components/*/README.md
 **Purpose**: Component-specific documentation
@@ -226,7 +220,7 @@ When changing task schema or workflow:
 ```markdown
 ## Navigation Rules
 
-- **Creating new environment?** → Reference `template_overview10.md` sections
+- **Creating new environment?** → Reference `templates/[name]/README.md` or use `.claude/commands/bootstrap.md`
 - **Task management questions?** → See `components/task-management/README.md`
 - **Command pattern examples?** → See `components/task-management/commands/`
 ```
@@ -350,13 +344,13 @@ Where results are written (files, status updates)
 - Technology-specific standards (Python, SQL, DAX, M)
 - Gemini MCP integration patterns
 
-See `todo.md` and `.claude/tasks/task-overview.md` for detailed progress.
+See `.claude/tasks/task-overview.md` for detailed progress.
 
 ## Related Files
 
 - **CLAUDE.md**: Main router for Claude Code (read this first when working on repo)
 - **README.md**: Human documentation (for GitHub/reference)
-- **template_overview10.md**: Comprehensive template documentation
+- **legacy-template-reference.md**: Historical comprehensive template documentation (frozen snapshot)
+- **templates/[name]/README.md**: Current template documentation
 - **components/task-management/README.md**: Task system documentation
-- **.claude/tasks/task-overview.md**: Current work tracking
-- **todo.md**: Development roadmap
+- **.claude/tasks/task-overview.md**: Current work tracking and completed tasks
