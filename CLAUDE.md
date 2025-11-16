@@ -13,17 +13,36 @@ This is a **template repository** for bootstrapping new Claude Code project envi
 
 ## Core Workflow: Creating New Projects
 
-### User's Typical Usage Pattern
+### Simplified Workflow (Recommended)
 
 1. **In Claude Desktop**: User discusses project idea, iterates on specification, exports to single Markdown file
-2. **In VS Code with Claude Code**: User navigates to new project directory, references this repo's templates, provides specification
-3. **Claude Code creates**: Full `.claude/` environment structure with tasks, commands, and context based on project needs
+2. **In VS Code with Claude Code**: User navigates to new project directory and says:
+   ```
+   "Create the environment from claude_code_environment repo using spec: [path/to/spec.md]"
+   ```
+3. **Claude Code automatically**:
+   - Reads and analyzes the specification
+   - Detects the appropriate template (Power Query, Research, Life Projects, Documentation, or Base)
+   - Asks only necessary clarifying questions (if template is ambiguous)
+   - Generates complete `.claude/` environment structure
+   - Populates files with content extracted from specification
+
+**Key Benefits**:
+- No need to manually choose template type
+- No need to answer extensive setup questions
+- Specification content automatically populates environment files
+- Smart detection with transparent reasoning
+
+### Advanced Workflow (More Control)
+
+Use `.claude/commands/bootstrap.md` for interactive template selection with step-by-step customization.
 
 ### This Repository's Role
 
 - **Version control** for environment templates
 - **Iteration space** for improving template patterns
 - **Reference documentation** for the `.claude/` folder structure and conventions
+- **Smart bootstrap system** for automatic template detection
 
 ## Key Files
 
@@ -153,20 +172,25 @@ When user requests to test a template:
 Based on user's requirements, the README.md should explain:
 
 1. **Purpose**: This is a template repository for bootstrapping Claude Code environments with version control
-2. **Typical Workflow**:
+2. **Simplified Workflow** (one-command setup):
    - Create project specification in Claude Desktop (export to single .md file)
    - Open VS Code in new project directory with Claude Code
-   - Reference this repo's templates
-   - Provide specification document
-   - Claude Code generates `.claude/` environment structure
-3. **Template Types Available**: See `templates/` directory and README.md
-4. **Benefits**:
+   - Say: "Create the environment from claude_code_environment repo using spec: [path]"
+   - Claude Code automatically detects template type and generates structure
+3. **Smart Bootstrap Features**:
+   - Automatic template detection from specification content
+   - Pattern matching for Power Query, Research, Life Projects, Documentation, and Base templates
+   - Asks only necessary clarifying questions
+   - Populates files with content extracted from specification
+4. **Template Types Available**: See `templates/` directory and README.md
+5. **Benefits**:
    - Version-controlled environment patterns
+   - One-command project setup (no manual template selection)
    - Consistent project setup across multiple projects
    - Hierarchical task management with automatic parent completion
    - Reusable command patterns
    - Technology-specific standards
-5. **Getting Started**: Instructions for using templates to bootstrap new projects
+6. **Getting Started**: Simple instructions for one-command bootstrap
 
 ## Commands to Run
 
@@ -189,7 +213,8 @@ Since this is a documentation/template repository, there are no build, lint, or 
 
 ## Navigation Rules
 
-- **Creating new environment?** → Use `.claude/commands/bootstrap.md` or reference `templates/[name]/README.md`
+- **Creating new environment?** → Use `.claude/commands/smart-bootstrap.md` (recommended) or `.claude/commands/bootstrap.md` (interactive)
+- **Understanding template detection?** → See `.claude/reference/template-selection-rules.md`
 - **Power Query projects?** → See `templates/power-query/README.md` for Phase 0 workflow, LLM pitfalls checklist, and 5-dimension difficulty scoring
 - **Task management questions?** → See "Task Management System" section in `legacy-template-reference.md`
 - **Command pattern examples?** → See "Command File Examples" section (breakdown.md, complete-task.md, sync-tasks.md)
