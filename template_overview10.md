@@ -268,6 +268,116 @@ project/
 
 Combines elements from above templates based on needs.
 
+### 5. Power Query Template
+
+**Use for**: Excel Power Query projects, regulatory/compliance calculations, complex data transformations
+
+**Key Features**:
+- Phase 0 workflow for ambiguity resolution
+- LLM pitfalls checklist for regulatory documents
+- 5-dimension difficulty scoring system
+- Excel integration with .m file version control
+
+```
+project/
+├── CLAUDE.md
+├── README.md
+├── calculation-docs/           # Source regulatory PDFs
+├── excel-files/                # Excel workbooks with Power Query
+├── power-query/                # Extracted .m files (git tracked)
+└── .claude/
+    ├── commands/
+    │   ├── initialize-project.md      # Phase 0 Step 1: Analyze docs
+    │   ├── resolve-ambiguities.md     # Phase 0 Step 2: Interactive resolution
+    │   ├── generate-artifacts.md      # Phase 0 Step 3: Create glossary/contracts
+    │   ├── extract-queries.md         # Phase 0 Step 4: Extract from Excel
+    │   ├── complete-task.md           # Work with status tracking
+    │   ├── breakdown.md               # Split high-difficulty tasks
+    │   ├── validate-query.md          # Schema validation
+    │   ├── sync-tasks.md              # Update task-overview.md
+    │   └── update-tasks.md            # Validate task structure
+    ├── context/
+    │   ├── overview.md                # Project description
+    │   ├── glossary.md                # Variable dictionary (Phase 0 output)
+    │   ├── assumptions.md             # Interpretation decisions (Phase 0 output)
+    │   ├── llm-pitfalls.md            # Regulatory document checklist
+    │   ├── data-architecture.md       # Bronze-Silver-Gold pattern
+    │   ├── validation-rules.md        # Task validation criteria
+    │   └── standards/
+    │       ├── power-query.md         # M-code conventions
+    │       ├── naming.md              # Naming rules
+    │       └── error-handling.md      # Error handling patterns
+    ├── tasks/
+    │   ├── _phase-0-status.md         # Phase 0 progress tracker
+    │   ├── task-overview.md           # Auto-updated task table
+    │   ├── task-1.json                # Individual tasks
+    │   └── ...
+    └── reference/
+        ├── ambiguity-report.md        # Ambiguities found (Phase 0 output)
+        ├── data-contracts.md          # Expected schemas (Phase 0 output)
+        ├── query-manifest.md          # Query descriptions (Phase 0 output)
+        ├── dependency-graph.md        # Query flow (Phase 0 output)
+        ├── difficulty-guide-pq.md     # 5-dimension difficulty scoring
+        └── breakdown-workflow.md      # Task hierarchy guide
+```
+
+**Phase 0 Workflow** (for regulatory/compliance projects):
+
+1. **initialize-project.md** - Analyze calculation documents, extract ambiguities
+2. **resolve-ambiguities.md** - Interactive batch resolution (5 at a time)
+3. **generate-artifacts.md** - Create glossary, data contracts, initial tasks
+4. **extract-queries.md** - Extract .m files from Excel, enable watch mode
+
+**Phase 0 Outputs**:
+- `glossary.md` - Every variable defined (eliminates interpretation ambiguity)
+- `assumptions.md` - All interpretation decisions documented
+- `data-contracts.md` - Expected schemas for each query
+- `query-manifest.md` - What each query does
+- `dependency-graph.md` - Query execution order
+
+**LLM Pitfalls Checklist** (`context/llm-pitfalls.md`):
+Pre-populated common mistakes when interpreting regulatory documents:
+- Ambiguity in legal language
+- Implicit calculation steps
+- Unit inconsistencies
+- Circular references
+- Null propagation errors
+- Try/otherwise misuse
+
+**5-Dimension Difficulty Scoring**:
+
+Each task scored across:
+1. **Query Dependency Depth** (1-10) - How many upstream queries?
+2. **Formula Complexity** (1-10) - Transformation logic complexity
+3. **Error Surface** (1-10) - How many things can go wrong?
+4. **Regulatory Precision** (1-10) - Compliance criticality
+5. **Performance Impact** (1-10) - Computational load
+
+**Final Score = Average of 5 dimensions, rounded to nearest integer**
+
+**Rule**: Tasks with difficulty ≥7 must be broken down using `breakdown.md` before work begins.
+
+**When to Use Comprehensive Approach**:
+- Implementing regulatory/compliance calculations
+- Source documents have ambiguous language
+- Multiple calculation methods need reconciliation
+- Audit trail required
+- Zero error tolerance
+- Team needs shared variable definitions
+
+**When to Use Minimal Approach**:
+- Existing PQ project needs documentation
+- Simple data transformations
+- No regulatory requirements
+- Solo developer, no shared context needed
+- Quick prototyping
+
+**Integration with Task Management**:
+- Tasks follow hierarchical breakdown workflow
+- "Broken Down" status for container tasks
+- Parent tasks auto-complete when all subtasks finish
+- Progress tracking: "Broken Down (X/Y done)"
+
 ------
 
 ## Task Management System

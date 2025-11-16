@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a **template repository** for bootstrapping new Claude Code project environments. It contains:
 
-1. **Environment templates** - Versioned patterns for different project types (Base, Data Engineering, BI/Dashboard, Hybrid)
+1. **Environment templates** - Versioned patterns for different project types (Base, Data Engineering, BI/Dashboard, Hybrid, Power Query)
 2. **Task management system** - Hierarchical task breakdown with JSON-based tracking
 3. **Command patterns** - Reusable workflow instructions for common operations
 4. **Documentation** - Comprehensive guides for creating and using project environments
@@ -190,6 +190,7 @@ Since this is a documentation/template repository, there are no build, lint, or 
 ## Navigation Rules
 
 - **Creating new environment?** → Reference `template_overview10.md` sections for appropriate template type
+- **Power Query projects?** → See "Power Query Template" section in `template_overview10.md` for Phase 0 workflow, LLM pitfalls checklist, and 5-dimension difficulty scoring
 - **Task management questions?** → See "Task Management System" section in `template_overview10.md`
 - **Command pattern examples?** → See "Command File Examples" section (breakdown.md, complete-task.md, sync-tasks.md)
 - **Understanding hierarchy?** → See `reference/breakdown-workflow.md` template
