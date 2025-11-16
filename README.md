@@ -131,6 +131,53 @@ For everyday non-technical projects like home improvement, event planning, movin
 - Personal goal projects
 - Family projects and coordination
 
+### 4. Power Query Template
+**Path:** `templates/power-query/`
+
+For Excel Power Query projects, regulatory/compliance calculations, and complex data transformations.
+
+**Key Features:**
+- **Phase 0 Workflow**: Front-load all ambiguity resolution before coding begins
+  - Initialize project: Analyze calculation documents, extract ambiguities
+  - Resolve ambiguities: Interactive batch resolution (5 at a time)
+  - Generate artifacts: Create glossary, data contracts, initial tasks
+  - Extract queries: Extract .m files from Excel, enable watch mode
+- **Phase 0 Outputs**: Glossary, assumptions, data contracts, query manifest, dependency graph
+- **LLM Pitfalls Checklist**: Pre-populated common mistakes when interpreting regulatory documents
+- **5-Dimension Difficulty Scoring**:
+  - Query Dependency Depth (1-10)
+  - Formula Complexity (1-10)
+  - Error Surface (1-10)
+  - Regulatory Precision (1-10)
+  - Performance Impact (1-10)
+  - Final Score = Average of 5 dimensions, rounded to nearest integer
+- **Excel Integration**: .m file version control, watch mode auto-sync, git-friendly workflow
+
+**Includes:**
+- Task management component (with PQ-specific difficulty scoring)
+- Phase 0 commands (initialize, resolve-ambiguities, generate-artifacts, extract-queries)
+- Power Query standards (M-code conventions, naming rules, error handling)
+- Data architecture guide (Bronze-Silver-Gold medallion pattern)
+- Validation commands (validate-query for schema checking)
+- Reference documentation (ambiguity reports, data contracts, query manifests)
+
+**When to use (Comprehensive Approach):**
+- Implementing regulatory/compliance calculations (EU Battery Regulation, ISO standards, etc.)
+- Source documents have ambiguous legal language
+- Multiple calculation methods need reconciliation
+- Audit trail required for compliance
+- Zero error tolerance projects
+- Team needs shared variable definitions
+
+**When to use (Minimal Approach):**
+- Existing PQ project needs documentation
+- Simple data transformations
+- No regulatory requirements
+- Solo developer, no shared context needed
+- Quick prototyping
+
+**Link to detailed documentation**: See "Power Query Template" section in `template_overview10.md`
+
 ## Typical Workflow
 
 ### 1. Create Project Specification (Claude Desktop)
@@ -256,7 +303,7 @@ This pattern allows:
 3. **In VS Code**, navigate to your new project directory
 4. **Ask Claude Code** to create an environment based on a template:
    ```
-   "Create a [research-analysis/documentation-content/life-projects] environment
+   "Create a [research-analysis/documentation-content/life-projects/power-query] environment
    based on the claude_code_environment repository. Here's my specification:
    [paste/attach specification.md]"
    ```
