@@ -1434,6 +1434,151 @@ For analyzing a Power BI dashboard screenshot:
 @gemini analyze_image (model: gemini-2.5-flash)
 ```
 
+### Gemini CLI MCP Integration
+
+The Gemini CLI MCP server provides enhanced Claude Code workflows with dedicated slash commands for common development tasks.
+
+#### Setup Instructions
+
+**Prerequisites:**
+1. Install the Gemini CLI globally:
+   ```bash
+   npm install -g @google/gemini-cli
+   ```
+
+2. Verify installation:
+   ```bash
+   gemini --version
+   ```
+
+3. Set up authentication (choose one):
+   - **API Key** (recommended for reliability):
+     - Get free key from https://aistudio.google.com/apikey
+     - Set environment variable: `export GOOGLE_API_KEY="your-key"`
+     - Benefits: No browser popups, permanent validity, works in remote sessions
+
+   - **OAuth** (higher limits):
+     - Run `gemini auth` for browser authentication
+     - 1,000 requests/day vs. 100 for API keys
+     - May require periodic re-authentication
+
+**Installation:**
+
+Install the Gemini MCP server using one of these methods:
+
+1. **Claude MCP Add** (recommended):
+   ```bash
+   claude mcp add gemini-cli -s user -- npx -y gemini-mcp-tool
+   ```
+
+2. **Via NPM**:
+   ```bash
+   npm install -g gemini-mcp-advisor
+   gemini-mcp-setup
+   ```
+
+3. **Using npx** (no installation):
+   ```bash
+   npx gemini-mcp-advisor
+   ```
+
+#### Available Slash Commands
+
+The setup creates 20+ slash commands organized in four categories:
+
+**Core Commands:**
+- `/gemini-plan` - Generate implementation plans
+- `/gemini-approach` - Suggest architectural approaches
+- `/gemini-function` - Generate function implementations
+- `/gemini-review` - Code review and feedback
+- `/gemini-explain` - Explain code or concepts
+- `/gemini-fix` - Debug and fix issues
+- `/gemini-security` - Security audit
+- `/gemini-ask` - General Q&A
+
+**Advanced Commands:**
+- `/gemini-test` - Generate test cases
+- `/gemini-project-audit` - Full project analysis
+- `/gemini-optimize` - Performance optimization suggestions
+- `/gemini-refactor` - Code refactoring patterns
+
+**Response Handlers:**
+- `/gemini-implement` - Apply Gemini's suggestions
+- `/gemini-verify` - Verify changes against recommendations
+- `/gemini-iterate` - Iterate on feedback
+- `/gemini-confirm` - Confirm approach before implementing
+
+**Workflow Automation:**
+- `/gemini-fix-cycle` - Automated fix workflow
+- `/gemini-build-cycle` - Build and fix errors
+- `/gemini-secure-cycle` - Security review → fix → verify
+- `/gemini-optimize-cycle` - Optimize → measure → iterate
+
+#### Model Selection Strategy
+
+Commands automatically route to appropriate models:
+- **gemini-2.5-flash**: Review, explain, fix, test (high-frequency tasks)
+- **gemini-2.5-pro**: Planning, security, optimization (complex analysis)
+
+#### Integration Patterns
+
+**Pattern 1: Pre-Implementation Review**
+```markdown
+1. Use /gemini-plan to analyze requirements
+2. Review Gemini's recommendations
+3. Use /gemini-confirm to validate approach
+4. Implement with Claude's native tools
+5. Use /gemini-verify to check against plan
+```
+
+**Pattern 2: Code Quality Workflow**
+```markdown
+1. Implement feature with Claude
+2. Use /gemini-review for feedback
+3. Use /gemini-implement to apply suggestions
+4. Use /gemini-test to generate test cases
+5. Run /gemini-verify for final check
+```
+
+**Pattern 3: Security-First Development**
+```markdown
+1. Use /gemini-security-cycle for automated:
+   - Security audit
+   - Fix vulnerabilities
+   - Verify fixes
+   - Re-audit until clean
+```
+
+**Pattern 4: Research → Implementation**
+```markdown
+1. Use Gemini MCP for research (grounding enabled)
+2. Use /gemini-approach for design patterns
+3. Claude implements using native file tools
+4. Use /gemini-review for quality check
+```
+
+#### Best Practices for Gemini CLI MCP
+
+1. **Use automation cycles** for repetitive workflows (fix-cycle, secure-cycle)
+2. **Leverage grounding** in research commands for current information
+3. **Combine with native Claude** for file operations and actual implementation
+4. **Document Gemini insights** in `.claude/reference/` for future reference
+5. **Create custom commands** that chain Gemini + Claude operations
+
+#### When to Use vs. Native Gemini API
+
+**Use Gemini CLI MCP when:**
+- Need structured workflows (review → implement → verify)
+- Want pre-built command patterns
+- Working on iterative improvement cycles
+- Need quick access to common AI operations
+
+**Use Native Gemini API when:**
+- Need custom tool parameters
+- Require specific model versions
+- Want direct control over grounding/search
+- Building custom workflows not covered by CLI commands
+
 -----
 
 ## Best Practices

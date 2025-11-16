@@ -21,13 +21,22 @@ Start and finish tasks with proper status tracking.
 
 ### Finishing a Task
 1. **Complete all work** described in task
-2. **Update status** to "Finished"
-3. **Add completion notes** if needed
-4. **Check for parent task**:
+2. **Document any issues encountered**:
+   - If something didn't go as planned, explicitly state what happened
+   - Document any fixes or workarounds applied during completion
+   - Create new tasks for unexpected issues that need follow-up
+   - Be transparent about scope changes or deviations from original plan
+3. **Update status** to "Finished"
+4. **Add completion notes** with:
+   - What was actually done
+   - Any fixes or adjustments made
+   - New tasks created (if applicable)
+   - Links to relevant files or commits
+5. **Check for parent task**:
    - If exists, check if all sibling tasks are finished
    - If yes, automatically update parent to "Finished"
    - Update parent progress indicator
-5. **Run sync-tasks** to update overview
+6. **Run sync-tasks** to update overview
 
 ## Output Location
 - Updated task JSON file
@@ -38,3 +47,9 @@ Start and finish tasks with proper status tracking.
 - Never mark "Broken Down" tasks as complete (they auto-complete when subtasks finish)
 - Always check parent task status when completing subtasks
 - Add notes about what was actually done
+- **Transparency Requirements**:
+  - If implementation deviated from original plan, document why
+  - If bugs were fixed during completion, note what was broken
+  - If workarounds were needed, explain what didn't work as expected
+  - If new tasks were created, reference them in notes
+  - Never silently fix issues - always document changes made

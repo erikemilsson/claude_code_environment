@@ -1,0 +1,13 @@
+{
+  "id": "9",
+  "title": "Improve Task Completion Transparency",
+  "description": "Update complete-task.md command to include transparency requirements: when completing a task, if something doesn't go as planned, Claude should explicitly document fixes applied, create new tasks for unexpected issues, and log workarounds or adjustments in task notes. Add validation rules to ensure transparency.",
+  "difficulty": 4,
+  "status": "Finished",
+  "created_date": "2025-11-16",
+  "updated_date": "2025-11-16",
+  "dependencies": [],
+  "subtasks": [],
+  "parent_task": null,
+  "notes": "Completed: Updated complete-task.md with transparency requirements. Added new step 2 to document issues encountered, expanded completion notes requirements, and added 5 transparency rules to Critical Rules section. Changes ensure Claude explicitly documents fixes, workarounds, and deviations from original plan."
+}

@@ -1,14 +1,14 @@
 # Task Overview
 
 **Generated:** 2025-11-16
-**Total Tasks:** 7
-**Pending:** 0 | **In Progress:** 0 | **Finished:** 7 | **Broken Down:** 0
+**Total Tasks:** 9
+**Pending:** 0 | **In Progress:** 0 | **Finished:** 9 | **Broken Down:** 0
 
 ---
 
 ## Summary
-- Total Tasks: 7
-- Top-level Tasks: 7
+- Total Tasks: 9
+- Top-level Tasks: 9
 - Subtasks: 0
 - Average Difficulty: 4.9
 - Blocked: 0
@@ -27,12 +27,14 @@
 | 5 | Update main README.md to reflect component-based architecture | Finished 🟢 | 4 | 1, 2, 3, 4 | - |
 | 6 | Create context documentation for this repo | Finished 🟢 | 3 | 1 | - |
 | 7 | Create Life Projects template | Finished 🟢 | 6 | 1 | - |
+| 8 | Add Gemini CLI MCP Integration | Finished 🟢 | 6 | - | - |
+| 9 | Improve Task Completion Transparency | Finished 🟢 | 4 | - | - |
 
 ---
 
 ## By Status
 
-### Finished (7)
+### Finished (9)
 - **Task 1** (Difficulty 5): Extract Task Management component from template_overview10.md 🟢
 - **Task 2** (Difficulty 6): Create Documentation/Content template 🟢
 - **Task 3** (Difficulty 6): Create Research/Analysis template 🟢
@@ -40,6 +42,8 @@
 - **Task 5** (Difficulty 4): Update main README.md to reflect component-based architecture 🟢
 - **Task 6** (Difficulty 3): Create context documentation for this repo 🟢
 - **Task 7** (Difficulty 6): Create Life Projects template 🟢
+- **Task 8** (Difficulty 6): Add Gemini CLI MCP Integration 🟢
+- **Task 9** (Difficulty 4): Improve Task Completion Transparency 🟢
 
 ---
 
@@ -47,6 +51,8 @@
 
 **No Dependencies:**
 - Task 1 (now complete) 🟢
+- Task 8 (now complete) 🟢
+- Task 9 (now complete) 🟢
 
 **Depends on Task 1 (all now unblocked):**
 - Task 2 (Documentation/Content template) 🟢 Complete
