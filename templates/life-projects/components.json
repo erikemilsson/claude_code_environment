@@ -1,0 +1,86 @@
+{
+  "template_name": "Life Projects",
+  "version": "1.0.0",
+  "description": "Template for managing everyday non-technical projects with structured planning, task management, and progress tracking",
+  "components": [
+    {
+      "name": "task-management",
+      "version": "1.0.0",
+      "source": "../../components/task-management",
+      "required": true,
+      "description": "Core task tracking with difficulty scoring, dependencies, and hierarchical breakdown"
+    },
+    {
+      "name": "project-brief",
+      "version": "1.0.0",
+      "source": "customizations/reference/project-brief-template.md",
+      "required": true,
+      "description": "Structured template for defining project goals, budget, timeline, and constraints"
+    },
+    {
+      "name": "budget-tracking",
+      "version": "1.0.0",
+      "source": "customizations/reference/budget-tracker-template.md",
+      "required": true,
+      "description": "Financial planning and tracking with estimates, actuals, and variance analysis"
+    },
+    {
+      "name": "decision-logging",
+      "version": "1.0.0",
+      "source": "customizations/reference/decision-log-template.md",
+      "required": false,
+      "description": "Document decisions with options considered, criteria, and rationale"
+    },
+    {
+      "name": "progress-documentation",
+      "version": "1.0.0",
+      "source": "customizations/workflows/progress-update-workflow.md",
+      "required": true,
+      "description": "Workflow for logging updates with photos, notes, and status changes"
+    }
+  ],
+  "customizations": {
+    "standards": [
+      "project-planning.md",
+      "budget-management.md",
+      "timeline-planning.md"
+    ],
+    "workflows": [
+      "progress-update-workflow.md",
+      "decision-making-process.md",
+      "vendor-evaluation-workflow.md"
+    ],
+    "commands": [
+      "update-progress.md",
+      "research.md",
+      "compare-options.md",
+      "update-budget.md"
+    ],
+    "reference": [
+      "project-brief-template.md",
+      "budget-tracker-template.md",
+      "decision-log-template.md",
+      "vendor-contacts-template.md"
+    ]
+  },
+  "difficulty_scale": {
+    "description": "Difficulty based on technical complexity, financial risk, and need for professional help",
+    "1-2": "Simple DIY tasks (paint a room, organize closet, minor shopping)",
+    "3-4": "Moderate DIY tasks (install shelving, minor repairs, basic planning)",
+    "5-6": "Complex DIY or simple contractor work (fence installation, appliance replacement, vendor coordination)",
+    "7-8": "Major contractor work requiring breakdown (kitchen remodel, electrical panel upgrade, extensive planning)",
+    "9-10": "Extensive multi-phase projects (home addition, full renovation, major life transitions)"
+  },
+  "typical_use_cases": [
+    "Home improvement and renovation",
+    "Life event planning (wedding, moving, baby)",
+    "Personal skill development projects",
+    "Financial and administrative planning",
+    "Multi-week travel planning"
+  ],
+  "integration_notes": {
+    "task_management": "Uses standard task-management component with custom difficulty scale for non-technical projects",
+    "gemini_api": "Recommended for research tasks (material options, vendor comparisons, best practices) and image analysis (progress photos, design inspiration)",
+    "claude": "Recommended for planning, task breakdown, budget calculations, and documentation"
+  }
+}

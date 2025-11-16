@@ -1,0 +1,13 @@
+{
+  "id": "7",
+  "title": "Create Life Projects template",
+  "description": "Build out templates/life-projects/ with README.md explaining when to use this template for everyday non-tech projects (home renovation, wedding planning, moving, etc.), components.json listing included components, and customizations/ folder with project planning standards, progress tracking workflows, decision-making processes, and reference templates for project briefs, budgets, and vendor management.",
+  "difficulty": 6,
+  "status": "Finished",
+  "created_date": "2025-11-16",
+  "updated_date": "2025-11-16",
+  "dependencies": ["1"],
+  "subtasks": [],
+  "parent_task": null,
+  "notes": "Completed: Created comprehensive Life Projects template with README.md (detailed usage guide for home improvement, life events, personal projects), components.json (component listings and integration info), 3 standards files (project-planning.md, budget-management.md, timeline-planning.md), 3 workflow files (progress-update-workflow.md, decision-making-process.md, vendor-evaluation-workflow.md), 4 command files (update-progress.md, research.md, compare-options.md, update-budget.md), and 4 reference templates (project-brief-template.md, budget-tracker-template.md, decision-log-template.md, vendor-contacts-template.md). Template provides complete patterns for managing everyday non-technical projects with structured planning, task management integration, budget tracking, decision documentation, and vendor coordination."
+}
