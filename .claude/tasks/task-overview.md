@@ -7,8 +7,8 @@ Auto-generated summary of all tasks. Run `sync-tasks.md` to update.
 **Total Tasks**: 21
 
 **By Status**:
-- Pending: 9
-- Finished: 12
+- Finished: 15
+- Pending: 6
 
 **By Difficulty**:
 - 3: 4 tasks
@@ -21,7 +21,19 @@ Auto-generated summary of all tasks. Run `sync-tasks.md` to update.
 | ID | Title | Status | Difficulty | Dependencies | Subtasks | Parent |
 |----|-------|--------|-----------|--------------|----------|--------|
 | 1 | Extract Task Management component from template_overview10.md | Finished | 5 | - | - | - |
+| 10 | Add Power Query Template section to template_overview10.md | Finished | 5 | - | - | - |
+| 11 | Update main CLAUDE.md navigation | Finished | 3 | 10 | - | - |
+| 12 | Update README.md with PQ information | Finished | 4 | 10 | - | - |
+| 13 | Create PQ usage example | Finished | 5 | 10 | - | - |
+| 14 | Extract reusable concepts | Pending | 6 | 10 | - | - |
+| 15 | Create bootstrap command | Pending | 6 | - | - | - |
+| 16 | Document Phase 0 pattern | Pending | 4 | 10 | - | - |
+| 17 | Document customization workflow | Pending | 4 | 10 | - | - |
+| 18 | Align PQ task management with base | Pending | 5 | - | - | - |
+| 19 | Validate file references | Finished | 3 | 10, 11, 12 | - | - |
 | 2 | Create Documentation/Content template | Finished | 6 | 1 | - | - |
+| 20 | Create PQ quick reference | Pending | 4 | 10 | - | - |
+| 21 | Document PQ difficulty scoring | Finished | 3 | - | - | - |
 | 3 | Create Research/Analysis template | Finished | 6 | 1 | - | - |
 | 4 | Create component README files | Finished | 4 | 1 | - | - |
 | 5 | Update main README.md to reflect component-based architecture | Finished | 4 | 1, 2, 3, 4 | - | - |
@@ -29,15 +41,3 @@ Auto-generated summary of all tasks. Run `sync-tasks.md` to update.
 | 7 | Create Life Projects template | Finished | 6 | 1 | - | - |
 | 8 | Add Gemini CLI MCP Integration | Finished | 6 | - | - | - |
 | 9 | Improve Task Completion Transparency | Finished | 4 | - | - | - |
-| 10 | Add Power Query Template section to template_overview10.md | Finished | 5 | - | - | - |
-| 11 | Update main CLAUDE.md navigation | Finished | 3 | 10 | - | - |
-| 12 | Update README.md with PQ information | Finished | 4 | 10 | - | - |
-| 13 | Create PQ usage example | Pending | 5 | 10 | - | - |
-| 14 | Extract reusable concepts | Pending | 6 | 10 | - | - |
-| 15 | Create bootstrap command | Pending | 6 | - | - | - |
-| 16 | Document Phase 0 pattern | Pending | 4 | 10 | - | - |
-| 17 | Document customization workflow | Pending | 4 | 10 | - | - |
-| 18 | Align PQ task management with base | Pending | 5 | - | - | - |
-| 19 | Validate file references | Pending | 3 | 10, 11, 12 | - | - |
-| 20 | Create PQ quick reference | Pending | 4 | 10 | - | - |
-| 21 | Document PQ difficulty scoring | Pending | 3 | - | - | - |

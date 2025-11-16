@@ -3,11 +3,11 @@
   "title": "Create PQ usage example",
   "description": "Create a complete usage example showing how to bootstrap a new Power Query project using this template. Include both minimal and comprehensive approaches, show Phase 0 workflow in action, and demonstrate task breakdown for PQ-specific work.",
   "difficulty": 5,
-  "status": "Pending",
+  "status": "Finished",
   "created_date": "2025-11-16",
   "updated_date": "2025-11-16",
   "dependencies": ["10"],
   "subtasks": [],
   "parent_task": null,
-  "notes": ""
+  "notes": "Created comprehensive usage example: templates/power-query/USAGE-EXAMPLE.md\n\nReal-world scenario: EU Battery Regulation Carbon Footprint Calculator\n\nDocument includes:\n1. Project bootstrapping (copy template, add source docs, customize overview)\n2. Complete Phase 0 workflow walkthrough:\n   - Step 1: Initialize project (analyze docs, extract 23 ambiguities)\n   - Step 2: Resolve ambiguities (interactive, with domain expert)\n   - Step 3: Generate artifacts (glossary, data contracts, manifest, tasks)\n   - Step 4: Extract queries (from Excel, enable watch mode)\n3. Phase 1 implementation:\n   - Task selection strategy\n   - complete-task.md command walkthrough\n   - Example implementation (Bronze_Source_BatteryData)\n   - Schema validation against data contracts\n4. High-difficulty task breakdown:\n   - breakdown.md command for difficulty 9 task\n   - 5-dimension scoring calculation\n   - Generated 7 subtasks (each ≤6 difficulty)\n   - Automatic parent completion workflow\n5. Time comparison (with vs without Phase 0)\n6. Artifacts created and regulatory audit readiness\n7. Minimal approach comparison (when to use each)\n\nShows both minimal and comprehensive approaches with clear decision criteria."
 }
