@@ -1,0 +1,13 @@
+{
+  "id": "10",
+  "title": "Add Power Query Template section to template_overview10.md",
+  "description": "Add comprehensive Power Query template documentation to template_overview10.md. Include description of the template structure, when to use it, component listing, Phase 0 workflow, LLM pitfalls, 5-dimension difficulty scoring, and integration with task management system.",
+  "difficulty": 5,
+  "status": "Pending",
+  "created_date": "2025-11-16",
+  "updated_date": "2025-11-16",
+  "dependencies": [],
+  "subtasks": [],
+  "parent_task": null,
+  "notes": ""
+}

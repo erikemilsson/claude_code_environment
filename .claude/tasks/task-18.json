@@ -1,0 +1,13 @@
+{
+  "id": "18",
+  "title": "Align PQ task management with base",
+  "description": "Review Power Query template task management files (breakdown.md, complete-task.md, sync-tasks.md, update-tasks.md) and align them with the base task management component. Ensure consistency in workflow, JSON schema, status values, and difficulty scoring approach while preserving PQ-specific 5-dimension scoring.",
+  "difficulty": 5,
+  "status": "Pending",
+  "created_date": "2025-11-16",
+  "updated_date": "2025-11-16",
+  "dependencies": [],
+  "subtasks": [],
+  "parent_task": null,
+  "notes": ""
+}

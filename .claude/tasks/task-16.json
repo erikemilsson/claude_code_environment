@@ -1,0 +1,13 @@
+{
+  "id": "16",
+  "title": "Document Phase 0 pattern",
+  "description": "Create comprehensive documentation for the Phase 0 ambiguity resolution pattern as a reusable workflow. Document when to use it, how to implement it for different domains, command structure (resolve-ambiguities.md, initialize-project.md), and integration with task management.",
+  "difficulty": 4,
+  "status": "Pending",
+  "created_date": "2025-11-16",
+  "updated_date": "2025-11-16",
+  "dependencies": ["10"],
+  "subtasks": [],
+  "parent_task": null,
+  "notes": ""
+}

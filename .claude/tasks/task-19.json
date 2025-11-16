@@ -1,0 +1,13 @@
+{
+  "id": "19",
+  "title": "Validate file references",
+  "description": "Validate all file path references across Power Query template documentation and command files. Ensure references from CLAUDE.md, README.md, template_overview10.md all point to correct locations in templates/power-query/ structure. Fix any broken links.",
+  "difficulty": 3,
+  "status": "Pending",
+  "created_date": "2025-11-16",
+  "updated_date": "2025-11-16",
+  "dependencies": ["10", "11", "12"],
+  "subtasks": [],
+  "parent_task": null,
+  "notes": ""
+}
