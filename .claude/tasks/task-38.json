@@ -1,0 +1,18 @@
+{
+  "id": "38",
+  "title": "Write create-checkpoint.md command",
+  "description": "Create command to capture current state before making changes. Determines files from task files_affected, generates checkpoint ID (chk-{task_id}-{sequence}), creates backup directory, copies files with hashing, captures task state, and reports checkpoint details.",
+  "difficulty": 5,
+  "status": "Finished",
+  "created_date": "2025-12-05",
+  "updated_date": "2025-12-05",
+  "dependencies": [
+    "37"
+  ],
+  "subtasks": [],
+  "parent_task": null,
+  "files_affected": [
+    "components/checkpoint-system/commands/create-checkpoint.md"
+  ],
+  "notes": "Created create-checkpoint.md command for capturing state before changes. Implements 7-step process: load task, generate checkpoint ID (chk-{task_id}-{sequence}), create backup directory, process files (hash + copy for existing, record metadata for new), capture task state, write checkpoint.json, report success. Includes error handling and integration with complete-task.md."
+}

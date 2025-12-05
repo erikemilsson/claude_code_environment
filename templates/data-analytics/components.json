@@ -1,0 +1,176 @@
+{
+  "template": {
+    "name": "data-analytics",
+    "version": "1.0.0",
+    "description": "Template for Microsoft Fabric, Power BI, DAX, and semantic modeling projects. Includes medallion architecture patterns, Power Query transformations, DAX calculations, and ATEF error prevention for common Microsoft stack mistakes.",
+    "base_template": "base",
+    "created_date": "2025-12-05",
+    "author": "ATEF Framework"
+  },
+  "components": {
+    "required": [
+      {
+        "name": "task-management",
+        "source": "components/task-management",
+        "description": "Core task tracking with ATEF schema extensions"
+      },
+      {
+        "name": "validation-gates",
+        "source": "components/validation-gates",
+        "description": "Pre/post-execution validation with error prevention"
+      },
+      {
+        "name": "pattern-library",
+        "source": "components/pattern-library",
+        "description": "Reusable patterns for Power Query, DAX, and Dataflows"
+      },
+      {
+        "name": "checkpoint-system",
+        "source": "components/checkpoint-system",
+        "description": "State snapshots for safe experimentation"
+      }
+    ],
+    "optional": [
+      {
+        "name": "error-catalog",
+        "source": "components/error-catalog",
+        "description": "Learning from Microsoft stack errors (Bronze/Silver violations, DAX context issues)"
+      }
+    ],
+    "included_patterns": [
+      "components/pattern-library/patterns/microsoft-stack/power-query-bronze.pattern.md",
+      "components/pattern-library/patterns/microsoft-stack/power-query-silver.pattern.md",
+      "components/pattern-library/patterns/microsoft-stack/dax-measure.pattern.md",
+      "components/pattern-library/patterns/microsoft-stack/dataflow-gen2.pattern.md"
+    ]
+  },
+  "customizations": {
+    "context": {
+      "description": "Microsoft Fabric and semantic modeling specific context",
+      "files": [
+        "customizations/context/medallion-architecture.md",
+        "customizations/context/naming-conventions.md",
+        "customizations/context/llm-pitfalls-microsoft.md",
+        "customizations/context/critical_rules.md"
+      ]
+    },
+    "reference": {
+      "description": "Technology-specific reference documentation",
+      "files": [
+        "customizations/reference/dax-patterns.md",
+        "customizations/reference/pq-patterns.md",
+        "customizations/reference/fabric-best-practices.md"
+      ]
+    },
+    "commands": {
+      "description": "Data analytics specific commands",
+      "files": [
+        "customizations/commands/validate-dax.md",
+        "customizations/commands/validate-pq.md",
+        "customizations/commands/deploy-model.md"
+      ]
+    }
+  },
+  "detection_rules": {
+    "description": "Automatic template detection based on project specification",
+    "high_confidence_keywords": [
+      "Microsoft Fabric",
+      "Power BI + semantic model",
+      "Power BI + data modeling",
+      "DAX measures",
+      "medallion architecture",
+      "bronze layer",
+      "silver layer",
+      "gold layer",
+      "lakehouse",
+      "Dataflow Gen2"
+    ],
+    "medium_confidence_keywords": [
+      "Power Query + data transformation",
+      "semantic layer",
+      "dimensional modeling",
+      "fact tables",
+      "dimension tables",
+      "star schema",
+      "snowflake schema"
+    ],
+    "file_extensions": [
+      ".dax",
+      ".pq",
+      ".m",
+      ".pbix",
+      ".bim"
+    ],
+    "differentiation": {
+      "from_power_query_template": "Use data-analytics for full semantic modeling projects with DAX measures and dimensional models. Use power-query template for pure ETL/data transformation without semantic layer."
+    }
+  },
+  "technology_focus": {
+    "primary": [
+      "Microsoft Fabric",
+      "Power BI",
+      "DAX",
+      "Power Query (M language)",
+      "Semantic modeling"
+    ],
+    "secondary": [
+      "Azure Data Lake",
+      "OneLake",
+      "Dataflow Gen2",
+      "Notebooks (PySpark/SQL)"
+    ]
+  },
+  "typical_project_structure": {
+    "description": "Expected directory layout for data analytics projects",
+    "structure": [
+      "queries/",
+      "queries/bronze/",
+      "queries/silver/",
+      "queries/gold/",
+      "measures/",
+      "models/",
+      "dataflows/",
+      "notebooks/",
+      "docs/"
+    ]
+  },
+  "key_patterns": {
+    "power_query": [
+      "Bronze layer: Raw data loading with metadata",
+      "Silver layer: Cleaning and standardization",
+      "Gold layer: Business logic and aggregations",
+      "Dataflow Gen2: Multi-layer pipeline configuration"
+    ],
+    "dax": [
+      "VAR pattern for performance and debugging",
+      "CALCULATE for filter context modification",
+      "Time intelligence patterns",
+      "Measure groups and organization"
+    ],
+    "semantic_modeling": [
+      "Star schema design",
+      "Relationship configuration",
+      "Row-level security (RLS)",
+      "Calculation groups"
+    ]
+  },
+  "common_errors_prevented": [
+    "ERR-PQ-001: Type conversion at Bronze layer",
+    "ERR-PQ-002: Silver sources directly from file",
+    "ERR-DAX-001: Missing VAR pattern",
+    "ERR-DAX-002: Measure in row context"
+  ],
+  "integration": {
+    "recommended_tools": [
+      "Tabular Editor (for semantic model development)",
+      "DAX Studio (for measure testing)",
+      "Power Query SDK (for M development)",
+      "Azure Data Studio (for SQL/PySpark)"
+    ],
+    "deployment_targets": [
+      "Microsoft Fabric workspace",
+      "Power BI Service",
+      "Azure Synapse Analytics"
+    ]
+  }
+}

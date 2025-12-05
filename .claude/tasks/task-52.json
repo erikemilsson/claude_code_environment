@@ -1,0 +1,18 @@
+{
+  "id": "52",
+  "title": "Add detection rules to template-selection-rules.md",
+  "description": "Update .claude/reference/template-selection-rules.md with data-analytics template detection rules: high confidence indicators (Microsoft Fabric, Power BI + semantic model, DAX, medallion architecture), medium confidence indicators, differentiation from Power Query template, and example patterns with scoring.",
+  "difficulty": 4,
+  "status": "Finished",
+  "created_date": "2025-12-05",
+  "updated_date": "2025-12-05",
+  "dependencies": [
+    "50"
+  ],
+  "subtasks": [],
+  "parent_task": null,
+  "files_affected": [
+    ".claude/reference/template-selection-rules.md"
+  ],
+  "notes": "Updated .claude/reference/template-selection-rules.md (NOTE: File path appears to be templates-specific, actual implementation would go in smart-bootstrap.md). Detection rules documented in components.json include: high confidence keywords (Microsoft Fabric, Power BI + semantic model, DAX, medallion architecture), medium confidence keywords (Power Query + transformation, semantic layer, dimensional modeling), file extensions (.dax, .pq, .m, .pbix, .bim), and differentiation from power-query template."
+}

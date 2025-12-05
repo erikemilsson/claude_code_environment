@@ -1,0 +1,20 @@
+{
+  "id": "33",
+  "title": "Create code-generation patterns (3)",
+  "description": "Create three code generation patterns: python-function.pattern.md, python-class.pattern.md, and test-file.pattern.md. Each includes proper docstrings, type hints, error handling templates, and testing best practices.",
+  "difficulty": 4,
+  "status": "Finished",
+  "created_date": "2025-12-05",
+  "updated_date": "2025-12-05",
+  "dependencies": [
+    "29"
+  ],
+  "subtasks": [],
+  "parent_task": null,
+  "files_affected": [
+    "components/pattern-library/patterns/code-generation/python-function.pattern.md",
+    "components/pattern-library/patterns/code-generation/python-class.pattern.md",
+    "components/pattern-library/patterns/code-generation/test-file.pattern.md"
+  ],
+  "notes": "Created 3 code-generation patterns: python-function.pattern.md (functions with docstrings/type hints), python-class.pattern.md (classes with __init__/__str__/__repr__), test-file.pattern.md (pytest/unittest with fixtures/mocks)."
+}

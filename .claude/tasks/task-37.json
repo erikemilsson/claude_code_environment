@@ -1,0 +1,18 @@
+{
+  "id": "37",
+  "title": "Define checkpoint.schema.json",
+  "description": "Create the JSON schema for checkpoint metadata. Defines structure for checkpoint ID, task ID, timestamp, type (pre-execution/mid-execution/manual), description, files array with paths/hashes/backup paths, and task state snapshot.",
+  "difficulty": 4,
+  "status": "Finished",
+  "created_date": "2025-12-05",
+  "updated_date": "2025-12-05",
+  "dependencies": [
+    "36"
+  ],
+  "subtasks": [],
+  "parent_task": null,
+  "files_affected": [
+    "components/checkpoint-system/schemas/checkpoint.schema.json"
+  ],
+  "notes": "Created checkpoint.schema.json defining checkpoint metadata structure. Schema includes checkpoint_id (chk-{task_id}-{sequence} pattern), task_id, timestamp, type (pre-execution/mid-execution/manual), description, files array (path/hash/backup_path/existed), and task_state snapshot. Enables versioned state capture and restoration."
+}

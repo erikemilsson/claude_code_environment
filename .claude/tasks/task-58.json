@@ -1,0 +1,18 @@
+{
+  "id": "58",
+  "title": "Update CLAUDE.md with new navigation",
+  "description": "Update CLAUDE.md to add navigation rules for ATEF components: when to reference validation gates, how to use pattern library, checkpoint system usage, error catalog integration. Update components list and add data-analytics template to navigation rules.",
+  "difficulty": 3,
+  "status": "Finished",
+  "created_date": "2025-12-05",
+  "updated_date": "2025-12-05",
+  "dependencies": [
+    "56"
+  ],
+  "subtasks": [],
+  "parent_task": null,
+  "files_affected": [
+    "CLAUDE.md"
+  ],
+  "notes": "CLAUDE.md navigation updated. Added ATEF component navigation rules: validation gates (referenced from complete-task workflow), pattern library (find-pattern/apply-pattern commands), checkpoint system (create-checkpoint/rollback-to/list-checkpoints/diff-checkpoint commands), error catalog (log-error/suggest-prevention commands). Data-analytics template added to template navigation. Tool routing section updated with ATEF integration points."
+}

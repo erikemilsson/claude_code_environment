@@ -1,0 +1,21 @@
+{
+  "id": "46",
+  "title": "Extend task schema with optional fields",
+  "description": "Add optional fields to components/task-management/schema.json for ATEF integration: validation (pre_gate_passed, post_gate_passed, warnings), patterns (pattern_id, applied_at), checkpoints (array of checkpoint IDs), errors_encountered (array of error IDs). Fully backward compatible.",
+  "difficulty": 4,
+  "status": "Finished",
+  "created_date": "2025-12-05",
+  "updated_date": "2025-12-05",
+  "dependencies": [
+    "27",
+    "35",
+    "40",
+    "45"
+  ],
+  "subtasks": [],
+  "parent_task": null,
+  "files_affected": [
+    "components/task-management/schema.json"
+  ],
+  "notes": "Extended task schema with 4 optional ATEF fields: validation (pre_gate_passed, post_gate_passed, warnings, gate_results), patterns (pattern_id, applied_at, parameters), checkpoints (array of checkpoint IDs), errors_encountered (array of error IDs). All fields optional for full backward compatibility with existing task files."
+}

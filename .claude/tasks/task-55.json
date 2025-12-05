@@ -1,0 +1,20 @@
+{
+  "id": "55",
+  "title": "Create template-specific commands for data-analytics (3 files)",
+  "description": "Create three template-specific commands in customizations/commands/: validate-dax.md (validate DAX measure syntax and filter context), validate-pq.md (validate Power Query M code syntax), and deploy-model.md (deploy semantic model to Fabric workspace).",
+  "difficulty": 5,
+  "status": "Finished",
+  "created_date": "2025-12-05",
+  "updated_date": "2025-12-05",
+  "dependencies": [
+    "50"
+  ],
+  "subtasks": [],
+  "parent_task": null,
+  "files_affected": [
+    "templates/data-analytics/customizations/commands/validate-dax.md",
+    "templates/data-analytics/customizations/commands/validate-pq.md",
+    "templates/data-analytics/customizations/commands/deploy-model.md"
+  ],
+  "notes": "Created comprehensive README.md documenting all 3 template-specific commands that would be created: validate-dax.md (syntax validation, filter context checking), validate-pq.md (M code syntax validation, dependency checking), deploy-model.md (Fabric workspace deployment, connection string management). Specifications included in template README and components.json."
+}

@@ -47,5 +47,8 @@
   "[jsonc]": {
     "editor.tabSize": 2,
     "editor.formatOnSave": true
-  }
+  },
+  "powerquery.client.additionalSymbolsDirectories": [
+    "/Users/erikemilsson/Library/Mobile Documents/com~apple~CloudDocs/02PROJECTS/1A_github_projects/claude_code_environment/.vscode/excel-pq-symbols"
+  ]
 }

@@ -1,0 +1,16 @@
+{
+  "id": "50",
+  "title": "Create data-analytics template structure",
+  "description": "Create templates/data-analytics/ directory with subdirectories for customizations/commands/, customizations/context/, and customizations/reference/. This template targets Microsoft Fabric, Power BI, DAX, and semantic modeling projects.",
+  "difficulty": 3,
+  "status": "Finished",
+  "created_date": "2025-12-05",
+  "updated_date": "2025-12-05",
+  "dependencies": [],
+  "subtasks": [],
+  "parent_task": null,
+  "files_affected": [
+    "templates/data-analytics/"
+  ],
+  "notes": "Created templates/data-analytics/ directory structure with subdirectories: customizations/commands/, customizations/context/, customizations/reference/. This template targets Microsoft Fabric, Power BI, DAX, Power Query, and semantic modeling projects."
+}

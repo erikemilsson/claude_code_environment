@@ -1,0 +1,18 @@
+{
+  "id": "24",
+  "title": "Write pre-execution.md gate",
+  "description": "Create the pre-execution validation gate that checks task readiness: status check, dependency check, difficulty check (must break down if >= 7), context check for files_affected, and pattern availability check. Blocks execution if critical checks fail.",
+  "difficulty": 5,
+  "status": "Finished",
+  "created_date": "2025-12-05",
+  "updated_date": "2025-12-05",
+  "dependencies": [
+    "23"
+  ],
+  "subtasks": [],
+  "parent_task": null,
+  "files_affected": [
+    "components/validation-gates/gates/pre-execution.md"
+  ],
+  "notes": "Created pre-execution.md gate with 5 checks: status check (BLOCKING), dependency check (BLOCKING), difficulty check for >=7 (BLOCKING), context check for files_affected (WARNING), and pattern availability check (INFO)."
+}

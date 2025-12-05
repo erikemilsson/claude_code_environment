@@ -27,6 +27,38 @@ Split tasks with difficulty ≥7 into smaller, manageable subtasks to reduce LLM
   - Subtasks MUST cover all original requirements
   - Subtasks SHOULD be independently testable
   - Create natural dependency order if needed
+
+### 2.5. Suggest Relevant Patterns (ATEF Enhancement)
+**If pattern library exists:**
+- Call `find-pattern.md` for the parent task
+- Review suggested patterns that match task description
+- For each subtask being created:
+  - Check if pattern matches subtask description
+  - Note applicable patterns in subtask planning
+  - Include pattern recommendation in subtask notes
+
+**Example pattern suggestions:**
+```
+Parent task: "Create Silver layer for sales data"
+Pattern found: power-query-silver.pattern.md
+
+Subtasks with pattern suggestions:
+- Subtask 1: "Load Bronze layer" → power-query-silver.pattern.md (step 1)
+- Subtask 2: "Clean and standardize columns" → power-query-silver.pattern.md (steps 2-4)
+- Subtask 3: "Add validation timestamp" → power-query-silver.pattern.md (step 6)
+```
+
+**Display to user:**
+```
+⚡ Pattern Suggestions:
+  Main pattern: power-query-silver.pattern.md matches parent task
+
+  Subtask recommendations:
+  - Task 13: Consider power-query-silver.pattern.md for Bronze loading
+  - Task 14: Consider power-query-silver.pattern.md for transformations
+  - Task 15: Consider power-query-silver.pattern.md for metadata
+```
+
 - Confirm breakdown plan with user before proceeding
 
 ### 3. Create Subtask Files
@@ -48,6 +80,10 @@ For each planned subtask:
     "subtasks": [],
     "notes": "Created from breakdown of Task {original_task_id}"
   }
+  ```
+- **ATEF Enhancement**: If pattern suggested for this subtask, add to notes:
+  ```
+  "notes": "Created from breakdown of Task {original_task_id}. Suggested pattern: {pattern_id}"
   ```
 
 ### 4. Update Parent Task to "Broken Down"

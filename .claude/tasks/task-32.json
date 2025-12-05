@@ -1,0 +1,20 @@
+{
+  "id": "32",
+  "title": "Create file-operations patterns (3)",
+  "description": "Create three file operation patterns: create-file.pattern.md, modify-file.pattern.md, and bulk-rename.pattern.md. Each follows the standard pattern format with metadata, triggers, parameters, templates, and anti-patterns.",
+  "difficulty": 4,
+  "status": "Finished",
+  "created_date": "2025-12-05",
+  "updated_date": "2025-12-05",
+  "dependencies": [
+    "29"
+  ],
+  "subtasks": [],
+  "parent_task": null,
+  "files_affected": [
+    "components/pattern-library/patterns/file-operations/create-file.pattern.md",
+    "components/pattern-library/patterns/file-operations/modify-file.pattern.md",
+    "components/pattern-library/patterns/file-operations/bulk-rename.pattern.md"
+  ],
+  "notes": "Created 3 file-operations patterns: create-file.pattern.md (file creation with headers), modify-file.pattern.md (safe editing with Read-first requirement), bulk-rename.pattern.md (systematic renaming with dry-run)."
+}

@@ -1,0 +1,18 @@
+{
+  "id": "42",
+  "title": "Define error entry schema and create common-errors.json",
+  "description": "Create common-errors.json with seed data containing error entry schema (id, category, severity, context, error details, analysis, resolution, prevention with keywords) and populate with 2+ example errors from Power Query and DAX domains.",
+  "difficulty": 5,
+  "status": "Finished",
+  "created_date": "2025-12-05",
+  "updated_date": "2025-12-05",
+  "dependencies": [
+    "41"
+  ],
+  "subtasks": [],
+  "parent_task": null,
+  "files_affected": [
+    "components/error-catalog/catalog/common-errors.json"
+  ],
+  "notes": "Created common-errors.json with comprehensive error entry schema and 6 seed errors: ERR-PQ-001 (Bronze type conversion), ERR-PQ-002 (Silver direct source), ERR-DAX-001 (no VAR pattern), ERR-DAX-002 (measure in row context), ERR-GEN-001 (Edit without Read), ERR-PY-001 (missing encoding). Each entry includes context, symptoms, analysis, resolution, prevention with keywords, and examples."
+}

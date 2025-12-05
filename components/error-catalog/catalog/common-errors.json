@@ -1,0 +1,455 @@
+{
+  "$schema": "error-entry-schema",
+  "version": "1.0",
+  "description": "Common errors catalog for learning from failures and preventing repeated mistakes",
+  "errors": [
+    {
+      "id": "ERR-PQ-001",
+      "category": "Power Query",
+      "severity": "high",
+      "recurrence_count": 0,
+      "context": {
+        "technology": "Power Query (M language)",
+        "operation": "Bronze layer data loading",
+        "difficulty_range": [3, 7]
+      },
+      "error": {
+        "title": "Type conversion at Bronze layer violates medallion architecture",
+        "symptoms": [
+          "Type errors in downstream Silver queries",
+          "Unable to reprocess raw data",
+          "Bronze table has typed columns instead of raw data"
+        ],
+        "error_message": "Expression.Error: We cannot convert the value to type Text",
+        "what_went_wrong": "LLM applied Table.TransformColumnTypes() at Bronze layer when Bronze should preserve raw data exactly as received"
+      },
+      "analysis": {
+        "root_cause": "Misunderstanding of medallion architecture - Bronze stores raw, Silver transforms",
+        "why_llm_makes_mistake": "Natural tendency to apply transformations immediately rather than deferring to appropriate layer",
+        "impact": "Breaks reprocessing capability, violates architectural principle, causes downstream errors"
+      },
+      "resolution": {
+        "immediate_fix": "Remove all Table.TransformColumnTypes() and Table.RenameColumns() from Bronze query, apply only in Silver",
+        "verification": "Bronze query should only have: Source connection, add _LoadTimestamp, add _SourceFile",
+        "time_to_fix_minutes": 10
+      },
+      "prevention": {
+        "keywords": [
+          "power query",
+          "bronze",
+          "medallion",
+          "raw data",
+          "data loading",
+          "source connection",
+          "excel",
+          "csv"
+        ],
+        "pre_execution_check": "Verify Bronze query has ZERO transformations (no type changes, no renames, no filters)",
+        "pattern_to_use": "power-query-bronze.pattern.md",
+        "warning_message": "⚠ Bronze Layer Rule: NO transformations at Bronze! Only add metadata (_LoadTimestamp, _SourceFile). All type conversions and renames go in Silver layer."
+      },
+      "examples": [
+        {
+          "task_description": "Load sales data from Excel into Bronze layer",
+          "wrong_approach": "Source → RenameColumns → TransformColumnTypes → AddMetadata",
+          "correct_approach": "Source → AddMetadata only (_LoadTimestamp, _SourceFile)"
+        }
+      ],
+      "last_occurred": null,
+      "created_date": "2025-12-05",
+      "updated_date": "2025-12-05"
+    },
+    {
+      "id": "ERR-PQ-002",
+      "category": "Power Query",
+      "severity": "critical",
+      "recurrence_count": 0,
+      "context": {
+        "technology": "Power Query (M language)",
+        "operation": "Silver layer transformation",
+        "difficulty_range": [4, 8]
+      },
+      "error": {
+        "title": "Silver query sources directly from file instead of Bronze layer",
+        "symptoms": [
+          "No Bronze metadata columns (_LoadTimestamp, _SourceFile) in Silver",
+          "Silver query has Source = Excel.Workbook() or Csv.Document()",
+          "Cannot track data lineage"
+        ],
+        "error_message": "Expression.Error: The column '_LoadTimestamp' of the table wasn't found",
+        "what_went_wrong": "LLM created Silver query that connects directly to source file instead of referencing Bronze query"
+      },
+      "analysis": {
+        "root_cause": "LLM treated Silver as independent query rather than transformation of Bronze",
+        "why_llm_makes_mistake": "Copy-paste pattern from Bronze without understanding layering dependency",
+        "impact": "Breaks lineage tracking, duplicates source connections, violates medallion architecture"
+      },
+      "resolution": {
+        "immediate_fix": "Change first step from File source to Bronze query reference: Source = BronzeQueryName",
+        "verification": "Silver query first step should reference Bronze query, not file path",
+        "time_to_fix_minutes": 5
+      },
+      "prevention": {
+        "keywords": [
+          "power query",
+          "silver",
+          "medallion",
+          "transformation",
+          "data cleaning",
+          "standardization",
+          "bronze reference"
+        ],
+        "pre_execution_check": "Verify Silver query FIRST STEP is Bronze query reference, NOT file source",
+        "pattern_to_use": "power-query-silver.pattern.md",
+        "warning_message": "⚠ Silver Layer Rule: ALWAYS source from Bronze query! Never connect directly to files. First line must be: Source = BronzeQueryName"
+      },
+      "examples": [
+        {
+          "task_description": "Create Silver layer for sales data with cleaning",
+          "wrong_approach": "Source = Excel.Workbook(File.Contents('sales.xlsx'))",
+          "correct_approach": "Source = SalesBronze (reference to Bronze query)"
+        }
+      ],
+      "last_occurred": null,
+      "created_date": "2025-12-05",
+      "updated_date": "2025-12-05"
+    },
+    {
+      "id": "ERR-DAX-001",
+      "category": "DAX",
+      "severity": "high",
+      "recurrence_count": 0,
+      "context": {
+        "technology": "DAX (Data Analysis Expressions)",
+        "operation": "Measure creation",
+        "difficulty_range": [4, 7]
+      },
+      "error": {
+        "title": "DAX measure uses nested calculations without VAR pattern",
+        "symptoms": [
+          "Poor performance on large datasets",
+          "Difficult to debug when results are wrong",
+          "Same calculation repeated multiple times in formula"
+        ],
+        "error_message": "Calculation produces unexpected results or performs slowly",
+        "what_went_wrong": "LLM wrote inline calculations like DIVIDE(SUM(...), SUM(...)) without storing intermediate results in variables"
+      },
+      "analysis": {
+        "root_cause": "Writing DAX like Excel formulas instead of using VAR pattern for performance and debugging",
+        "why_llm_makes_mistake": "Translating from Excel-style thinking, unaware of DAX performance implications",
+        "impact": "Slow measure evaluation, difficult debugging, repeated calculations waste resources"
+      },
+      "resolution": {
+        "immediate_fix": "Refactor to VAR pattern: VAR _Total = SUM(...) VAR _Count = COUNT(...) VAR _Result = DIVIDE(_Total, _Count, BLANK()) RETURN _Result",
+        "verification": "All intermediate calculations stored in VARs, single RETURN statement",
+        "time_to_fix_minutes": 8
+      },
+      "prevention": {
+        "keywords": [
+          "dax",
+          "measure",
+          "calculation",
+          "performance",
+          "var pattern",
+          "kpi",
+          "metric"
+        ],
+        "pre_execution_check": "Verify measure uses VAR for each intermediate calculation, not nested functions",
+        "pattern_to_use": "dax-measure.pattern.md",
+        "warning_message": "⚠ DAX Performance Rule: Use VAR pattern! Store intermediate calculations in variables (VAR _Variable = ...) before final RETURN. Improves performance and debugging."
+      },
+      "examples": [
+        {
+          "task_description": "Create profit margin measure",
+          "wrong_approach": "Profit Margin = DIVIDE(SUM(Sales[Revenue]) - SUM(Sales[Cost]), SUM(Sales[Revenue]))",
+          "correct_approach": "Profit Margin = VAR _Revenue = SUM(Sales[Revenue]) VAR _Cost = SUM(Sales[Cost]) VAR _Profit = _Revenue - _Cost VAR _Margin = DIVIDE(_Profit, _Revenue, BLANK()) RETURN _Margin"
+        }
+      ],
+      "last_occurred": null,
+      "created_date": "2025-12-05",
+      "updated_date": "2025-12-05"
+    },
+    {
+      "id": "ERR-DAX-002",
+      "category": "DAX",
+      "severity": "critical",
+      "recurrence_count": 0,
+      "context": {
+        "technology": "DAX (Data Analysis Expressions)",
+        "operation": "Iterator functions",
+        "difficulty_range": [5, 9]
+      },
+      "error": {
+        "title": "Measure referenced inside SUMX/AVERAGEX row context",
+        "symptoms": [
+          "Incorrect calculation results",
+          "Measure returns BLANK() unexpectedly",
+          "DAX error: 'A single value for column X cannot be determined'"
+        ],
+        "error_message": "A table of multiple values was supplied where a single value was expected",
+        "what_went_wrong": "LLM used [MeasureName] inside SUMX() row iteration where measures don't have row context"
+      },
+      "analysis": {
+        "root_cause": "Confusion between row context (iterators) and filter context (measures)",
+        "why_llm_makes_mistake": "Treating measures like columns, unaware that measures evaluate in filter context not row context",
+        "impact": "Wrong results or errors, fundamentally broken calculation logic"
+      },
+      "resolution": {
+        "immediate_fix": "Replace measure reference with column calculation or use CALCULATE to create filter context: SUMX(Table, CALCULATE([Measure]))",
+        "verification": "No measure references inside SUMX/AVERAGEX unless wrapped in CALCULATE",
+        "time_to_fix_minutes": 15
+      },
+      "prevention": {
+        "keywords": [
+          "dax",
+          "sumx",
+          "averagex",
+          "iterator",
+          "row context",
+          "filter context",
+          "calculate"
+        ],
+        "pre_execution_check": "Verify no measure references inside SUMX/AVERAGEX without CALCULATE wrapper",
+        "pattern_to_use": "dax-measure.pattern.md",
+        "warning_message": "⚠ DAX Context Rule: Measures don't work in row context! Inside SUMX/AVERAGEX, use column references OR wrap measures with CALCULATE([Measure])."
+      },
+      "examples": [
+        {
+          "task_description": "Calculate total profit across products",
+          "wrong_approach": "Total Profit = SUMX(Products, [Profit Margin Measure])",
+          "correct_approach": "Total Profit = SUMX(Products, Products[Revenue] - Products[Cost]) OR SUMX(Products, CALCULATE([Profit Margin Measure]))"
+        }
+      ],
+      "last_occurred": null,
+      "created_date": "2025-12-05",
+      "updated_date": "2025-12-05"
+    },
+    {
+      "id": "ERR-GEN-001",
+      "category": "File Operations",
+      "severity": "critical",
+      "recurrence_count": 0,
+      "context": {
+        "technology": "Claude Code File Operations",
+        "operation": "File modification",
+        "difficulty_range": [1, 10]
+      },
+      "error": {
+        "title": "Attempted to use Edit tool without reading file first",
+        "symptoms": [
+          "Edit tool returns error: 'You must read the file before editing'",
+          "File modification fails",
+          "Workflow halts"
+        ],
+        "error_message": "Error: You must use Read tool before Edit tool",
+        "what_went_wrong": "LLM tried to modify existing file using Edit tool without first using Read tool"
+      },
+      "analysis": {
+        "root_cause": "Tool usage requirement: Edit tool requires Read tool to be called first on same file",
+        "why_llm_makes_mistake": "Assumption that Edit can work standalone, not aware of Read-first requirement",
+        "impact": "Workflow stops, task cannot proceed until Read is performed"
+      },
+      "resolution": {
+        "immediate_fix": "Call Read tool on the file, then call Edit tool with exact string matching",
+        "verification": "Check conversation history shows Read tool called before Edit on same file path",
+        "time_to_fix_minutes": 2
+      },
+      "prevention": {
+        "keywords": [
+          "edit",
+          "modify",
+          "update",
+          "change",
+          "file",
+          "code"
+        ],
+        "pre_execution_check": "Before using Edit tool, verify Read tool was used on that file in current conversation",
+        "pattern_to_use": "modify-file.pattern.md",
+        "warning_message": "⚠ CRITICAL: Edit tool requires Read tool first! Always Read file before Edit, even if you think you know contents."
+      },
+      "examples": [
+        {
+          "task_description": "Update function in existing file",
+          "wrong_approach": "Direct Edit tool call",
+          "correct_approach": "Read tool → analyze contents → Edit tool with exact string matching"
+        }
+      ],
+      "last_occurred": null,
+      "created_date": "2025-12-05",
+      "updated_date": "2025-12-05"
+    },
+    {
+      "id": "ERR-PY-001",
+      "category": "Python",
+      "severity": "medium",
+      "recurrence_count": 0,
+      "context": {
+        "technology": "Python",
+        "operation": "CSV file operations",
+        "difficulty_range": [3, 6]
+      },
+      "error": {
+        "title": "Missing encoding parameter causes UnicodeDecodeError",
+        "symptoms": [
+          "UnicodeDecodeError when reading CSV",
+          "File reads successfully on some systems, fails on others",
+          "Special characters appear corrupted"
+        ],
+        "error_message": "UnicodeDecodeError: 'utf-8' codec can't decode byte 0xff in position X",
+        "what_went_wrong": "LLM used open() or pd.read_csv() without encoding parameter, defaulted to system encoding"
+      },
+      "analysis": {
+        "root_cause": "Omitted encoding parameter, system default varies (UTF-8 vs Windows-1252 vs others)",
+        "why_llm_makes_mistake": "Assumes UTF-8 default, doesn't account for encoding variations in source files",
+        "impact": "Code fails on files with special characters, non-portable across systems"
+      },
+      "resolution": {
+        "immediate_fix": "Add encoding='utf-8-sig' (handles BOM) or encoding='latin-1' (permissive) parameter",
+        "verification": "All file operations have explicit encoding parameter",
+        "time_to_fix_minutes": 3
+      },
+      "prevention": {
+        "keywords": [
+          "csv",
+          "pandas",
+          "read",
+          "file",
+          "encoding",
+          "unicode"
+        ],
+        "pre_execution_check": "Verify all open() and pd.read_csv() calls have encoding parameter",
+        "pattern_to_use": "csv-transform.pattern.md",
+        "warning_message": "⚠ Encoding Rule: Always specify encoding! Use encoding='utf-8-sig' for UTF-8 files or encoding='latin-1' for permissive reading."
+      },
+      "examples": [
+        {
+          "task_description": "Read CSV file with pandas",
+          "wrong_approach": "df = pd.read_csv('data.csv')",
+          "correct_approach": "df = pd.read_csv('data.csv', encoding='utf-8-sig') with try/except for fallback encoding"
+        }
+      ],
+      "last_occurred": null,
+      "created_date": "2025-12-05",
+      "updated_date": "2025-12-05"
+    }
+  ],
+  "schema": {
+    "description": "Error entry schema definition",
+    "required_fields": [
+      "id",
+      "category",
+      "severity",
+      "recurrence_count",
+      "context",
+      "error",
+      "analysis",
+      "resolution",
+      "prevention",
+      "examples",
+      "last_occurred",
+      "created_date",
+      "updated_date"
+    ],
+    "field_definitions": {
+      "id": {
+        "type": "string",
+        "format": "ERR-{CATEGORY_CODE}-{NUMBER}",
+        "description": "Unique error identifier"
+      },
+      "category": {
+        "type": "string",
+        "enum": ["Power Query", "DAX", "Python", "File Operations", "Git", "Task Management", "General"],
+        "description": "Technology or domain category"
+      },
+      "severity": {
+        "type": "string",
+        "enum": ["critical", "high", "medium", "low"],
+        "description": "Impact level - critical: blocks work, high: major issues, medium: workarounds exist, low: minor inconvenience"
+      },
+      "recurrence_count": {
+        "type": "integer",
+        "description": "Number of times this error has occurred (incremented by log-error.md)"
+      },
+      "context": {
+        "type": "object",
+        "properties": {
+          "technology": "Specific technology involved",
+          "operation": "What operation was being performed",
+          "difficulty_range": "Array of [min, max] difficulty where error commonly occurs"
+        }
+      },
+      "error": {
+        "type": "object",
+        "properties": {
+          "title": "Short descriptive title",
+          "symptoms": "Array of observable symptoms",
+          "error_message": "Actual error message or behavior",
+          "what_went_wrong": "Plain English explanation"
+        }
+      },
+      "analysis": {
+        "type": "object",
+        "properties": {
+          "root_cause": "Underlying cause",
+          "why_llm_makes_mistake": "Why LLM specifically makes this error",
+          "impact": "Consequences of the error"
+        }
+      },
+      "resolution": {
+        "type": "object",
+        "properties": {
+          "immediate_fix": "How to fix when it occurs",
+          "verification": "How to verify fix worked",
+          "time_to_fix_minutes": "Estimated time to fix"
+        }
+      },
+      "prevention": {
+        "type": "object",
+        "properties": {
+          "keywords": "Array of keywords for matching task descriptions",
+          "pre_execution_check": "What to verify before starting",
+          "pattern_to_use": "Which pattern file helps prevent this",
+          "warning_message": "Short warning to display"
+        }
+      },
+      "examples": {
+        "type": "array",
+        "items": {
+          "task_description": "Example task",
+          "wrong_approach": "What not to do",
+          "correct_approach": "What to do instead"
+        }
+      },
+      "last_occurred": {
+        "type": "string or null",
+        "format": "ISO 8601 date-time",
+        "description": "When this error last occurred (null if never logged)"
+      },
+      "created_date": {
+        "type": "string",
+        "format": "ISO 8601 date",
+        "description": "When error entry was created"
+      },
+      "updated_date": {
+        "type": "string",
+        "format": "ISO 8601 date",
+        "description": "When error entry was last updated"
+      }
+    }
+  },
+  "statistics": {
+    "total_errors": 6,
+    "by_category": {
+      "Power Query": 2,
+      "DAX": 2,
+      "File Operations": 1,
+      "Python": 1
+    },
+    "by_severity": {
+      "critical": 3,
+      "high": 2,
+      "medium": 1,
+      "low": 0
+    }
+  }
+}

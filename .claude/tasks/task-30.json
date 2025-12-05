@@ -1,0 +1,18 @@
+{
+  "id": "30",
+  "title": "Write find-pattern.md command",
+  "description": "Create command to search pattern library for patterns matching task description. Extracts keywords, scores patterns by triggers/file types/difficulty range, ranks results, and presents top 3 matches with recommendations.",
+  "difficulty": 5,
+  "status": "Finished",
+  "created_date": "2025-12-05",
+  "updated_date": "2025-12-05",
+  "dependencies": [
+    "29"
+  ],
+  "subtasks": [],
+  "parent_task": null,
+  "files_affected": [
+    "components/pattern-library/commands/find-pattern.md"
+  ],
+  "notes": "Created find-pattern.md command with keyword extraction, pattern scoring algorithm, confidence ranking (6+ high, 3-5 medium), and top-3 match presentation."
+}

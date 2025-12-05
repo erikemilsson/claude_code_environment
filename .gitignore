@@ -8,3 +8,6 @@
 # macOS system files
 .DS_Store
 **/.DS_Store
+
+# Checkpoint system (local state snapshots)
+.claude/checkpoints/
