@@ -14,5 +14,14 @@
   "files_affected": [
     "components/checkpoint-system/commands/rollback-to.md"
   ],
-  "notes": "Created rollback-to.md command for restoring checkpoint state. Implements 7-step process: load checkpoint, analyze current state (hash comparison), confirm with user, restore files (RESTORE/REMOVE/MISSING/UNCHANGED actions), optional task status restoration, report results, preserve checkpoint. Includes safety features (confirmation required, pre-rollback checkpoint offer), selective restoration, and diff display."
+  "notes": "Created rollback-to.md command for restoring checkpoint state. Implements 7-step process: load checkpoint, analyze current state (hash comparison), confirm with user, restore files (RESTORE/REMOVE/MISSING/UNCHANGED actions), optional task status restoration, report results, preserve checkpoint. Includes safety features (confirmation required, pre-rollback checkpoint offer), selective restoration, and diff display.",
+  "confidence": 75,
+  "assumptions": [],
+  "validation_status": "pending",
+  "momentum": {
+    "phase": "pending",
+    "velocity": 0,
+    "last_activity": "2025-12-05"
+  },
+  "decision_rationale": ""
 }

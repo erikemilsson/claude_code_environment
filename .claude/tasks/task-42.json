@@ -14,5 +14,14 @@
   "files_affected": [
     "components/error-catalog/catalog/common-errors.json"
   ],
-  "notes": "Created common-errors.json with comprehensive error entry schema and 6 seed errors: ERR-PQ-001 (Bronze type conversion), ERR-PQ-002 (Silver direct source), ERR-DAX-001 (no VAR pattern), ERR-DAX-002 (measure in row context), ERR-GEN-001 (Edit without Read), ERR-PY-001 (missing encoding). Each entry includes context, symptoms, analysis, resolution, prevention with keywords, and examples."
+  "notes": "Created common-errors.json with comprehensive error entry schema and 6 seed errors: ERR-PQ-001 (Bronze type conversion), ERR-PQ-002 (Silver direct source), ERR-DAX-001 (no VAR pattern), ERR-DAX-002 (measure in row context), ERR-GEN-001 (Edit without Read), ERR-PY-001 (missing encoding). Each entry includes context, symptoms, analysis, resolution, prevention with keywords, and examples.",
+  "confidence": 75,
+  "assumptions": [],
+  "validation_status": "pending",
+  "momentum": {
+    "phase": "pending",
+    "velocity": 0,
+    "last_activity": "2025-12-05"
+  },
+  "decision_rationale": ""
 }

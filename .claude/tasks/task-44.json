@@ -14,5 +14,14 @@
   "files_affected": [
     "components/error-catalog/commands/suggest-prevention.md"
   ],
-  "notes": "Created suggest-prevention.md command for proactive error prevention. Implements 6-step process: load task, extract keywords (technology/operation/domain), search catalog (scoring: keyword match +1, category match +2, severity multiplier, recurrence bonus), rank by score, display top 3 warnings with symptoms/prevention/checks, return structured JSON. Includes detailed/summary/compact modes, confidence levels, and related error detection."
+  "notes": "Created suggest-prevention.md command for proactive error prevention. Implements 6-step process: load task, extract keywords (technology/operation/domain), search catalog (scoring: keyword match +1, category match +2, severity multiplier, recurrence bonus), rank by score, display top 3 warnings with symptoms/prevention/checks, return structured JSON. Includes detailed/summary/compact modes, confidence levels, and related error detection.",
+  "confidence": 75,
+  "assumptions": [],
+  "validation_status": "pending",
+  "momentum": {
+    "phase": "pending",
+    "velocity": 0,
+    "last_activity": "2025-12-05"
+  },
+  "decision_rationale": ""
 }

@@ -1,0 +1,27 @@
+{
+  "id": "63",
+  "title": "Update complete-task.md command for new fields",
+  "description": "Modify the complete-task command to handle confidence updates, assumption validation, momentum phase transitions, and require decision rationale when marking tasks complete.",
+  "difficulty": 4,
+  "status": "Finished",
+  "created_date": "2025-12-15",
+  "updated_date": "2025-12-15",
+  "dependencies": [
+    "61"
+  ],
+  "subtasks": [],
+  "parent_task": "60",
+  "files_affected": [
+    ".claude/commands/complete-task.md"
+  ],
+  "notes": "Completed: Updated complete-task.md command to integrate belief tracking. Added sections for updating confidence, validating assumptions, tracking momentum phases, and documenting decision rationale. Included detailed guidance on phase transitions, confidence adjustments, and validation processes.",
+  "confidence": 75,
+  "assumptions": [],
+  "validation_status": "pending",
+  "momentum": {
+    "phase": "pending",
+    "velocity": 0,
+    "last_activity": "2025-12-15"
+  },
+  "decision_rationale": ""
+}

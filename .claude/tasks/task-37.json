@@ -14,5 +14,14 @@
   "files_affected": [
     "components/checkpoint-system/schemas/checkpoint.schema.json"
   ],
-  "notes": "Created checkpoint.schema.json defining checkpoint metadata structure. Schema includes checkpoint_id (chk-{task_id}-{sequence} pattern), task_id, timestamp, type (pre-execution/mid-execution/manual), description, files array (path/hash/backup_path/existed), and task_state snapshot. Enables versioned state capture and restoration."
+  "notes": "Created checkpoint.schema.json defining checkpoint metadata structure. Schema includes checkpoint_id (chk-{task_id}-{sequence} pattern), task_id, timestamp, type (pre-execution/mid-execution/manual), description, files array (path/hash/backup_path/existed), and task_state snapshot. Enables versioned state capture and restoration.",
+  "confidence": 75,
+  "assumptions": [],
+  "validation_status": "pending",
+  "momentum": {
+    "phase": "pending",
+    "velocity": 0,
+    "last_activity": "2025-12-05"
+  },
+  "decision_rationale": ""
 }

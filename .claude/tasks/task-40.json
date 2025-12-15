@@ -15,5 +15,14 @@
     "components/checkpoint-system/commands/list-checkpoints.md",
     "components/checkpoint-system/commands/diff-checkpoint.md"
   ],
-  "notes": "Created two utility commands: list-checkpoints.md (display all checkpoints for task with metadata, sorting, current state indicator, compact/detailed formats) and diff-checkpoint.md (compare current state to checkpoint, show file diffs, task state changes, multiple diff formats: summary/unified/side-by-side/stat/hash-only, export capability)."
+  "notes": "Created two utility commands: list-checkpoints.md (display all checkpoints for task with metadata, sorting, current state indicator, compact/detailed formats) and diff-checkpoint.md (compare current state to checkpoint, show file diffs, task state changes, multiple diff formats: summary/unified/side-by-side/stat/hash-only, export capability).",
+  "confidence": 75,
+  "assumptions": [],
+  "validation_status": "pending",
+  "momentum": {
+    "phase": "pending",
+    "velocity": 0,
+    "last_activity": "2025-12-05"
+  },
+  "decision_rationale": ""
 }

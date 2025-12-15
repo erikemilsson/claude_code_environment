@@ -16,24 +16,109 @@ User: "Create the environment from claude_code_environment repo using this spec:
 
 ## Process
 
-### Step 1: Read and Analyze Specification
+### Phase 1: Analysis & Assumption Extraction
+
+#### Step 1A: Read and Deep-Analyze Specification
 
 **Read the specification document** provided by user.
 
-**Extract key indicators**:
+**Extract comprehensive indicators**:
 - Technologies mentioned (Excel, Power Query, Python, SQL, React, etc.)
 - Project type keywords (ETL, dashboard, research, analysis, calculation, etc.)
 - Domain characteristics (regulatory, compliance, academic, experimental, etc.)
 - Complexity indicators (timeline mentions, team size, deliverables count)
 - Data characteristics (sensitive, regulatory, financial, medical, etc.)
 
-### Step 2: Auto-Detect Template Type
+**Identify implicit assumptions**:
+- Technology stack availability
+- User expertise level
+- Data source accessibility
+- Timeline feasibility
+- Error tolerance requirements
+- Team collaboration needs
 
-**Apply pattern matching** using `.claude/reference/template-selection-rules.md`.
+**Build assumption confidence map**:
+```
+For each assumption:
+  - Evidence: What in the spec supports this?
+  - Confidence: How certain are we? (percentage)
+  - Impact: What happens if wrong? (low/medium/high/critical)
+  - Validation: Do we need to confirm? (yes/no)
+```
 
-**Score each template** based on keyword matches and pattern indicators.
+#### Step 1B: Generate Targeted Clarifications
 
-**Select highest-scoring template** as recommendation.
+**Only generate questions for**:
+- Critical assumptions with <70% confidence
+- High-impact unknowns that affect template selection
+- Ambiguities that would change configuration
+
+**Skip questions if**:
+- All critical assumptions have >85% confidence
+- Template selection is unambiguous (>90% confidence)
+- Configuration needs are clear from specification
+
+**Question format** (if needed):
+```
+Based on your specification, I need to clarify a few critical points:
+
+1. [Question about highest-impact unknown]
+   Why this matters: [Impact on template/configuration]
+
+2. [Question about critical assumption]
+   Why this matters: [What changes based on answer]
+```
+
+### Phase 2: Confident Decision & Generation
+
+#### Step 2A: Process Responses & Validate Assumptions
+
+**If questions were asked**:
+- Update assumption confidence based on responses
+- Mark assumptions as validated/invalidated
+- Identify any new assumptions from responses
+
+**Recalculate template scores** with validated assumptions:
+- Apply pattern matching using `.claude/reference/template-selection-rules.md`
+- Weight scores by assumption confidence
+- Boost scores for validated assumptions
+
+**Make confident template selection**:
+- Select highest-scoring template (must be >85% confidence)
+- If still ambiguous, use Base template with notes
+- Document full decision rationale
+
+#### Step 2B: Log Decision with Full Context
+
+**Create decision log entry** in `.claude/decisions/template-selection.md`:
+```markdown
+### [Date] - [Project Name from Spec]
+**Selected Template**: [template-name]
+**Confidence**: [percentage] (increased from X% after clarifications)
+**Decision Time**: [time taken]
+
+**Indicators Present**:
+- [List all indicators found]
+
+**Assumptions Validated**:
+- ✓ [Validated assumption 1]
+- ✓ [Validated assumption 2]
+- ✗ [Invalidated assumption]
+- ? [Unvalidated assumption]
+
+**Alternatives Considered**:
+1. **[Alternative Template]** (Confidence: X%)
+   - Why considered: [indicators]
+   - Why rejected: [reasoning]
+
+**Rationale**:
+[Detailed explanation including assumption validation impact]
+
+**Configuration Decisions**:
+- Phase 0: [Yes/No] because [reasoning]
+- Validation level: [Standard/Extensive] because [reasoning]
+- Difficulty scoring: [Simple/Multi-dimension] because [reasoning]
+```
 
 **Detection Logic** (see template-selection-rules.md for full patterns):
 
@@ -123,7 +208,7 @@ Do you have ambiguous source documents that need interpretation? (Y/N)
 - Goals (extract from spec)
 - Timeline estimates (infer from spec)
 
-### Step 5: Generate Environment
+#### Step 2C: Generate Environment with High Confidence
 
 **Based on detected template and configuration**, generate files:
 
@@ -439,6 +524,26 @@ Before completing, verify:
 6. **Allow override** - User can always switch templates if detection is wrong
 7. **Extract, don't invent** - Use user's words from spec, don't paraphrase unnecessarily
 8. **Be conservative** - When in doubt, choose simpler template (can upgrade later)
+
+## Two-Step Processing Benefits
+
+### Enhanced Accuracy
+- **Assumption Validation**: Explicitly validates assumptions before making decisions
+- **Higher Confidence**: Decisions made with >85% confidence after clarifications
+- **Reduced Errors**: Catches misunderstandings before environment generation
+
+### Better User Experience
+- **Minimal Questions**: Only asks when truly necessary (critical unknowns)
+- **Transparent Reasoning**: Shows exactly why each question matters
+- **Faster Resolution**: Targeted questions lead to quicker accurate setup
+
+### Improved Learning
+- **Decision Tracking**: All decisions logged with full rationale
+- **Pattern Detection**: Feeds validated assumptions to pattern analyzer
+- **Continuous Improvement**: System learns from each project setup
+
+### Implementation Details
+See `.claude/reference/two-step-processing.md` for complete framework documentation.
 
 ## Examples
 

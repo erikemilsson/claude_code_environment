@@ -14,5 +14,14 @@
   "files_affected": [
     "components/validation-gates/schemas/gate-result.schema.json"
   ],
-  "notes": "Created gate-result.schema.json defining validation result format with passed status, blocking failures, warnings, info, auto_actions, and timestamp fields conforming to JSON Schema draft-07."
+  "notes": "Created gate-result.schema.json defining validation result format with passed status, blocking failures, warnings, info, auto_actions, and timestamp fields conforming to JSON Schema draft-07.",
+  "confidence": 75,
+  "assumptions": [],
+  "validation_status": "pending",
+  "momentum": {
+    "phase": "pending",
+    "velocity": 0,
+    "last_activity": "2025-12-05"
+  },
+  "decision_rationale": ""
 }

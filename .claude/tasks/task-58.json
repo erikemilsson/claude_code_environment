@@ -14,5 +14,14 @@
   "files_affected": [
     "CLAUDE.md"
   ],
-  "notes": "CLAUDE.md navigation updated. Added ATEF component navigation rules: validation gates (referenced from complete-task workflow), pattern library (find-pattern/apply-pattern commands), checkpoint system (create-checkpoint/rollback-to/list-checkpoints/diff-checkpoint commands), error catalog (log-error/suggest-prevention commands). Data-analytics template added to template navigation. Tool routing section updated with ATEF integration points."
+  "notes": "CLAUDE.md navigation updated. Added ATEF component navigation rules: validation gates (referenced from complete-task workflow), pattern library (find-pattern/apply-pattern commands), checkpoint system (create-checkpoint/rollback-to/list-checkpoints/diff-checkpoint commands), error catalog (log-error/suggest-prevention commands). Data-analytics template added to template navigation. Tool routing section updated with ATEF integration points.",
+  "confidence": 75,
+  "assumptions": [],
+  "validation_status": "pending",
+  "momentum": {
+    "phase": "pending",
+    "velocity": 0,
+    "last_activity": "2025-12-05"
+  },
+  "decision_rationale": ""
 }

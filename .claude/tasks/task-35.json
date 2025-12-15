@@ -17,5 +17,14 @@
     "components/pattern-library/patterns/microsoft-stack/dax-measure.pattern.md",
     "components/pattern-library/patterns/microsoft-stack/dataflow-gen2.pattern.md"
   ],
-  "notes": "Created 4 microsoft-stack patterns: power-query-bronze.pattern.md (raw data loading), power-query-silver.pattern.md (data cleaning/standardization), dax-measure.pattern.md (DAX measure creation with VAR pattern), dataflow-gen2.pattern.md (Fabric dataflow configuration)."
+  "notes": "Created 4 microsoft-stack patterns: power-query-bronze.pattern.md (raw data loading), power-query-silver.pattern.md (data cleaning/standardization), dax-measure.pattern.md (DAX measure creation with VAR pattern), dataflow-gen2.pattern.md (Fabric dataflow configuration).",
+  "confidence": 75,
+  "assumptions": [],
+  "validation_status": "pending",
+  "momentum": {
+    "phase": "pending",
+    "velocity": 0,
+    "last_activity": "2025-12-05"
+  },
+  "decision_rationale": ""
 }

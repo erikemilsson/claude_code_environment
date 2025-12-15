@@ -14,5 +14,14 @@
   "files_affected": [
     "components/task-management/commands/breakdown.md"
   ],
-  "notes": "Enhanced breakdown.md with pattern suggestion integration. Added step 2.5 to call find-pattern.md when breaking down tasks, suggest relevant patterns for parent task and each subtask, display pattern recommendations to user, and include pattern suggestions in subtask notes. Helps guide implementation by recommending proven approaches during task decomposition."
+  "notes": "Enhanced breakdown.md with pattern suggestion integration. Added step 2.5 to call find-pattern.md when breaking down tasks, suggest relevant patterns for parent task and each subtask, display pattern recommendations to user, and include pattern suggestions in subtask notes. Helps guide implementation by recommending proven approaches during task decomposition.",
+  "confidence": 75,
+  "assumptions": [],
+  "validation_status": "pending",
+  "momentum": {
+    "phase": "pending",
+    "velocity": 0,
+    "last_activity": "2025-12-05"
+  },
+  "decision_rationale": ""
 }

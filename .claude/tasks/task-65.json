@@ -1,0 +1,29 @@
+{
+  "id": "65",
+  "title": "Implement assumption tracking and validation",
+  "description": "Create system for tracking assumptions made during project setup and task execution. Include assumption states (pending/validated/invalidated), validation triggers, and impact analysis when assumptions prove false.",
+  "difficulty": 5,
+  "status": "Finished",
+  "created_date": "2025-12-15",
+  "updated_date": "2025-12-15",
+  "dependencies": [
+    "61",
+    "64"
+  ],
+  "subtasks": [],
+  "parent_task": "60",
+  "files_affected": [
+    ".claude/reference/assumption-management.md",
+    ".claude/commands/validate-assumptions.md"
+  ],
+  "notes": "Completed: Created comprehensive assumption-management.md covering structure, categories, impact levels, validation methods, triggers, and fallback planning. Created validate-assumptions.md command for systematic validation with grouping, execution, and reporting capabilities.",
+  "confidence": 75,
+  "assumptions": [],
+  "validation_status": "pending",
+  "momentum": {
+    "phase": "pending",
+    "velocity": 0,
+    "last_activity": "2025-12-15"
+  },
+  "decision_rationale": ""
+}

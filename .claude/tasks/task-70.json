@@ -1,0 +1,27 @@
+{
+  "id": "70",
+  "title": "Create pattern-detection.md insights document",
+  "description": "Track common patterns across project setups including template selection trends, recurring task difficulties, common assumption failures, and emerging project types. Include confidence levels and observation counts.",
+  "difficulty": 4,
+  "status": "Finished",
+  "created_date": "2025-12-15",
+  "updated_date": "2025-12-15",
+  "completion_date": "2025-12-15",
+  "dependencies": [],
+  "subtasks": [],
+  "parent_task": "60",
+  "files_affected": [
+    ".claude/insights/pattern-detection.md"
+  ],
+  "notes": "Foundation for learning from multiple project executions. Created comprehensive pattern detection framework with sections for template selection patterns, task difficulty patterns, assumption failures, emerging project types, and workflow optimizations. Ready for data collection.",
+  "completion_notes": "Created pattern-detection.md with comprehensive framework for tracking patterns across projects. Includes tables for template usage, difficulty patterns, assumption failures, and optimization opportunities. Set up for real-time data collection and trend analysis.",
+  "confidence": 75,
+  "assumptions": [],
+  "validation_status": "pending",
+  "momentum": {
+    "phase": "pending",
+    "velocity": 0,
+    "last_activity": "2025-12-15"
+  },
+  "decision_rationale": ""
+}

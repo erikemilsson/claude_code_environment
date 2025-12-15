@@ -14,5 +14,14 @@
   "files_affected": [
     "components/validation-gates/gates/post-execution.md"
   ],
-  "notes": "Created post-execution.md gate with 5 checks: files modified check (WARNING), notes check (WARNING), time tracking check (INFO), parent auto-completion logic (AUTO), and error pattern check (INFO)."
+  "notes": "Created post-execution.md gate with 5 checks: files modified check (WARNING), notes check (WARNING), time tracking check (INFO), parent auto-completion logic (AUTO), and error pattern check (INFO).",
+  "confidence": 75,
+  "assumptions": [],
+  "validation_status": "pending",
+  "momentum": {
+    "phase": "pending",
+    "velocity": 0,
+    "last_activity": "2025-12-05"
+  },
+  "decision_rationale": ""
 }

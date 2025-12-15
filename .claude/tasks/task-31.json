@@ -14,5 +14,14 @@
   "files_affected": [
     "components/pattern-library/commands/apply-pattern.md"
   ],
-  "notes": "Created apply-pattern.md command with parameter gathering, pre-condition verification, template application with placeholder replacement, post-condition checklist, and pattern usage tracking."
+  "notes": "Created apply-pattern.md command with parameter gathering, pre-condition verification, template application with placeholder replacement, post-condition checklist, and pattern usage tracking.",
+  "confidence": 75,
+  "assumptions": [],
+  "validation_status": "pending",
+  "momentum": {
+    "phase": "pending",
+    "velocity": 0,
+    "last_activity": "2025-12-05"
+  },
+  "decision_rationale": ""
 }

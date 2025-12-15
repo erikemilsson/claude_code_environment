@@ -1,0 +1,45 @@
+{
+  "id": "77",
+  "title": "Test and validate belief tracker integration",
+  "description": "Create test scenarios for all belief tracking features: confidence scoring, assumption validation, momentum tracking, pattern detection, and decision logging. Validate integration with existing task management workflow.",
+  "difficulty": 5,
+  "status": "Finished",
+  "created_date": "2025-12-15",
+  "updated_date": "2025-12-15",
+  "completion_date": "2025-12-15",
+  "completion_notes": "Created comprehensive test scenarios covering all belief tracking features including confidence scoring, assumption validation, momentum tracking, pattern detection, decision logging, risk indicators, dashboard integration, command integration, edge cases, and workflow integration. Also created integration validation reference document detailing validation criteria, integration points, success metrics, rollback plan, and approval gates. Total of 30 test scenarios across 10 categories with clear expected outcomes.",
+  "dependencies": [
+    "61",
+    "62",
+    "63",
+    "64",
+    "65",
+    "66",
+    "67",
+    "68",
+    "69",
+    "70",
+    "71",
+    "72",
+    "73",
+    "74",
+    "75",
+    "76"
+  ],
+  "subtasks": [],
+  "parent_task": "60",
+  "files_affected": [
+    ".claude/tests/belief-tracking-tests.md",
+    ".claude/reference/integration-validation.md"
+  ],
+  "notes": "Final validation of all belief tracking features",
+  "confidence": 75,
+  "assumptions": [],
+  "validation_status": "pending",
+  "momentum": {
+    "phase": "pending",
+    "velocity": 0,
+    "last_activity": "2025-12-15"
+  },
+  "decision_rationale": ""
+}

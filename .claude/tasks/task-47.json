@@ -14,5 +14,14 @@
   "files_affected": [
     "components/task-management/reference/validation-rules.md"
   ],
-  "notes": "Updated validation-rules.md with ATEF field validation rules. Added 4 sections: Validation field structure (gate results tracking), Patterns field structure (pattern usage tracking), Checkpoints field structure (checkpoint ID array), Errors Encountered field structure (error ID array). Included cross-field validation rules (validation+status, checkpoints+status, errors+checkpoints, patterns+files) and backward compatibility notes."
+  "notes": "Updated validation-rules.md with ATEF field validation rules. Added 4 sections: Validation field structure (gate results tracking), Patterns field structure (pattern usage tracking), Checkpoints field structure (checkpoint ID array), Errors Encountered field structure (error ID array). Included cross-field validation rules (validation+status, checkpoints+status, errors+checkpoints, patterns+files) and backward compatibility notes.",
+  "confidence": 75,
+  "assumptions": [],
+  "validation_status": "pending",
+  "momentum": {
+    "phase": "pending",
+    "velocity": 0,
+    "last_activity": "2025-12-05"
+  },
+  "decision_rationale": ""
 }

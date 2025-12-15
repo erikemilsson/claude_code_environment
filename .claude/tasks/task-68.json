@@ -1,0 +1,27 @@
+{
+  "id": "68",
+  "title": "Create momentum-tracking.md SOP",
+  "description": "Document standard operating procedures for momentum monitoring including velocity check frequency, stalling detection rules, intervention strategies for at-risk tasks, and momentum transfer patterns.",
+  "difficulty": 4,
+  "status": "Finished",
+  "created_date": "2025-12-15",
+  "updated_date": "2025-12-15",
+  "dependencies": [
+    "67"
+  ],
+  "subtasks": [],
+  "parent_task": "60",
+  "files_affected": [
+    ".claude/sop/momentum-tracking.md"
+  ],
+  "notes": "Completed: Created comprehensive momentum-tracking.md SOP with monitoring schedules (daily/weekly/sprint), velocity calculation rules, phase classifications, stalling detection criteria, intervention strategies (3 levels), momentum transfer patterns, and quick reference guides.",
+  "confidence": 75,
+  "assumptions": [],
+  "validation_status": "pending",
+  "momentum": {
+    "phase": "pending",
+    "velocity": 0,
+    "last_activity": "2025-12-15"
+  },
+  "decision_rationale": ""
+}

@@ -14,5 +14,14 @@
   "files_affected": [
     "templates/data-analytics/components.json"
   ],
-  "notes": "Created components.json for data-analytics template defining: template metadata (v1.0.0), required components (task-management, validation-gates, pattern-library, checkpoint-system), optional components (error-catalog), included Microsoft stack patterns (4 patterns), customizations structure (context/reference/commands), detection rules (high/medium confidence keywords), technology focus (Fabric/Power BI/DAX/PQ), typical project structure, key patterns, and common errors prevented."
+  "notes": "Created components.json for data-analytics template defining: template metadata (v1.0.0), required components (task-management, validation-gates, pattern-library, checkpoint-system), optional components (error-catalog), included Microsoft stack patterns (4 patterns), customizations structure (context/reference/commands), detection rules (high/medium confidence keywords), technology focus (Fabric/Power BI/DAX/PQ), typical project structure, key patterns, and common errors prevented.",
+  "confidence": 75,
+  "assumptions": [],
+  "validation_status": "pending",
+  "momentum": {
+    "phase": "pending",
+    "velocity": 0,
+    "last_activity": "2025-12-05"
+  },
+  "decision_rationale": ""
 }

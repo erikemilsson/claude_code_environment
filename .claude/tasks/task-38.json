@@ -14,5 +14,14 @@
   "files_affected": [
     "components/checkpoint-system/commands/create-checkpoint.md"
   ],
-  "notes": "Created create-checkpoint.md command for capturing state before changes. Implements 7-step process: load task, generate checkpoint ID (chk-{task_id}-{sequence}), create backup directory, process files (hash + copy for existing, record metadata for new), capture task state, write checkpoint.json, report success. Includes error handling and integration with complete-task.md."
+  "notes": "Created create-checkpoint.md command for capturing state before changes. Implements 7-step process: load task, generate checkpoint ID (chk-{task_id}-{sequence}), create backup directory, process files (hash + copy for existing, record metadata for new), capture task state, write checkpoint.json, report success. Includes error handling and integration with complete-task.md.",
+  "confidence": 75,
+  "assumptions": [],
+  "validation_status": "pending",
+  "momentum": {
+    "phase": "pending",
+    "velocity": 0,
+    "last_activity": "2025-12-05"
+  },
+  "decision_rationale": ""
 }

@@ -15,5 +15,14 @@
   "files_affected": [
     "components/validation-gates/commands/run-gate.md"
   ],
-  "notes": "Created run-gate.md command to execute validation gates, perform all checks based on gate type, determine pass/fail status, generate structured result object conforming to schema, and display formatted output to user."
+  "notes": "Created run-gate.md command to execute validation gates, perform all checks based on gate type, determine pass/fail status, generate structured result object conforming to schema, and display formatted output to user.",
+  "confidence": 75,
+  "assumptions": [],
+  "validation_status": "pending",
+  "momentum": {
+    "phase": "pending",
+    "velocity": 0,
+    "last_activity": "2025-12-05"
+  },
+  "decision_rationale": ""
 }

@@ -1,0 +1,52 @@
+{
+  "id": "60",
+  "title": "Integrate Belief Tracker features into Task Management System",
+  "description": "Implement comprehensive belief tracking, confidence scoring, momentum analysis, and validation systems from the belief_tracker project into the Claude Code environment creator. This will enhance task management with confidence tracking, assumption validation, momentum phases, pattern detection, and intelligent decision rationale tracking.",
+  "difficulty": 9,
+  "status": "Finished",
+  "created_date": "2025-12-15",
+  "updated_date": "2025-12-15",
+  "completion_date": "2025-12-15",
+  "completion_notes": "All 17 subtasks completed successfully. Belief tracker system fully integrated with task management, including enhanced schema, confidence scoring, assumption validation, momentum tracking, pattern detection, decision logging, risk indicators, project health dashboard, enhanced task overview, and comprehensive test scenarios. Parent task auto-completed per hierarchical task rules.",
+  "dependencies": [],
+  "subtasks": [
+    "61",
+    "62",
+    "63",
+    "64",
+    "65",
+    "66",
+    "67",
+    "68",
+    "69",
+    "70",
+    "71",
+    "72",
+    "73",
+    "74",
+    "75",
+    "76",
+    "77"
+  ],
+  "parent_task": null,
+  "files_affected": [
+    ".claude/tasks/*.json",
+    ".claude/reference/confidence-scoring.md",
+    ".claude/analyzers/momentum_tracker.py",
+    ".claude/insights/pattern-detection.md",
+    ".claude/validation/checkpoint-system.md",
+    ".claude/sop/momentum-tracking.md",
+    ".claude/decisions/template-selection.md",
+    ".claude/commands/smart-bootstrap.md"
+  ],
+  "notes": "Finished (17/17 done) - Successfully integrated comprehensive belief tracking features from belief_tracker project. All components implemented: enhanced task schema, confidence scoring, assumption validation, momentum tracking, pattern detection, decision logging, risk indicators, project health dashboard, and enhanced task overview with full test coverage.",
+  "confidence": 75,
+  "assumptions": [],
+  "validation_status": "pending",
+  "momentum": {
+    "phase": "pending",
+    "velocity": 0,
+    "last_activity": "2025-12-15"
+  },
+  "decision_rationale": ""
+}

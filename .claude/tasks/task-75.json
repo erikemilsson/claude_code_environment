@@ -1,0 +1,33 @@
+{
+  "id": "75",
+  "title": "Create Project Health Dashboard",
+  "description": "Design and implement a dashboard showing project health metrics: task momentum, confidence levels, assumption validation status, risk indicators, and pattern insights. Include ASCII visualizations for terminal display.",
+  "difficulty": 6,
+  "status": "Finished",
+  "created_date": "2025-12-15",
+  "updated_date": "2025-12-15",
+  "completion_date": "2025-12-15",
+  "completion_notes": "Created comprehensive project health dashboard with ASCII visualizations. Implemented dashboard file at .claude/dashboard/project-health.md with sections for momentum phases, confidence metrics, assumption validation, risk indicators, pattern insights, task status, and overall health score. Also created show-dashboard.md command with detailed implementation instructions for real-time metric calculation and display.",
+  "dependencies": [
+    "67",
+    "65",
+    "69",
+    "70"
+  ],
+  "subtasks": [],
+  "parent_task": "60",
+  "files_affected": [
+    ".claude/dashboard/project-health.md",
+    ".claude/commands/show-dashboard.md"
+  ],
+  "notes": "Provides comprehensive project status visibility",
+  "confidence": 75,
+  "assumptions": [],
+  "validation_status": "pending",
+  "momentum": {
+    "phase": "pending",
+    "velocity": 0,
+    "last_activity": "2025-12-15"
+  },
+  "decision_rationale": ""
+}

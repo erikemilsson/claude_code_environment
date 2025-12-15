@@ -1,0 +1,27 @@
+{
+  "id": "64",
+  "title": "Create confidence-scoring.md reference document",
+  "description": "Document confidence calculation methodology for template selection, task completion estimates, and assumption tracking. Include scoring rubric (0-100), factors affecting confidence, and examples.",
+  "difficulty": 4,
+  "status": "Finished",
+  "created_date": "2025-12-15",
+  "updated_date": "2025-12-15",
+  "dependencies": [
+    "62"
+  ],
+  "subtasks": [],
+  "parent_task": "60",
+  "files_affected": [
+    ".claude/reference/confidence-scoring.md"
+  ],
+  "notes": "Completed: Created comprehensive confidence-scoring.md with calculation methodology, score ranges (0-100), adjustment factors, context-specific scoring for templates/tasks/assumptions, practical examples, calibration guidelines, and common pitfalls. Included quick reference card.",
+  "confidence": 75,
+  "assumptions": [],
+  "validation_status": "pending",
+  "momentum": {
+    "phase": "pending",
+    "velocity": 0,
+    "last_activity": "2025-12-15"
+  },
+  "decision_rationale": ""
+}

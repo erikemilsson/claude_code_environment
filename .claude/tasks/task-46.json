@@ -17,5 +17,14 @@
   "files_affected": [
     "components/task-management/schema.json"
   ],
-  "notes": "Extended task schema with 4 optional ATEF fields: validation (pre_gate_passed, post_gate_passed, warnings, gate_results), patterns (pattern_id, applied_at, parameters), checkpoints (array of checkpoint IDs), errors_encountered (array of error IDs). All fields optional for full backward compatibility with existing task files."
+  "notes": "Extended task schema with 4 optional ATEF fields: validation (pre_gate_passed, post_gate_passed, warnings, gate_results), patterns (pattern_id, applied_at, parameters), checkpoints (array of checkpoint IDs), errors_encountered (array of error IDs). All fields optional for full backward compatibility with existing task files.",
+  "confidence": 75,
+  "assumptions": [],
+  "validation_status": "pending",
+  "momentum": {
+    "phase": "pending",
+    "velocity": 0,
+    "last_activity": "2025-12-05"
+  },
+  "decision_rationale": ""
 }

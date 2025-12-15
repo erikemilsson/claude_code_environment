@@ -1,0 +1,26 @@
+{
+  "id": "61",
+  "title": "Extend task JSON schema with belief-tracking fields",
+  "description": "Add confidence, assumptions, validation_status, momentum, and decision_rationale fields to the task JSON schema. Update existing tasks to include these new fields with default values.",
+  "difficulty": 4,
+  "status": "Finished",
+  "created_date": "2025-12-15",
+  "updated_date": "2025-12-15",
+  "dependencies": [],
+  "subtasks": [],
+  "parent_task": "60",
+  "files_affected": [
+    ".claude/tasks/*.json",
+    ".claude/reference/task-schema.md"
+  ],
+  "notes": "Completed: Added belief-tracking fields (confidence, assumptions, validation_status, momentum, decision_rationale) to all 77 task JSON files. Created update_task_schema.py script for bulk updates. Created task-schema.md documentation.",
+  "confidence": 75,
+  "assumptions": [],
+  "validation_status": "pending",
+  "momentum": {
+    "phase": "pending",
+    "velocity": 0,
+    "last_activity": "2025-12-15"
+  },
+  "decision_rationale": ""
+}

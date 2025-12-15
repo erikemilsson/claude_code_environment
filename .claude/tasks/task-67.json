@@ -1,0 +1,28 @@
+{
+  "id": "67",
+  "title": "Create momentum_tracker.py analyzer module",
+  "description": "Port momentum analysis from belief_tracker including phase classification (ignition/building/cruising/coasting/stalling/stopped), velocity calculation, risk detection, and momentum transfer detection between related tasks.",
+  "difficulty": 6,
+  "status": "Finished",
+  "created_date": "2025-12-15",
+  "updated_date": "2025-12-15",
+  "dependencies": [
+    "61"
+  ],
+  "subtasks": [],
+  "parent_task": "60",
+  "files_affected": [
+    ".claude/analyzers/momentum_tracker.py",
+    ".claude/analyzers/__init__.py"
+  ],
+  "notes": "Completed: Created momentum_tracker.py with MomentumTracker class including phase classification, velocity calculation (0-100), risk detection, momentum transfer opportunities, and report generation. Created __init__.py for module initialization. Includes command-line interface for analysis.",
+  "confidence": 75,
+  "assumptions": [],
+  "validation_status": "pending",
+  "momentum": {
+    "phase": "pending",
+    "velocity": 0,
+    "last_activity": "2025-12-15"
+  },
+  "decision_rationale": ""
+}

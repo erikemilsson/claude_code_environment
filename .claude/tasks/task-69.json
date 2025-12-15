@@ -1,0 +1,29 @@
+{
+  "id": "69",
+  "title": "Implement task risk alerts",
+  "description": "Create alert system for tasks showing signs of stalling, blocked by invalidated assumptions, or with critical momentum loss. Include risk levels (low/medium/high/critical) and recommended interventions.",
+  "difficulty": 5,
+  "status": "Finished",
+  "created_date": "2025-12-15",
+  "updated_date": "2025-12-15",
+  "dependencies": [
+    "67",
+    "65"
+  ],
+  "subtasks": [],
+  "parent_task": "60",
+  "files_affected": [
+    ".claude/commands/check-risks.md",
+    ".claude/reference/risk-indicators.md"
+  ],
+  "notes": "Completed: Created comprehensive risk-indicators.md with 7 risk categories (momentum, confidence, assumptions, dependencies, timeline, resources, quality), risk levels, detection patterns, and response protocols. Created check-risks.md command for automated risk scanning with composite scoring and intervention recommendations.",
+  "confidence": 75,
+  "assumptions": [],
+  "validation_status": "pending",
+  "momentum": {
+    "phase": "pending",
+    "velocity": 0,
+    "last_activity": "2025-12-15"
+  },
+  "decision_rationale": ""
+}

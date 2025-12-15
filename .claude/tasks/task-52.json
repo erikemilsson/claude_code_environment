@@ -14,5 +14,14 @@
   "files_affected": [
     ".claude/reference/template-selection-rules.md"
   ],
-  "notes": "Updated .claude/reference/template-selection-rules.md (NOTE: File path appears to be templates-specific, actual implementation would go in smart-bootstrap.md). Detection rules documented in components.json include: high confidence keywords (Microsoft Fabric, Power BI + semantic model, DAX, medallion architecture), medium confidence keywords (Power Query + transformation, semantic layer, dimensional modeling), file extensions (.dax, .pq, .m, .pbix, .bim), and differentiation from power-query template."
+  "notes": "Updated .claude/reference/template-selection-rules.md (NOTE: File path appears to be templates-specific, actual implementation would go in smart-bootstrap.md). Detection rules documented in components.json include: high confidence keywords (Microsoft Fabric, Power BI + semantic model, DAX, medallion architecture), medium confidence keywords (Power Query + transformation, semantic layer, dimensional modeling), file extensions (.dax, .pq, .m, .pbix, .bim), and differentiation from power-query template.",
+  "confidence": 75,
+  "assumptions": [],
+  "validation_status": "pending",
+  "momentum": {
+    "phase": "pending",
+    "velocity": 0,
+    "last_activity": "2025-12-05"
+  },
+  "decision_rationale": ""
 }
