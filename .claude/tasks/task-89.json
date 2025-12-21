@@ -1,0 +1,22 @@
+{
+  "id": "89",
+  "title": "Implement smart path detection in smart-bootstrap.md",
+  "description": "Enhance smart-bootstrap.md to accept relative paths (~/Documents/spec.md, ./spec.md, spec.md) and search common macOS locations when files aren't found. Add a 'recent files' helper that searches ~/Documents/, ~/Downloads/, ~/Desktop/, and iCloud Drive for recent .md files. This reduces friction with complex macOS paths, especially iCloud Drive paths.",
+  "difficulty": 7,
+  "status": "Finished",
+  "created_date": "2025-12-17",
+  "updated_date": "2025-12-17",
+  "completed_date": "2025-12-17",
+  "dependencies": [],
+  "subtasks": ["105", "106", "107", "108", "109"],
+  "parent_task": null,
+  "files_affected": [
+    ".claude/commands/smart-bootstrap.md",
+    ".claude/reference/mac-user-workflow-guide.md"
+  ],
+  "notes": "HIGH IMPACT - Phase 1 Quick Win. AUTO-COMPLETED: All 5 subtasks finished (5/5 done). Addresses 'Path Complexity on macOS' pain point. Implemented comprehensive smart path detection in smart-bootstrap.md: (1) Task 105: Relative path expansion (~/,./,..), (2) Task 106: Fallback search in Documents/Downloads/Desktop, (3) Task 107: iCloud Drive recursive search with download status checks, (4) Task 108: Recent files helper with interactive selection, (5) Task 109: Complete documentation in mac-user-workflow-guide.md. Users can now provide paths in any format and system automatically finds specs across all locations including iCloud. Eliminates need to type complex 80+ character iCloud paths.",
+  "priority": "high",
+  "tags": ["ux-improvement", "phase-1", "quick-win", "macos", "path-handling"],
+  "estimated_hours": 4,
+  "user_benefit": "Users can use simple relative paths or choose from recently modified .md files instead of typing complex absolute paths"
+}

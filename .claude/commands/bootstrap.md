@@ -9,9 +9,154 @@ Automate the creation of a new Claude Code project environment from templates. I
 - `.claude/reference/reusable-template-patterns.md` - Pattern library
 - `legacy-template-reference.md` - Historical reference (optional)
 
+## Pre-Flight Checks (CRITICAL - Run Before Gathering Information)
+
+Before asking ANY questions or gathering information, perform these validation checks:
+
+### 1. Validate Directory Safety
+
+**Check current directory status**:
+```bash
+# Count files and list them
+ls -A
+```
+
+**Directory States**:
+- **Empty**: 0 files → ✓ SAFE TO PROCEED
+- **Safe files only**: Only `.git/`, `.gitignore`, `README.md`, `LICENSE` → ✓ SAFE TO PROCEED
+- **Has .claude/**: Directory already has environment → ❌ STOP - Show error
+- **Has other files**: Project files present → ⚠️ WARN USER
+
+### 2. Check for Conflicting Files
+
+**Scan for existing environment**:
+```bash
+# Check for conflicts
+[ -d ".claude" ] && echo "ERROR: .claude/ directory exists"
+[ -f "CLAUDE.md" ] && echo "WARNING: CLAUDE.md file exists"
+```
+
+**Actions Based on Results**:
+
+**If .claude/ exists**:
+```
+❌ ERROR: Claude Code environment already exists
+
+📍 Where: [current_directory]/.claude/
+
+🔍 Why this happened:
+   This directory already has a Claude Code environment.
+
+   You're either:
+   • Re-bootstrapping an existing project
+   • In the wrong directory
+   • Previous bootstrap failed midway
+
+💡 How to fix:
+
+**Option 1: WRONG DIRECTORY**
+   cd /path/to/your/new/project
+   /bootstrap
+
+**Option 2: REMOVE EXISTING** (⚠️  deletes environment)
+   /undo-bootstrap
+   # Then bootstrap fresh
+   /bootstrap
+
+**Option 3: KEEP EXISTING**
+   The environment already exists! You can:
+   • Start working: /complete-task [id]
+   • View tasks: cat .claude/tasks/task-overview.md
+   • Update context: Edit .claude/context/overview.md
+
+**Option 4: INCOMPLETE BOOTSTRAP**
+   # Check what exists
+   ls -la .claude/
+
+   # If incomplete, remove manually
+   rm -rf .claude
+   /bootstrap
+
+🔗 Related:
+   • Undo bootstrap: /undo-bootstrap
+   • Working with environments: See CLAUDE.md
+```
+→ STOP - Do not proceed with bootstrap
+
+**If CLAUDE.md exists but no .claude/**:
+```
+⚠️  WARNING: CLAUDE.md file exists without .claude/ directory
+
+📍 Where: [current_directory]/CLAUDE.md
+
+🔍 Why this happened:
+   There's a CLAUDE.md file but no .claude/ directory.
+
+   Possible reasons:
+   • Partial bootstrap that failed
+   • Manual file creation
+   • .claude/ was deleted but CLAUDE.md remained
+   • Different project using CLAUDE.md
+
+💡 What happens if you proceed:
+   Bootstrap will create .claude/ directory alongside existing CLAUDE.md.
+
+   Your options:
+   A) Continue - Bootstrap will work around existing file
+   B) Remove CLAUDE.md first - Start completely fresh
+   C) Back up CLAUDE.md - mv CLAUDE.md CLAUDE.md.old
+   D) Cancel - Bootstrap in different directory
+
+Proceed with bootstrap? This will create .claude/ directory. [y/N]
+```
+→ Get user confirmation before proceeding
+
+**If other files present (no .claude/)**:
+```
+⚠️  NOTICE: Current directory is not empty
+
+Found existing files:
+  [list first 5-10 files]
+  [and X more...]
+
+Bootstrap will create:
+  • CLAUDE.md (if not present)
+  • .claude/ directory with environment files
+
+Existing files will NOT be modified or deleted.
+
+Is this the correct directory for bootstrap? [Y/n]
+```
+→ Get user confirmation before proceeding
+
+**If directory is empty or only safe files**:
+```
+✓ Directory check passed - Safe to proceed
+```
+→ Continue to Step 1
+
+### 3. Present Pre-Flight Summary
+
+**Show quick summary before questions**:
+```
+═══════════════════════════════════════════════════════════
+BOOTSTRAP PRE-FLIGHT CHECK
+═══════════════════════════════════════════════════════════
+
+DIRECTORY: [current directory path]
+  Status: [Empty | Has safe files | Has project files]
+  Conflicts: None ✓
+
+Ready to configure new Claude Code environment.
+
+This will ask ~5-8 questions (takes 2-3 minutes).
+
+═══════════════════════════════════════════════════════════
+```
+
 ## Process
 
-### Step 1: Gather Project Information
+### Step 1: Gather Project Information (After Pre-Flight Success)
 
 Ask user the following questions:
 
@@ -692,18 +837,45 @@ Configuration:
 [If Phase 0:] - Phase 0: Enabled
 [If custom files:] - Custom Components: [list]
 
-Next Steps:
-[If Phase 0:]
-1. Read .claude/tasks/_phase-0-status.md
-2. Run @.claude/commands/initialize-project.md to begin Phase 0
-3. Follow Phase 0 workflow through all 4 steps
-4. Begin implementation once Phase 0 complete
+📋 IMMEDIATE NEXT STEP (do this first):
+   → Read: .claude/context/overview.md
 
-[Else:]
-1. Read .claude/context/overview.md to understand project
-2. Create initial tasks based on project scope
-3. Run @.claude/commands/sync-tasks.md to update overview
-4. Use @.claude/commands/complete-task.md to start first task
+⏰ THEN:
+[If Phase 0 enabled:]
+   □ Phase 0: Resolve Ambiguities (1-2 hours)
+     → Run: /initialize-project
+     Why: [Reason - e.g., "Detected regulatory requirements + ambiguous calculations"]
+     Expected: 4-step workflow to clarify all variables and assumptions
+
+     Phase 0 Steps:
+     1. Initialize Project (15-20 min) - Extract ambiguities
+     2. Resolve Ambiguities (30-60 min) - Interactive decisions
+     3. Generate Artifacts (15-20 min) - Create glossary & contracts
+     4. Extract Queries (10-15 min) - Set up for implementation
+
+     After Phase 0: Begin implementation with /complete-task [first-task-id]
+
+[If initial tasks created:]
+   □ Review Generated Tasks (5 minutes)
+     → Open: .claude/tasks/task-overview.md
+     → [N] tasks created from bootstrap
+     → Start work: /complete-task [suggested-first-task-id]
+
+     Suggested first task: [ID] - [Title] (difficulty: [N], est. [X]h)
+     [Reason - e.g., "Foundation task, blocks others", "High priority"]
+
+[If no tasks created:]
+   □ Create Your First Tasks (10 minutes)
+     → Review project scope in overview.md
+     → Create task JSON files in .claude/tasks/
+     → Run: /sync-tasks to update overview
+     → Then: /complete-task [id] to start work
+
+[If Life Projects or simple template:]
+   □ Get Started (5 minutes)
+     → Review goals in overview.md
+     → Create 2-3 initial tasks for quick wins
+     → Or jump in: /complete-task to start first task
 
 Quick Reference:
 - Task management: .claude/tasks/task-overview.md

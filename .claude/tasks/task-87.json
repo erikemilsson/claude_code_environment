@@ -1,0 +1,34 @@
+{
+  "id": "87",
+  "title": "Clarify Purpose of Analysis and Insights Directories",
+  "description": "The .claude/analysis/ and .claude/insights/ directories contain some files but their purpose and usage patterns are unclear. Need to document their role or consolidate/remove if redundant.",
+  "difficulty": 3,
+  "status": "Finished",
+  "created_date": "2025-12-17",
+  "updated_date": "2025-12-17",
+  "completion_date": "2025-12-17",
+  "completion_notes": "Created comprehensive README.md files in both .claude/analysis/ and .claude/insights/ directories clarifying their distinct purposes. Analysis directory contains meta-analytical reports and audits of the repository itself (instruction audits, performance reports) - answers 'how well is the system working?'. Insights directory contains learned patterns and actionable intelligence extracted from analysis data (pattern catalogs, success recipes) - answers 'what should we do?'. Key distinction: Analysis = data collection/reports, Insights = pattern recognition/actionable learnings, Reference = how-to guides, Context = project understanding. Both serve template developers for continuous improvement cycle.",
+  "dependencies": [],
+  "subtasks": [],
+  "parent_task": null,
+  "files_affected": [
+    ".claude/analysis/",
+    ".claude/insights/",
+    ".claude/README.md",
+    "CLAUDE.md"
+  ],
+  "notes": "Directories exist with some content but no clear documentation on when to use them vs other directories like reference/ or context/.",
+  "confidence": 85,
+  "assumptions": [
+    "May be experimental features",
+    "Could be project-specific additions",
+    "Might overlap with other directories"
+  ],
+  "validation_status": "validated",
+  "momentum": {
+    "phase": "cruising",
+    "velocity": 80,
+    "last_activity": "2025-12-17"
+  },
+  "decision_rationale": "Unclear directory purposes create confusion about where to put different types of documentation."
+}

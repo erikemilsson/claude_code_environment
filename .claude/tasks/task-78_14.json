@@ -1,0 +1,27 @@
+{
+  "id": "78_14",
+  "title": "Create decision-making framework reference",
+  "description": "Document explicit decision-making patterns for Claude. Create decision tree templates for common scenarios: template selection, task breakdown strategy, tool choice (Claude vs Gemini), difficulty scoring. Include confidence thresholds (>90% auto-proceed, 70-90% minimal questions, <70% comprehensive clarification).",
+  "difficulty": 4,
+  "status": "Finished",
+  "created_date": "2025-12-16",
+  "updated_date": "2025-12-16",
+  "completion_date": "2025-12-16",
+  "completion_notes": "Created comprehensive decision-making framework with 4 main decision trees: template selection, task breakdown, tool choice (Claude vs Gemini), and difficulty scoring. Included confidence calculation framework, 4-level escalation patterns, decision caching structure, and implementation examples. Clear thresholds: >90% auto-proceed, 70-90% minimal confirmation, <70% targeted questions.",
+  "dependencies": ["78_7"],
+  "subtasks": [],
+  "parent_task": "78",
+  "files_affected": [
+    ".claude/reference/decision-framework.md"
+  ],
+  "notes": "MEDIUM PRIORITY - Reduces unnecessary user interactions. Include clear thresholds and escalation paths.",
+  "confidence": 0,
+  "assumptions": [],
+  "validation_status": "pending",
+  "momentum": {
+    "phase": "pending",
+    "velocity": 0,
+    "last_activity": "2025-12-16"
+  },
+  "decision_rationale": ""
+}

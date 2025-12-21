@@ -1,0 +1,27 @@
+{
+  "id": "110_4",
+  "title": "Create file conflict detector",
+  "description": "Implement scripts/conflict-detector.py to detect overlapping files_affected fields across parallel tasks. Classify conflicts as BLOCKING (write-write) or WARNING (read-write). Include pattern matching for file globs and directory overlap detection.",
+  "difficulty": 6,
+  "status": "Finished",
+  "created_date": "2025-12-21",
+  "updated_date": "2025-12-21",
+  "completion_date": "2025-12-21",
+  "completion_notes": "Implemented file conflict detector with pattern matching, operation analysis, conflict classification (BLOCKING/WARNING/INFO), directory overlap detection, and execution order suggestions",
+  "dependencies": ["110_2"],
+  "subtasks": [],
+  "parent_task": "110",
+  "files_affected": [
+    "scripts/conflict-detector.py"
+  ],
+  "notes": "Prevents file conflicts between parallel tasks",
+  "confidence": 85,
+  "assumptions": [],
+  "validation_status": "pending",
+  "momentum": {
+    "phase": "pending",
+    "velocity": 0,
+    "last_activity": "2025-12-21"
+  },
+  "decision_rationale": ""
+}

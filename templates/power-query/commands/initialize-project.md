@@ -8,6 +8,25 @@ Analyze calculation method documents and extract all variables, formulas, and lo
 - Calculation documents placed in `calculation-docs/`
 - Excel files placed in `excel-files/`
 
+## Phase 0 Progress
+
+**BEFORE STARTING**: Display current progress from `.claude/tasks/_phase-0-status.md`
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PHASE 0 PROGRESS - Step 1 of 4
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Step 1: Initialize Project        🔄  (Est. 15-20 min)
+Step 2: Resolve Ambiguities       ⬜  (Est. 30-60 min)
+Step 3: Generate Artifacts        ⬜  (Est. 15-20 min)
+Step 4: Extract Queries           ⬜  (Est. 10-15 min)
+
+Starting Step 1: Initialize Project
+Estimated time: 15-20 minutes
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
 ## Process
 
 ### 1. Read Project Context
@@ -102,39 +121,42 @@ C) [Interpretation option 3, if applicable]
 ...
 ```
 
-### 5. Generate Phase 0 Status
-Create `.claude/tasks/_phase-0-status.md`:
+### 5. Update Phase 0 Status
+Update `.claude/tasks/_phase-0-status.md`:
 
-```markdown
-# Phase 0 Initialization Status
-
-**Current Step:** 1 of 4 - Initialize Project ✅
-**Next Step:** 2 of 4 - Resolve Ambiguities
-
-## Progress
-- [x] Initialize Project
-- [ ] Resolve Ambiguities (0 of [N] batches)
-- [ ] Generate Artifacts
-- [ ] Extract Queries
-
-## Statistics
-- Documents analyzed: [Count]
-- Ambiguities found: [Count]
-- Batches to resolve: [Ceil(Count/5)]
-- Estimated resolution time: [Count*2] minutes
-
-## Files Generated
-- `.claude/reference/ambiguity-report.md`
-- `.claude/tasks/_phase-0-status.md`
-```
+- Change Step 1 status from ⬜ to ✅
+- Update "Current Step" to "Step 2: Resolve Ambiguities"
+- Update "Time Elapsed" (estimate 15-20 min)
+- Update Step 1 section:
+  - Status: ✅ Complete
+  - Add completion time
+- Update Step 2 section:
+  - Progress: "0 of [total] ambiguities resolved" (insert actual count)
+- Update progress overview to show:
+  ```
+  Step 1: Initialize Project        ✅  (Completed in ~[X] min)
+  Step 2: Resolve Ambiguities       🔄  (Est. 30-60 min)
+  Step 3: Generate Artifacts        ⬜  (Est. 15-20 min)
+  Step 4: Extract Queries           ⬜  (Est. 10-15 min)
+  ```
+- Update "Last Updated" timestamp
 
 ### 6. Report to User
-Present summary:
+Present summary with updated progress:
 
 ```
-Phase 0 - Step 1 Complete ✅
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ Phase 0 - Step 1 Complete
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Documents Analyzed:
+PROGRESS:
+Step 1: Initialize Project        ✅  (Completed in ~[X] min)
+Step 2: Resolve Ambiguities       🔄  NEXT
+Step 3: Generate Artifacts        ⬜
+Step 4: Extract Queries           ⬜
+
+RESULTS:
+Documents Analyzed: [Count]
 - [List documents]
 
 Ambiguities Found: [Count]
@@ -145,10 +167,15 @@ Ambiguities Found: [Count]
 - Conditional edge cases: [Count]
 - Data quality assumptions: [Count]
 
-Next Step: Run @.claude/commands/resolve-ambiguities.md
+NEXT STEP:
+Run /resolve-ambiguities
 This will present the first batch of up to 5 ambiguities for resolution.
+Estimated time to resolve all: [Count*2] minutes
 
-Estimated time to resolve all ambiguities: [Count*2] minutes
+FILES CREATED:
+- .claude/reference/ambiguity-report.md
+- .claude/tasks/_phase-0-status.md (updated)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 ## Output Files

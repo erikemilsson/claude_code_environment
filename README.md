@@ -2,6 +2,49 @@
 
 **Version-controlled templates for bootstrapping Claude Code projects with structured task management and reusable workflows.**
 
+## 5-Minute Quickstart
+
+**Get from zero to working environment in 5 minutes:**
+
+- [ ] **Step 1** (1 min): Clone this repo locally
+  ```bash
+  git clone https://github.com/yourusername/claude_code_environment.git
+  ```
+
+- [ ] **Step 2** (1 min): Write project spec in Claude Desktop → export as .md file
+  - Describe what you're building
+  - Include key technologies (Power BI, Python, etc.)
+  - List main requirements/deliverables
+  - See `examples/specifications/templates/` for examples
+
+- [ ] **Step 3** (30 sec): Create new project directory
+  ```bash
+  mkdir ~/Projects/my-new-project
+  cd ~/Projects/my-new-project
+  ```
+
+- [ ] **Step 4** (1 min): Open in VS Code with Claude Code, say:
+  ```
+  "Create the environment from claude_code_environment repo using spec: [path/to/spec.md]"
+  ```
+
+- [ ] **Step 5** (1-2 min): Verify environment created
+  - Check `.claude/` directory exists with commands, context, tasks folders
+  - Run `/sync-tasks` to see task overview
+  - Start first task: `/complete-task 1`
+
+**Total time: ~5 minutes**
+
+**New to this system?** Try the interactive tutorial first:
+```
+/tutorial-bootstrap
+```
+Gets you familiar with the process using a safe example before using real projects.
+
+**Video walkthrough:** [Coming soon - placeholder for future screencast]
+
+---
+
 ## Quick Start
 
 **Simplified workflow - just one command:**
@@ -63,7 +106,7 @@ At initialization, Claude Code:
 | **life-projects** | Home improvement, event planning, personal goals | Budget management, timeline planning, decision logs, vendor evaluation |
 | **power-query** | Excel Power Query, regulatory calculations | Phase 0 ambiguity resolution, 5-dimension difficulty scoring, M-code standards, Excel integration |
 
-**Detailed docs:** See `templates/[name]/README.md` or `template_overview10.md`
+**Detailed docs:** See `templates/[name]/README.md` or `legacy-template-reference.md`
 
 ## Workflow
 

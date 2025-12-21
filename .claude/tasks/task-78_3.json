@@ -1,0 +1,25 @@
+{
+  "id": "78_3",
+  "title": "Update CLAUDE.md with explicit action directives",
+  "description": "Rewrite CLAUDE.md sections to use explicit, imperative instructions. Replace vague guidance with specific action directives. Add 'Always/Never' sections for critical workflows. Convert passive voice to active commands. Make all instructions clear and unambiguous.",
+  "difficulty": 4,
+  "status": "Finished",
+  "created_date": "2025-12-16",
+  "updated_date": "2025-12-16",
+  "dependencies": ["78_1"],
+  "subtasks": [],
+  "parent_task": "78",
+  "files_affected": [
+    "CLAUDE.md"
+  ],
+  "notes": "HIGH PRIORITY - Core document update. Add sections for Implementation Preferences, Long-Horizon Task Management, and explicit Tool Usage Patterns.",
+  "confidence": 0,
+  "assumptions": [],
+  "validation_status": "pending",
+  "momentum": {
+    "phase": "pending",
+    "velocity": 0,
+    "last_activity": "2025-12-16"
+  },
+  "decision_rationale": ""
+}

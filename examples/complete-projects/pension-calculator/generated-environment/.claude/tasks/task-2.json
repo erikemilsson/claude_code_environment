@@ -1,0 +1,29 @@
+{
+  "id": "2",
+  "title": "Implement core pension calculation M function",
+  "description": "Create fnCalculatePension function with parameters for contribution history, years of service, salary progression. Handle compound calculations and various pension formulas.",
+  "difficulty": {
+    "overall": 8,
+    "m_complexity": 8,
+    "dax_complexity": 0,
+    "data_volume": 3,
+    "performance": 6,
+    "integration": 2,
+    "rationale": "Complex iterative calculations in M, needs breakdown into subtasks"
+  },
+  "status": "Pending",
+  "created_date": "2025-12-18",
+  "updated_date": "2025-12-18",
+  "dependencies": ["1"],
+  "subtasks": [],
+  "parent_task": null,
+  "phase": 2,
+  "files_affected": [
+    "Queries/Functions/fnCalculatePension.pq"
+  ],
+  "notes": "High difficulty due to iterative calculations - should be broken down",
+  "priority": "high",
+  "tags": ["phase-2", "calculation-engine", "m-function", "high-complexity"],
+  "estimated_hours": 10,
+  "breakdown_suggested": true
+}

@@ -16,6 +16,160 @@ Each template receives a **confidence score (0-100)** based on keyword matches a
 
 **Tie-breaking**: If multiple templates score within 10 points, ask user to choose.
 
+## Educational Feedback (Enhanced Reporting)
+
+When reporting template detection results, use **educational feedback mode** to help users understand the pattern matching system and learn to write better specifications.
+
+### Visual Confidence Bars
+
+Show template scores as visual bar charts for quick comparison:
+
+```
+Research Template:    ████████████████████ 92% ✓ SELECTED
+Base Template:        ████████░░░░░░░░░░░░ 45%
+Power Query:          ████░░░░░░░░░░░░░░░░ 20%
+Life Projects:        ██░░░░░░░░░░░░░░░░░░ 10%
+Documentation:        █░░░░░░░░░░░░░░░░░░░ 5%
+```
+
+**Format**: 20 blocks total, filled proportionally to percentage
+- Filled blocks: █ (represents achieved confidence)
+- Empty blocks: ░ (represents remaining confidence)
+- Winner marker: ✓ SELECTED
+
+### Scoring Breakdown (Why This Template Won)
+
+For the winning template, show:
+1. **Each keyword match** with point value
+2. **Where found** in spec (exact quote or section)
+3. **Why it matters** (educational explanation)
+
+**Example**:
+```
+✓ "research question" (HIGH signal, +30pts)
+  Found in: "Research question: How does remote work..."
+  Why it matters: Strong academic research indicator
+
+✓ "hypothesis" (HIGH signal, +30pts)
+  Found in: "Primary hypothesis: Remote workers will show..."
+  Why it matters: Confirms scientific methodology
+```
+
+### Missing Keyword Education
+
+Show what keywords were NOT found but would have changed the outcome:
+
+```
+× "Power Query" (not found)
+  Would have added: +30pts to Power Query template
+  How to trigger: Mention "Power Query", "M language", or "Excel queries"
+
+× "personal project" (not found)
+  Would have added: +30pts to Life Projects template
+  How to trigger: Use "personal goal", "fitness", "learning journey"
+```
+
+### Other Templates Comparison
+
+For each non-selected template, explain:
+- What points it scored and why
+- What it was missing (specific keywords)
+- Why it wasn't selected
+- **When to use** this template (educational)
+
+**Example**:
+```
+Power Query Template (20%):
+  • "Excel" mentioned once in passing (+5pts)
+  • "data" keyword (+5pts × 2)
+  • Missing: No "Power Query", "M language", "regulatory" keywords
+  • Why not selected: No specialized calculation/Excel focus
+  • When to use: Excel + regulatory calculations + Power Query
+```
+
+### Spec Quality Feedback
+
+Provide feedback on how well-written the spec was for detection:
+
+**For high-confidence specs (90%+)**:
+```
+Your spec was EXCELLENT for detection! Here's why:
+
+✓ Clear domain terminology ("research question", "hypothesis")
+✓ Specific methodology section
+✓ Domain-specific workflows mentioned (literature review)
+✓ Technology stack clear (statistical tools)
+```
+
+**For medium-confidence specs (50-89%)**:
+```
+Your spec had some good signals but could be improved:
+
+✓ Technology mentioned (Python, SQL)
+✗ Domain unclear - research? engineering? general?
+✗ No workflow indicators
+
+To improve:
+• Add domain-specific terms (hypothesis, regulatory, personal goal)
+• Mention specific workflows (Phase 0, literature review, etc.)
+• Include more context about project type
+```
+
+**For low-confidence specs (<50%)**:
+```
+Your spec needs more detail for automatic detection:
+
+✗ Very generic terms ("project", "data", "analysis")
+✗ No technology stack mentioned
+✗ No clear domain indicators
+
+To improve:
+• Be specific about technologies (Excel, Python, Power Query)
+• Use domain terminology (research question, regulatory, personal)
+• Mention key workflows or methodologies
+• Include project type in description
+```
+
+### Tips for Better Specs
+
+Always include actionable tips for future specifications:
+
+```
+Tips for future specs:
+• Include domain-specific terms early in description
+• Mention key technologies explicitly (Python, R, Excel, etc.)
+• Use standard terminology for your field
+• Include workflow indicators (Phase 0, research methodology, etc.)
+
+Confidence breakdown:
+90-100% = Strong signals, obvious choice ✓ (Your spec: 92%)
+70-89%  = Good signals, minor clarification may help
+50-69%  = Mixed signals, add more domain keywords
+<50%    = Vague spec, needs substantial clarification
+```
+
+### Optional Flags for User Control
+
+**--explain flag** (maximum detail):
+- Full scoring breakdown for all templates
+- Every keyword match with line numbers in spec
+- Alternative interpretations considered
+- Assumption validation process
+- Pattern matching rule references
+- Decision rationale with full context
+
+**--quiet flag** (minimal output):
+- Template selected + confidence %
+- Top 3 reasons why
+- Immediate next step only
+
+**Default mode** (educational, balanced):
+- Visual confidence bars
+- Winning template explanation
+- Other templates summary
+- Spec quality feedback
+- Tips for improvement
+
 ## Template Detection Patterns
 
 ### Power Query Template

@@ -1,0 +1,35 @@
+{
+  "id": "81",
+  "title": "Consolidate and Document Task Schema Versions",
+  "description": "Both task-schema.md and task-schema-v2.md exist in .claude/reference/. Need to clarify which is current, document the differences, and either consolidate into one or clearly mark versions.",
+  "difficulty": 4,
+  "status": "Finished",
+  "created_date": "2025-12-17",
+  "updated_date": "2025-12-17",
+  "completion_date": "2025-12-17",
+  "completion_notes": "Created task-schema-consolidated.md combining all three schema documents (task-schema.md, task-schema-v2.md, enhanced-task-schema.md). The consolidated schema uses flat belief tracking structure (currently used by all tasks) with optional progress tracking for complex tasks. Created SCHEMA-MIGRATION-GUIDE.md documenting the consolidation, migration path, and future schema evolution process. Added deprecation notices to all three old schema files. No migration needed for existing tasks as they already use the correct flat structure.",
+  "dependencies": [],
+  "subtasks": [],
+  "parent_task": null,
+  "files_affected": [
+    ".claude/reference/task-schema.md",
+    ".claude/reference/task-schema-v2.md",
+    ".claude/reference/enhanced-task-schema.md",
+    "components/task-management/schema.json",
+    "CLAUDE.md"
+  ],
+  "notes": "Multiple schema files causing confusion. Need to establish single source of truth or clear versioning strategy.",
+  "confidence": 90,
+  "assumptions": [
+    "v2 is likely the current version",
+    "Original schema kept for backwards compatibility",
+    "enhanced-task-schema.md might be another variant"
+  ],
+  "validation_status": "validated",
+  "momentum": {
+    "phase": "cruising",
+    "velocity": 80,
+    "last_activity": "2025-12-17"
+  },
+  "decision_rationale": "Multiple schema versions without clear documentation creates ambiguity about which to use."
+}

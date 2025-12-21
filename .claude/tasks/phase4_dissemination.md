@@ -175,17 +175,12 @@ Synthesize findings, create deliverables, and disseminate results to scientific 
 
 ## Commands to Run
 ```bash
-# Generate publication draft
-/generate_reports scientific
-
-# Create technical report
-/generate_reports technical
-
-# Prepare dataset
-/generate_reports dataset
-
-# Update dashboards
-/generate_reports dashboard
+# Note: The /generate_reports command has been deprecated
+# These tasks should be performed manually or with updated commands:
+# - Generate publication draft (scientific report)
+# - Create technical report
+# - Prepare dataset for publication
+# - Update dashboards with results
 ```
 
 ## Time Estimate

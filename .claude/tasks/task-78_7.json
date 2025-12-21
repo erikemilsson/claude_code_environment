@@ -1,0 +1,25 @@
+{
+  "id": "78_7",
+  "title": "Create model knowledge cutoff reference",
+  "description": "Document Claude 4 (Opus 4.1 and Sonnet 4.5) knowledge cutoff and capabilities. Create reference file listing what Claude knows natively vs what requires web search/grounding. Include guidelines for when to use Gemini MCP for current information. Add model self-identification strings.",
+  "difficulty": 3,
+  "status": "Finished",
+  "created_date": "2025-12-16",
+  "updated_date": "2025-12-16",
+  "dependencies": [],
+  "subtasks": [],
+  "parent_task": "78",
+  "files_affected": [
+    ".claude/reference/model-knowledge.md"
+  ],
+  "notes": "HIGH PRIORITY - Simple but important reference. Include exact model IDs and API strings.",
+  "confidence": 0,
+  "assumptions": [],
+  "validation_status": "pending",
+  "momentum": {
+    "phase": "pending",
+    "velocity": 0,
+    "last_activity": "2025-12-16"
+  },
+  "decision_rationale": ""
+}

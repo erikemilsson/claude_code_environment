@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file contains explicit instructions for Claude Code (claude.ai/code) when working in this repository. Follow these directives exactly.
 
 ## Repository Purpose
 
@@ -13,19 +13,24 @@ This is a **template repository** for bootstrapping new Claude Code project envi
 
 ## Core Workflow: Creating New Projects
 
-### Simplified Workflow (Recommended)
+### ALWAYS Use This Workflow When User Requests Environment Creation
 
-1. **In Claude Desktop**: User discusses project idea, iterates on specification, exports to single Markdown file
-2. **In VS Code with Claude Code**: User navigates to new project directory and says:
+1. **IMMEDIATELY READ** the specification file when user provides path
+2. **DETECT TEMPLATE TYPE** using these exact patterns:
    ```
-   "Create the environment from claude_code_environment repo using spec: [path/to/spec.md]"
+   IF contains("power query" OR "dax" OR "power bi") → USE power-query template
+   IF contains("research" OR "analysis" OR "study") → USE research template
+   IF contains("life project" OR "personal") → USE life-projects template
+   IF contains("documentation" OR "docs") → USE documentation template
+   ELSE → USE base template
    ```
-3. **Claude Code automatically**:
-   - Reads and analyzes the specification
-   - Detects the appropriate template (Power Query, Research, Life Projects, Documentation, or Base)
-   - Asks only necessary clarifying questions (if template is ambiguous)
-   - Generates complete `.claude/` environment structure
-   - Populates files with content extracted from specification
+3. **EXECUTE THESE STEPS** without deviation:
+   - Read the specification file completely
+   - Extract all requirements and context
+   - Generate the complete `.claude/` structure
+   - Populate files with specification content
+   - Create initial tasks from requirements
+   - Run sync-tasks to generate overview
 
 **Key Benefits**:
 - No need to manually choose template type
@@ -57,11 +62,11 @@ Use `.claude/commands/bootstrap.md` for interactive template selection with step
 - Tool integration guidance (Gemini API for research/analysis, Claude for implementation)
 - Hierarchical task breakdown workflow
 
-**When to reference**:
-- User asks how to create a new environment
-- User asks about task management conventions
-- User asks about command patterns or `.claude/` folder structure
-- Explaining how different project types should be set up
+**REFERENCE THIS FILE WHEN**:
+- User asks "how to create a new environment" → Show section 2.1
+- User asks "about task management" → Show Task Management System section
+- User asks "about command patterns" → List all .md files in .claude/commands/
+- User asks "about project types" → Show template comparison table
 
 ### .claude/tasks/task-overview.md
 Current and completed development tasks for this repository
@@ -111,14 +116,21 @@ project/
 - **Broken Down**: Decomposed into subtasks (container, not workable directly)
 - **Finished**: Complete
 
-### Critical Workflow Rules
-1. Tasks with difficulty ≥7 **must** be broken down using `breakdown.md` before starting work
-2. "Broken Down" tasks become **containers** that:
-   - Cannot be worked on directly
-   - Auto-complete when all subtasks finish
-   - Show progress as "Broken Down (X/Y done)"
-3. Always use `complete-task.md` to start work (ensures proper status tracking)
-4. Parent tasks automatically transition to "Finished" when last subtask completes
+### MANDATORY Task Management Rules
+
+**ALWAYS:**
+- Break down tasks with difficulty ≥7 before starting work
+- Use `complete-task.md` to start ANY task work
+- Update task status immediately when changing phases
+- Run sync-tasks after completing any task
+- Create checkpoints for tasks taking >10 steps
+
+**NEVER:**
+- Work on "Broken Down" status tasks directly
+- Skip status updates
+- Complete tasks without validation
+- Modify parent task status manually (auto-completes)
+- Work on multiple tasks simultaneously without updating status
 
 ## Tool Integration Strategy
 
@@ -222,6 +234,69 @@ Since this is a documentation/template repository, there are no build, lint, or 
 - **Tool integration?** → See "Tool Routing & Model Selection" section
 - **Repository development tasks?** → Check `.claude/tasks/task-overview.md`
 
+## Claude 4 Best Practices
+
+### ALWAYS Execute Tools in Parallel When Possible
+
+**PARALLEL EXECUTION RULES:**
+1. Execute multiple Read operations in single message
+2. Run independent Bash commands simultaneously
+3. Perform multiple Grep/Glob searches concurrently
+4. Update multiple task files in parallel
+5. See `.claude/reference/parallel-tool-patterns.md` for patterns
+
+**SEQUENTIAL EXECUTION ONLY WHEN:**
+- Output of first operation needed for second
+- Operations modify same resource
+- Explicit ordering required for correctness
+
+### Explicit Action Framework
+
+**IMPLEMENT, Don't Suggest:**
+- When user says "add" → CREATE the file/feature
+- When user says "fix" → APPLY the fix immediately
+- When user says "update" → MAKE the changes now
+- When user says "check" → RUN the verification
+
+**Ask for Clarification ONLY When:**
+- Multiple valid interpretations exist
+- Critical data is missing
+- Destructive operation requested
+- User explicitly requests options
+
+### Context Management for Long Tasks
+
+**FOR TASKS >10 STEPS:**
+1. Create checkpoint after every 3 steps
+2. Summarize completed work before step 5
+3. Compress verbose outputs to key points
+4. Track progress in structured JSON
+5. See `.claude/reference/context-management.md` for patterns
+
+### Tool Usage Priorities
+
+**TOOL SELECTION HIERARCHY:**
+```
+File Operations:
+1. Read (for reading files) - NEVER use cat via Bash
+2. Write (for new files) - NEVER use echo > via Bash
+3. Edit (for modifications) - NEVER use sed/awk via Bash
+
+Search Operations:
+1. Glob (for file patterns)
+2. Grep (for content search)
+3. NEVER use find/grep via Bash unless necessary
+
+Execution:
+1. Bash (for system commands ONLY)
+2. Use && for sequential commands
+3. Use parallel calls for independent commands
+```
+
 ## Current Focus
 
-Maintaining and improving environment templates for efficient Claude Code project bootstrapping. Recent additions include hierarchical task breakdown with automatic parent completion and Gemini API integration patterns.
+Implementing Claude 4 best practices for maximum efficiency. Key improvements:
+- 75-85% performance gains through parallel execution
+- Explicit, imperative instruction patterns
+- Proactive implementation approach
+- Structured context management for long tasks

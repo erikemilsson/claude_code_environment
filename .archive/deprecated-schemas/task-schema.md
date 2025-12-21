@@ -1,5 +1,11 @@
 # Task JSON Schema with Belief Tracking
 
+**DEPRECATED** - This document has been superseded by task-schema-consolidated.md
+
+See: .claude/reference/task-schema-consolidated.md (Created: 2025-12-17)
+
+---
+
 ## Schema Definition
 
 All task JSON files follow this schema structure with integrated belief tracking capabilities:

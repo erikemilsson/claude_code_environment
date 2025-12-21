@@ -1,0 +1,22 @@
+{
+  "id": "95",
+  "title": "Enhance template detection reporting with educational feedback",
+  "description": "Improve the template detection output to be more educational. Show confidence breakdown as a visual bar chart, explain why each template scored points, show how close other templates were, and provide tips for writing better specs. Add an optional --explain flag for detailed breakdowns. This helps users learn the pattern matching system.",
+  "difficulty": 5,
+  "status": "Finished",
+  "created_date": "2025-12-17",
+  "updated_date": "2025-12-17",
+  "completed_date": "2025-12-17",
+  "dependencies": [],
+  "subtasks": [],
+  "parent_task": null,
+  "files_affected": [
+    ".claude/commands/smart-bootstrap.md",
+    ".claude/reference/template-selection-rules.md"
+  ],
+  "notes": "MEDIUM IMPACT - Phase 2 Onboarding/Education. Addresses 'Template Detection Transparency' pain point. Current reporting shows reasoning but isn't educational. New version teaches users how detection works.\n\nCOMPLETED: Enhanced template detection reporting with comprehensive educational feedback:\n\n1. Visual Confidence Bars:\n   - 20-block bar charts for all templates\n   - Proportional fill based on confidence %\n   - Winner marker (✓ SELECTED)\n   - Quick visual comparison\n\n2. Scoring Breakdown (Why This Template Won):\n   - Each keyword match with point value (HIGH/MEDIUM/LOW signals)\n   - Exact quotes from spec showing where found\n   - Educational 'Why it matters' for each match\n   - Total score calculation shown\n\n3. Missing Keyword Education:\n   - Show what wasn't found but would have changed outcome\n   - Point values for missing keywords\n   - How to trigger each template with examples\n\n4. Other Templates Comparison:\n   - Detailed breakdown for each non-selected template\n   - What points it scored and why\n   - What keywords were missing\n   - 'When to use' guidance (educational)\n\n5. Spec Quality Feedback:\n   - Tiered feedback based on confidence (90%+, 50-89%, <50%)\n   - Specific praise for high-confidence specs\n   - Actionable improvements for medium/low confidence\n   - Examples of what to add\n\n6. Tips for Better Specs:\n   - Actionable advice for future specifications\n   - Domain-specific terminology examples\n   - Technology stack guidance\n   - Confidence breakdown scale with user's position marked\n\n7. Optional Flags:\n   - --explain (maximum detail with line numbers)\n   - --quiet (minimal output for experienced users)\n   - Default mode (educational, balanced)\n\nFiles updated:\n- .claude/commands/smart-bootstrap.md (added educational reporting section after Step 3)\n- .claude/reference/template-selection-rules.md (added comprehensive Educational Feedback section)\n\nThis transforms template detection from a black box into a learning experience that helps users write better specs over time.",
+  "priority": "medium",
+  "tags": ["ux-improvement", "phase-2", "transparency", "education"],
+  "estimated_hours": 3,
+  "user_benefit": "Users understand why templates were selected and learn how to write better specs for future projects"
+}

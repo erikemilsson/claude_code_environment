@@ -1,0 +1,35 @@
+{
+  "id": "83",
+  "title": "Document and Integrate Agent System",
+  "description": "The agent system has only 3 agents defined but extensive agent-config.json. The integration between agents and commands is unclear. Need to document how agents work, their purpose, and complete the implementation or remove if unused.",
+  "difficulty": 5,
+  "status": "Finished",
+  "created_date": "2025-12-17",
+  "updated_date": "2025-12-17",
+  "completion_date": "2025-12-17",
+  "completion_notes": "Created comprehensive agent-system-integration.md documenting the 3-agent architecture (Environment Architect, Task Orchestrator, Execution Guardian). The document clarifies that the agent system is experimental/aspirational - fully documented with supporting scripts from Task 79, but not yet integrated with Claude Code's automatic invocation system. Documented current status (what exists vs missing), implementation roadmap, design decisions, and how to use the agent mental model even without full implementation. The agent system provides excellent separation of concerns but requires additional integration work to become fully functional.",
+  "dependencies": [],
+  "subtasks": [],
+  "parent_task": null,
+  "files_affected": [
+    ".claude/agents/",
+    ".claude/agent-config.json",
+    ".claude/agent-docs/",
+    ".claude/commands/use-agent.md",
+    ".claude/agents/README.md"
+  ],
+  "notes": "Agent system appears partially implemented. Needs documentation on usage patterns, integration points, and either completion or removal.",
+  "confidence": 70,
+  "assumptions": [
+    "Agent system is experimental",
+    "May be related to Claude 4 features",
+    "Could be valuable if properly documented"
+  ],
+  "validation_status": "validated",
+  "momentum": {
+    "phase": "cruising",
+    "velocity": 70,
+    "last_activity": "2025-12-17"
+  },
+  "decision_rationale": "Undocumented features create confusion and maintenance burden. Either complete or remove."
+}

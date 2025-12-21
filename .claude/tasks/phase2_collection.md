@@ -104,8 +104,8 @@ python scripts/import_forms.py
 # Check PESTLE distribution
 python scripts/analyze_coverage.py
 
-# Generate factor list
-/run_analysis factor_extraction
+# Note: The /run_analysis command has been deprecated
+# Factor extraction should be performed manually
 ```
 
 ## Time Estimate

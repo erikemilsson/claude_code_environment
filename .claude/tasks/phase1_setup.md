@@ -81,9 +81,9 @@ None - this phase must complete before others begin
 
 ## Commands to Run
 ```bash
-# After setup complete
-/setup_database
-/create_forms
+# Note: The following commands have been deprecated:
+# - /setup_database (perform database setup manually)
+# - /create_forms (create forms using appropriate tools)
 ```
 
 ## Time Estimate

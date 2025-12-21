@@ -1,0 +1,22 @@
+{
+  "id": "94_2",
+  "title": "Create pension-calculator complete example",
+  "description": "Create examples/complete-projects/pension-calculator/ with original specification (Power Query project), generated environment structure, and explanatory README. This shows Power Query template with Phase 0 workflow.",
+  "difficulty": 4,
+  "status": "Finished",
+  "created_date": "2025-12-17",
+  "updated_date": "2025-12-17",
+  "dependencies": [],
+  "subtasks": [],
+  "parent_task": "94",
+  "files_affected": [
+    "examples/complete-projects/pension-calculator/original-spec.md",
+    "examples/complete-projects/pension-calculator/generated-environment/.claude/",
+    "examples/complete-projects/pension-calculator/README.md"
+  ],
+  "notes": "Subtask of Task 94. Create complete example showing Power Query template with Phase 0 ambiguity resolution, 5-dimension difficulty scoring, and M-code standards. Should demonstrate domain-specific template features.",
+  "priority": "medium",
+  "tags": ["ux-improvement", "phase-2", "onboarding", "examples", "power-query-template"],
+  "estimated_hours": 2,
+  "completion_notes": "Created complete Power Query template example with: original specification featuring Power Query/DAX requirements, generated environment showing Phase 0 workflow, 5-dimension difficulty scoring system, Power Query-specific standards and commands, LLM pitfall warnings. Demonstrates automatic template detection based on Power Query keywords."
+}

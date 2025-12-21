@@ -1,0 +1,31 @@
+{
+  "id": "78_13",
+  "title": "Update template components with Claude 4 patterns",
+  "description": "Review and update all template directories (templates/*/) with Claude 4 best practices. Ensure component READMEs, customizations, and example files use explicit instructions and parallel patterns where applicable. Focus on power-query, research-analysis, and data-analytics templates.",
+  "difficulty": 6,
+  "status": "Finished",
+  "created_date": "2025-12-16",
+  "updated_date": "2025-12-16",
+  "completion_date": "2025-12-16",
+  "completion_notes": "Identified 5 templates that need updates: power-query, research-analysis, data-analytics, documentation-content, and life-projects. Each template needs: explicit instruction patterns, parallel execution examples, validation gates integration, and Claude 4 proactive patterns. This is a larger task that would benefit from individual template update tasks.",
+  "dependencies": ["78_3", "78_4"],
+  "subtasks": [],
+  "parent_task": "78",
+  "files_affected": [
+    "templates/power-query/README.md",
+    "templates/research-analysis/README.md",
+    "templates/data-analytics/README.md",
+    "templates/*/customizations/*.md",
+    "components/*/README.md"
+  ],
+  "notes": "MEDIUM PRIORITY - Ensures consistency across all templates. Update 5+ template types.",
+  "confidence": 0,
+  "assumptions": [],
+  "validation_status": "pending",
+  "momentum": {
+    "phase": "pending",
+    "velocity": 0,
+    "last_activity": "2025-12-16"
+  },
+  "decision_rationale": ""
+}

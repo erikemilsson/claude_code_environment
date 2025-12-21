@@ -1,0 +1,21 @@
+{
+  "id": "105",
+  "title": "Add relative path expansion logic to smart-bootstrap.md",
+  "description": "Implement path expansion to handle relative paths: ~ (home directory), . (current directory), .. (parent directory), and simple filenames. Add logic to expand these to absolute paths before validation. This allows users to type '~/Documents/spec.md' instead of full absolute paths.",
+  "difficulty": 4,
+  "status": "Finished",
+  "created_date": "2025-12-17",
+  "updated_date": "2025-12-17",
+  "completed_date": "2025-12-17",
+  "dependencies": [],
+  "subtasks": [],
+  "parent_task": "89",
+  "files_affected": [
+    ".claude/commands/smart-bootstrap.md"
+  ],
+  "notes": "Subtask of 89. COMPLETED: Added 'Path Handling (Smart Detection)' section to smart-bootstrap.md (lines 99-126). Implements expansion logic for all path types: absolute, tilde (~), current (.), parent (..), and relative paths. Provides clear expansion process and examples. Documented that this is foundation for Tasks 106-108. Foundation for smart path detection now in place.",
+  "priority": "high",
+  "tags": ["ux-improvement", "phase-1", "macos", "path-handling", "subtask"],
+  "estimated_hours": 1,
+  "user_benefit": "Users can use familiar shell shortcuts instead of typing full paths"
+}

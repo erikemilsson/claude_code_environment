@@ -1,0 +1,21 @@
+{
+  "id": "109",
+  "title": "Update mac-user-workflow-guide.md with path examples",
+  "description": "Add a 'Path Examples' section to mac-user-workflow-guide.md showing all supported path formats with examples. Include: relative paths, shell shortcuts, search behavior, iCloud handling, and the 'recent files' helper. Make it easy to copy-paste examples.",
+  "difficulty": 3,
+  "status": "Finished",
+  "created_date": "2025-12-17",
+  "updated_date": "2025-12-17",
+  "completed_date": "2025-12-17",
+  "dependencies": ["105", "106", "107", "108"],
+  "subtasks": [],
+  "parent_task": "89",
+  "files_affected": [
+    ".claude/reference/mac-user-workflow-guide.md"
+  ],
+  "notes": "Subtask of 89. COMPLETED: Completely rewrote section 10.1 'File Paths & Smart Path Detection' in mac-user-workflow-guide.md (lines 1288-1423). Added comprehensive documentation covering: (1) All supported path formats (absolute, tilde, relative), (2) Automatic fallback search process with example, (3) Recent files helper with interactive flow, (4) iCloud considerations with download status handling, (5) Quick copy-paste examples for common scenarios. Also updated troubleshooting section 11.1 to reference new smart path features. Documentation complete for all path handling features from Tasks 105-108.",
+  "priority": "medium",
+  "tags": ["ux-improvement", "phase-1", "documentation", "macos", "subtask"],
+  "estimated_hours": 0.5,
+  "user_benefit": "Users have clear documentation and examples for all path handling features"
+}

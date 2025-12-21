@@ -1,0 +1,29 @@
+{
+  "id": "78_12",
+  "title": "Add explicit validation gates to task workflow",
+  "description": "Enhance complete-task.md and breakdown.md with explicit validation gates at key decision points. Add pre-execution checks, mid-task validations, and completion criteria. Make validation mandatory (not optional) with clear pass/fail criteria.",
+  "difficulty": 5,
+  "status": "Finished",
+  "created_date": "2025-12-16",
+  "updated_date": "2025-12-16",
+  "completion_date": "2025-12-16",
+  "completion_notes": "Enhanced complete-task.md and breakdown.md with explicit validation gates. Created comprehensive validation-gates.md reference with pre-execution, mid-execution, and completion gates. Added mandatory checkpoints with clear pass/fail criteria. Integrated gate patterns including circuit breakers and progressive validation.",
+  "dependencies": ["78_4", "78_11"],
+  "subtasks": [],
+  "parent_task": "78",
+  "files_affected": [
+    ".claude/commands/complete-task.md",
+    ".claude/commands/breakdown.md",
+    ".claude/reference/validation-gates.md"
+  ],
+  "notes": "MEDIUM PRIORITY - Reduces errors through systematic validation. Include go/no-go decision points.",
+  "confidence": 0,
+  "assumptions": [],
+  "validation_status": "pending",
+  "momentum": {
+    "phase": "pending",
+    "velocity": 0,
+    "last_activity": "2025-12-16"
+  },
+  "decision_rationale": ""
+}

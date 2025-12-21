@@ -1,0 +1,28 @@
+{
+  "id": "3",
+  "title": "Screen papers and extract data",
+  "description": "Screen titles/abstracts against inclusion criteria, retrieve full texts, extract quantitative data and metadata into structured format, assess study quality.",
+  "difficulty": 6,
+  "status": "Pending",
+  "created_date": "2025-12-18",
+  "updated_date": "2025-12-18",
+  "dependencies": ["2"],
+  "subtasks": [],
+  "parent_task": null,
+  "phase": 2,
+  "research_phase": "Data Extraction",
+  "files_affected": [
+    ".claude/data/extracted/data-extraction-form.csv",
+    ".claude/data/extracted/quality-scores.csv",
+    ".claude/analysis/screening-decisions.md"
+  ],
+  "notes": "Time-intensive process requiring careful documentation",
+  "priority": "high",
+  "tags": ["phase-2", "data-extraction", "quality-assessment"],
+  "estimated_hours": 40,
+  "research_specific": {
+    "screening_tool": "Rayyan or Covidence",
+    "extraction_fields": ["effect_size", "sample_size", "location", "methods"],
+    "quality_tool": "Newcastle-Ottawa Scale or custom checklist"
+  }
+}

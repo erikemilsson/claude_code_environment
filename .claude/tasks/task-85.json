@@ -1,0 +1,33 @@
+{
+  "id": "85",
+  "title": "Document Checkpoint System Usage",
+  "description": "Checkpoint directory exists but is empty. checkpoint-manager.py script exists. Feature seems implemented but unused. Need to create examples and document usage patterns.",
+  "difficulty": 4,
+  "status": "Finished",
+  "created_date": "2025-12-17",
+  "updated_date": "2025-12-17",
+  "completion_date": "2025-12-17",
+  "completion_notes": "Created comprehensive checkpoint-usage.md documenting the checkpoint system implemented in scripts/checkpoint-manager.py. Documentation covers: when to create checkpoints (auto triggers every 3 steps, before risky ops, manual triggers), complete usage guide (create/list/diff/restore/delete), storage structure, metadata format, integration with commands (complete-task, breakdown, validation gates), best practices, CLI reference, Python API, error handling, performance optimization, and troubleshooting. The checkpoint system provides fast state snapshots with SHA-256 verification and gzip compression for safe experimentation and recovery.",
+  "dependencies": [],
+  "subtasks": [],
+  "parent_task": null,
+  "files_affected": [
+    ".claude/checkpoints/",
+    "scripts/checkpoint-manager.py",
+    ".claude/reference/checkpoint-usage.md"
+  ],
+  "notes": "Checkpoint system implemented in Python but no examples or documentation on when/how to use it.",
+  "confidence": 80,
+  "assumptions": [
+    "Checkpoint system is functional",
+    "Just needs documentation and examples",
+    "Could be valuable for long-running tasks"
+  ],
+  "validation_status": "validated",
+  "momentum": {
+    "phase": "cruising",
+    "velocity": 80,
+    "last_activity": "2025-12-17"
+  },
+  "decision_rationale": "Implemented feature without documentation or examples limits its usefulness."
+}

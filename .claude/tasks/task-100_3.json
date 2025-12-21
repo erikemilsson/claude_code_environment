@@ -1,0 +1,21 @@
+{
+  "id": "100_3",
+  "title": "Create create-spec.md command file structure",
+  "description": "Write .claude/commands/create-spec.md with standard command structure (Purpose, Context Required, Process sections). Implement interactive question-answer flow, response validation, and spec.md generation. Include examples for different project types (Power Query, Research, Life Project, Standard).",
+  "difficulty": 5,
+  "status": "Finished",
+  "completion_date": "2025-12-18",
+  "created_date": "2025-12-18",
+  "updated_date": "2025-12-18",
+  "dependencies": ["100_1", "100_2"],
+  "subtasks": [],
+  "parent_task": "100",
+  "files_affected": [
+    ".claude/commands/create-spec.md"
+  ],
+  "notes": "Implementation subtask - creates the actual command file. Depends on question flow (100_1) and keyword logic (100_2) being designed first.",
+  "priority": "medium",
+  "tags": ["ux-improvement", "specification", "implementation"],
+  "estimated_hours": 1.5,
+  "user_benefit": "Working command that guides users through spec creation"
+}

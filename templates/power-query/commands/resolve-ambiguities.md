@@ -7,6 +7,25 @@ Present the next batch of unresolved ambiguities (maximum 5) for user resolution
 - `initialize-project.md` has been run
 - `.claude/reference/ambiguity-report.md` exists
 
+## Phase 0 Progress
+
+**BEFORE STARTING**: Display current progress from `.claude/tasks/_phase-0-status.md`
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PHASE 0 PROGRESS - Step 2 of 4
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Step 1: Initialize Project        ✅  (Completed)
+Step 2: Resolve Ambiguities       🔄  (Est. 30-60 min)
+Step 3: Generate Artifacts        ⬜  (Est. 15-20 min)
+Step 4: Extract Queries           ⬜  (Est. 10-15 min)
+
+Current: Step 2 - Resolving batch [X] of [Y]
+Ambiguities resolved: [N] of [Total]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
 ## Process
 
 ### 1. Load Ambiguity Report
@@ -116,35 +135,57 @@ Append to `.claude/context/assumptions.md`:
 
 ### 6. Update Phase 0 Status
 Update `.claude/tasks/_phase-0-status.md`:
-- Increment batch counter
-- Update progress bar
-- Calculate remaining batches
+- Update Step 2 progress: "[Resolved] of [Total] ambiguities resolved"
+- Update time elapsed
+- If all complete: Change Step 2 status from 🔄 to ✅, Step 3 to 🔄
 
 ### 7. Check Completion
 **If more ambiguities remain:**
 ```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ✅ Batch [X] Resolved
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Progress: [Resolved]/[Total] ambiguities resolved ([Percentage]%)
+PROGRESS:
+Step 1: Initialize Project        ✅  (Completed)
+Step 2: Resolve Ambiguities       🔄  (In progress)
+Step 3: Generate Artifacts        ⬜
+Step 4: Extract Queries           ⬜
+
+Ambiguities: [Resolved]/[Total] resolved ([Percentage]%)
 Remaining batches: [Count]
+Estimated time: [Count*10] minutes
 
-Next: Run @.claude/commands/resolve-ambiguities.md again for the next batch.
+NEXT STEP:
+Run /resolve-ambiguities again for next batch
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 **If all ambiguities resolved:**
 ```
-✅ All Ambiguities Resolved!
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ Phase 0 - Step 2 Complete
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Total resolved: [Count]
-Time taken: [Estimate based on batches]
+PROGRESS:
+Step 1: Initialize Project        ✅  (Completed)
+Step 2: Resolve Ambiguities       ✅  (Completed in ~[X] min)
+Step 3: Generate Artifacts        🔄  NEXT
+Step 4: Extract Queries           ⬜
+
+RESULTS:
+Total ambiguities resolved: [Count]
+Batches completed: [Count]
 
 All decisions documented in:
 - .claude/context/assumptions.md
+- .claude/reference/ambiguity-report.md (all marked ✅)
 
-Phase 0 - Step 2 Complete ✅
-
-Next Step: Run @.claude/commands/generate-artifacts.md
-This will create glossary, data contracts, and task breakdown.
+NEXT STEP:
+Run /generate-artifacts
+This will create glossary, data contracts, query manifest, and tasks.
+Estimated time: 15-20 minutes
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 ## Output Files

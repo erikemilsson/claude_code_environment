@@ -1,0 +1,27 @@
+{
+  "id": "78_16",
+  "title": "Document Claude 4 vs Claude 3.5 differences",
+  "description": "Create migration guide comparing Claude 3.5 Sonnet and Claude 4 (Opus 4.1 and Sonnet 4.5) capabilities. Document what changed, what improved, and how to update existing projects. Include before/after examples of instruction styles, highlighting improvements in directness and efficiency.",
+  "difficulty": 3,
+  "status": "Finished",
+  "created_date": "2025-12-16",
+  "updated_date": "2025-12-16",
+  "completion_date": "2025-12-16",
+  "completion_notes": "Created comprehensive migration guide comparing Claude 3.5 Sonnet with Claude 4 (Opus 4.1/Sonnet 4.5). Documented key improvements: proactive execution, parallel operations, explicit instructions, confidence-based decisions. Included before/after examples, feature comparison table, migration checklist, and performance metrics showing 70-85% improvements.",
+  "dependencies": ["78_1", "78_3"],
+  "subtasks": [],
+  "parent_task": "78",
+  "files_affected": [
+    ".claude/reference/claude-4-migration.md"
+  ],
+  "notes": "LOW PRIORITY - Helpful for users migrating from older versions. Include concrete examples.",
+  "confidence": 0,
+  "assumptions": [],
+  "validation_status": "pending",
+  "momentum": {
+    "phase": "pending",
+    "velocity": 0,
+    "last_activity": "2025-12-16"
+  },
+  "decision_rationale": ""
+}

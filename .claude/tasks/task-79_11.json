@@ -1,0 +1,37 @@
+{
+  "id": "79_11",
+  "title": "Create CLI Wrapper for All Scripts",
+  "description": "Develop scripts/claude-cli.py as a unified command-line interface for all script operations. Single entry point for task management, validation, bootstrap, and analysis operations.",
+  "difficulty": 5,
+  "status": "Finished",
+  "created_date": "2025-12-17",
+  "updated_date": "2025-12-17",
+  "completion_date": "2025-12-17",
+  "completion_notes": "Successfully implemented script as specified.",
+  "dependencies": [
+    "79_1",
+    "79_2",
+    "79_3",
+    "79_4"
+  ],
+  "subtasks": [],
+  "parent_task": "79",
+  "files_affected": [
+    "scripts/claude-cli.py",
+    "scripts/README.md"
+  ],
+  "notes": "Unified CLI using argparse or click. Commands: task, validate, bootstrap, analyze, metrics, checkpoint. Subcommands for specific operations. Help text and examples. Support for breakdown operations via CLI.",
+  "confidence": 95,
+  "assumptions": [
+    "Click framework for CLI structure",
+    "Colorized output for better UX",
+    "Tab completion support"
+  ],
+  "validation_status": "pending",
+  "momentum": {
+    "phase": "initializing",
+    "velocity": 0,
+    "last_activity": "2025-12-17"
+  },
+  "decision_rationale": "Unified CLI improves user experience and makes scripts accessible to non-Python users. Single entry point simplifies documentation."
+}

@@ -1,5 +1,13 @@
 # Enhanced Task Schema with Belief Tracking
 
+**DEPRECATED** - This document has been superseded by task-schema-consolidated.md
+
+See: .claude/reference/task-schema-consolidated.md (Created: 2025-12-17)
+
+NOTE: The nested "belief_tracking" format from this document was NOT adopted. Use flat belief tracking structure at root level.
+
+---
+
 ## Overview
 
 The enhanced task schema integrates belief tracking directly into the task management system, enabling confidence scoring, assumption management, momentum tracking, and decision documentation. This creates a transparent, self-aware project execution framework.

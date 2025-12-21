@@ -1,0 +1,386 @@
+{
+  "version": "1.0.0",
+  "description": "Agent ownership matrix and configuration for Claude Code environment",
+  "agents": {
+    "environment-architect": {
+      "name": "Environment Architect",
+      "phase": "initialization",
+      "description": "Exclusive owner of project initialization, template selection, and environment creation",
+      "scripts": {
+        "owned": [
+          "scripts/bootstrap.py",
+          "scripts/pattern-matcher.py",
+          "scripts/test-templates.py"
+        ],
+        "never_touches": [
+          "scripts/task-manager.py",
+          "scripts/validation-gates.py",
+          "scripts/checkpoint-manager.py"
+        ]
+      },
+      "commands": {
+        "owned": [
+          ".claude/commands/smart-bootstrap.md",
+          ".claude/commands/bootstrap.md"
+        ],
+        "never_touches": [
+          ".claude/commands/complete-task.md",
+          ".claude/commands/breakdown.md"
+        ]
+      },
+      "triggers": {
+        "automatic": [
+          {
+            "condition": "empty_directory",
+            "priority": 1
+          },
+          {
+            "condition": "no_claude_folder",
+            "priority": 1
+          }
+        ],
+        "manual": [
+          "create environment from spec",
+          "bootstrap new project",
+          "initialize from template",
+          "generate project structure",
+          "set up claude environment"
+        ]
+      },
+      "boundaries": {
+        "allowed_operations": [
+          "create_directories",
+          "generate_files",
+          "detect_templates",
+          "extract_initial_tasks"
+        ],
+        "forbidden_operations": [
+          "modify_task_status",
+          "run_validation_gates",
+          "create_checkpoints",
+          "break_down_tasks"
+        ]
+      },
+      "handoff_triggers": [
+        {
+          "to": "task-orchestrator",
+          "condition": "tasks_with_difficulty_gte_7_created",
+          "message_template": "Environment created with {count} high-difficulty tasks requiring breakdown"
+        }
+      ]
+    },
+    "task-orchestrator": {
+      "name": "Task Orchestrator",
+      "phase": "planning",
+      "description": "Exclusive owner of task hierarchy, breakdown operations, and dependency management",
+      "scripts": {
+        "owned": [
+          "scripts/task-manager.py",
+          "scripts/schema-validator.py",
+          "scripts/dependency-analyzer.py",
+          "scripts/breakdown-suggester.py"
+        ],
+        "never_touches": [
+          "scripts/bootstrap.py",
+          "scripts/validation-gates.py",
+          "scripts/checkpoint-manager.py"
+        ]
+      },
+      "commands": {
+        "owned": [
+          ".claude/commands/breakdown.md",
+          ".claude/commands/sync-tasks.md"
+        ],
+        "never_touches": [
+          ".claude/commands/smart-bootstrap.md",
+          ".claude/commands/complete-task.md"
+        ]
+      },
+      "triggers": {
+        "automatic": [
+          {
+            "condition": "task_difficulty_gte_7",
+            "priority": 1
+          },
+          {
+            "condition": "all_subtasks_finished",
+            "priority": 2
+          },
+          {
+            "condition": "task_modifications_detected",
+            "priority": 3
+          }
+        ],
+        "manual": [
+          "break down task",
+          "analyze task dependencies",
+          "optimize task sequence",
+          "sync task overview",
+          "validate task hierarchy"
+        ]
+      },
+      "allowed_task_states": [
+        "Pending",
+        "Broken Down"
+      ],
+      "forbidden_task_states": [
+        "In Progress",
+        "Finished"
+      ],
+      "boundaries": {
+        "allowed_operations": [
+          "create_subtasks",
+          "set_dependencies",
+          "update_parent_status",
+          "sync_overview",
+          "validate_schema"
+        ],
+        "forbidden_operations": [
+          "execute_tasks",
+          "run_validation_gates",
+          "create_checkpoints",
+          "bootstrap_environment"
+        ]
+      },
+      "handoff_triggers": [
+        {
+          "to": "execution-guardian",
+          "condition": "subtasks_ready_for_execution",
+          "message_template": "Breakdown complete. {count} subtasks ready for execution"
+        },
+        {
+          "from": "execution-guardian",
+          "condition": "subtask_completed",
+          "message_template": "Check if parent {parent_id} can be auto-completed"
+        }
+      ]
+    },
+    "execution-guardian": {
+      "name": "Execution Guardian",
+      "phase": "execution",
+      "description": "Exclusive owner of task execution, validation gates, and progress monitoring",
+      "scripts": {
+        "owned": [
+          "scripts/validation-gates.py",
+          "scripts/checkpoint-manager.py",
+          "scripts/metrics-dashboard.py",
+          "scripts/claude-cli.py"
+        ],
+        "never_touches": [
+          "scripts/bootstrap.py",
+          "scripts/task-manager.py",
+          "scripts/breakdown-suggester.py"
+        ]
+      },
+      "commands": {
+        "owned": [
+          ".claude/commands/complete-task.md",
+          ".claude/commands/validate-assumptions.md",
+          ".claude/commands/check-risks.md",
+          ".claude/commands/log-decision.md",
+          ".claude/commands/run-gate.md"
+        ],
+        "never_touches": [
+          ".claude/commands/bootstrap.md",
+          ".claude/commands/breakdown.md"
+        ]
+      },
+      "triggers": {
+        "automatic": [
+          {
+            "condition": "task_status_changing_to_in_progress",
+            "priority": 1
+          },
+          {
+            "condition": "checkpoint_needed",
+            "priority": 2
+          },
+          {
+            "condition": "confidence_below_threshold",
+            "priority": 2
+          },
+          {
+            "condition": "context_usage_above_50_percent",
+            "priority": 3
+          }
+        ],
+        "manual": [
+          "complete task",
+          "start task",
+          "validate task",
+          "create checkpoint",
+          "check project health",
+          "run validation gates",
+          "assess risks"
+        ]
+      },
+      "allowed_task_states": [
+        "In Progress"
+      ],
+      "forbidden_task_states": [
+        "Pending",
+        "Broken Down"
+      ],
+      "boundaries": {
+        "allowed_operations": [
+          "update_task_progress",
+          "run_validation_gates",
+          "create_checkpoints",
+          "track_confidence",
+          "update_metrics",
+          "handle_errors"
+        ],
+        "forbidden_operations": [
+          "break_down_tasks",
+          "create_task_hierarchy",
+          "bootstrap_environment",
+          "modify_dependencies"
+        ]
+      },
+      "validation_gates": {
+        "pre_execution": [
+          "task_ready",
+          "dependencies_met",
+          "resources_available",
+          "assumptions_valid"
+        ],
+        "during_execution": [
+          "confidence_stable",
+          "approach_valid",
+          "risk_acceptable"
+        ],
+        "post_execution": [
+          "acceptance_criteria_met",
+          "quality_standards_met",
+          "documentation_complete"
+        ]
+      },
+      "handoff_triggers": [
+        {
+          "to": "task-orchestrator",
+          "condition": "subtask_completed",
+          "message_template": "Task {task_id} completed. Check parent {parent_id} for auto-completion"
+        }
+      ]
+    }
+  },
+  "handoff_protocol": {
+    "rules": [
+      {
+        "name": "initialization_to_planning",
+        "from": "environment-architect",
+        "to": "task-orchestrator",
+        "condition": "environment_created_with_high_difficulty_tasks",
+        "data_passed": [
+          "task_ids",
+          "difficulty_scores",
+          "initial_hierarchy"
+        ]
+      },
+      {
+        "name": "planning_to_execution",
+        "from": "task-orchestrator",
+        "to": "execution-guardian",
+        "condition": "breakdown_complete",
+        "data_passed": [
+          "subtask_ids",
+          "dependency_graph",
+          "recommended_sequence"
+        ]
+      },
+      {
+        "name": "execution_to_planning",
+        "from": "execution-guardian",
+        "to": "task-orchestrator",
+        "condition": "subtask_finished",
+        "data_passed": [
+          "completed_task_id",
+          "parent_task_id",
+          "completion_metrics"
+        ]
+      }
+    ],
+    "conflict_resolution": {
+      "strategy": "phase_based",
+      "rules": [
+        "If empty directory: ONLY environment-architect can act",
+        "If task.status == 'Pending': ONLY task-orchestrator can modify",
+        "If task.status == 'In Progress': ONLY execution-guardian can modify",
+        "If task.status == 'Broken Down': ONLY task-orchestrator manages subtasks",
+        "If task.status == 'Finished': NO agent modifies"
+      ]
+    }
+  },
+  "decision_tree": {
+    "root": "analyze_context",
+    "nodes": {
+      "analyze_context": {
+        "checks": [
+          {
+            "condition": "is_empty_directory",
+            "true": "activate_environment_architect",
+            "false": "check_task_exists"
+          }
+        ]
+      },
+      "check_task_exists": {
+        "checks": [
+          {
+            "condition": "task_specified",
+            "true": "check_task_state",
+            "false": "no_agent_needed"
+          }
+        ]
+      },
+      "check_task_state": {
+        "checks": [
+          {
+            "condition": "needs_breakdown",
+            "true": "activate_task_orchestrator",
+            "false": "check_execution_needed"
+          }
+        ]
+      },
+      "check_execution_needed": {
+        "checks": [
+          {
+            "condition": "execution_requested",
+            "true": "activate_execution_guardian",
+            "false": "no_agent_needed"
+          }
+        ]
+      }
+    }
+  },
+  "performance_metrics": {
+    "environment-architect": {
+      "template_detection_accuracy": 0.0,
+      "environment_generation_time_avg": 0.0,
+      "initial_task_extraction_rate": 0.0,
+      "user_modification_rate": 0.0
+    },
+    "task-orchestrator": {
+      "breakdown_acceptance_rate": 0.0,
+      "subtask_difficulty_avg": 0.0,
+      "parallel_execution_potential": 0.0,
+      "parent_auto_completion_rate": 0.0
+    },
+    "execution-guardian": {
+      "gate_enforcement_rate": 0.0,
+      "checkpoint_recovery_success": 0.0,
+      "confidence_tracking_accuracy": 0.0,
+      "error_recovery_rate": 0.0
+    }
+  },
+  "learning_patterns": {
+    "enabled": true,
+    "pattern_storage": ".claude/agent-patterns/",
+    "categories": [
+      "successful_breakdowns",
+      "template_selections",
+      "error_recoveries",
+      "validation_failures",
+      "confidence_trajectories"
+    ]
+  }
+}

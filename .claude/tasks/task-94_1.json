@@ -1,0 +1,22 @@
+{
+  "id": "94_1",
+  "title": "Create simple-todo-app complete example",
+  "description": "Create examples/complete-projects/simple-todo-app/ with original specification, generated environment structure, and explanatory README. This shows a basic project example using Base template.",
+  "difficulty": 4,
+  "status": "Finished",
+  "created_date": "2025-12-17",
+  "updated_date": "2025-12-17",
+  "dependencies": [],
+  "subtasks": [],
+  "parent_task": "94",
+  "files_affected": [
+    "examples/complete-projects/simple-todo-app/original-spec.md",
+    "examples/complete-projects/simple-todo-app/generated-environment/.claude/",
+    "examples/complete-projects/simple-todo-app/README.md"
+  ],
+  "notes": "Subtask of Task 94. Create complete example showing Base template usage for simple web app. Should demonstrate basic task management without domain-specific features.",
+  "priority": "medium",
+  "tags": ["ux-improvement", "phase-2", "onboarding", "examples", "base-template"],
+  "estimated_hours": 2,
+  "completion_notes": "Created complete example showing Base template usage with: original specification file, generated .claude/ environment structure with commands/context/tasks/reference folders, explanatory README showing template detection and benefits. Example demonstrates automatic content extraction from spec into organized environment files."
+}

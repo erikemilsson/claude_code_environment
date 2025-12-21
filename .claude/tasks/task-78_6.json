@@ -1,0 +1,27 @@
+{
+  "id": "78_6",
+  "title": "Add proactive action prompts to command templates",
+  "description": "Enhance command files with proactive prompts that guide Claude to take initiative. Add decision trees, validation checkpoints, and 'next action' suggestions. Focus on smart-bootstrap.md, complete-task.md, and breakdown.md. Include confidence thresholds for automatic decisions.",
+  "difficulty": 5,
+  "status": "Finished",
+  "created_date": "2025-12-16",
+  "updated_date": "2025-12-16",
+  "dependencies": ["78_3", "78_4"],
+  "subtasks": [],
+  "parent_task": "78",
+  "files_affected": [
+    ".claude/commands/smart-bootstrap.md",
+    ".claude/commands/complete-task.md",
+    ".claude/commands/breakdown.md"
+  ],
+  "notes": "HIGH PRIORITY - Encourages Claude to implement rather than suggest. Add 'By default, implement changes' guidance.",
+  "confidence": 0,
+  "assumptions": [],
+  "validation_status": "pending",
+  "momentum": {
+    "phase": "pending",
+    "velocity": 0,
+    "last_activity": "2025-12-16"
+  },
+  "decision_rationale": ""
+}

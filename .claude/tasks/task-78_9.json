@@ -1,0 +1,31 @@
+{
+  "id": "78_9",
+  "title": "Create coding best practices reference",
+  "description": "Document Claude 4 coding best practices including: prefer Edit over Write, avoid echoing large outputs, proper error handling, testing patterns. Create language-specific sub-guides for Python, SQL, M/Power Query, JavaScript. Include guidance on avoiding over-engineering and hallucinations.",
+  "difficulty": 5,
+  "status": "Finished",
+  "created_date": "2025-12-16",
+  "updated_date": "2025-12-16",
+  "completion_date": "2025-12-16",
+  "completion_notes": "Created comprehensive coding guidelines including main reference and language-specific guides for Python, SQL, Power Query/M, and JavaScript. Documented best practices for file operations, error handling, performance optimization, and security. Included anti-patterns to avoid and quick reference tables.",
+  "dependencies": [],
+  "subtasks": [],
+  "parent_task": "78",
+  "files_affected": [
+    ".claude/reference/coding-guidelines.md",
+    ".claude/reference/coding-guidelines-python.md",
+    ".claude/reference/coding-guidelines-sql.md",
+    ".claude/reference/coding-guidelines-powerquery.md",
+    ".claude/reference/coding-guidelines-javascript.md"
+  ],
+  "notes": "MEDIUM PRIORITY - Important for code quality. Emphasize 'read before edit' and 'minimize file creation' principles.",
+  "confidence": 0,
+  "assumptions": [],
+  "validation_status": "pending",
+  "momentum": {
+    "phase": "pending",
+    "velocity": 0,
+    "last_activity": "2025-12-16"
+  },
+  "decision_rationale": ""
+}

@@ -1,0 +1,22 @@
+{
+  "id": "100",
+  "title": "Create interactive spec builder command",
+  "description": "Create .claude/commands/create-spec.md that helps users create project specifications interactively in VS Code. Ask guided questions (What are you building? Technologies? Domain? Timeline?), validate responses, and generate a well-structured spec.md with detection-friendly keywords. This keeps users in VS Code instead of switching to Claude Desktop.",
+  "difficulty": 7,
+  "status": "Finished",
+  "completion_date": "2025-12-18",
+  "created_date": "2025-12-17",
+  "updated_date": "2025-12-18",
+  "broken_down_date": "2025-12-18",
+  "dependencies": ["91"],
+  "subtasks": ["100_1", "100_2", "100_3", "100_4"],
+  "parent_task": null,
+  "files_affected": [
+    ".claude/commands/create-spec.md"
+  ],
+  "notes": "MEDIUM IMPACT - Additional Support. Addresses 'Specification Creation Friction' by providing in-tool spec creation. Eliminates need to switch to Claude Desktop for spec creation. MUST BREAK DOWN before starting (difficulty ≥7).",
+  "priority": "medium",
+  "tags": ["ux-improvement", "support", "specification", "interactive"],
+  "estimated_hours": 5,
+  "user_benefit": "Users can create specs directly in VS Code with guided prompts, staying in their development environment"
+}

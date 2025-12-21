@@ -1,0 +1,27 @@
+{
+  "id": "78_8",
+  "title": "Implement structured progress tracking in task schema",
+  "description": "Extend task JSON schema with structured progress field for multi-step tasks. Add fields for: current_step, total_steps, step_history[], blocking_step, completion_percentage. Update complete-task.md to populate these fields. Create examples of proper usage.",
+  "difficulty": 5,
+  "status": "Finished",
+  "created_date": "2025-12-16",
+  "updated_date": "2025-12-16",
+  "dependencies": ["78_5"],
+  "subtasks": [],
+  "parent_task": "78",
+  "files_affected": [
+    ".claude/reference/task-schema.md",
+    ".claude/commands/complete-task.md",
+    "components/task-management/schema.json"
+  ],
+  "notes": "HIGH PRIORITY - Enhances visibility into task progress. Distinguish between JSON structured data and plain text progress notes.",
+  "confidence": 0,
+  "assumptions": [],
+  "validation_status": "pending",
+  "momentum": {
+    "phase": "pending",
+    "velocity": 0,
+    "last_activity": "2025-12-16"
+  },
+  "decision_rationale": ""
+}

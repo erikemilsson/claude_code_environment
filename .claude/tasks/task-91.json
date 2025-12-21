@@ -1,0 +1,25 @@
+{
+  "id": "91",
+  "title": "Create specification templates for each project type",
+  "description": "Create template specifications in examples/specifications/templates/ for each template type (power-query, research, life-project, documentation). Each template should show required sections, detection-triggering keywords, example content, and dos/don'ts. These help users create specs that will be correctly detected by smart-bootstrap.",
+  "difficulty": 4,
+  "status": "Finished",
+  "created_date": "2025-12-17",
+  "updated_date": "2025-12-17",
+  "completed_date": "2025-12-17",
+  "dependencies": [],
+  "subtasks": [],
+  "parent_task": null,
+  "files_affected": [
+    "examples/specifications/templates/power-query-spec-template.md",
+    "examples/specifications/templates/research-spec-template.md",
+    "examples/specifications/templates/life-project-spec-template.md",
+    "examples/specifications/templates/documentation-spec-template.md",
+    "examples/specifications/templates/README.md"
+  ],
+  "notes": "HIGH IMPACT - Phase 1 Quick Win. COMPLETED: Created comprehensive specification template system in examples/specifications/templates/. Includes: (1) README.md with template usage guide, detection tips, and validation instructions, (2) power-query-spec-template.md with regulatory calculation support and M language complexity considerations, (3) research-spec-template.md with hypothesis, literature review, and statistical analysis sections, (4) life-project-spec-template.md with personal goals, milestones, and accountability tracking, (5) documentation-spec-template.md with API docs, technical writing, and content creation guidance. Each template includes detection keywords (⚡), expected confidence scores, copy-paste examples, and comprehensive dos/don'ts. Addresses 'Specification Creation Friction' pain point by providing clear examples that ensure 90%+ detection confidence.",
+  "priority": "high",
+  "tags": ["ux-improvement", "phase-1", "quick-win", "specification", "templates"],
+  "estimated_hours": 3,
+  "user_benefit": "Users have clear templates to follow when creating specs, increasing bootstrap success rate and reducing ambiguity"
+}

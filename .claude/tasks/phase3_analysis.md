@@ -120,11 +120,10 @@ communities = nx.community.louvain_communities(G)
 
 ## Commands to Run
 ```bash
-# Generate network analysis
-/run_analysis network_analysis
-
-# Prepare workshop materials
-/run_analysis workshop_prep
+# Note: The /run_analysis command has been deprecated
+# These analyses should be performed manually:
+# - Generate network analysis
+# - Prepare workshop materials
 
 # After workshops
 python scripts/process_workshop_feedback.py

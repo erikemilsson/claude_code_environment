@@ -1,0 +1,27 @@
+{
+  "id": "110_5",
+  "title": "Enhance validation gates with conflict checking",
+  "description": "Modify scripts/validation-gates.py to add pre-execution file conflict checks. Check lock availability before execution. Add new ParallelExecutionGates class with validate_parallel_group method for checking task groups.",
+  "difficulty": 5,
+  "status": "Finished",
+  "created_date": "2025-12-21",
+  "updated_date": "2025-12-21",
+  "completion_date": "2025-12-21",
+  "completion_notes": "Enhanced validation-gates.py with file conflict checking, lock availability checking, and added ParallelExecutionGates class with comprehensive parallel validation methods",
+  "dependencies": ["110_4"],
+  "subtasks": [],
+  "parent_task": "110",
+  "files_affected": [
+    "scripts/validation-gates.py"
+  ],
+  "notes": "Lines to modify: 69-119 (run_pre_execution_gates), add ParallelExecutionGates class",
+  "confidence": 85,
+  "assumptions": [],
+  "validation_status": "pending",
+  "momentum": {
+    "phase": "pending",
+    "velocity": 0,
+    "last_activity": "2025-12-21"
+  },
+  "decision_rationale": ""
+}

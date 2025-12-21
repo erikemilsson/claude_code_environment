@@ -1,0 +1,34 @@
+{
+  "id": "79_5",
+  "title": "Build Template Testing Framework",
+  "description": "Develop scripts/test-templates.py for automated testing of template generation and detection. Include tests for template scoring, file generation, and cross-references. Must test task breakdown scenarios and subtask creation.",
+  "difficulty": 6,
+  "status": "Finished",
+  "created_date": "2025-12-17",
+  "updated_date": "2025-12-17",
+  "completion_date": "2025-12-17",
+  "completion_notes": "Successfully implemented script as specified.",
+  "dependencies": [
+    "79_4"
+  ],
+  "subtasks": [],
+  "parent_task": "79",
+  "files_affected": [
+    "scripts/test-templates.py",
+    ".github/workflows/test-scripts.yml"
+  ],
+  "notes": "Test cases for: template detection accuracy, file generation completeness, cross-reference validity, phase 0 triggering, task breakdown workflows. CI/CD integration via GitHub Actions.",
+  "confidence": 90,
+  "assumptions": [
+    "Pytest framework for test structure",
+    "Test fixtures in .claude/tests/fixtures/",
+    "Coverage target of 80%+"
+  ],
+  "validation_status": "pending",
+  "momentum": {
+    "phase": "initializing",
+    "velocity": 0,
+    "last_activity": "2025-12-17"
+  },
+  "decision_rationale": "Testing framework ensures reliability as templates evolve. Regression prevention is critical for maintaining quality."
+}

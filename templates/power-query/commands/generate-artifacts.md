@@ -8,6 +8,25 @@ Generate all project artifacts (glossary, data contracts, query manifest, tasks)
 - All ambiguities have status "✅ Resolved"
 - `.claude/context/assumptions.md` is complete
 
+## Phase 0 Progress
+
+**BEFORE STARTING**: Display current progress from `.claude/tasks/_phase-0-status.md`
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PHASE 0 PROGRESS - Step 3 of 4
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Step 1: Initialize Project        ✅  (Completed)
+Step 2: Resolve Ambiguities       ✅  (Completed)
+Step 3: Generate Artifacts        🔄  (Est. 15-20 min)
+Step 4: Extract Queries           ⬜  (Est. 10-15 min)
+
+Starting Step 3: Generate Artifacts
+Estimated time: 15-20 minutes
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
 ## Process
 
 ### 1. Verify Prerequisites
@@ -517,9 +536,16 @@ Present to user:
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Phase 0 - Step 3 Complete ✅
+✅ Phase 0 - Step 3 Complete
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+PROGRESS:
+Step 1: Initialize Project        ✅  (Completed)
+Step 2: Resolve Ambiguities       ✅  (Completed)
+Step 3: Generate Artifacts        ✅  (Completed in ~[X] min)
+Step 4: Extract Queries           🔄  NEXT
+
+RESULTS:
 Generated Artifacts:
 
 📖 Glossary: [N] terms defined

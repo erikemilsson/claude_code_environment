@@ -151,6 +151,134 @@ Show parent-child relationships with indentation and progress:
     └─ 77. Test Integration [Pending ⏸]
 ```
 
+## Context-Aware Next Steps
+
+After syncing tasks, provide smart suggestions based on project state:
+
+### Analysis Logic
+
+After generating the overview, analyze current state to suggest next actions:
+
+**If critical risks detected:**
+```
+✓ Task overview updated
+
+⚠️  CRITICAL RISKS DETECTED ([N] tasks)
+High-impact tasks need attention:
+
+📋 PRIORITY ACTION:
+   → Task [ID]: [Title] (Impact: [N]/10, Likelihood: [N]%)
+   → Run: /check-risks [task-id] to analyze mitigation strategies
+   → Or: Address risk before proceeding with task
+```
+
+**If high-difficulty tasks need breakdown (≥7):**
+```
+✓ Task overview updated
+
+⚠️  COMPLEX TASKS REQUIRE BREAKDOWN
+[N] pending tasks with difficulty ≥7 detected
+
+📋 NEXT STEP (break down before starting):
+   → Task [ID]: [Title] (difficulty: [N])
+   → Run: /breakdown [task-id]
+
+   Repository rules require breakdown for difficulty ≥7
+```
+
+**If tasks are blocked:**
+```
+✓ Task overview updated
+
+🚫 BLOCKED TASKS: [N] tasks cannot proceed
+
+📋 NEXT STEP (resolve blockers):
+   → Task [ID]: [Title]
+   → Blocker: [Blocker description]
+   → Action: [Suggested resolution]
+```
+
+**If confidence declining (trend analysis):**
+```
+✓ Task overview updated
+
+📉 CONFIDENCE TREND DECLINING
+Average confidence: [X]% (down from [Y]%)
+
+📋 SUGGESTED ACTION:
+   → Run: /validate-assumptions to review pending assumptions
+   → [N] assumptions need validation
+   → Or: Review low-confidence tasks for clarity improvements
+```
+
+**If momentum stalled:**
+```
+✓ Task overview updated
+
+⚠️  MOMENTUM STALLED: [N] tasks in declining/stalled phase
+
+📋 NEXT STEP (restart momentum):
+   → Review stalled tasks for blockers
+   → Consider switching to easier tasks (difficulty ≤4) to build momentum
+   → Suggested: Task [ID] - [Title] (difficulty: [N])
+```
+
+**If all systems healthy and work ready:**
+```
+✓ Task overview updated
+
+✅ PROJECT HEALTH: [Status] | [X]/[Total] tasks complete ([%]%)
+
+📋 NEXT STEP (continue work):
+   → Suggested: Task [ID] - [Title]
+   → Reason: [Why this task - e.g., "High priority, unblocks 3 tasks"]
+   → Run: /complete-task [id]
+
+   Other options:
+   - [N] pending tasks available
+   - [N] high-priority tasks
+   - Review: .claude/tasks/task-overview.md
+```
+
+**If project complete:**
+```
+✓ Task overview updated
+
+🎉 ALL TASKS COMPLETE!
+[Total] tasks finished. No pending or blocked tasks.
+
+📋 NEXT STEPS (project completion):
+   □ Review deliverables and outcomes
+   □ Run final validation tests
+   □ Update documentation
+   □ Create completion report
+   □ Archive/tag repository
+```
+
+**If Phase 0 tasks detected but not complete:**
+```
+✓ Task overview updated
+
+⏳ PHASE 0 IN PROGRESS
+Initialization tasks must complete before implementation
+
+📋 NEXT STEP (complete Phase 0):
+   → Task [ID]: [Phase 0 step]
+   → Run: /complete-task [id]
+   → Phase 0 progress: [X]/[Y] steps complete
+   → Estimated time remaining: [N] minutes
+```
+
+### Suggestion Priority Rules
+When choosing which suggestion to show (if multiple apply):
+1. **Critical risks** - Highest priority, show first
+2. **Blocked tasks** - Must resolve before progress
+3. **High-difficulty needs breakdown** - Required before work
+4. **Phase 0 incomplete** - Must finish before implementation
+5. **Momentum/confidence issues** - Process health concerns
+6. **Standard continuation** - Normal work flow
+7. **Project complete** - All done
+
 ## Output Location
 `.claude/tasks/task-overview.md`
 

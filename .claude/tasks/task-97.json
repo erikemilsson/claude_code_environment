@@ -1,0 +1,21 @@
+{
+  "id": "97",
+  "title": "Create bootstrap undo command",
+  "description": "Create .claude/commands/undo-bootstrap.md that safely removes generated files from a bootstrap operation. Should list files to be removed, require confirmation, preserve user-created content, and provide clear feedback. This allows users to easily clean up and start over if bootstrap didn't work as expected.",
+  "difficulty": 5,
+  "status": "Finished",
+  "created_date": "2025-12-17",
+  "updated_date": "2025-12-17",
+  "dependencies": [],
+  "subtasks": [],
+  "parent_task": null,
+  "files_affected": [
+    ".claude/commands/undo-bootstrap.md"
+  ],
+  "notes": "MEDIUM IMPACT - Phase 3 Polish. Addresses 'Error Recovery & Troubleshooting' by providing easy cleanup. Currently no way to cleanly undo a bootstrap operation without manual file deletion.",
+  "priority": "medium",
+  "tags": ["ux-improvement", "phase-3", "error-recovery", "cleanup"],
+  "estimated_hours": 3,
+  "user_benefit": "Users can easily and safely remove bootstrap-generated files to start over without manually tracking what was created",
+  "completion_notes": "Created comprehensive undo-bootstrap.md command with: environment detection, user content preservation logic, three-category file classification (safe to delete/user content/ambiguous), detailed removal plan presentation, backup option, dry run mode, selective removal options, force removal with confirmation, safety checks (permission verification, git change detection), error handling, and recovery instructions. Command prevents accidental data loss while allowing clean environment reset."
+}

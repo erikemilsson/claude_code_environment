@@ -1,0 +1,21 @@
+{
+  "id": "107",
+  "title": "Add iCloud Drive path search capability",
+  "description": "Extend search to iCloud Drive location: ~/Library/Mobile Documents/com~apple~CloudDocs/. This is a special case due to very long path and sync behavior. Check if file exists and is downloaded (not just in cloud). Warn if file is pending download.",
+  "difficulty": 5,
+  "status": "Finished",
+  "created_date": "2025-12-17",
+  "updated_date": "2025-12-17",
+  "completed_date": "2025-12-17",
+  "dependencies": ["106"],
+  "subtasks": [],
+  "parent_task": "89",
+  "files_affected": [
+    ".claude/commands/smart-bootstrap.md"
+  ],
+  "notes": "Subtask of 89. COMPLETED: Added 'iCloud Drive Search (Extended Fallback)' section to smart-bootstrap.md (lines 171-227). Implements recursive search in iCloud Drive path with 5-level depth limit for performance. Handles downloaded files vs placeholders (.icloud extension, zero bytes). Warns users when file is cloud-only and not downloaded. Includes two example interactions: successful find in iCloud, and pending download warning. Builds on Task 106's fallback search.",
+  "priority": "high",
+  "tags": ["ux-improvement", "phase-1", "macos", "path-handling", "icloud", "subtask"],
+  "estimated_hours": 1,
+  "user_benefit": "Automatically finds specs saved in iCloud Drive without users needing to type complex paths"
+}

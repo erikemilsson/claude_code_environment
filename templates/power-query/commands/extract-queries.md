@@ -9,6 +9,25 @@ Guide user through extracting Power Query M code from Excel files and setting up
 - Excel files in `excel-files/` directory
 - Excel Power Query Editor extension installed in VS Code
 
+## Phase 0 Progress
+
+**BEFORE STARTING**: Display current progress from `.claude/tasks/_phase-0-status.md`
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PHASE 0 PROGRESS - Step 4 of 4 (Final Step!)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Step 1: Initialize Project        ✅  (Completed)
+Step 2: Resolve Ambiguities       ✅  (Completed)
+Step 3: Generate Artifacts        ✅  (Completed)
+Step 4: Extract Queries           🔄  (Est. 10-15 min)
+
+Starting Step 4: Extract Queries (Final Step)
+Estimated time: 10-15 minutes
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
 ## Process
 
 ### 1. Verify Prerequisites
@@ -249,8 +268,15 @@ Present final summary to user:
 🎉 Phase 0 Complete! 🎉
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Initialization Summary:
+PROGRESS:
+Step 1: Initialize Project        ✅  (Completed)
+Step 2: Resolve Ambiguities       ✅  (Completed)
+Step 3: Generate Artifacts        ✅  (Completed)
+Step 4: Extract Queries           ✅  (Completed in ~[X] min)
 
+Total Phase 0 Time: ~[Total] minutes
+
+INITIALIZATION SUMMARY:
 📄 Documents Analyzed: [N]
 ❓ Ambiguities Resolved: [N]
 📖 Terms Defined: [N]

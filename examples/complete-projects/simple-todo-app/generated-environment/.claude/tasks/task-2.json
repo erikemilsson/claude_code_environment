@@ -1,0 +1,20 @@
+{
+  "id": "2",
+  "title": "Implement task data model and CRUD operations",
+  "description": "Create Task class/object structure, implement create, read, update, delete functions in memory. Define data schema for tasks with id, title, description, status fields.",
+  "difficulty": 5,
+  "status": "Pending",
+  "created_date": "2025-12-18",
+  "updated_date": "2025-12-18",
+  "dependencies": ["1"],
+  "subtasks": [],
+  "parent_task": null,
+  "files_affected": [
+    "src/models/Task.js",
+    "src/services/taskService.js"
+  ],
+  "notes": "Core functionality for Phase 1",
+  "priority": "high",
+  "tags": ["core", "phase-1", "data-model"],
+  "estimated_hours": 3
+}

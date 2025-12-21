@@ -1,0 +1,27 @@
+{
+  "id": "2",
+  "title": "Execute database searches and document results",
+  "description": "Run search queries in all selected databases, export results in RIS/CSV format, remove duplicates, create PRISMA flow diagram of search results.",
+  "difficulty": 5,
+  "status": "Pending",
+  "created_date": "2025-12-18",
+  "updated_date": "2025-12-18",
+  "dependencies": ["1"],
+  "subtasks": [],
+  "parent_task": null,
+  "phase": 1,
+  "research_phase": "Literature Search",
+  "files_affected": [
+    ".claude/data/literature/search-results/",
+    ".claude/data/literature/prisma-flow.md",
+    ".claude/data/literature/search-log.csv"
+  ],
+  "notes": "Systematic execution critical for reproducibility",
+  "priority": "high",
+  "tags": ["phase-1", "data-collection", "prisma"],
+  "estimated_hours": 8,
+  "research_specific": {
+    "expected_results": "500-2000 initial papers",
+    "duplicate_handling": "Mendeley/Zotero deduplication"
+  }
+}

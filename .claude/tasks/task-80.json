@@ -1,0 +1,35 @@
+{
+  "id": "80",
+  "title": "Create Missing update-tasks.md Command File",
+  "description": "The update-tasks.md command is referenced in multiple places (bootstrap.md, smart-bootstrap.md, context/overview.md) but doesn't exist. Need to create this command file or update references if it's been replaced by sync-tasks.md.",
+  "difficulty": 3,
+  "status": "Finished",
+  "created_date": "2025-12-17",
+  "updated_date": "2025-12-17",
+  "completion_date": "2025-12-17",
+  "completion_notes": "Created .claude/commands/update-tasks.md by copying from components/task-management/commands/update-tasks.md. The file provides validation and health check functionality for the task system, including structure validation, consistency checks, relevance assessment, and parent-child relationship validation.",
+  "dependencies": [],
+  "subtasks": [],
+  "parent_task": null,
+  "files_affected": [
+    ".claude/commands/update-tasks.md",
+    ".claude/commands/bootstrap.md",
+    ".claude/commands/smart-bootstrap.md",
+    ".claude/context/overview.md",
+    "CLAUDE.md"
+  ],
+  "notes": "Critical missing file. Either create update-tasks.md with validation/health check functionality, or update all references to use sync-tasks.md if that's the replacement.",
+  "confidence": 95,
+  "assumptions": [
+    "update-tasks.md was likely renamed to sync-tasks.md",
+    "References weren't updated during rename",
+    "Functionality exists in sync-tasks.md"
+  ],
+  "validation_status": "validated",
+  "momentum": {
+    "phase": "cruising",
+    "velocity": 75,
+    "last_activity": "2025-12-17"
+  },
+  "decision_rationale": "Documentation references a non-existent command, causing confusion for users following the guides."
+}

@@ -93,7 +93,7 @@ When a user creates a new project with Claude Code:
    - Integration guide (how to use in projects)
    - Benefits and best practices
 3. Create subdirectories (commands/, reference/, examples/)
-4. Update `template_overview10.md` to reference the component
+4. Update `legacy-template-reference.md` or relevant template docs to reference the component
 5. Update this file (`context/overview.md`) to list the new component
 
 #### Updating Task Management Component

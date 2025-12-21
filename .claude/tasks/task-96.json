@@ -1,0 +1,22 @@
+{
+  "id": "96",
+  "title": "Add pre-flight checks to bootstrap commands",
+  "description": "Add validation checks before generating any files in both smart-bootstrap.md and bootstrap.md. Check: directory is empty (or has only safe files), specification is readable, template detection confidence is sufficient, no conflicting .claude/ directory exists. Show summary and require confirmation before proceeding. This prevents common errors.",
+  "difficulty": 5,
+  "status": "Finished",
+  "created_date": "2025-12-17",
+  "updated_date": "2025-12-17",
+  "dependencies": [],
+  "subtasks": [],
+  "parent_task": null,
+  "files_affected": [
+    ".claude/commands/smart-bootstrap.md",
+    ".claude/commands/bootstrap.md"
+  ],
+  "notes": "MEDIUM IMPACT - Phase 3 Polish. Addresses 'Error Recovery & Troubleshooting' by preventing errors before they happen. Catches common issues like running bootstrap in wrong directory or overwriting existing environment.",
+  "priority": "medium",
+  "tags": ["ux-improvement", "phase-3", "validation", "error-prevention"],
+  "estimated_hours": 3,
+  "user_benefit": "Users avoid common mistakes like overwriting existing environments or running bootstrap in wrong directory",
+  "completion_notes": "Added comprehensive pre-flight checks to both smart-bootstrap.md and bootstrap.md. Checks include: directory safety validation, existing environment detection, file conflict scanning, specification access validation, template confidence checking, and user confirmation before any file generation. Each check has appropriate warnings and error messages with clear next steps."
+}
