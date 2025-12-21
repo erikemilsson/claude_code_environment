@@ -1,3 +1,5 @@
+<!-- Type: Direct Execution -->
+
 # Command: Update Tasks
 
 ## Purpose

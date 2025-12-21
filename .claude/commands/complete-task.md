@@ -1,3 +1,10 @@
+<!-- Type: Agent-Invoked | Execution Guardian Agent -->
+<!-- Template Variables:
+{{PROJECT_NAME}} - Filled during bootstrap
+{{DOMAIN_CONTEXT}} - From specification
+{{VALIDATION_RULES}} - Custom validation if applicable
+-->
+
 # Complete Task Command
 
 ## Purpose

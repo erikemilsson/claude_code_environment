@@ -1,3 +1,5 @@
+<!-- Type: Direct Execution -->
+
 # Validate Specification Command
 
 ## Purpose

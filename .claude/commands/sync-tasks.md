@@ -1,3 +1,9 @@
+<!-- Type: Direct Execution -->
+<!-- Template Variables:
+{{PROJECT_NAME}} - Filled during bootstrap
+{{TASK_PATH}} - Custom task directory if applicable
+-->
+
 # Sync Tasks Command
 
 ## Purpose

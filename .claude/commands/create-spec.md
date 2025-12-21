@@ -1,3 +1,5 @@
+<!-- Type: Direct Execution -->
+
 # Create Specification - Interactive Spec Builder
 
 ## Purpose

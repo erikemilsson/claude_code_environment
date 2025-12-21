@@ -1,3 +1,10 @@
+<!-- Type: Agent-Invoked | Task Orchestrator Agent -->
+<!-- Template Variables:
+{{PROJECT_NAME}} - Filled during bootstrap
+{{DOMAIN_CONTEXT}} - From specification
+{{DIFFICULTY_DIMENSIONS}} - Custom difficulty scoring if applicable
+-->
+
 # Breakdown Task Command
 
 ## Purpose

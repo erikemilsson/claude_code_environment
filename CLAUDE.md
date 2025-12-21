@@ -40,7 +40,7 @@ This is a **template repository** for bootstrapping new Claude Code project envi
 
 ### Advanced Workflow (More Control)
 
-Use `.claude/commands/bootstrap.md` for interactive template selection with step-by-step customization.
+Use `.claude/commands/bootstrap.md` (primary bootstrap command with auto-detection) or see `.archive/legacy-commands/bootstrap-interactive.md` for the legacy interactive version with manual template selection.
 
 ### This Repository's Role
 
@@ -51,22 +51,31 @@ Use `.claude/commands/bootstrap.md` for interactive template selection with step
 
 ## Key Files
 
-### legacy-template-reference.md
-**Legacy comprehensive template documentation** (52KB, frozen snapshot) containing:
+### Task Schema Documentation
+**Current authoritative schema**: `.claude/reference/task-schema-consolidated.md`
+- Consolidated schema combining all previous versions
+- Includes belief tracking, progress tracking, and momentum tracking
+- Deprecated schemas archived in `.archive/deprecated-schemas/`
 
-- Quick start minimal setup (5 minutes)
-- Full environment patterns for different project types
-- Task management system details (JSON schema, difficulty scoring, status values)
-- Command file examples (breakdown.md, complete-task.md, sync-tasks.md, update-tasks.md)
-- Context file templates
-- Tool integration guidance (Gemini API for research/analysis, Claude for implementation)
-- Hierarchical task breakdown workflow
+### Bootstrap Command
+**Primary command**: `.claude/commands/bootstrap.md`
+- Auto-detects template type from specification
+- Agent-based (Environment Architect Agent)
+- Minimal user interaction required
+- Legacy interactive version: `.archive/legacy-commands/bootstrap-interactive.md`
 
-**REFERENCE THIS FILE WHEN**:
-- User asks "how to create a new environment" → Show section 2.1
-- User asks "about task management" → Show Task Management System section
-- User asks "about command patterns" → List all .md files in .claude/commands/
-- User asks "about project types" → Show template comparison table
+### Reference Documentation
+**Key reference files** in `.claude/reference/`:
+- `task-schema-consolidated.md` - Authoritative task schema
+- `claude-4-parallel-tools.md` - Parallel execution patterns (renamed from parallel-tool-patterns.md)
+- `parallel-task-safety-checks.md` - Safety checks for parallel tasks (renamed from parallel-execution-gates.md)
+- `validation-gates-reference.md` - Validation concepts (renamed from validation-gates.md)
+- `claude-4-tool-usage.md` - Tool usage guidelines (renamed from coding-guidelines.md)
+
+### Archive Directory
+**Historical and deprecated files**: `.archive/`
+- Deprecated schemas, legacy commands, historical documentation
+- See `.archive/README.md` for guidance on when to reference archived files
 
 ### .claude/tasks/task-overview.md
 Current and completed development tasks for this repository

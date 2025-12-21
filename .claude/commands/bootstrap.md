@@ -1,44 +1,1441 @@
-# Bootstrap New Project
+<!-- Type: Agent-Invoked | Environment Architect Agent -->
+<!-- This is the PRIMARY bootstrap command (renamed from smart-bootstrap.md) -->
+
+# Bootstrap - Auto-Detect Template from Specification
 
 ## Purpose
-Automate the creation of a new Claude Code project environment from templates. Interactively guide through template selection, component choices, and customization options to generate complete `.claude/` folder structure.
+Automatically analyze a project specification document and create the appropriate Claude Code environment with minimal user interaction. This command now uses the **Environment Architect Agent** for intelligent template selection and environment generation.
+
+## Agent Integration
+
+**This command invokes the Environment Architect Agent**:
+```markdown
+AGENT: Environment Architect
+PHASE: Project Initialization
+OWNERSHIP: Template detection, environment generation, initial task extraction
+```
+
+The Environment Architect will:
+1. Analyze your specification with pattern matching
+2. Auto-detect appropriate template (>85% confidence = auto-select)
+3. Generate complete .claude/ structure
+4. Extract initial tasks from requirements
+5. Hand off to Task Orchestrator if high-difficulty tasks detected
+
+## Usage
+
+```
+User: "Create the environment from claude_code_environment repo using this spec: [path/to/specification.md]"
+```
 
 ## Context Required
+- `.claude/agents/environment-architect.md` - Agent definition
+- `.claude/agent-config.json` - Agent ownership matrix
+- `.claude/reference/template-selection-rules.md` - Auto-detection patterns
 - `templates/[name]/README.md` - Template specifications
-- `.claude/reference/template-customization-guide.md` - Customization options
-- `.claude/reference/reusable-template-patterns.md` - Pattern library
-- `legacy-template-reference.md` - Historical reference (optional)
+- Project specification document (from Claude Desktop export)
 
-## Pre-Flight Checks (CRITICAL - Run Before Gathering Information)
+## Pre-Flight Checks (CRITICAL - Run Before Any Generation)
 
-Before asking ANY questions or gathering information, perform these validation checks:
+Before starting environment generation, perform these validation checks:
 
 ### 1. Validate Directory Safety
 
 **Check current directory status**:
 ```bash
-# Count files and list them
-ls -A
+# Count files in current directory (excluding hidden)
+ls -A | wc -l
 ```
 
 **Directory States**:
 - **Empty**: 0 files → ✓ SAFE TO PROCEED
 - **Safe files only**: Only `.git/`, `.gitignore`, `README.md`, `LICENSE` → ✓ SAFE TO PROCEED
-- **Has .claude/**: Directory already has environment → ❌ STOP - Show error
+- **Has .claude/**: Directory already has environment → ⚠️ WARN USER
 - **Has other files**: Project files present → ⚠️ WARN USER
 
-### 2. Check for Conflicting Files
+### 2. Validate Specification Access
 
-**Scan for existing environment**:
+**Check specification file**:
 ```bash
-# Check for conflicts
-[ -d ".claude" ] && echo "ERROR: .claude/ directory exists"
-[ -f "CLAUDE.md" ] && echo "WARNING: CLAUDE.md file exists"
+# Test if file exists and is readable
+test -r [spec_path] && echo "OK" || echo "ERROR"
 ```
 
-**Actions Based on Results**:
+**Path Expansion** (see Path Handling section for full details):
+- Expand `~` to home directory
+- Expand relative paths (`.`, `..`)
+- Try fallback search if not found
 
-**If .claude/ exists**:
+**File Validation**:
+- File exists and is readable → ✓ PROCEED
+- File not found → Try fallback search (Documents, Downloads, Desktop, iCloud)
+- File found but not readable → ERROR
+- File is empty (< 100 bytes) → ⚠️ WARN USER
+
+### 3. Template Detection Confidence
+
+**Calculate confidence before showing report**:
+- Run template detection analysis
+- Score all templates
+- Determine highest confidence
+
+**Confidence Levels**:
+- **High (> 85%)**: Auto-select without asking → ✓ PROCEED
+- **Medium (70-85%)**: Auto-select but show reasoning → ✓ PROCEED WITH EXPLANATION
+- **Low (< 70%)**: Must ask clarifying questions → ⚠️ NEED USER INPUT
+
+### 4. Check for Conflicting Files
+
+**Scan for potential conflicts**:
+```bash
+# Check for existing environment files
+[ -d ".claude" ] && echo "CONFLICT: .claude/ exists"
+[ -f "CLAUDE.md" ] && echo "CONFLICT: CLAUDE.md exists"
+```
+
+**Conflict Resolution**:
+- `.claude/` exists → ERROR: Environment already present
+- `CLAUDE.md` exists → ERROR: May be existing project
+- Both missing → ✓ SAFE TO PROCEED
+
+### 5. Present Pre-Flight Summary
+
+**Before generating ANY files, show summary**:
+```
+═══════════════════════════════════════════════════════════
+PRE-FLIGHT CHECKS
+═══════════════════════════════════════════════════════════
+
+DIRECTORY: /Users/username/project-name/
+  Status: Empty ✓
+  Safe to proceed: YES
+
+SPECIFICATION: ~/Documents/project-spec.md
+  Found: YES ✓
+  Size: 45 KB
+  Readable: YES ✓
+
+TEMPLATE DETECTION:
+  Selected: Research Template
+  Confidence: 92% (HIGH) ✓
+  Auto-selecting without confirmation
+
+CONFLICTS:
+  .claude/ directory: Not present ✓
+  CLAUDE.md file: Not present ✓
+  No conflicts detected ✓
+
+═══════════════════════════════════════════════════════════
+READY TO GENERATE
+═══════════════════════════════════════════════════════════
+
+Will create:
+  • CLAUDE.md - Project router
+  • README.md - Documentation
+  • .claude/commands/ - 8 commands
+  • .claude/context/ - 4 context files
+  • .claude/tasks/ - Task management
+  • .claude/reference/ - 3 reference docs
+
+Template: Research (hypothesis tracking, literature review, statistical standards)
+
+═══════════════════════════════════════════════════════════
+
+Proceed with environment generation? [Y/n]
+```
+
+**User Confirmation**:
+- If user says YES or just hits enter → PROCEED
+- If user says NO → ABORT
+
+### 6. Handle Pre-Flight Warnings
+
+**Warning: Directory Not Empty**
+```
+⚠️  WARNING: Current directory is not empty
+
+Found existing files:
+  • src/ (directory)
+  • package.json
+  • .gitignore
+  • README.md
+
+This may be an existing project. Bootstrap will add:
+  • CLAUDE.md
+  • .claude/ directory
+
+Existing files will NOT be modified.
+
+Proceed anyway? [y/N]
+```
+
+**Warning: .claude/ Already Exists**
+```
+❌ ERROR: Environment already exists
+
+Found existing .claude/ directory in current location.
+
+This directory already has a Claude Code environment.
+
+Options:
+  1. Use /undo-bootstrap to remove existing environment
+  2. Navigate to a different directory
+  3. Cancel bootstrap operation
+
+What would you like to do? [1/2/3]
+```
+
+**Warning: Specification File Issues**
+```
+⚠️  WARNING: Specification file seems unusual
+
+File: ~/Documents/spec.md
+Size: 0.3 KB (very small)
+Content: Appears to be mostly empty
+
+This may not be a complete specification.
+
+Options:
+  1. Proceed anyway (may result in minimal environment)
+  2. Cancel and provide different specification
+  3. Show me the file contents first
+
+What would you like to do? [1/2/3]
+```
+
+**Warning: Low Template Confidence**
+```
+⚠️  NOTICE: Template detection confidence is moderate
+
+Best match: Base Template (65% confidence)
+Reasons: Generic project keywords, no domain-specific indicators
+
+I need to ask a few questions to select the right template.
+This will only take 30 seconds.
+
+Proceed with questions? [Y/n]
+```
+
+## Process (Agent-Driven)
+
+### 1. Run Pre-Flight Checks First
+
+**CRITICAL: Complete all pre-flight checks before invoking agent**
+
+If any check fails or requires user input:
+- Show appropriate warning/error
+- Get user confirmation
+- Only proceed if user approves
+
+### 2. Invoke Environment Architect (After Pre-Flight Success)
+```markdown
+System: Detecting empty directory...
+System: Activating Environment Architect Agent
+
+Environment Architect: "Analyzing specification document..."
+Environment Architect: "Extracting project indicators and requirements..."
+```
+
+### 2. Agent Performs Analysis
+The Environment Architect will:
+- Read specification and template rules in parallel
+- Extract technology, domain, and complexity indicators
+- Build assumption confidence map
+- Calculate template scores
+
+### 3. Agent Makes Template Decision (Enhanced with Educational Feedback)
+
+**EDUCATIONAL REPORTING MODE** (always enabled for transparency):
+
+```markdown
+Environment Architect: "Template Detection Results"
+
+═══════════════════════════════════════════════════════════
+TEMPLATE CONFIDENCE SCORES
+═══════════════════════════════════════════════════════════
+
+[Template Name]        ████████████████████ 92% ✓ SELECTED
+[Other Template 1]     ████████░░░░░░░░░░░░ 45%
+[Other Template 2]     ████░░░░░░░░░░░░░░░░ 20%
+[Other Template 3]     ██░░░░░░░░░░░░░░░░░░ 10%
+[Other Template 4]     █░░░░░░░░░░░░░░░░░░░ 5%
+
+CONFIDENCE LEVEL: HIGH (92% > 85% threshold)
+ACTION: Auto-selecting [Template Name]
+
+═══════════════════════════════════════════════════════════
+WHY THIS TEMPLATE WON
+═══════════════════════════════════════════════════════════
+
+✓ "research question" (HIGH signal, +30pts)
+  Found in: "Research question: How does remote work..."
+  Why it matters: Strong academic research indicator
+
+✓ "hypothesis" (HIGH signal, +30pts)
+  Found in: "Primary hypothesis: Remote workers will show..."
+  Why it matters: Confirms scientific methodology
+
+✓ "literature review" (MEDIUM signal, +15pts)
+  Found in section heading
+  Why it matters: Academic research workflow needed
+
+✓ "statistical analysis" (MEDIUM signal, +15pts)
+  Found in: "Methodology > Data Analysis > Statistical analysis plan"
+  Why it matters: Needs research-specific analysis tools
+
+× "Power Query" (not found)
+  Would have added: +30pts to Power Query template
+
+× "personal project" (not found)
+  Would have added: +30pts to Life Projects template
+
+TOTAL SCORE: 90 points
+
+═══════════════════════════════════════════════════════════
+OTHER TEMPLATES CONSIDERED
+═══════════════════════════════════════════════════════════
+
+Base Template (45%):
+  • Generic "project" mentions (+5pts × 3)
+  • General "data" and "analysis" keywords (+5pts × 6)
+  • Why not selected: No domain-specific indicators
+  • When to use: Generic projects without clear domain
+
+Power Query Template (20%):
+  • "Excel" mentioned once in passing (+5pts)
+  • "data" keyword (+5pts × 2)
+  • Missing: No "Power Query", "M language", "regulatory" keywords
+  • Why not selected: No specialized calculation/Excel focus
+  • When to use: Excel + regulatory calculations + Power Query
+
+Life Projects (10%):
+  • "project" mentioned (+5pts × 2)
+  • Missing: No personal/fitness/goal keywords
+  • Why not selected: This is professional/academic work
+  • When to use: Personal goals, fitness, home projects
+
+Documentation (5%):
+  • Generic text content (+5pts)
+  • Missing: No "documentation", "technical writing" keywords
+  • Why not selected: Not a documentation project
+  • When to use: Writing docs, guides, tutorials, content
+
+═══════════════════════════════════════════════════════════
+LEARNING: WRITING BETTER SPECS
+═══════════════════════════════════════════════════════════
+
+Your spec was EXCELLENT for detection! Here's why:
+
+✓ Clear domain terminology ("research question", "hypothesis")
+✓ Specific methodology section
+✓ Domain-specific workflows mentioned (literature review)
+✓ Technology stack clear (statistical tools)
+
+Tips for future specs:
+• Include domain-specific terms early in description
+• Mention key technologies explicitly (Python, R, Excel, etc.)
+• Use standard terminology for your field
+• Include workflow indicators (Phase 0, research methodology, etc.)
+
+Confidence breakdown:
+90-100% = Strong signals, obvious choice ✓ (Your spec: 92%)
+70-89%  = Good signals, minor clarification may help
+50-69%  = Mixed signals, add more domain keywords
+<50%    = Vague spec, needs substantial clarification
+
+═══════════════════════════════════════════════════════════
+DECISION: AUTO-SELECT [Template Name]
+═══════════════════════════════════════════════════════════
+
+Confidence: 92% (HIGH)
+Threshold: 85% (for auto-selection)
+Result: Proceeding without confirmation
+
+If confidence > 85%:
+  → Auto-select without asking ✓ YOU ARE HERE
+If confidence 70-85%:
+  → Confirm with minimal questions
+If confidence < 70%:
+  → Request specific clarifications
+```
+
+**Optional --explain Flag** (show even more detail):
+```
+User: "Create environment with --explain flag from spec: [path]"
+
+Shows additional detail:
+- Full scoring breakdown for all templates
+- Every keyword match with line numbers
+- Alternative interpretations considered
+- Assumption validation process
+- Pattern matching rule references
+```
+
+**Compact Mode** (for experienced users who want less detail):
+```
+User: "Create environment with --quiet flag from spec: [path]"
+
+Shows only:
+- Template selected + confidence %
+- Top 3 reasons why
+- Immediate next step
+```
+
+### 4. Agent Generates Environment
+The Environment Architect will create all files in parallel:
+- CLAUDE.md router file
+- README.md documentation
+- .claude/ directory structure
+- Template-specific files
+- Initial tasks from requirements
+
+### 5. Agent Handoff (if needed)
+```markdown
+Environment Architect: "Environment created successfully!"
+Environment Architect: "Detected N tasks with difficulty ≥7"
+Environment Architect: "Handing off to Task Orchestrator for breakdown..."
+
+Task Orchestrator: "Received handoff. Analyzing high-difficulty tasks..."
+```
+
+## Script Integration (If Available)
+
+**The Environment Architect can use Python scripts for acceleration:**
+```bash
+# Auto-detect template from specification
+python scripts/bootstrap.py detect --spec {SPEC_FILE}
+
+# Generate complete environment
+python scripts/bootstrap.py bootstrap --spec {SPEC_FILE} --output {OUTPUT_DIR}
+```
+
+**Script Benefits (when used by agent):**
+- Template detection in 100ms
+- Environment generation in 2-3 seconds
+- Automatic task creation from requirements
+- Consistent structure every time
+
+## Path Handling (Smart Detection)
+
+Before processing the specification, expand and resolve the provided path:
+
+### Path Expansion Logic
+
+**Accept all path formats:**
+- **Absolute**: `/Users/username/Documents/spec.md`
+- **Tilde expansion**: `~/Documents/spec.md` → expand ~ to $HOME
+- **Current directory**: `./spec.md` or `spec.md` → expand to full path from pwd
+- **Parent directory**: `../spec.md` → expand .. to parent of pwd
+- **Relative paths**: `Documents/spec.md` → expand from pwd
+
+**Expansion Process:**
+1. If path starts with `~`, replace with user's home directory
+2. If path starts with `.` or `..`, resolve relative to current directory
+3. If path has no directory component (just filename), keep as-is for fallback search
+4. Convert to absolute path for validation
+
+**Example Expansions:**
+```bash
+~/Documents/spec.md        → /Users/username/Documents/spec.md
+./spec.md                  → /Users/username/current-project/spec.md
+../specs/project.md        → /Users/username/specs/project.md
+spec.md                    → spec.md (will trigger fallback search)
+```
+
+**Implementation Note**: This path expansion is the foundation for Tasks 106-108 (fallback search, iCloud search, recent files).
+
+### Fallback Search (File Not Found)
+
+If the expanded path doesn't exist, search common macOS locations:
+
+**Search Order** (prefer closer locations first):
+1. Current directory: `./[filename]`
+2. Documents: `~/Documents/[filename]`
+3. Downloads: `~/Downloads/[filename]`
+4. Desktop: `~/Desktop/[filename]`
+
+**Search Process:**
+```
+IF file not found at expanded path:
+  1. Extract filename from path
+  2. Search each location in order
+  3. Collect all matches
+
+  IF exactly 1 match found:
+    → Use that file automatically
+    → Inform user: "Found spec at: [full path]"
+
+  IF multiple matches found:
+    → List all with modification times
+    → Ask user to choose:
+       1. ~/Documents/spec.md (modified 2 min ago, 45KB)
+       2. ~/Downloads/spec.md (modified 1 hour ago, 32KB)
+       3. ~/Desktop/spec.md (modified yesterday, 45KB)
+       Which file should I use? [1/2/3]
+
+  IF no matches found:
+    → Proceed to iCloud search (Task 107)
+```
+
+**Example Interaction:**
+```
+User: "Create environment using spec: project-spec.md"
+
+System: File not found at ./project-spec.md
+System: Searching common locations...
+System: Found spec at: ~/Documents/project-spec.md
+System: Proceeding with bootstrap...
+```
+
+### iCloud Drive Search (Extended Fallback)
+
+If not found in common locations, search iCloud Drive:
+
+**iCloud Path**: `~/Library/Mobile Documents/com~apple~CloudDocs/`
+
+**Search Process:**
+```
+IF no matches in common locations:
+  1. Check if iCloud Drive exists
+  2. Search recursively for [filename] in iCloud directory
+  3. Check file is downloaded (not .icloud placeholder)
+  4. Limit search depth to 5 levels (performance)
+
+  IF matches found:
+    → Verify file is downloaded (size > 0 bytes)
+    → List all matches with paths and timestamps
+    → Ask user to choose if multiple
+
+  IF file is pending download (.icloud file):
+    → Warn user: "File '[filename]' found in iCloud but not downloaded"
+    → Suggest: "Open Finder and wait for file to download, then retry"
+
+  IF still no matches:
+    → Proceed to 'recent files' helper (Task 108)
+```
+
+**iCloud-Specific Checks:**
+- **Downloaded files**: Full file with actual size
+- **Placeholder files**: `.icloud` extension, zero bytes
+- **Synced but not downloaded**: File appears in Finder but isn't local yet
+
+**Example Interaction:**
+```
+User: "Create environment using spec: pension-spec.md"
+
+System: File not found at ./pension-spec.md
+System: Searching common locations...
+System: Not found in Documents, Downloads, Desktop
+System: Searching iCloud Drive...
+System: Found spec at: ~/Library/Mobile Documents/com~apple~CloudDocs/02PROJECTS/pension-spec.md
+System: Proceeding with bootstrap...
+```
+
+**Warning Example:**
+```
+User: "Create environment using spec: old-project.md"
+
+System: Searching all locations...
+System: Found in iCloud but file is not downloaded (cloud-only)
+System:
+⚠ File is pending download from iCloud
+  Location: ~/Library/Mobile Documents/com~apple~CloudDocs/old-project.md
+
+  Please open this location in Finder and wait for download to complete.
+  Then run this command again.
+```
+
+### Recent Files Helper (Last Resort)
+
+If file still not found after all searches, offer to show recent `.md` files:
+
+**Trigger**: After iCloud search returns no matches
+
+**Process:**
+```
+System: Could not find '[filename]' in any location.
+
+Would you like to see recently modified .md files?
+  [Y] Yes, show me recent specs
+  [N] No, I'll provide the correct path
+
+IF user says Yes:
+  1. Search all locations (Documents, Downloads, Desktop, iCloud)
+  2. Find all .md files modified in last 7 days
+  3. Sort by modification time (newest first)
+  4. Limit to 10 most recent
+  5. Display with relative paths and details
+
+  Recent .md files (last 7 days):
+   1. project-spec.md         (Documents, 2 min ago, 45KB)
+   2. pension-calculator.md   (iCloud/02PROJECTS, 1 hour ago, 38KB)
+   3. research-notes.md       (Desktop, yesterday, 12KB)
+   4. old-project.md          (Downloads, 3 days ago, 52KB)
+   5. draft-spec.md           (Documents, 5 days ago, 23KB)
+
+  Which file should I use? [1-5 or 'none']
+
+  IF user selects number:
+    → Use that file
+    → Proceed with bootstrap
+
+  IF user says 'none':
+    → Ask for correct path
+    → Return to path expansion step
+```
+
+**Search Command** (uses find or mdfind):
+```bash
+# Fast search using Spotlight (mdfind)
+mdfind -onlyin ~/Documents -onlyin ~/Downloads -onlyin ~/Desktop \
+  -onlyin ~/Library/Mobile\ Documents/com~apple~CloudDocs \
+  'kMDItemContentType == "net.daringfireball.markdown" && kMDItemFSContentChangeDate >= $time.today(-7)'
+
+# Fallback using find (if mdfind unavailable)
+find ~/Documents ~/Downloads ~/Desktop \
+  ~/Library/Mobile\ Documents/com~apple~CloudDocs \
+  -name "*.md" -mtime -7 -type f 2>/dev/null
+```
+
+**Performance Notes:**
+- Uses Spotlight (mdfind) for speed when available
+- Falls back to find if Spotlight unavailable
+- Limits to 7 days to keep results relevant
+- Shows top 10 to avoid overwhelming user
+
+**Example Interaction:**
+```
+User: "Create environment using spec: my-project.md"
+
+System: Searching all locations...
+System: File 'my-project.md' not found
+
+Would you like to see recently modified .md files? [Y/N]
+
+User: Y
+
+System: Recent .md files (last 7 days):
+  1. startup-idea-spec.md        (Documents, 5 min ago, 34KB)
+  2. side-project-notes.md       (Desktop, 2 hours ago, 18KB)
+  3. pension-calc-spec.md        (iCloud/02PROJECTS, yesterday, 45KB)
+
+Which file should I use? [1-3 or 'none']
+
+User: 3
+
+System: Using: ~/Library/Mobile Documents/com~apple~CloudDocs/02PROJECTS/pension-calc-spec.md
+System: Proceeding with bootstrap...
+```
+
+## Manual Process (Fallback if agent unavailable)
+
+### Phase 1: Analysis & Assumption Extraction (⏱️ Target: 2-3 seconds)
+
+#### Step 1A: Read and Deep-Analyze Specification [PARALLEL EXECUTION]
+
+**PARALLEL READ OPERATIONS**:
+```
+Execute simultaneously in single message:
+1. Read specification document
+2. Read template-selection-rules.md
+3. Read available template READMEs (if paths known)
+4. Read existing project files (if any)
+```
+
+**Extract comprehensive indicators** (process in memory):
+- Technologies mentioned (Excel, Power Query, Python, SQL, React, etc.)
+- Project type keywords (ETL, dashboard, research, analysis, calculation, etc.)
+- Domain characteristics (regulatory, compliance, academic, experimental, etc.)
+- Complexity indicators (timeline mentions, team size, deliverables count)
+- Data characteristics (sensitive, regulatory, financial, medical, etc.)
+
+**Identify implicit assumptions** (concurrent analysis):
+- Technology stack availability
+- User expertise level
+- Data source accessibility
+- Timeline feasibility
+- Error tolerance requirements
+- Team collaboration needs
+
+**Build assumption confidence map** (in-memory processing):
+```
+For each assumption:
+  - Evidence: What in the spec supports this?
+  - Confidence: How certain are we? (percentage)
+  - Impact: What happens if wrong? (low/medium/high/critical)
+  - Validation: Do we need to confirm? (yes/no)
+```
+
+**Performance Benefits**:
+- Parallel reads: 60-70% time reduction vs sequential
+- Single tool message: Reduces context switches
+- In-memory processing: No intermediate writes
+
+#### Step 1B: Generate Targeted Clarifications
+
+**Only generate questions for**:
+- Critical assumptions with <70% confidence
+- High-impact unknowns that affect template selection
+- Ambiguities that would change configuration
+
+**Skip questions if**:
+- All critical assumptions have >85% confidence
+- Template selection is unambiguous (>90% confidence)
+- Configuration needs are clear from specification
+
+**Question format** (if needed):
+```
+Based on your specification, I need to clarify a few critical points:
+
+1. [Question about highest-impact unknown]
+   Why this matters: [Impact on template/configuration]
+
+2. [Question about critical assumption]
+   Why this matters: [What changes based on answer]
+```
+
+### Phase 2: Confident Decision & Generation (⏱️ Target: 3-5 seconds)
+
+#### Step 2A: Process Responses & Validate Assumptions [OPTIMIZED]
+
+**If questions were asked** (batch processing):
+- Update assumption confidence based on responses
+- Mark assumptions as validated/invalidated
+- Identify any new assumptions from responses
+
+**Recalculate template scores** (parallel evaluation):
+- Apply pattern matching using `.claude/reference/template-selection-rules.md`
+- Weight scores by assumption confidence
+- Boost scores for validated assumptions
+
+**Make confident template selection** (instant decision):
+- Select highest-scoring template (must be >85% confidence)
+- If still ambiguous, use Base template with notes
+- Document full decision rationale
+
+**Performance Optimizations**:
+- Batch all updates in single operation
+- Score all templates simultaneously
+- No file I/O until decision finalized
+
+#### Step 2B: Log Decision with Full Context
+
+**Create decision log entry** in `.claude/decisions/template-selection.md`:
+```markdown
+### [Date] - [Project Name from Spec]
+**Selected Template**: [template-name]
+**Confidence**: [percentage] (increased from X% after clarifications)
+**Decision Time**: [time taken]
+
+**Indicators Present**:
+- [List all indicators found]
+
+**Assumptions Validated**:
+- ✓ [Validated assumption 1]
+- ✓ [Validated assumption 2]
+- ✗ [Invalidated assumption]
+- ? [Unvalidated assumption]
+
+**Alternatives Considered**:
+1. **[Alternative Template]** (Confidence: X%)
+   - Why considered: [indicators]
+   - Why rejected: [reasoning]
+
+**Rationale**:
+[Detailed explanation including assumption validation impact]
+
+**Configuration Decisions**:
+- Phase 0: [Yes/No] because [reasoning]
+- Validation level: [Standard/Extensive] because [reasoning]
+- Difficulty scoring: [Simple/Multi-dimension] because [reasoning]
+```
+
+**Detection Logic** (see template-selection-rules.md for full patterns):
+
+```
+HIGH CONFIDENCE SIGNALS (auto-select without asking):
+
+Power Query Template:
+  - "Power Query" OR "M language" OR "Excel" mentioned
+  - AND ("regulatory" OR "compliance" OR "calculation" OR "formula")
+
+Research/Analysis Template:
+  - "research question" OR "hypothesis" OR "literature review"
+  - OR "experiment" OR "statistical analysis" OR "academic"
+  - OR "data science" OR "exploratory analysis"
+
+Life Projects Template:
+  - "personal project" OR "organize" OR "plan"
+  - OR "fitness" OR "learning" OR "budget" OR "goals"
+  - OR mentions personal activities, not professional work
+
+Documentation/Content Template:
+  - "documentation" OR "technical writing" OR "content creation"
+  - OR "blog" OR "tutorial" OR "guide" OR "knowledge base"
+
+LOW CONFIDENCE (ask user to confirm):
+  - Multiple template signals detected
+  - Generic descriptions without clear indicators
+  - Conflicting signals (e.g., both research and engineering keywords)
+```
+
+### Step 3: Detect Configuration Needs
+
+**Analyze specification for**:
+
+**A. Complexity Level**
+- Count of deliverables/features mentioned
+- Timeline indicators (weekend project vs. multi-month)
+- Team size mentions (solo, small team, large team)
+
+**B. Domain Characteristics**
+- Regulatory/compliance requirements
+- Ambiguous source documents (legal, regulations)
+- Specialized domain knowledge needed
+- Zero-error tolerance requirements
+
+**C. Technology Stack**
+- Specific languages/frameworks mentioned
+- Data tools and platforms
+- Infrastructure requirements
+
+**D. Special Requirements**
+- Custom difficulty dimensions needed (if domain is specialized)
+- Phase 0 needed (if regulatory + ambiguous docs)
+- Custom commands needed (if repeated workflows mentioned)
+
+### Step 4: Ask Targeted Questions (Only if Needed)
+
+**Only ask questions for**:
+1. **Template ambiguity** (if multiple templates scored similarly)
+2. **Missing critical info** (if can't determine essential config from spec)
+3. **User preferences** (multi-dimension difficulty scoring preference)
+
+**Example Targeted Questions**:
+
+```
+[If template unclear:]
+"I detected both research and data engineering patterns in your spec.
+Which better describes your focus?
+  1. Research/academic focus (literature review, hypothesis testing, experiments)
+  2. Data engineering focus (ETL pipelines, data transformation, infrastructure)"
+
+[If Phase 0 unclear:]
+"Your project involves [regulatory/compliance] requirements.
+Do you have ambiguous source documents that need interpretation? (Y/N)
+  - Y: Include Phase 0 ambiguity resolution workflow
+  - N: Skip Phase 0, use standard workflow"
+
+[If custom difficulty scoring might help:]
+"Your domain involves [specialized area]. Would you like:
+  1. Simple 1-10 difficulty scoring (recommended for most projects)
+  2. Multi-dimension scoring (5 custom dimensions for specialized domains)"
+```
+
+**Don't ask about**:
+- Project description (extract from spec)
+- Technologies (extract from spec)
+- Goals (extract from spec)
+- Timeline estimates (infer from spec)
+
+#### Step 2C: Generate Environment with High Confidence [MASSIVE PARALLEL EXECUTION]
+
+**PARALLEL FILE GENERATION** (⏱️ Target: 2-3 seconds for entire environment):
+
+#### A. Determine File Set
+
+**Base files (all templates)** - Generate ALL simultaneously:
+```
+Single message with multiple Write tool calls:
+- `CLAUDE.md` - Router file
+- `README.md` - Human documentation
+- `.claude/context/overview.md` - Extracted from specification
+- `.claude/context/validation-rules.md` - Standard rules
+- `.claude/tasks/task-overview.md` - Empty initially
+- `.claude/reference/difficulty-guide.md` - Appropriate for template
+```
+
+**Performance Impact**:
+- Sequential generation: 15-20 seconds (6 files × 2-3 sec each)
+- Parallel generation: 2-3 seconds total (all concurrent)
+- **85% time reduction**
+
+**Template-specific additions**:
+
+**Power Query**:
+- Phase 0 commands if regulatory + ambiguous docs detected
+- Power Query-specific context files (critical_rules.md, llm-pitfalls.md)
+- Query validation commands
+- Phase 0 status tracker if needed
+
+**Research/Analysis**:
+- Research workflow commands (conduct-analysis.md, review-literature.md)
+- Research standards (literature-review.md, hypothesis-tracking.md)
+- Statistical methods reference
+- Research directory structure
+
+**Life Projects**:
+- Minimal structure
+- Goal tracking commands
+- Simple context files
+
+**Documentation/Content**:
+- Content creation workflows
+- Style guides
+- Publishing commands
+
+**Standard Commands** (generate in parallel unless minimal template):
+```
+Parallel Write operations:
+- `complete-task.md`
+- `breakdown.md`
+- `sync-tasks.md`
+- `update-tasks.md`
+```
+
+#### B. Populate Content from Specification
+
+**CLAUDE.md**:
+```markdown
+# Project: [Extract project name from spec]
+
+## What I'm Building
+[Extract 2-3 sentence summary from spec]
+
+## Template Type
+[Auto-detected template]
+
+## Auto-Detected Configuration
+- **Template**: [Name] (detected from: [key indicators])
+- **Complexity**: [Weekend project | Multi-week | Long-term] (based on [reasoning])
+- **Domain**: [If specialized domain detected]
+- **Phase 0**: [Yes/No] (based on [regulatory + ambiguous docs analysis])
+
+## Current Tasks
+See `.claude/tasks/task-overview.md`
+
+## Key Commands
+[List commands appropriate for detected template]
+
+## Critical Context Files
+- `.claude/context/overview.md` - Project overview (generated from specification)
+[Add template-specific context files]
+
+## Technology Stack
+[Extract from specification]
+
+## Next Action
+[Context-appropriate next step based on template]
+```
+
+**context/overview.md**:
+```markdown
+# Project Overview
+
+[Extract and structure content from specification document]
+
+## Project Name
+[From spec]
+
+## Description
+[From spec, expanded]
+
+## Goals
+[Extract from spec]
+
+## Technology Stack
+[Extract from spec]
+
+## Success Criteria
+[Extract from spec or infer from goals]
+
+## Timeline
+[Extract from spec if mentioned]
+
+## Team
+[Extract from spec if mentioned, else "Solo"]
+
+## Template Configuration
+
+**Selected Template**: [Name]
+**Detection Confidence**: [High/Medium - based on signal strength]
+**Key Indicators**: [List top 3-5 patterns that triggered this template]
+
+**Configuration**:
+- Difficulty Scoring: [Simple 1-10 | Multi-dimension]
+- Phase 0: [Yes/No]
+- Custom Components: [List if any]
+
+## Source Specification
+Original specification analyzed: [filename]
+Analysis date: [current date]
+```
+
+**README.md**:
+```markdown
+# [Project Name]
+
+[Extract project description from spec]
+
+## Overview
+
+[Extract goals and purpose from spec]
+
+## Technology Stack
+
+[Extract from spec]
+
+## Quick Start
+
+[Generate appropriate quick start based on detected template type]
+
+## Development Workflow
+
+[Insert template-appropriate workflow description]
+
+## Project Structure
+
+[Show structure appropriate for detected template]
+
+## Documentation
+
+For working with Claude Code on this project:
+- **Start here**: `CLAUDE.md` - AI assistant router
+- **Context**: `.claude/context/` - Project understanding
+- **Commands**: `.claude/commands/` - Reusable workflows
+- **Tasks**: `.claude/tasks/` - Work tracking
+
+[Add template-specific sections]
+```
+
+#### C. Generate Template-Specific Files
+
+Copy appropriate files from detected template's customizations directory.
+
+Populate with project-specific content extracted from specification.
+
+### Step 6: Create Initial Tasks [PARALLEL BATCH CREATION]
+
+**If specification contains clear deliverables/features**, offer to create initial tasks:
+
+```
+"I detected [N] potential tasks from your specification:
+[List extracted tasks with estimated difficulty]
+
+Would you like me to create these as initial task JSON files? (Y/N)"
+```
+
+**If YES** (⏱️ Target: 1-2 seconds for all tasks):
+```
+PARALLEL OPERATIONS:
+1. Create ALL task JSON files simultaneously:
+   - task-001.json
+   - task-002.json
+   - ...
+   - task-N.json
+   (Single message, multiple Write calls)
+
+2. Then run sync-tasks to update overview
+```
+
+**Performance Benefits**:
+- Sequential: N × 2 seconds
+- Parallel: 2 seconds total
+- **90% reduction for 10+ tasks**
+
+**If NO**:
+- User will create tasks manually later
+
+### Step 7: Present Summary
+
+**Output**:
+
+```
+## Completion Message (Tiered Display)
+
+### Tier 1: Essential Information (Always Show)
+
+```
+✓ Environment Ready! ([time taken, e.g., 6.2s])
+
+PROJECT: [Project Name]
+TEMPLATE: [Template Name] (auto-selected, [X]% confidence)
+
+📋 IMMEDIATE NEXT STEP (do this first):
+   → Read: .claude/context/overview.md
+
+⏰ THEN (choose one path):
+
+   [If Phase 0 enabled:]
+   □ Phase 0: Resolve Ambiguities (1-2 hours)
+     → Run: @.claude/commands/initialize-project.md
+     Why: Your project has regulatory/ambiguous requirements
+     Expected: 4-step workflow to eliminate all ambiguities
+
+   [If standard project:]
+   □ Start Development (5 minutes)
+     → Review generated tasks: .claude/tasks/task-overview.md
+     → Run: @.claude/commands/complete-task.md [id]
+     Why: [N] tasks were extracted from your specification
+
+💡 Type "show details" to see full configuration and file list
+```
+
+### Tier 2: Detailed Information (On Request Only)
+
+**Trigger**: User types "show details" or "show bootstrap details"
+
+```
+📊 Bootstrap Details
+
+DETECTION:
+  Template: [Template Name]
+  Confidence: [X]%
+
+  Why this template?
+    ✓ [Indicator 1] - "[quote from spec]"
+    ✓ [Indicator 2] - "[quote from spec]"
+    ✓ [Indicator 3] - "[quote from spec]"
+
+CONFIGURATION:
+  • Difficulty Scoring: [Simple 1-10 | Multi-dimension (5 factors)]
+  • Phase 0: [Enabled | Disabled]
+    [If enabled: Reason - Regulatory requirements + ambiguous source docs]
+  • Technology Stack: [extracted list]
+  • Estimated Complexity: [Weekend project | Multi-week | Long-term]
+  • Initial Tasks: [N tasks created | Create tasks manually]
+
+FILES CREATED:
+  Structure:
+    ├── CLAUDE.md (router file)
+    ├── README.md (human docs)
+    └── .claude/
+        ├── commands/ ([N] commands)
+        ├── context/ ([N] context files)
+        ├── tasks/ (task management)
+        └── reference/ ([N] docs)
+
+  Template-Specific:
+    [List any template-specific files added]
+
+NEXT STEPS (detailed):
+  [If Phase 0:]
+  Phase 0 Workflow (1-2 hours total):
+    1. Initialize (15-20 min)
+       → @.claude/commands/initialize-project.md
+       Extracts ambiguities from source documents
+
+    2. Resolve Ambiguities (45-60 min)
+       → @.claude/commands/resolve-ambiguities.md
+       Interactive: Review and decide on interpretations
+
+    3. Generate Artifacts (10-15 min)
+       → @.claude/commands/generate-artifacts.md
+       Creates glossary, data contracts, initial tasks
+
+    4. Extract/Initialize (5-10 min)
+       → @.claude/commands/extract-queries.md (or equivalent)
+       Sets up project structure for implementation
+
+  Phase 0 completion criteria:
+    - All ambiguities resolved
+    - Every variable defined in glossary
+    - All decisions documented in assumptions.md
+
+  [If standard project:]
+  Standard Workflow:
+    1. Review project overview (2-3 min)
+       → .claude/context/overview.md
+       Confirms extracted requirements and goals
+
+    2. Review/create tasks (5-10 min)
+       → .claude/tasks/task-overview.md
+       [N tasks already created | Create initial tasks]
+
+    3. Start first task (immediate)
+       → @.claude/commands/complete-task.md [task-id]
+       Use complete-task to start AND finish tasks
+
+    4. Break down difficult tasks (as needed)
+       → @.claude/commands/breakdown.md [task-id]
+       Required for any task with difficulty ≥ 7
+
+QUICK REFERENCE:
+  • Template docs: templates/[name]/README.md (in claude_code_environment repo)
+  • Task management: .claude/tasks/task-overview.md
+  • All commands: .claude/commands/
+  • Context files: .claude/context/
+  • Validation: @.claude/commands/update-tasks.md (check system health)
+
+TIME ESTIMATES:
+  Phase 0 (if enabled): 1-2 hours
+  First task setup: 5 minutes
+  Weekend project: 5-10 hours total
+  Multi-week project: 20-40 hours
+  Long-term project: 80+ hours
+```
+
+### Message Selection Logic
+
+**Show Tier 1 (Essential) By Default:**
+- Always show project name, template, and immediate next step
+- Keep output to 10-12 lines max
+- Make next action crystal clear with time estimate
+- Offer "show details" option
+
+**Show Tier 2 (Detailed) Only When:**
+- User explicitly requests: "show details", "show bootstrap details", "show more"
+- User asks about configuration: "what was configured?", "what files were created?"
+- User needs troubleshooting: link to detailed view
+
+**Benefits of Tiered Display:**
+- Reduces cognitive load (10 lines vs 30+ lines)
+- Makes immediate action obvious
+- Prevents decision paralysis
+- Details available when needed
+- Faster comprehension
+
+### Example Outputs
+
+**Example 1: Power Query with Phase 0**
+```
+✓ Environment Ready! (5.8s)
+
+PROJECT: Pension Calculator Implementation
+TEMPLATE: Power Query (auto-selected, 92% confidence)
+
+📋 IMMEDIATE NEXT STEP (do this first):
+   → Read: .claude/context/overview.md
+
+⏰ THEN (Phase 0 workflow):
+   □ Phase 0: Resolve Ambiguities (1-2 hours)
+     → Run: @.claude/commands/initialize-project.md
+     Why: Detected regulatory requirements + ambiguous PDF source
+     Expected: 4-step workflow to clarify all calculations
+
+💡 Type "show details" for full configuration and file list
+```
+
+**Example 2: Standard Research Project**
+```
+✓ Environment Ready! (4.2s)
+
+PROJECT: Machine Learning Performance Analysis
+TEMPLATE: Research/Analysis (auto-selected, 88% confidence)
+
+📋 IMMEDIATE NEXT STEP (do this first):
+   → Read: .claude/context/overview.md
+
+⏰ THEN (start research):
+   □ Review Generated Tasks (5 minutes)
+     → Open: .claude/tasks/task-overview.md
+     → 12 tasks created from your specification
+     → Run: @.claude/commands/complete-task.md [id]
+
+💡 Type "show details" for full configuration and file list
+```
+
+**Example 3: Simple Life Project**
+```
+✓ Environment Ready! (3.1s)
+
+PROJECT: 2024 Fitness Goals Tracker
+TEMPLATE: Life Projects (auto-selected, 75% confidence)
+
+📋 IMMEDIATE NEXT STEP (do this first):
+   → Read: .claude/context/overview.md
+
+⏰ THEN (get started):
+   □ Create Your First Tasks (5 minutes)
+     → Run: @.claude/commands/sync-tasks.md after creating
+     → Or use: @.claude/commands/complete-task.md to start work
+
+💡 Type "show details" for full configuration and file list
+```
+```
+
+## Output Location
+
+All files created in user's current working directory:
+- `./CLAUDE.md`
+- `./README.md`
+- `./.claude/commands/*.md`
+- `./.claude/context/*.md`
+- `./.claude/tasks/task-overview.md`
+- `./.claude/tasks/task-*.json` (if initial tasks created)
+- `./.claude/reference/*.md`
+
+## Error Handling
+
+### File Not Found Errors
+
+**If specification not found (initial attempt)**:
+```
+❌ ERROR: Specification file not found
+
+📍 Where: Looking for file at "[path_provided]"
+
+🔍 Why this happened:
+   • File doesn't exist at this path
+   • Path may have typo or incorrect location
+   • File might be in a different folder
+
+💡 How to fix:
+
+1. **Verify file exists**:
+   ls -la "[path_provided]"
+
+2. **Check common locations**:
+   ls ~/Documents/*.md      # Documents folder
+   ls ~/Downloads/*.md      # Downloads folder
+   ls ~/Desktop/*.md        # Desktop
+
+3. **Use just filename** (I'll search for it):
+   /smart-bootstrap myproject.md
+
+4. **Create new spec interactively**:
+   /create-spec
+
+5. **Get full path from Finder**:
+   • Right-click file in Finder
+   • Hold Option key
+   • Click "Copy [filename] as Pathname"
+   • Paste here
+
+🔗 Related:
+   • Mac paths guide: .claude/reference/mac-user-workflow-guide.md
+   • Create spec: /create-spec
+```
+
+**If specification not found (after searching all locations)**:
+```
+❌ ERROR: Specification file not found after searching
+
+📍 Searched:
+   ✗ Current directory: [pwd]
+   ✗ ~/Documents/
+   ✗ ~/Downloads/
+   ✗ ~/Desktop/
+   ✗ iCloud Drive: ~/Library/Mobile Documents/com~apple~CloudDocs/
+
+🔍 Why this happened:
+   I searched all common Mac locations but couldn't find "[filename]".
+
+💡 How to fix:
+
+1. **Check filename spelling**:
+   You provided: "[filename]"
+
+2. **Show recent .md files**:
+   Would you like to see recently modified .md files?
+   Say "yes" and I'll list them for you.
+
+3. **Use absolute path** if file is elsewhere:
+   /smart-bootstrap /full/path/to/your/spec.md
+
+4. **Create new spec**:
+   /create-spec
+
+5. **Export from Claude Desktop**:
+   • Open conversation in Claude Desktop
+   • Click conversation title → Export → Markdown
+   • Save file and note the location
+
+🔗 Related:
+   • Export guide: .claude/reference/mac-user-workflow-guide.md
+   • Create spec: /create-spec
+```
+
+### Template Detection Issues
+
+**If specification is too vague**:
+```
+⚠️  WARNING: Specification too vague for auto-detection
+
+📍 Issue: Template confidence below 50%
+   • Power Query: 15%
+   • Research: 10%
+   • Life Projects: 5%
+   • Documentation: 5%
+   • Base: 20% (default fallback)
+
+🔍 Why this happened:
+   Your spec lacks clear indicators for template selection.
+
+   Missing signals for:
+   • Project type (web app, data analysis, research, personal)
+   • Technology stack (specific tools/languages)
+   • Domain keywords (regulatory, academic, fitness, API)
+
+💡 How to fix:
+
+**Option A: ADD MORE DETAILS to your spec**
+
+   Edit spec.md and add:
+   1. Project type: "This is a [research project/Power Query solution/etc.]"
+   2. Technologies: "Python, pandas, scipy" or "Power Query, Excel 365"
+   3. Domain keywords:
+      - Research: "hypothesis", "statistical analysis"
+      - Power Query: "regulatory calculation", "M language"
+      - Life: "personal goal", "fitness journey"
+
+   Then retry: /smart-bootstrap spec.md
+
+**Option B: USE CREATE-SPEC for guided creation**
+   /create-spec
+
+**Option C: CHOOSE TEMPLATE MANUALLY**
+
+   1. Power Query - Excel calculations, regulatory, M language
+   2. Research - Academic, hypothesis testing, data science
+   3. Life Projects - Personal goals, fitness, learning
+   4. Documentation - API docs, technical writing
+   5. Base - Standard software projects
+
+   Say: "Use [template name] template"
+
+🔗 Related:
+   • Template guide: .claude/reference/template-selection-rules.md
+   • Spec examples: examples/specifications/templates/
+```
+
+**If conflicting signals**:
+```
+ℹ️  NOTICE: Multiple templates match your spec
+
+📍 Detection scores:
+   • Research/Analysis: 75% ← "hypothesis", "statistical analysis"
+   • Power Query: 70% ← "Excel", "calculation", "regulatory"
+
+🔍 Why this happened:
+   Your spec contains keywords matching multiple templates.
+
+💡 How to clarify:
+
+**Which is your PRIMARY focus?**
+
+If RESEARCH is primary:
+   • Testing hypothesis
+   • Publishing findings
+   • Statistical significance
+   → Use Research template
+
+If POWER QUERY is primary:
+   • Automating Excel reports
+   • M language implementation
+   • Compliance calculations
+   → Use Power Query template
+
+Say: "Use [template name] template"
+
+🔗 Related:
+   • Template comparison: legacy-template-reference.md
+   • Detection rules: .claude/reference/template-selection-rules.md
+```
+
+### Directory and File Issues
+
+**If .claude/ already exists**:
 ```
 ❌ ERROR: Claude Code environment already exists
 
@@ -54,955 +1451,251 @@ ls -A
 
 💡 How to fix:
 
-**Option 1: WRONG DIRECTORY**
+**Option A: WRONG DIRECTORY**
    cd /path/to/your/new/project
-   /bootstrap
+   /smart-bootstrap spec.md
 
-**Option 2: REMOVE EXISTING** (⚠️  deletes environment)
-   /undo-bootstrap
-   # Then bootstrap fresh
-   /bootstrap
+**Option B: START OVER** (⚠️  deletes existing environment)
+   # Back up first
+   cp -r .claude .claude.backup
 
-**Option 3: KEEP EXISTING**
+   # Remove and restart
+   rm -rf .claude CLAUDE.md README.md
+   /smart-bootstrap spec.md
+
+**Option C: UPDATE EXISTING**
    The environment already exists! You can:
    • Start working: /complete-task [id]
    • View tasks: cat .claude/tasks/task-overview.md
    • Update context: Edit .claude/context/overview.md
 
-**Option 4: INCOMPLETE BOOTSTRAP**
+**Option D: INCOMPLETE BOOTSTRAP**
    # Check what exists
    ls -la .claude/
 
-   # If incomplete, remove manually
+   # If incomplete, remove and retry
    rm -rf .claude
-   /bootstrap
+   /smart-bootstrap spec.md
 
 🔗 Related:
-   • Undo bootstrap: /undo-bootstrap
    • Working with environments: See CLAUDE.md
 ```
-→ STOP - Do not proceed with bootstrap
 
-**If CLAUDE.md exists but no .claude/**:
+**If specification file is empty or too small**:
 ```
-⚠️  WARNING: CLAUDE.md file exists without .claude/ directory
+⚠️  WARNING: Specification file appears empty or too small
 
-📍 Where: [current_directory]/CLAUDE.md
+📍 Where: "[path]"
+   File size: [N] bytes (expected: >100 bytes)
 
 🔍 Why this happened:
-   There's a CLAUDE.md file but no .claude/ directory.
+   The file exists but has little/no content.
 
-   Possible reasons:
-   • Partial bootstrap that failed
-   • Manual file creation
-   • .claude/ was deleted but CLAUDE.md remained
-   • Different project using CLAUDE.md
+   Possible causes:
+   • File wasn't saved properly
+   • Export from Claude Desktop failed
+   • Wrong file opened
 
-💡 What happens if you proceed:
-   Bootstrap will create .claude/ directory alongside existing CLAUDE.md.
+💡 How to fix:
 
-   Your options:
-   A) Continue - Bootstrap will work around existing file
-   B) Remove CLAUDE.md first - Start completely fresh
-   C) Back up CLAUDE.md - mv CLAUDE.md CLAUDE.md.old
-   D) Cancel - Bootstrap in different directory
+1. **Check file contents**:
+   cat "[path]"
 
-Proceed with bootstrap? This will create .claude/ directory. [y/N]
+2. **Re-export from Claude Desktop**:
+   • Open conversation
+   • Click title → Export → Markdown
+   • Save and note the path
+
+3. **Create new spec**:
+   /create-spec
+
+4. **Minimum spec requirements**:
+   • Project name/title
+   • Description (what you're building)
+   • Technology stack
+   • Goals or objectives
+   • At least 100-200 words
+
+🔗 Related:
+   • Spec templates: examples/specifications/templates/
+   • Export guide: .claude/reference/mac-user-workflow-guide.md
 ```
-→ Get user confirmation before proceeding
-
-**If other files present (no .claude/)**:
-```
-⚠️  NOTICE: Current directory is not empty
-
-Found existing files:
-  [list first 5-10 files]
-  [and X more...]
-
-Bootstrap will create:
-  • CLAUDE.md (if not present)
-  • .claude/ directory with environment files
-
-Existing files will NOT be modified or deleted.
-
-Is this the correct directory for bootstrap? [Y/n]
-```
-→ Get user confirmation before proceeding
-
-**If directory is empty or only safe files**:
-```
-✓ Directory check passed - Safe to proceed
-```
-→ Continue to Step 1
-
-### 3. Present Pre-Flight Summary
-
-**Show quick summary before questions**:
-```
-═══════════════════════════════════════════════════════════
-BOOTSTRAP PRE-FLIGHT CHECK
-═══════════════════════════════════════════════════════════
-
-DIRECTORY: [current directory path]
-  Status: [Empty | Has safe files | Has project files]
-  Conflicts: None ✓
-
-Ready to configure new Claude Code environment.
-
-This will ask ~5-8 questions (takes 2-3 minutes).
-
-═══════════════════════════════════════════════════════════
-```
-
-## Process
-
-### Step 1: Gather Project Information (After Pre-Flight Success)
-
-Ask user the following questions:
-
-**1. Project Description**
-- "What are you building? (Brief description is fine)"
-- "What's the main goal or purpose?"
-
-**2. Project Type**
-- "What type of work is this?"
-  - [ ] Data Engineering (ETL, pipelines, data transformation)
-  - [ ] BI/Dashboard (Analytics, reporting, visualization)
-  - [ ] Power Query (Excel, regulatory calculations)
-  - [ ] Web Development (Frontend, backend, full-stack)
-  - [ ] DevOps/Infrastructure (CI/CD, cloud, containers)
-  - [ ] Machine Learning (Models, training, deployment)
-  - [ ] General Purpose (Other)
-
-**3. Estimated Complexity**
-- "How many tasks do you estimate?" (helps determine minimal vs full)
-  - [ ] < 10 tasks (weekend project)
-  - [ ] 10-30 tasks (multi-week project)
-  - [ ] 30+ tasks (long-term project)
-
-**4. Team Size**
-- "Who will work on this?"
-  - [ ] Solo
-  - [ ] Small team (2-3 people)
-  - [ ] Medium/Large team (4+ people)
-
-**5. Domain Characteristics**
-- "Does this project involve:" (check all that apply)
-  - [ ] Regulatory/compliance requirements
-  - [ ] Ambiguous source requirements (legal docs, regulations)
-  - [ ] Specialized domain knowledge (medical, financial, legal)
-  - [ ] Need for audit trail
-  - [ ] Zero error tolerance
-
----
-
-### Step 2: Determine Template Type
-
-Based on responses, recommend template:
-
-**Logic**:
-
-```
-IF tasks < 10 AND solo AND no regulatory requirements:
-  → Recommend MINIMAL
-
-ELSE IF project_type == "Power Query" OR (regulatory requirements AND ambiguous docs):
-  → Recommend POWER QUERY (with Phase 0)
-
-ELSE IF project_type == "Data Engineering":
-  → Recommend DATA ENGINEERING
-
-ELSE IF project_type == "BI/Dashboard":
-  → Recommend BI/DASHBOARD
-
-ELSE IF project_type in ["Data Engineering", "BI/Dashboard"] AND both needed:
-  → Recommend HYBRID
-
-ELSE:
-  → Recommend BASE (full)
-```
-
-**Present Recommendation**:
-- "Based on your answers, I recommend the **[TEMPLATE NAME]** template."
-- "This template includes: [list key features]"
-- "Does this sound right, or would you prefer a different template?"
-
-Allow user to override recommendation.
-
----
-
-### Step 3: Choose Components
-
-Based on template choice, ask about optional components:
-
-#### For All Templates (except Minimal)
-
-**A. Custom Difficulty Scoring**
-- "Would you like to use multi-dimension difficulty scoring instead of simple 1-10?"
-  - If YES: Ask for 5 dimensions relevant to domain
-  - If NO: Use standard 1-10 scoring
-
-**B. Domain-Specific Context Files**
-- "Does your domain have specialized knowledge or common pitfalls?"
-  - If YES: Offer to create:
-    - `llm-pitfalls.md` - Common mistake checklist
-    - `critical_rules.md` - DO/DON'T rules for technology
-    - `glossary.md` - Term definitions (if not using Phase 0)
-
-**C. Custom Commands**
-- "Do you have repeated workflows that would benefit from custom commands?"
-  - If YES: Ask for workflow descriptions
-  - If NO: Include only standard commands
-
-#### For Regulatory/Ambiguous Requirements
-
-**D. Phase 0 Workflow**
-- "Your project has ambiguous requirements. Include Phase 0 ambiguity resolution workflow?"
-  - If YES: Include Phase 0 commands and status tracker
-  - If NO: Skip Phase 0 components
-
----
-
-### Step 4: Customize Difficulty Scoring (if chosen)
-
-If user chose multi-dimension scoring:
-
-**Ask for 5 dimensions** relevant to their domain:
-
-- "What 5 dimensions best capture task difficulty for your domain?"
-- "Examples:"
-  - Web: UI Complexity, State Management, API Integration, Performance, Accessibility
-  - Data: Data Volume, Transformation Complexity, Dependencies, Error Recovery, Performance SLA
-  - DevOps: Infrastructure Scope, Security Impact, Rollback Complexity, Monitoring, Cross-Team Deps
-  - ML: Data Complexity, Model Complexity, Training Time, Interpretability, Deployment
-
-**For each dimension**, confirm:
-- Dimension name
-- What 1-2 means (trivial)
-- What 5-6 means (moderate)
-- What 9-10 means (extreme)
-
----
-
-### Step 5: Generate Folder Structure
-
-Create the directory structure based on template choice:
-
-#### Minimal Template Structure
-
-```
-project/
-├── CLAUDE.md
-└── .claude/
-    └── tasks/
-        ├── task-overview.md
-        └── (task JSON files created separately)
-```
-
-#### Base Template Structure
-
-```
-project/
-├── CLAUDE.md
-├── README.md
-└── .claude/
-    ├── commands/
-    │   ├── complete-task.md
-    │   ├── breakdown.md
-    │   ├── sync-tasks.md
-    │   └── update-tasks.md
-    ├── context/
-    │   ├── overview.md
-    │   ├── validation-rules.md
-    │   └── standards/
-    ├── tasks/
-    │   ├── task-overview.md
-    │   └── (task JSON files created separately)
-    └── reference/
-        ├── difficulty-guide.md
-        └── breakdown-workflow.md
-```
-
-#### Domain-Specific Additions
-
-**Power Query** (add to Base):
-```
-├── commands/
-│   ├── initialize-project.md       # Phase 0 Step 1
-│   ├── resolve-ambiguities.md      # Phase 0 Step 2
-│   ├── generate-artifacts.md       # Phase 0 Step 3
-│   ├── extract-queries.md          # Phase 0 Step 4
-│   └── validate-query.md
-├── context/
-│   ├── glossary.md                 # Phase 0 output
-│   ├── assumptions.md              # Phase 0 output
-│   ├── llm-pitfalls.md
-│   ├── data-architecture.md
-│   ├── power-query.md
-│   ├── naming.md
-│   ├── error-handling.md
-│   └── critical_rules.md
-├── tasks/
-│   └── _phase-0-status.md
-└── reference/
-    ├── ambiguity-report.md         # Phase 0 output
-    ├── data-contracts.md           # Phase 0 output
-    ├── query-manifest.md           # Phase 0 output
-    ├── dependency-graph.md         # Phase 0 output
-    └── difficulty-guide-pq.md
-```
-
-**Data Engineering** (add to Base):
-```
-├── commands/
-│   ├── create-pipeline.md
-│   ├── test-pipeline.md
-│   └── deploy-pipeline.md
-├── context/
-│   ├── data-architecture.md
-│   ├── naming.md
-│   ├── error-handling.md
-│   └── schema-evolution.md
-└── reference/
-    └── pipeline-patterns.md
-```
-
-**BI/Dashboard** (add to Base):
-```
-├── commands/
-│   ├── create-dashboard.md
-│   ├── validate-metrics.md
-│   └── optimize-queries.md
-├── context/
-│   ├── visualization-standards.md
-│   ├── data-refresh.md
-│   ├── performance.md
-│   └── security.md
-└── reference/
-    └── dashboard-patterns.md
-```
-
-**Custom Components** (add as selected):
-- If `llm-pitfalls.md`: Add to `context/`
-- If `critical_rules.md`: Add to `context/`
-- If `glossary.md` (non-Phase-0): Add to `context/`
-- If custom difficulty: Create `reference/difficulty-guide-[domain].md`
-- If custom commands: Add to `commands/`
-
----
-
-### Step 6: Generate File Contents
-
-#### A. CLAUDE.md
-
-```markdown
-# Project: [Project Name]
-
-## What I'm Building
-[User's project description, 2-3 sentences]
-
-## Template Type
-[Minimal | Base | Power Query | Data Engineering | BI/Dashboard | Hybrid]
-
-## Current Phase
-[Phase 0: Requirements Resolution | Implementation | Maintenance]
-
-## Current Tasks
-See `.claude/tasks/task-overview.md`
-
-## Key Commands
-- `@.claude/commands/complete-task.md` - Start/finish tasks
-- `@.claude/commands/breakdown.md` - Split difficult tasks
-- `@.claude/commands/sync-tasks.md` - Update task overview
-[Add Phase 0 commands if applicable]
-[Add custom commands if created]
-
-## Critical Context Files
-- `.claude/context/overview.md` - Project overview
-[Add domain-specific context files if created]
-
-## Difficulty Scoring
-[Simple 1-10 | Multi-dimension (5 factors)]
-[If multi-dimension: See `.claude/reference/difficulty-guide-[domain].md`]
-
-## Next Action
-[Phase 0 Step 1: initialize-project.md | Create initial tasks | Start first task]
-```
-
-#### B. README.md
-
-```markdown
-# [Project Name]
-
-[User's project description]
-
-## Purpose
-
-[Expand on project goals]
-
-## Technology Stack
-
-[List technologies/frameworks based on project type]
-
-## Getting Started
-
-[Provide setup instructions based on project type]
-
-## Development Workflow
-
-[Explain task management approach]
-
-1. Review tasks in `.claude/tasks/task-overview.md`
-2. Use `.claude/commands/complete-task.md` to start work
-3. Break down difficult tasks (difficulty ≥7) using `.claude/commands/breakdown.md`
-4. Keep task overview updated with `.claude/commands/sync-tasks.md`
-
-[If Phase 0: Add Phase 0 workflow section]
-
-## Project Structure
-
-[Describe folder organization based on project type]
-
-## Documentation
-
-- `.claude/context/` - Project context and standards
-- `.claude/commands/` - Reusable workflows
-- `.claude/tasks/` - Task management
-- `.claude/reference/` - Supporting documentation
-
-## Contributing
-
-[Team collaboration guidelines if team size > 1]
-```
-
-#### C. context/overview.md
-
-```markdown
-# Project Overview
-
-## Project Name
-[Name]
-
-## Description
-[User's description expanded]
-
-## Goals
-[Extract from user input]
-
-## Technology Stack
-[Based on project type]
-
-## Template Configuration
-
-**Template Type**: [Type]
-**Difficulty Scoring**: [Simple | Multi-dimension]
-**Phase 0**: [Yes | No]
-
-[If Phase 0:]
-## Phase 0 Status
-See `.claude/tasks/_phase-0-status.md` for current progress.
-
-## Domain Characteristics
-[If regulatory/specialized domain, describe here]
-
-## Success Criteria
-[What does "done" look like?]
-
-## Constraints
-[Any known limitations or requirements]
-
-## Team
-[Team size and roles if applicable]
-```
-
-#### D. context/validation-rules.md
-
-```markdown
-# Task Validation Rules
-
-## Task Creation Rules
-
-1. **Every task must have**:
-   - Unique ID (sequential integers)
-   - Clear title (action-oriented)
-   - Detailed description
-   - Difficulty score (1-10)
-   - Status (Pending | In Progress | Blocked | Broken Down | Finished)
-   - Created date
-   - Dependencies array (task IDs that must complete first)
-   - Subtasks array (child task IDs)
-   - Parent task ID (if this is a subtask)
-   - Notes field
-
-2. **Difficulty Scoring**:
-   [If simple:]
-   - Use 1-10 scale
-   - Tasks ≥7 must be broken down before starting
-
-   [If multi-dimension:]
-   - Score across 5 dimensions (see difficulty-guide-[domain].md)
-   - Average and round to nearest integer
-   - Tasks ≥7 must be broken down before starting
-
-3. **Status Rules**:
-   - Tasks start as "Pending"
-   - Only one task "In Progress" at a time (recommended)
-   - "Broken Down" tasks cannot be worked on directly (work on subtasks)
-   - "Broken Down" tasks auto-complete when all subtasks finish
-   - "Finished" tasks are complete and verified
-
-4. **Dependency Rules**:
-   - Cannot start task until all dependencies are "Finished"
-   - No circular dependencies
-   - Subtasks inherit parent's dependencies
-
-5. **Breakdown Rules**:
-   - Tasks with difficulty ≥7 must be broken down
-   - Broken down task gets status "Broken Down (0/N done)"
-   - Create 2-5 subtasks
-   - Subtasks reference parent_task ID
-   - Parent task auto-completes when last subtask finishes
-
-## Task Update Rules
-
-1. Use `complete-task.md` to change status to "In Progress" or "Finished"
-2. Add notes when completing tasks (what was done, issues encountered)
-3. Run `sync-tasks.md` after status changes to update overview
-4. Check parent task when completing subtasks
-
-## Validation Checks
-
-Run `update-tasks.md` to validate:
-- All tasks have required fields
-- No circular dependencies
-- Subtask/parent relationships are bidirectional
-- Difficulty scores are in valid range
-- Status values are valid
-- Broken Down tasks have subtasks
-```
-
-#### E. reference/difficulty-guide.md
-
-[If Simple Scoring:]
-```markdown
-# Difficulty Scoring Guide
-
-## 1-10 Scale
-
-- **1-2**: Trivial (fix typo, update text, simple config change)
-- **3-4**: Low (basic CRUD, simple UI component, straightforward logic)
-- **5-6**: Moderate (form validation, API integration, basic algorithms)
-- **7-8**: High (authentication setup, database migration, complex features)
-  - **MUST BREAK DOWN** before starting
-- **9-10**: Extreme (architecture changes, distributed systems, major refactors)
-  - **MUST BREAK DOWN** before starting
-
-## Breakdown Rule
-
-Tasks with difficulty ≥7 MUST be broken down using `breakdown.md` before work begins.
-
-## Examples
-
-[Provide 3-5 examples relevant to project type]
-```
-
-[If Multi-Dimension Scoring:]
-```markdown
-# Difficulty Scoring Guide for [Domain]
-
-## 5-Dimension Scoring System
-
-This project uses multi-dimension difficulty scoring for more accurate task assessment.
-
-### Dimension 1: [Name] (1-10)
-- **1-2**: [Criteria]
-- **3-4**: [Criteria]
-- **5-6**: [Criteria]
-- **7-8**: [Criteria]
-- **9-10**: [Criteria]
-
-[Repeat for all 5 dimensions with user-specified names and criteria]
-
-## Final Score Calculation
-
-**Final Difficulty = ROUND(AVERAGE(Dim1, Dim2, Dim3, Dim4, Dim5))**
-
-## Breakdown Rule
-
-Tasks with final difficulty ≥7 MUST be broken down using `breakdown.md` before work begins.
-
-## Examples
-
-[Provide 2-3 examples showing dimension scoring]
-```
-
-#### F. tasks/task-overview.md (initial)
-
-```markdown
-# Task Overview
-
-**Project**: [Name]
-**Last Updated**: [Date]
-**Total Tasks**: 0
-**Completed**: 0
-**In Progress**: 0
-**Pending**: 0
-
-## Status Summary
-
-No tasks created yet.
-
-[If Phase 0:]
-Complete Phase 0 workflow first:
-1. Run `@.claude/commands/initialize-project.md`
-2. Run `@.claude/commands/resolve-ambiguities.md`
-3. Run `@.claude/commands/generate-artifacts.md`
-4. Run `@.claude/commands/extract-queries.md` [or equivalent]
-
-[Else:]
-Create your first task and run `@.claude/commands/sync-tasks.md` to see it here.
-
-## Next Steps
-
-[Phase 0 workflow | Create initial tasks based on project scope]
-```
-
-#### G. Phase 0 Status (if applicable)
-
-`tasks/_phase-0-status.md`:
-```markdown
-# Phase 0: Requirements Resolution
-
-**Started**: [Not yet started]
-**Last Updated**: [Date]
-**Status**: Not Started
-
-## Purpose
-
-Resolve ambiguities in source requirements before implementation to ensure:
-- Consistent interpretation of terms
-- All decisions documented
-- Zero ambiguity in specifications
-
-## Steps
-
-- [ ] Step 1: Initialize Project (`initialize-project.md`)
-  - Analyze source documents
-  - Extract ambiguities and inconsistencies
-  - Generate ambiguity report
-
-- [ ] Step 2: Resolve Ambiguities (`resolve-ambiguities.md`)
-  - Interactive batch resolution (5 at a time)
-  - User makes interpretation decisions
-  - Document in assumptions.md
-
-- [ ] Step 3: Generate Artifacts (`generate-artifacts.md`)
-  - Create glossary.md (variable definitions)
-  - Create data-contracts.md (schemas)
-  - Create manifest and dependency graph
-  - Generate initial tasks
-
-- [ ] Step 4: Extract/Initialize (`extract-queries.md` or equivalent)
-  - Set up project structure for implementation
-  - Version control setup
-  - Ready for implementation
-
-## Outputs Generated
-
-- [ ] `context/glossary.md`
-- [ ] `context/assumptions.md`
-- [ ] `reference/ambiguity-report.md`
-- [ ] `reference/data-contracts.md`
-- [ ] `reference/[domain]-manifest.md`
-- [ ] `reference/dependency-graph.md`
-- [ ] Initial task JSON files
-
-## Next Action
-
-Run `@.claude/commands/initialize-project.md` to begin Phase 0.
-
-## Completion Criteria
-
-- All ambiguities resolved (nothing in ambiguity-report.md unresolved)
-- Every variable/term has definition in glossary.md
-- All interpretation decisions documented in assumptions.md
-- Expected schemas defined in data-contracts.md
-- Initial task list created
-
-**Phase 0 is complete when all steps are checked and all outputs generated.**
-```
-
-#### H. Domain-Specific Context Files
-
-**If llm-pitfalls.md selected**:
-
-Create `context/llm-pitfalls.md` with template:
-```markdown
-# LLM Pitfalls for [Domain]
-
-This checklist catalogs common mistakes LLMs make when working with [domain] materials.
-
-IMPORTANT: Review this checklist before implementing tasks in this domain.
-
-## Category 1: [e.g., Security]
-
-### Common Mistakes:
-- [ ] [Specific mistake 1]
-- [ ] [Specific mistake 2]
-
-**Correct Approach**: [How to avoid]
-
-## Category 2: [e.g., Performance]
-
-### Common Mistakes:
-- [ ] [Specific mistake 3]
-- [ ] [Specific mistake 4]
-
-**Correct Approach**: [How to avoid]
-
-[Add 3-6 categories based on domain]
-
-## When to Review
-
-- [ ] Before starting any new task
-- [ ] During code review
-- [ ] When encountering unexpected behavior
-```
-
-**If critical_rules.md selected**:
-
-Create `context/critical_rules.md` with template:
-```markdown
-# Critical Rules for [Technology]
-
-These rules MUST be followed. Violations lead to [consequences].
-
-## Rule 1: [Category]
-
-**DO**: [Correct approach]
-**DON'T**: [What to avoid]
-**WHY**: [Consequence of violation]
-
-**Example**:
-```[language]
-// CORRECT
-[code example]
-
-// INCORRECT
-[code example]
-```
-
-[Add 5-10 rules based on technology]
-```
-
-#### I. Command Files
-
-**Standard Commands** (always include unless Minimal):
-
-Copy from this repository:
-- `complete-task.md`
-- `breakdown.md`
-- `sync-tasks.md`
-- `update-tasks.md`
-
-**Phase 0 Commands** (if Phase 0 selected):
-
-Create domain-appropriate versions based on `reusable-template-patterns.md` section 1.
-
-**Custom Commands** (if user requested):
-
-Create based on user-described workflows using command template from `template-customization-guide.md`.
-
----
-
-### Step 7: Summary and Next Steps
-
-**Present to user**:
-
-```
-✓ Bootstrap Complete!
-
-Created [TEMPLATE TYPE] environment for: [Project Name]
-
-Structure:
-- CLAUDE.md (router file)
-- README.md (human documentation)
-- .claude/commands/ ([N] commands)
-- .claude/context/ ([N] context files)
-- .claude/tasks/ (task management)
-- .claude/reference/ ([N] reference docs)
-
-Configuration:
-- Difficulty Scoring: [Simple 1-10 | Multi-dimension (5 factors)]
-[If Phase 0:] - Phase 0: Enabled
-[If custom files:] - Custom Components: [list]
-
-📋 IMMEDIATE NEXT STEP (do this first):
-   → Read: .claude/context/overview.md
-
-⏰ THEN:
-[If Phase 0 enabled:]
-   □ Phase 0: Resolve Ambiguities (1-2 hours)
-     → Run: /initialize-project
-     Why: [Reason - e.g., "Detected regulatory requirements + ambiguous calculations"]
-     Expected: 4-step workflow to clarify all variables and assumptions
-
-     Phase 0 Steps:
-     1. Initialize Project (15-20 min) - Extract ambiguities
-     2. Resolve Ambiguities (30-60 min) - Interactive decisions
-     3. Generate Artifacts (15-20 min) - Create glossary & contracts
-     4. Extract Queries (10-15 min) - Set up for implementation
-
-     After Phase 0: Begin implementation with /complete-task [first-task-id]
-
-[If initial tasks created:]
-   □ Review Generated Tasks (5 minutes)
-     → Open: .claude/tasks/task-overview.md
-     → [N] tasks created from bootstrap
-     → Start work: /complete-task [suggested-first-task-id]
-
-     Suggested first task: [ID] - [Title] (difficulty: [N], est. [X]h)
-     [Reason - e.g., "Foundation task, blocks others", "High priority"]
-
-[If no tasks created:]
-   □ Create Your First Tasks (10 minutes)
-     → Review project scope in overview.md
-     → Create task JSON files in .claude/tasks/
-     → Run: /sync-tasks to update overview
-     → Then: /complete-task [id] to start work
-
-[If Life Projects or simple template:]
-   □ Get Started (5 minutes)
-     → Review goals in overview.md
-     → Create 2-3 initial tasks for quick wins
-     → Or jump in: /complete-task to start first task
-
-Quick Reference:
-- Task management: .claude/tasks/task-overview.md
-- Commands: .claude/commands/
-- Context: .claude/context/
-[If PQ:] - PQ Quick Ref: .claude/reference/power-query-quick-reference.md
-[If custom difficulty:] - Difficulty Guide: .claude/reference/difficulty-guide-[domain].md
-
-Happy building!
-```
-
----
-
-## Output Location
-
-All files created in user's current project directory:
-- `./CLAUDE.md`
-- `./README.md`
-- `./.claude/commands/*.md`
-- `./.claude/context/*.md`
-- `./.claude/tasks/task-overview.md`
-- `./.claude/tasks/_phase-0-status.md` (if Phase 0)
-- `./.claude/reference/*.md`
-
----
-
-## Critical Rules
-
-1. **Always ask before creating** - Don't assume user wants default template
-2. **Customize, don't just copy** - Adapt content to user's specific domain
-3. **Explain recommendations** - Tell user WHY you recommend a template
-4. **Allow overrides** - User can choose different template than recommended
-5. **Start simple** - When in doubt, recommend simpler template (can upgrade later)
-6. **Create only selected components** - Don't add files user didn't choose
-7. **Populate content** - Don't create empty files, add appropriate starter content
-8. **Be consistent** - Use naming conventions and patterns from `templates/[name]/README.md`
-9. **Link documentation** - Reference full docs in generated files
-10. **Test structure** - Ensure all cross-references between files are valid
-
----
-
-## Template Recommendation Decision Tree
-
-```
-[Tasks < 10] AND [Solo] AND [No Regulatory]
-    → MINIMAL
-
-[Power Query Project] OR [Excel + Regulatory]
-    → POWER QUERY (ask about Phase 0)
-
-[Regulatory] AND [Ambiguous Source Docs]
-    → BASE + PHASE 0 + Domain Customizations
-
-[Data Engineering] AND NOT [BI/Dashboard]
-    → DATA ENGINEERING
-
-[BI/Dashboard] AND NOT [Data Engineering]
-    → BI/DASHBOARD
-
-[Data Engineering] AND [BI/Dashboard]
-    → HYBRID
-
-[Web Dev] OR [DevOps] OR [ML] OR [General]
-    → BASE (offer domain customizations)
-```
-
----
-
-## Examples
-
-### Example 1: Simple Weekend Project
-
-**User Input**:
-- Description: "Build a todo list app"
-- Type: Web Development
-- Tasks: ~5
-- Team: Solo
-
-**Recommendation**: Minimal
-**Rationale**: Simple project, few tasks, solo developer
-**Files Created**: CLAUDE.md, .claude/tasks/ only
-
----
-
-### Example 2: Regulatory Calculation Project
-
-**User Input**:
-- Description: "Implement pension calculation from regulatory PDF"
-- Type: Power Query
-- Tasks: ~20
-- Team: 2 people
-- Regulatory: Yes, ambiguous source docs
-
-**Recommendation**: Power Query with Phase 0
-**Rationale**: Regulatory requirements + ambiguous docs = need Phase 0
-**Files Created**: Full PQ structure including Phase 0 commands and status tracker
-
----
-
-### Example 3: Data Engineering Pipeline
-
-**User Input**:
-- Description: "ETL pipeline for customer data"
-- Type: Data Engineering
-- Tasks: ~15
-- Team: 3 people
-- Regulatory: No
-
-**Recommendation**: Data Engineering Template
-**Rationale**: Clear domain, medium complexity, team collaboration
-**Files Created**: Base + data engineering commands and context files
-**Custom**: Offer multi-dimension scoring for data domain
-
----
 
 ## Validation Checklist
 
-Before completing bootstrap, verify:
+Before completing, verify:
 
-- [ ] All required folders created
-- [ ] CLAUDE.md contains correct template type and commands
-- [ ] README.md has appropriate getting started section
-- [ ] context/overview.md describes project
-- [ ] validation-rules.md matches scoring system chosen
-- [ ] difficulty-guide.md (or domain variant) exists and is correct
-- [ ] All command files referenced in CLAUDE.md exist
-- [ ] Phase 0 status tracker present if Phase 0 enabled
-- [ ] Domain-specific context files have starter content (not empty)
-- [ ] No broken cross-references between files
-- [ ] task-overview.md has appropriate "next steps" for template type
+- [ ] Specification was successfully read and parsed
+- [ ] Template was detected with reasonable confidence
+- [ ] All referenced files in CLAUDE.md exist
+- [ ] context/overview.md contains extracted content from spec (not empty templates)
+- [ ] README.md has project-specific content from spec
+- [ ] Technology stack extracted and documented
+- [ ] Appropriate commands for template type are present
+- [ ] Cross-references between files are valid
+- [ ] If Phase 0 enabled, status tracker exists
+- [ ] If initial tasks created, they're valid JSON and synced
+
+## Critical Rules
+
+1. **Trust the specification** - Extract actual content, don't make up project details
+2. **High confidence = don't ask** - If clear signals present, auto-select template
+3. **Ask only when necessary** - Don't ask questions answered by the spec
+4. **Populate, don't template** - Fill files with real content from spec, not placeholders
+5. **Explain detection** - Tell user why template was selected (transparency)
+6. **Allow override** - User can always switch templates if detection is wrong
+7. **Extract, don't invent** - Use user's words from spec, don't paraphrase unnecessarily
+8. **Be conservative** - When in doubt, choose simpler template (can upgrade later)
+
+## Performance Metrics & Optimization
+
+### Time Reduction Summary
+
+| Phase | Sequential (Old) | Parallel (New) | Improvement |
+|-------|-----------------|-----------------|-------------|
+| **Phase 1: Analysis** | 8-10 seconds | 2-3 seconds | **70% faster** |
+| - Read spec + rules | 4-5 sec | 1-2 sec | Parallel reads |
+| - Template analysis | 4-5 sec | 1 sec | In-memory processing |
+| **Phase 2: Generation** | 20-30 seconds | 3-5 seconds | **85% faster** |
+| - File generation | 15-20 sec | 2-3 sec | Parallel writes |
+| - Task creation | 5-10 sec | 1-2 sec | Batch creation |
+| **Total Setup Time** | 28-40 seconds | 5-8 seconds | **80% faster** |
+
+### Parallel Execution Patterns
+
+#### Pattern 1: Multi-Read Operations
+```javascript
+// Execute in single message:
+[
+  Read(specification.md),
+  Read(template-rules.md),
+  Read(template-readme.md)
+]
+// All complete simultaneously
+```
+
+#### Pattern 2: Batch File Generation
+```javascript
+// Generate entire environment at once:
+[
+  Write(CLAUDE.md, content1),
+  Write(README.md, content2),
+  Write(overview.md, content3),
+  Write(task-001.json, content4),
+  Write(task-002.json, content5)
+]
+// 10 files = still ~3 seconds
+```
+
+#### Pattern 3: Concurrent Validation
+```javascript
+// Validate all assumptions simultaneously:
+[
+  ValidateTemplate(indicators),
+  ValidateComplexity(metrics),
+  ValidateRequirements(spec)
+]
+```
+
+### Resource Utilization
+
+- **Context Usage**: 40% reduction (fewer tool round-trips)
+- **Token Efficiency**: Better batching reduces overhead
+- **Error Recovery**: Faster retry on failures
+
+## Two-Step Processing Benefits
+
+### Enhanced Accuracy
+- **Assumption Validation**: Explicitly validates assumptions before making decisions
+- **Higher Confidence**: Decisions made with >85% confidence after clarifications
+- **Reduced Errors**: Catches misunderstandings before environment generation
+
+### Better User Experience
+- **Minimal Questions**: Only asks when truly necessary (critical unknowns)
+- **Transparent Reasoning**: Shows exactly why each question matters
+- **Faster Resolution**: Targeted questions lead to quicker accurate setup (5-8 sec total)
+
+### Improved Learning
+- **Decision Tracking**: All decisions logged with full rationale
+- **Pattern Detection**: Feeds validated assumptions to pattern analyzer
+- **Continuous Improvement**: System learns from each project setup
+
+### Implementation Details
+See `.claude/reference/two-step-processing.md` for complete framework documentation.
+
+## Examples
+
+### Example 1: High Confidence Power Query Detection
+
+**User Input**:
+```
+"Create the environment from claude_code_environment repo using this spec: pension-calc-spec.md"
+```
+
+**Spec contains**:
+- "Power Query M language"
+- "Regulatory PDF from government"
+- "Pension calculation formulas"
+- "Excel workbook implementation"
+
+**Result**: Auto-selects Power Query template with Phase 0, no questions asked.
+
+---
+
+### Example 2: High Confidence Research Detection
+
+**User Input**:
+```
+"Create environment from claude_code_environment repo: ml-hypothesis-spec.md"
+```
+
+**Spec contains**:
+- "Research question: Do transformer models..."
+- "Hypothesis testing framework"
+- "Literature review of 50+ papers"
+- "Statistical analysis of results"
+
+**Result**: Auto-selects Research/Analysis template, no questions asked.
+
+---
+
+### Example 3: Ambiguous - Ask for Clarification
+
+**User Input**:
+```
+"Create environment: data-project-spec.md"
+```
+
+**Spec contains**:
+- "Work with customer data"
+- "Python and SQL"
+- "Build some pipelines"
+- No clear research or regulatory indicators
+
+**Result**: Asks user:
+```
+"I see this is a data project with Python/SQL. Which focus?
+1. Data Engineering (ETL pipelines, data infrastructure)
+2. Research/Analysis (exploratory analysis, statistical modeling)
+3. General (standard template)"
+```
+
+---
+
+### Example 4: Life Project - High Confidence
+
+**User Input**:
+```
+"Create environment: fitness-goals-spec.md"
+```
+
+**Spec contains**:
+- "Track my workouts and nutrition"
+- "Personal fitness goals for 2024"
+- "Organize meal plans"
+
+**Result**: Auto-selects Life Projects template, creates minimal structure.
+
+## Template Selection Rules Reference
+
+See `.claude/reference/template-selection-rules.md` for complete pattern matching rules and scoring logic.

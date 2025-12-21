@@ -1,3 +1,6 @@
+<!-- Type: Agent Coordinator -->
+<!-- This command selects and invokes the appropriate agent -->
+
 # Use Agent Command
 
 ## Purpose
