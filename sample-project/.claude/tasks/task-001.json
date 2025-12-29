@@ -1,0 +1,28 @@
+{
+  "id": "task-001",
+  "title": "Setup Express server",
+  "description": "Initialize the Node.js project and set up a basic Express server.\n\nRequirements:\n- Initialize package.json\n- Install Express and development dependencies\n- Create server.js with basic Express setup\n- Add npm scripts for starting the server\n- Server should listen on port 3000\n- Add basic health check endpoint (GET /health)\n\nAcceptance Criteria:\n- Server starts without errors\n- GET /health returns 200 OK with {\"status\": \"ok\"}\n- npm start runs the server\n- npm run dev runs with nodemon for development",
+  "status": "finished",
+  "difficulty": 3,
+  "priority": "critical",
+  "created": "2025-12-29",
+  "updated": "2025-12-29",
+  "notes": "Started work on Express server setup. Created package.json with Express dependencies and npm scripts. Implemented server.js with basic Express setup and health check endpoint. Server listens on port 3000.",
+  "parent_task": null,
+  "subtasks": [],
+  "related_phases": ["phase-1"],
+  "related_decisions": ["decision-001"],
+  "assigned_agent": null,
+  "agent_context": {},
+  "blockers": [],
+  "validation": {
+    "criteria": [
+      "package.json exists with Express dependency",
+      "server.js created and starts without errors",
+      "GET /health endpoint returns 200 OK",
+      "npm start and npm run dev scripts work"
+    ],
+    "completed": true
+  },
+  "notes": ""
+}

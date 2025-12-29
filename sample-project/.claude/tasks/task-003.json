@@ -1,0 +1,27 @@
+{
+  "id": "task-003",
+  "title": "Create in-memory data store",
+  "description": "Implement an in-memory data store for todos.\n\nRequirements:\n- Create a data store module\n- Use JavaScript array to store todos\n- Implement functions for CRUD operations:\n  - getAllTodos()\n  - getTodoById(id)\n  - createTodo(data)\n  - updateTodo(id, data)\n  - deleteTodo(id)\n- Generate unique IDs for new todos\n- Handle timestamps (createdAt, updatedAt)\n\nAcceptance Criteria:\n- Data store module exports all CRUD functions\n- Functions handle edge cases (not found, invalid data)\n- IDs are unique\n- Timestamps are automatically managed",
+  "status": "pending",
+  "difficulty": 4,
+  "priority": "high",
+  "created": "2025-12-29",
+  "updated": "2025-12-29",
+  "parent_task": null,
+  "subtasks": [],
+  "related_phases": ["phase-1"],
+  "related_decisions": ["decision-002"],
+  "assigned_agent": null,
+  "agent_context": {},
+  "blockers": [],
+  "validation": {
+    "criteria": [
+      "Data store module created",
+      "All CRUD functions implemented",
+      "Unique ID generation works",
+      "Timestamps handled correctly"
+    ],
+    "completed": false
+  },
+  "notes": ""
+}
