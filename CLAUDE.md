@@ -143,6 +143,8 @@ project/
 
 ## Tool Integration Strategy
 
+**MCP Servers Available:** See `.claude/reference/mcp-servers.md` for full reference (Gemini, Playwright, Netlify)
+
 ### When to Use Gemini API (via MCP)
 - **Research**: Current regulations, market trends, up-to-date information (use `grounding: true`)
 - **Domain Analysis**: Industry expertise, compliance interpretation, business domain knowledge
