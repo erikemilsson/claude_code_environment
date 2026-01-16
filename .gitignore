@@ -11,3 +11,11 @@
 
 # Checkpoint system (local state snapshots)
 .claude/checkpoints/
+
+# Python cache
+__pycache__/
+**/__pycache__/
+*.pyc
+
+# Local settings
+.claude/settings.local.json
