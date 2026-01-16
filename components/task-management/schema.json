@@ -47,6 +47,12 @@
       "type": "string",
       "description": "Progress notes, completion summary, blockers",
       "default": ""
+    },
+    "owner": {
+      "type": "string",
+      "enum": ["claude", "human", "both"],
+      "description": "Who does this task: claude (autonomous), human (manual), both (collaboration)",
+      "default": "claude"
     }
   }
 }

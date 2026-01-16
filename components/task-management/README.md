@@ -57,6 +57,7 @@ Optional fields when useful:
 - `subtasks` - Child task IDs
 - `parent_task` - Parent task ID
 - `notes` - Progress, blockers, completion summary
+- `owner` - Who does this: "claude", "human", or "both"
 
 ## Core Concepts
 
@@ -89,6 +90,7 @@ When you break down a task:
 | `/breakdown {id}` | Split into subtasks |
 | `/sync-tasks` | Regenerate task-overview.md |
 | `/update-tasks` | Check for issues |
+| `/generate-handoff-guide` | Create Claude/Human task overview with diagram |
 
 ## Example Workflow
 
@@ -113,12 +115,28 @@ Task 1_2: "Finished"
 Task 1_3: "Finished"
 ```
 
+## Claude/Human Handoffs
+
+Some tasks Claude can't do autonomously (Power BI UI, manual testing, approvals). Use the `owner` field:
+
+```json
+{"id": "1", "title": "Write M queries", "owner": "claude"}
+{"id": "2", "title": "Configure PBI visuals", "owner": "human", "dependencies": ["1"]}
+{"id": "3", "title": "Review together", "owner": "both", "dependencies": ["2"]}
+```
+
+Run `/generate-handoff-guide` to create:
+- Mermaid diagram showing workflow
+- Human task checklist
+- Clear handoff points
+
 ## Philosophy
 
 This system exists to:
 1. **Show what needs doing** - task-overview.md
 2. **Track what's done** - status updates
 3. **Handle complexity** - break down big tasks
+4. **Clarify handoffs** - who does what
 
 It does NOT try to:
 - Track your confidence levels
