@@ -2,6 +2,8 @@
 
 **Version-controlled templates for bootstrapping Claude Code projects with structured task management and reusable workflows.**
 
+> **Optimized for Claude Opus 4.5** - This system is calibrated for Opus 4.5's capabilities. Task difficulty, breakdown thresholds, and workflow design assume you're using Opus 4.5 with normal thinking settings. Earlier models may need more aggressive task breakdown.
+
 ## 5-Minute Quickstart
 
 **Get from zero to working environment in 5 minutes:**
@@ -173,7 +175,7 @@ The smart bootstrap will:
 
 ## Task Management Quick Reference
 
-**Difficulty (LLM error risk):** 1-2 (trivial), 3-4 (low), 5-6 (moderate), 7-8 (high, **breakdown required**), 9-10 (extreme, **breakdown required**)
+**Difficulty (scope/uncertainty):** 1-2 (routine), 3-4 (standard), 5-6 (substantial), 7-8 (large scope, **break down**), 9-10 (multi-phase, **break down**)
 
 **Status:** Pending → In Progress → Finished | Blocked | Broken Down (auto-completes when subtasks done)
 
