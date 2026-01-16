@@ -1,0 +1,29 @@
+{
+  "id": "task-200.3",
+  "title": "Build Live Dashboard Component",
+  "description": "Implement a real-time dashboard that displays current operations, task status, execution progress, warnings, and next steps in markdown format",
+  "status": "Finished",
+  "completed_at": "2025-12-29T19:40:00Z",
+  "difficulty": 5,
+  "priority": "high",
+  "created_at": "2025-12-29T18:45:00Z",
+  "parent_id": "task-200",
+  "dependencies": ["task-200.1", "task-200.2"],
+  "validation_criteria": [
+    "Dashboard updates in real-time",
+    "Shows current operation clearly",
+    "Displays progress indicators",
+    "Includes confidence metrics",
+    "Shows warnings and alerts",
+    "Updates are atomic (no partial writes)"
+  ],
+  "context_requirements": [
+    "Real-time update patterns",
+    "Markdown formatting",
+    "File system operations",
+    "Progress tracking algorithms"
+  ],
+  "completion_percentage": 100,
+  "estimated_hours": 3,
+  "tags": ["dashboard", "real-time", "visualization"]
+}

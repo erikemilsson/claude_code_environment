@@ -17,8 +17,34 @@ for task_file in sorted(task_dir.glob('task-*.json')):
             task = json.load(f)
             tasks.append(task)
 
-# Sort by ID numerically
-tasks.sort(key=lambda x: int(x['id']))
+# Sort by ID numerically (handle both "123" and "task-200.1" formats)
+def parse_task_id(task_id):
+    """Parse task ID for sorting, handling both numeric and dotted formats"""
+    # Remove "task-" prefix if present
+    if isinstance(task_id, str) and task_id.startswith('task-'):
+        task_id = task_id[5:]  # Remove "task-" prefix
+
+    # Try to parse as a simple number first
+    try:
+        return (int(task_id), 0)
+    except ValueError:
+        # Handle dotted format like "200.1"
+        if '.' in str(task_id):
+            parts = str(task_id).split('.')
+            try:
+                main_id = int(parts[0])
+                sub_id = int(parts[1]) if len(parts) > 1 else 0
+                return (main_id, sub_id)
+            except ValueError:
+                return (999999, 0)  # Put unparseable IDs at the end
+        else:
+            # Try to extract numbers from the ID
+            try:
+                return (int(task_id), 0)
+            except ValueError:
+                return (999999, 0)
+
+tasks.sort(key=lambda x: parse_task_id(x['id']))
 
 # Calculate statistics
 status_counts = {'Pending': 0, 'In Progress': 0, 'Finished': 0, 'Broken Down': 0, 'Blocked': 0}
@@ -136,7 +162,7 @@ for task in tasks:
 
     deps = ', '.join(task.get('dependencies', [])) if task.get('dependencies') else '-'
     subtasks = ', '.join(task.get('subtasks', [])) if task.get('subtasks') else '-'
-    parent = task.get('parent_task', '-')
+    parent = task.get('parent_id', '-')
 
     output += f"\n| {task['id']} | {title} | {status_icon} {task.get('status', 'Pending')} | {task.get('difficulty', '-')} | {deps} | {subtasks} | {parent} |"
 

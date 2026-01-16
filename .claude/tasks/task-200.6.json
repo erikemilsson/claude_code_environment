@@ -1,0 +1,29 @@
+{
+  "id": "task-200.6",
+  "title": "Integrate with Existing Task Management System",
+  "description": "Connect the observability layer with the current task management system to track task execution, monitor status changes, and capture performance metrics",
+  "status": "Finished",
+  "completed_at": "2025-12-30T00:30:00Z",
+  "difficulty": 5,
+  "priority": "critical",
+  "created_at": "2025-12-29T18:45:00Z",
+  "parent_id": "task-200",
+  "dependencies": ["task-200.3", "task-200.4"],
+  "validation_criteria": [
+    "Monitors all task status changes",
+    "Captures task execution metrics",
+    "Updates dashboard on task events",
+    "Maintains task execution history",
+    "No impact on task performance",
+    "Backward compatible with existing tasks"
+  ],
+  "context_requirements": [
+    "Task management system architecture",
+    "Event monitoring patterns",
+    "Integration patterns",
+    "Performance optimization"
+  ],
+  "completion_percentage": 100,
+  "estimated_hours": 2.5,
+  "tags": ["integration", "task-system", "monitoring"]
+}

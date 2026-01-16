@@ -99,6 +99,40 @@ python scripts/task-manager.py update-hierarchy --parent {ID}
 python scripts/task-manager.py sync-overview
 ```
 
+## Monitoring Integration
+
+**The Task Orchestrator triggers monitoring during breakdown:**
+
+### Pre-Breakdown Monitoring
+```bash
+# Check system health before complex operation
+python .claude/monitor/scripts/health_checker.py --check-before-breakdown {ID}
+
+# Update dashboard with breakdown start
+python .claude/monitor/scripts/dashboard_updater.py --breakdown-start {ID}
+```
+
+### During Breakdown Monitoring
+```bash
+# Monitor subtask creation
+python .claude/monitor/scripts/dashboard_updater.py --subtask-created {SUBTASK_ID}
+
+# If complexity issues detected
+python .claude/monitor/scripts/diagnose.py --complexity-warning {ID}
+```
+
+### Post-Breakdown Monitoring
+```bash
+# Update monitoring after breakdown complete
+python .claude/monitor/scripts/health_checker.py --check-after-breakdown {ID}
+
+# Update dashboard with breakdown results
+python .claude/monitor/scripts/dashboard_updater.py --breakdown-complete {ID} --subtasks {COUNT}
+
+# Generate breakdown metrics
+python .claude/monitor/scripts/quick_status.py --breakdown-metrics {ID}
+```
+
 ## Manual Process (Fallback if agent unavailable)
 
 ### Pre-Breakdown Validation Gate [MANDATORY]
@@ -118,17 +152,24 @@ VALIDATION_GATE: breakdown_decision
 ```
 
 1. **READ** task file `.claude/tasks/task-{id}.json`
-2. **EXECUTE** Pre-Breakdown Validation Gate
+2. **TRIGGER** Pre-Breakdown Monitoring:
+   ```bash
+   python .claude/monitor/scripts/health_checker.py --check-before-breakdown {id}
+   python .claude/monitor/scripts/dashboard_updater.py --breakdown-start {id}
+   ```
+3. **EXECUTE** Pre-Breakdown Validation Gate
    ```
    IF gate FAILS:
      IF difficulty < 7 AND not user requested:
        INFORM: "Task difficulty {X} doesn't require breakdown"
+       python .claude/monitor/scripts/dashboard_updater.py --breakdown-skipped {id}
        STOP
      ELSE:
+       python .claude/monitor/scripts/diagnose.py --breakdown-blocked {id}
        EXPLAIN why breakdown cannot proceed
        SUGGEST alternatives
    ```
-3. **ANALYZE AND DECOMPOSE** task:
+4. **ANALYZE AND DECOMPOSE** task:
    - IDENTIFY logical components
    - ENSURE each subtask is independently completable
    - ASSIGN difficulty ≤ 6 to each subtask
@@ -146,18 +187,30 @@ VALIDATION_GATE: subtask_creation
     ├── PASS → Add to subtask list
     └── FAIL → Refine subtask definition
 ```
-4. **CREATE subtask files IN PARALLEL**:
+5. **CREATE subtask files IN PARALLEL**:
    - GENERATE unique IDs (parent_id_1, parent_id_2, etc.)
    - WRITE clear, imperative descriptions
    - SET `parent_task` field to original task ID
    - POPULATE dependency arrays
    - INITIALIZE progress tracking structure
-5. **UPDATE parent task IMMEDIATELY**:
+   ```bash
+   # Monitor each subtask creation
+   FOR each subtask:
+     python .claude/monitor/scripts/dashboard_updater.py --subtask-created {subtask_id}
+   ```
+6. **UPDATE parent task IMMEDIATELY**:
    - SET status = "Broken Down"
    - SET subtasks = [array of all subtask IDs]
    - ADD note: "Broken Down (0/X done)"
    - PRESERVE existing belief tracking data
-6. **EXECUTE sync-tasks** to regenerate overview
+7. **EXECUTE sync-tasks** to regenerate overview
+8. **FINALIZE breakdown monitoring**:
+   ```bash
+   # Update monitoring with breakdown completion
+   python .claude/monitor/scripts/health_checker.py --check-after-breakdown {id}
+   python .claude/monitor/scripts/dashboard_updater.py --breakdown-complete {id} --subtasks {count}
+   python .claude/monitor/scripts/quick_status.py --breakdown-metrics {id}
+   ```
 
 ## Output Location
 - New task files: `.claude/tasks/task-{new-id}.json` for each subtask

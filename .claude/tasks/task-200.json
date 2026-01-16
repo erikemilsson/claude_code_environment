@@ -1,0 +1,53 @@
+{
+  "id": "task-200",
+  "title": "Implement Real-Time Observability Layer with Self-Diagnosis",
+  "description": "Create a comprehensive monitoring and self-diagnosis system that provides real-time visibility into system operations, automated problem detection, and self-healing recommendations",
+  "status": "Finished",
+  "completed_at": "2025-12-30T00:40:00Z",
+  "difficulty": 9,
+  "priority": "critical",
+  "created_at": "2025-12-29T18:45:00Z",
+  "dependencies": [],
+  "subtasks": [
+    "task-200.1",
+    "task-200.2",
+    "task-200.3",
+    "task-200.4",
+    "task-200.5",
+    "task-200.6",
+    "task-200.7"
+  ],
+  "validation_criteria": [
+    "Live dashboard updates in real-time",
+    "Health checks run continuously",
+    "Diagnostics auto-generate on failures",
+    "Self-healing recommendations are accurate",
+    "Integration with existing task system",
+    "Performance overhead < 5%",
+    "All tests pass"
+  ],
+  "context_requirements": [
+    "Understanding of current task management system",
+    "Knowledge of monitoring patterns",
+    "Familiarity with JSON schema",
+    "Understanding of self-diagnosis algorithms"
+  ],
+  "completion_percentage": 100,
+  "belief_score": 0.95,
+  "confidence_level": "high",
+  "assumptions": [
+    {
+      "assumption": "Monitor won't impact system performance significantly",
+      "confidence": 0.9,
+      "validated": false
+    },
+    {
+      "assumption": "Real-time updates can use file watching",
+      "confidence": 0.85,
+      "validated": false
+    }
+  ],
+  "estimated_hours": 12,
+  "impact": "high",
+  "risk_level": "medium"
+}

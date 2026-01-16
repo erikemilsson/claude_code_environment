@@ -99,6 +99,53 @@ python scripts/validation-gates.py post --task-id {ID}
 python scripts/metrics-dashboard.py update --task-id {ID}
 ```
 
+## Monitoring Integration
+
+**The Execution Guardian triggers monitoring at key points:**
+
+### Pre-Task Monitoring
+```bash
+# Update health status before starting
+python .claude/monitor/scripts/health_checker.py --check-before-task {ID}
+
+# Update dashboard with task start
+python .claude/monitor/scripts/dashboard_updater.py --task-start {ID}
+```
+
+### During-Task Monitoring
+```bash
+# Create monitoring checkpoint (every 3 steps or on warnings)
+python .claude/monitor/scripts/health_checker.py --checkpoint {ID}
+
+# Update live dashboard with progress
+python .claude/monitor/scripts/dashboard_updater.py --progress {ID} --step {STEP}
+
+# If errors occur, trigger diagnosis
+python .claude/monitor/scripts/diagnose.py --error "{ERROR_MSG}" --task {ID}
+```
+
+### Post-Task Monitoring
+```bash
+# Final health check after completion
+python .claude/monitor/scripts/health_checker.py --check-after-task {ID}
+
+# Update dashboard with completion
+python .claude/monitor/scripts/dashboard_updater.py --task-complete {ID}
+
+# Generate performance metrics
+python .claude/monitor/scripts/quick_status.py --task-metrics {ID}
+```
+
+### Error Recovery Monitoring
+```bash
+# On task failure or blocking
+python .claude/monitor/scripts/diagnose.py --task-failed {ID}
+python .claude/monitor/scripts/self_heal.py --recommend-fix {ID}
+
+# Update monitoring with failure
+python .claude/monitor/scripts/dashboard_updater.py --task-blocked {ID}
+```
+
 ## Manual Process (Fallback if agent unavailable)
 ```
 VALIDATION_GATE: task_start_gate
@@ -115,12 +162,19 @@ VALIDATION_GATE: task_start_gate
 ### Starting a Task - EXECUTE EXACTLY
 
 1. **READ** task file `.claude/tasks/task-{id}.json`
-2. **EXECUTE** Pre-Execution Validation Gate (see above)
+2. **TRIGGER** Pre-Task Monitoring:
+   ```bash
+   python .claude/monitor/scripts/health_checker.py --check-before-task {id}
+   python .claude/monitor/scripts/dashboard_updater.py --task-start {id}
    ```
-   IF gate FAILS → STOP and report specific failure
-   IF gate PASSES → CONTINUE to step 3
+3. **EXECUTE** Pre-Execution Validation Gate (see above)
    ```
-3. **INITIALIZE progress tracking**:
+   IF gate FAILS →
+     TRIGGER monitoring: python .claude/monitor/scripts/diagnose.py --validation-failed {id}
+     STOP and report specific failure
+   IF gate PASSES → CONTINUE to step 4
+   ```
+4. **INITIALIZE progress tracking**:
    ```
    IF no progress field exists:
      ADD progress structure based on difficulty:
@@ -145,6 +199,10 @@ VALIDATION_GATE: task_start_gate
 1. **INCREMENT** progress.current_step
 2. **CALCULATE** completion_percentage = (current_step / total_steps) * 100
 3. **ADD** to step_history (as before)
+4. **UPDATE** Live Monitoring Dashboard:
+   ```bash
+   python .claude/monitor/scripts/dashboard_updater.py --progress {id} --step {current_step}
+   ```
 
 **PROGRESS CHECKPOINT GATE [Every 3 steps]:**
 ```
@@ -164,6 +222,15 @@ VALIDATION_GATE: progress_checkpoint
    - Gate result is WARN or FAIL
    - Before risky operations
    - Context > 50% of budget
+   ```bash
+   # Create monitoring checkpoint when needed
+   python .claude/monitor/scripts/health_checker.py --checkpoint {id}
+
+   # If issues detected, run diagnosis
+   IF gate_result in [WARN, FAIL]:
+     python .claude/monitor/scripts/diagnose.py --checkpoint-issue {id}
+     python .claude/monitor/scripts/self_heal.py --suggest-recovery {id}
+   ```
 
 ### Finishing a Task - COMPLETE ALL STEPS with Final Validation
 
@@ -228,6 +295,17 @@ VALIDATION_GATE: task_completion
    # Use script for fast sync (100x faster than manual)
    python scripts/task-manager.py sync
    # Or: python scripts/claude-cli.py task sync
+   ```
+9. **FINALIZE monitoring**:
+   ```bash
+   # Update monitoring with task completion
+   python .claude/monitor/scripts/health_checker.py --check-after-task {id}
+   python .claude/monitor/scripts/dashboard_updater.py --task-complete {id}
+   python .claude/monitor/scripts/quick_status.py --task-metrics {id}
+
+   # If parent task auto-completed, update monitoring
+   IF parent.status == "Finished":
+     python .claude/monitor/scripts/dashboard_updater.py --parent-complete {parent_id}
    ```
 
 ## Context-Aware Next Steps

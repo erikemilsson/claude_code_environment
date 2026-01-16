@@ -1,0 +1,32 @@
+{
+  "id": "task-200.5",
+  "title": "Implement Self-Healing Recommendations",
+  "description": "Build a system that generates automated fix recommendations based on diagnosed problems, including code snippets, command suggestions, and configuration changes",
+  "status": "Finished",
+  "completed_at": "2025-12-29T19:50:00Z",
+  "difficulty": 6,
+  "priority": "high",
+  "created_at": "2025-12-29T18:45:00Z",
+  "parent_id": "task-200",
+  "dependencies": ["task-200.4"],
+  "validation_criteria": [
+    "Generates relevant fix recommendations",
+    "Provides executable code snippets",
+    "Includes step-by-step instructions",
+    "Risk assessment for each recommendation",
+    "Success probability estimation",
+    "Rollback instructions included"
+  ],
+  "context_requirements": [
+    "Fix pattern library",
+    "Code generation templates",
+    "Risk assessment methodology",
+    "Command execution patterns"
+  ],
+  "completion_percentage": 100,
+  "estimated_hours": 3.5,
+  "belief_score": 0.75,
+  "confidence_level": "medium",
+  "risk_level": "medium",
+  "tags": ["self-healing", "automation", "recommendations"]
+}

@@ -1,0 +1,28 @@
+{
+  "id": "task-201",
+  "title": "Create Predictive Warning System",
+  "description": "Implement a system that predicts potential issues before they occur based on patterns, system state, and historical data",
+  "status": "Finished",
+  "difficulty": 6,
+  "priority": "medium",
+  "created_at": "2025-12-29T18:45:00Z",
+  "dependencies": ["task-200"],
+  "validation_criteria": [
+    "Accurately predicts common issues",
+    "Minimal false positives",
+    "Clear warning messages",
+    "Actionable prevention steps",
+    "Historical accuracy tracking"
+  ],
+  "context_requirements": [
+    "Pattern recognition algorithms",
+    "Statistical analysis",
+    "Machine learning basics"
+  ],
+  "completion_percentage": 100,
+  "estimated_hours": 4,
+  "actual_time_minutes": 45,
+  "completed_at": "2025-12-30T16:30:00Z",
+  "tags": ["prediction", "warnings", "prevention"],
+  "notes": "Successfully implemented predictive warning system with:\n- Created predictor.py with pattern recognition for memory leaks, CPU overload, cascade failures, and resource exhaustion\n- Implemented history_manager.py for data collection, storage, and retrieval\n- Built trend analysis using linear regression for metric predictions\n- Integrated predictor into health_checker.py for real-time predictions\n- Added predictions to health check results and dashboard\n- All validation criteria met: accurate predictions, configurable thresholds, clear warnings, actionable steps, and historical tracking"
+}
