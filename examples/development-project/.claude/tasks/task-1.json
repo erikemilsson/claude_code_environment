@@ -1,0 +1,8 @@
+{
+  "id": "1",
+  "title": "Set up project structure",
+  "description": "Initialize Node.js project with TypeScript, ESLint, and Prettier",
+  "status": "Finished",
+  "difficulty": 3,
+  "notes": "Created project with standard Express.js structure"
+}

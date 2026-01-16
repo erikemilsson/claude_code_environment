@@ -1,0 +1,9 @@
+{
+  "id": "2_1",
+  "title": "Create user model and registration",
+  "description": "Database schema for users and registration endpoint",
+  "status": "Finished",
+  "difficulty": 4,
+  "parent_task": "2",
+  "notes": "Added User model with password hashing"
+}

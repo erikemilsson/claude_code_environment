@@ -1,0 +1,9 @@
+{
+  "id": "2",
+  "title": "Implement user authentication",
+  "description": "Register, login, and JWT token management",
+  "status": "Broken Down",
+  "difficulty": 7,
+  "subtasks": ["2_1", "2_2", "2_3"],
+  "notes": "Broken down into 3 subtasks for manageable implementation"
+}

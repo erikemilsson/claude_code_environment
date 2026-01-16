@@ -1,0 +1,8 @@
+{
+  "id": "3",
+  "title": "Implement todo CRUD operations",
+  "description": "Create, read, update, delete endpoints for todos",
+  "status": "Pending",
+  "difficulty": 5,
+  "dependencies": ["2"]
+}

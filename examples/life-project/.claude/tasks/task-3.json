@@ -1,0 +1,8 @@
+{
+  "id": "3",
+  "title": "Select and order cabinets",
+  "description": "Choose cabinet supplier and place order (6-8 week lead time)",
+  "status": "Pending",
+  "difficulty": 4,
+  "dependencies": ["1"]
+}

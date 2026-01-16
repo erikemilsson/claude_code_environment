@@ -1,0 +1,8 @@
+{
+  "id": "2_2",
+  "title": "Implement login and JWT generation",
+  "description": "Login endpoint that validates credentials and returns JWT",
+  "status": "In Progress",
+  "difficulty": 5,
+  "parent_task": "2"
+}
