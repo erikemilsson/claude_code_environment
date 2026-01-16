@@ -1,14 +1,14 @@
-# Claude 4 vs Claude 3.5 Migration Guide
+# Claude Opus 4.5 vs Claude 3.5 Migration Guide
 
 ## Overview
 
-Claude 4 (Opus 4.1 and Sonnet 4.5) represents a significant evolution in capabilities and interaction patterns compared to Claude 3.5 Sonnet. This guide helps you understand the differences and migrate existing projects.
+Claude Opus 4.5 (model ID: `claude-opus-4-5-20251101`) represents a significant evolution in capabilities and interaction patterns compared to Claude 3.5 Sonnet. This guide helps you understand the differences and migrate existing projects.
 
-## Key Improvements in Claude 4
+## Key Improvements in Claude Opus 4.5
 
 ### 1. Proactive Execution
 **Claude 3.5**: Often asked "Should I...?" or "Would you like me to...?"
-**Claude 4**: Takes action immediately when intent is clear
+**Claude Opus 4.5**: Takes action immediately when intent is clear
 
 ```markdown
 # Claude 3.5 Approach
@@ -19,44 +19,44 @@ Claude 3.5: "I can help you add error handling. Would you like me to:
 3. Add logging?
 Which approach would you prefer?"
 
-# Claude 4 Approach
+# Claude Opus 4.5 Approach
 User: "Add error handling to this function"
-Claude 4: [Immediately reads file, adds appropriate error handling, shows result]
+Claude Opus 4.5: [Immediately reads file, adds appropriate error handling, shows result]
 "I've added comprehensive error handling including try-catch blocks, input validation, and error logging. Here's what changed..."
 ```
 
 ### 2. Parallel Tool Execution
 **Claude 3.5**: Sequential tool calls
-**Claude 4**: Massive parallel execution
+**Claude Opus 4.5**: Massive parallel execution
 
 ```markdown
 # Claude 3.5 Pattern (Sequential)
 Read file A → Process → Read file B → Process → Read file C
 Total time: 15 seconds
 
-# Claude 4 Pattern (Parallel)
+# Claude Opus 4.5 Pattern (Parallel)
 [Read file A, Read file B, Read file C] → Process all
 Total time: 3 seconds
 ```
 
 ### 3. Explicit, Direct Instructions
 **Claude 3.5**: Often verbose, explanatory
-**Claude 4**: Imperative, action-focused
+**Claude Opus 4.5**: Imperative, action-focused
 
 ```markdown
 # Claude 3.5 Style
 "Let me explain what I'm going to do. First, I'll read the configuration file to understand the current settings. Then, I'll analyze what changes are needed..."
 
-# Claude 4 Style
+# Claude Opus 4.5 Style
 "Reading configuration and applying updates."
 [Executes immediately]
 ```
 
 ### 4. Confidence-Based Decision Making
 **Claude 3.5**: Asked for confirmation frequently
-**Claude 4**: Acts autonomously when confident
+**Claude Opus 4.5**: Acts autonomously when confident
 
-| Confidence | Claude 3.5 | Claude 4 |
+| Confidence | Claude 3.5 | Claude Opus 4.5 |
 |------------|------------|----------|
 | >90% | Still asks | Auto-proceeds |
 | 70-90% | Multiple questions | Single confirmation |
@@ -78,7 +78,7 @@ When working with tasks, please follow these guidelines:
 5. Remember to document your changes
 ```
 
-### After (Claude 4 Optimized)
+### After (Claude Opus 4.5 Optimized)
 ```markdown
 ## Task Management
 
@@ -93,7 +93,7 @@ EXECUTE these steps WITHOUT deviation:
 
 ## Feature Comparison Table
 
-| Feature | Claude 3.5 Sonnet | Claude 4 (Opus 4.1/Sonnet 4.5) |
+| Feature | Claude 3.5 Sonnet | Claude Opus 4.5 |
 |---------|------------------|----------------------------------|
 | **Parallel Execution** | Limited | Extensive (10+ operations) |
 | **Auto-Action Threshold** | Rarely | >90% confidence |
@@ -152,17 +152,17 @@ EXECUTE these steps WITHOUT deviation:
 
 ### Bootstrap Process
 - **Claude 3.5**: 30-45 seconds
-- **Claude 4**: 5-8 seconds
+- **Claude Opus 4.5**: 5-8 seconds
 - **Improvement**: 80% reduction
 
 ### Task Completion
 - **Claude 3.5**: Multiple clarifications
-- **Claude 4**: Zero questions if >90% confidence
+- **Claude Opus 4.5**: Zero questions if >90% confidence
 - **Improvement**: 70% fewer interactions
 
 ### File Operations
 - **Claude 3.5**: Sequential reads/writes
-- **Claude 4**: Parallel batch operations
+- **Claude Opus 4.5**: Parallel batch operations
 - **Improvement**: 85% time reduction
 
 ## Common Anti-Patterns to Remove
@@ -214,7 +214,7 @@ If you need compatibility with both versions:
 
 ## Future-Proofing
 
-Claude 4 patterns are designed for:
+Claude Opus 4.5 patterns are designed for:
 - Even more parallel execution
 - Higher autonomous action thresholds
 - Smarter context management

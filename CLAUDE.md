@@ -2,6 +2,8 @@
 
 This file contains explicit instructions for Claude Code (claude.ai/code) when working in this repository. Follow these directives exactly.
 
+> **Optimized for Claude Opus 4.5** - This system is calibrated for Opus 4.5's capabilities. Task difficulty, breakdown thresholds, and workflow design assume you're using Opus 4.5 with normal thinking settings. Earlier models may need more aggressive task breakdown.
+
 ## Repository Purpose
 
 This is a **template repository** for bootstrapping new Claude Code project environments. It contains:
@@ -245,7 +247,7 @@ Since this is a documentation/template repository, there are no build, lint, or 
 - **Tool integration?** → See "Tool Routing & Model Selection" section
 - **Repository development tasks?** → Check `.claude/tasks/task-overview.md`
 
-## Claude 4 Best Practices
+## Claude Opus 4.5 Best Practices
 
 ### ALWAYS Execute Tools in Parallel When Possible
 
@@ -306,8 +308,9 @@ Execution:
 
 ## Current Focus
 
-Implementing Claude 4 best practices for maximum efficiency. Key improvements:
+Optimized for Claude Opus 4.5 (model ID: `claude-opus-4-5-20251101`). Key capabilities:
 - 75-85% performance gains through parallel execution
 - Explicit, imperative instruction patterns
 - Proactive implementation approach
 - Structured context management for long tasks
+- Knowledge cutoff: May 2025

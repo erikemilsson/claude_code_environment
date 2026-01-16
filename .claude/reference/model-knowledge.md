@@ -1,26 +1,22 @@
-# Claude 4 Model Knowledge Reference
+# Claude Opus 4.5 Model Knowledge Reference
 
-*Version: 1.0 | Created: 2025-12-16*
+*Version: 2.0 | Updated: 2026-01-16*
 
 ## Model Identification
 
-### Opus 4.1
-- **Model ID:** `claude-opus-4-1-20250805`
-- **API Name:** `claude-3-opus-20240229` (legacy), `claude-opus-4.1` (current)
-- **Knowledge Cutoff:** January 2025
+### Opus 4.5 (Primary Model)
+- **Model ID:** `claude-opus-4-5-20251101`
+- **Knowledge Cutoff:** May 2025
 - **Context Window:** 200K tokens
-- **Primary Use:** Complex reasoning, code generation, long-context analysis
+- **Primary Use:** Complex reasoning, code generation, long-context analysis, agentic workflows
 
-### Sonnet 4.5
-- **Model ID:** `claude-sonnet-4-5-20250929`
-- **API Name:** `claude-3-5-sonnet-20241022` (legacy), `claude-sonnet-4.5` (current)
-- **Knowledge Cutoff:** April 2024
-- **Context Window:** 200K tokens
-- **Primary Use:** Balanced performance, general tasks, rapid iteration
+### Other Available Models
+- **Sonnet 4** (`claude-sonnet-4-20250514`): Balanced performance, general tasks, rapid iteration
+- **Haiku**: Fast, lightweight tasks
 
 ## Knowledge Boundaries
 
-### What Claude 4 Knows Natively
+### What Claude Opus 4.5 Knows Natively
 
 #### ✅ INCLUDED in Training Data
 
@@ -41,11 +37,11 @@
 - Business and economics fundamentals
 
 **Specific Versions Known:**
-- Python: Up to 3.11/3.12
-- Node.js: Up to v20
-- React: Up to v18
-- TypeScript: Up to v5.0
-- Major frameworks as of early 2024
+- Python: Up to 3.12/3.13
+- Node.js: Up to v22
+- React: Up to v19
+- TypeScript: Up to v5.4
+- Major frameworks as of early 2025
 
 ### What Requires External Sources
 
@@ -68,7 +64,7 @@
 - Database contents
 - User-specific data
 
-**Post-Cutoff Technology:**
+**Post-Cutoff Technology (after May 2025):**
 - Framework versions released after cutoff
 - New programming languages
 - Recent security vulnerabilities
@@ -100,7 +96,7 @@ USE EXTERNAL SOURCES FOR:
 ❌ Recent security advisories
 ❌ Updated API documentation
 ❌ Real-time data
-❌ Post-2024 technologies
+❌ Post-May 2025 technologies
 ❌ Specific version compatibility
 ```
 
@@ -114,7 +110,7 @@ IF user asks about:
   "current" → USE Web Search
   "today's" → USE Web Search
   "recent" → USE Web Search
-  "2025" or later → USE Web Search
+  "late 2025" or later → USE Web Search
   Specific version > known → USE Web Search
 ELSE:
   USE Claude native knowledge
@@ -145,16 +141,18 @@ ELSE:
 
 ## Model Capabilities
 
-### Claude 4 Strengths
+### Claude Opus 4.5 Strengths
 
-**Opus 4.1:**
+**Opus 4.5:**
 - Complex multi-step reasoning
 - Large codebase analysis
 - Architecture design
 - Long document processing
 - Creative problem-solving
+- Agentic task execution
+- Extended thinking for difficult problems
 
-**Sonnet 4.5:**
+**Sonnet 4:**
 - Rapid code generation
 - Quick iterations
 - Standard implementations
@@ -175,11 +173,11 @@ ELSE:
 ### Model Announcement Strings
 
 ```markdown
-# Opus 4.1
-"You are powered by the model named Opus 4.1. The exact model ID is claude-opus-4-1-20250805."
+# Opus 4.5
+"You are powered by the model named Opus 4.5. The exact model ID is claude-opus-4-5-20251101."
 
-# Sonnet 4.5
-"You are powered by the model named Sonnet 4.5. The exact model ID is claude-sonnet-4-5-20250929."
+# Sonnet 4
+"You are powered by the model named Sonnet 4. The exact model ID is claude-sonnet-4-20250514."
 ```
 
 ### Capability Disclosure
@@ -198,26 +196,26 @@ When asked about capabilities:
 
 | Framework | Latest Known Version | Cutoff Date |
 |-----------|---------------------|-------------|
-| React | 18.2.0 | April 2024 |
-| Vue | 3.4 | April 2024 |
-| Angular | 17 | April 2024 |
-| Next.js | 14 | April 2024 |
-| Django | 5.0 | April 2024 |
-| Flask | 3.0 | April 2024 |
-| Express | 4.18 | April 2024 |
-| Spring Boot | 3.2 | April 2024 |
+| React | 19.x | May 2025 |
+| Vue | 3.5 | May 2025 |
+| Angular | 18 | May 2025 |
+| Next.js | 15 | May 2025 |
+| Django | 5.1 | May 2025 |
+| Flask | 3.1 | May 2025 |
+| Express | 4.21 | May 2025 |
+| Spring Boot | 3.3 | May 2025 |
 
 ### Language Versions Known
 
 | Language | Latest Known Version | Features Known |
 |----------|---------------------|----------------|
-| Python | 3.12 | Pattern matching, walrus operator |
-| JavaScript | ES2023 | Array methods, private fields |
-| TypeScript | 5.3 | Decorators, satisfies operator |
-| Java | 21 LTS | Records, pattern matching |
-| C# | 12 | Primary constructors |
-| Go | 1.21 | Built-in functions |
-| Rust | 1.75 | Async traits |
+| Python | 3.13 | Pattern matching, walrus operator, improved error messages |
+| JavaScript | ES2024 | Array methods, private fields, groupBy |
+| TypeScript | 5.4 | Decorators, satisfies operator, NoInfer |
+| Java | 22 | Records, pattern matching, virtual threads |
+| C# | 13 | Primary constructors, collection expressions |
+| Go | 1.22 | Built-in functions, range over func |
+| Rust | 1.78 | Async traits, impl Trait in return |
 
 ## Information Verification
 
@@ -265,7 +263,7 @@ When confidence < 70%:
 3. **Math:** Calculations, formulas, proofs
 4. **Concepts:** Programming paradigms, principles
 5. **Standards:** HTTP, SQL, REST, GraphQL basics
-6. **History:** Events before 2024
+6. **History:** Events before May 2025
 
 ## Implementation Guidelines
 
@@ -290,13 +288,15 @@ When encountering knowledge boundary:
 ### Model Selection for Tasks
 
 ```markdown
-Choose Opus 4.1 when:
+Choose Opus 4.5 when:
 - Complex reasoning required
 - Large context processing
 - Multi-step planning
 - Architecture design
+- Agentic workflows
+- Extended thinking beneficial
 
-Choose Sonnet 4.5 when:
+Choose Sonnet 4 when:
 - Speed is priority
 - Standard implementations
 - Iterative development
@@ -305,7 +305,7 @@ Choose Sonnet 4.5 when:
 
 ## Conclusion
 
-This reference serves as the authoritative guide for understanding Claude 4's knowledge boundaries and capabilities. Always verify currency of information when dealing with:
+This reference serves as the authoritative guide for understanding Claude Opus 4.5's knowledge boundaries and capabilities. Always verify currency of information when dealing with:
 - Specific versions
 - Recent developments
 - Time-sensitive data
