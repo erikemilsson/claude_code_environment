@@ -6,6 +6,7 @@ Lightweight task tracking for Claude Code projects. Keeps you organized without 
 
 ```
 .claude/
+├── settings.json           # Pre-configured permissions (no prompts for task files)
 ├── tasks/
 │   ├── task-overview.md    # Summary of all tasks
 │   └── task-*.json         # Individual task files
@@ -145,3 +146,67 @@ It does NOT try to:
 - Create checkpoints constantly
 
 With capable models like Claude Opus 4.5, you don't need guardrails - you need visibility.
+
+## Pre-Configured Permissions (Vibe Coding Ready)
+
+The `settings.json` file pre-authorizes Claude for smooth, uninterrupted development workflows.
+
+### What's Allowed Without Prompting
+
+**File writes:**
+- Everything in `.claude/` - tasks, context, reference, decisions, checkpoints, scratchpad
+
+**Commands:**
+- Git read operations (status, diff, log, branch, show)
+- Test commands (npm test, pytest, cargo test, go test, bun test, make test)
+- Lint commands (eslint, prettier, mypy, ruff, clippy)
+- Build/check commands (npm run build, cargo check, tsc --noEmit)
+- Project scripts (python scripts/*)
+
+### What Still Requires Permission
+
+**Intentionally prompted:**
+- Writing to source files (src/, tests/, etc.)
+- Git commits and pushes
+- Package installation (npm install, pip install)
+- Any deployment commands
+
+**Explicitly denied:**
+- `rm -rf` - Destructive deletions
+- `git push --force` - Can destroy remote history
+- `git reset --hard` - Can lose uncommitted work
+- `sudo` - Privilege escalation
+- Publishing commands (npm publish, cargo publish)
+
+### Customizing for Your Project
+
+Add source file permissions if you trust Claude with direct edits:
+
+```json
+{
+  "permissions": {
+    "file": {
+      "allow_write": [
+        ".claude/**/*",
+        "src/**/*",
+        "tests/**/*"
+      ]
+    }
+  }
+}
+```
+
+Or add project-specific commands:
+
+```json
+{
+  "permissions": {
+    "bash": {
+      "allow": [
+        "docker compose up*",
+        "npm run dev*"
+      ]
+    }
+  }
+}
+```

@@ -25,6 +25,51 @@ PROMPT: Ask user before executing (default for writes)
 DENY: Block operation entirely
 ```
 
+## Bootstrapped Environments (Vibe Coding Ready)
+
+Projects created from this template system automatically include `.claude/settings.json` pre-configured for uninterrupted development workflows.
+
+### Auto-Allowed Operations
+
+**File writes** - Everything in `.claude/`:
+- Tasks, context, reference, decisions, checkpoints, scratchpad
+
+**Commands** - Common development operations:
+- Git read-only (status, diff, log, branch, show)
+- Tests (npm test, pytest, cargo test, go test, bun test, make test)
+- Linting (eslint, prettier, mypy, ruff, clippy)
+- Building (npm run build, cargo check, tsc --noEmit)
+- Project scripts
+
+### Still Requires Permission
+
+- Source file writes (src/, tests/)
+- Git commits and pushes
+- Package installation
+- Deployment commands
+
+### Explicitly Denied
+
+- `rm -rf`, `git push --force`, `git reset --hard`, `sudo`, publish commands
+
+### Customizing
+
+Extend `.claude/settings.json` for your project. Example for full trust:
+
+```jsonc
+{
+  "permissions": {
+    "file": {
+      "allow_write": [
+        ".claude/**/*",
+        "src/**/*",
+        "tests/**/*"
+      ]
+    }
+  }
+}
+```
+
 ## Configuration Methods
 
 ### 1. Interactive Commands

@@ -849,6 +849,7 @@ Do you have ambiguous source documents that need interpretation? (Y/N)
 Single message with multiple Write tool calls:
 - `CLAUDE.md` - Router file
 - `README.md` - Human documentation
+- `.claude/settings.json` - Pre-configured permissions for task management
 - `.claude/context/overview.md` - Extracted from specification
 - `.claude/context/validation-rules.md` - Standard rules
 - `.claude/tasks/task-overview.md` - Empty initially
@@ -1259,6 +1260,7 @@ TEMPLATE: Life Projects (auto-selected, 75% confidence)
 All files created in user's current working directory:
 - `./CLAUDE.md`
 - `./README.md`
+- `./.claude/settings.json` - Pre-configured permissions
 - `./.claude/commands/*.md`
 - `./.claude/context/*.md`
 - `./.claude/tasks/task-overview.md`

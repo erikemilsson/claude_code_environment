@@ -1,0 +1,63 @@
+{
+  "permissions": {
+    "file": {
+      "allow_write": [
+        ".claude/**/*"
+      ]
+    },
+    "bash": {
+      "allow": [
+        "python scripts/*",
+        "python .claude/**/*",
+
+        "git status",
+        "git diff*",
+        "git log*",
+        "git branch*",
+        "git show*",
+        "git stash list",
+
+        "npm test*",
+        "npm run test*",
+        "npm run lint*",
+        "npm run build*",
+        "npm run check*",
+        "npm run typecheck*",
+        "npx tsc --noEmit*",
+        "npx eslint*",
+        "npx prettier --check*",
+
+        "pytest*",
+        "python -m pytest*",
+        "python -m mypy*",
+        "python -m ruff*",
+
+        "cargo test*",
+        "cargo check*",
+        "cargo clippy*",
+
+        "go test*",
+        "go vet*",
+
+        "bun test*",
+        "bun run test*",
+        "bun run lint*",
+        "bun run build*",
+
+        "make test*",
+        "make check*",
+        "make lint*",
+        "make build*"
+      ],
+      "deny": [
+        "rm -rf*",
+        "git push --force*",
+        "git reset --hard*",
+        "*sudo*",
+        "*> /dev/*",
+        "npm publish*",
+        "cargo publish*"
+      ]
+    }
+  }
+}
