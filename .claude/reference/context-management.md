@@ -1,10 +1,10 @@
 # Context Management Framework for Long Tasks
 
-*Version: 1.0 | Created: 2025-12-16*
+*Version: 1.1 | Updated: 2025-01-16 | Based on: Anthropic Claude Code Best Practices*
 
 ## Overview
 
-Long-running tasks in Claude 4 require structured context management to maintain state, track progress, and enable resumption. This framework provides patterns for managing context efficiently across extended workflows.
+Long-running tasks in Claude Code require structured context management to maintain state, track progress, and enable resumption. This framework provides patterns for managing context efficiently across extended workflows.
 
 ## Core Principles
 
@@ -12,6 +12,142 @@ Long-running tasks in Claude 4 require structured context management to maintain
 2. **Structure Over Narrative** - Use JSON for data, markdown for documentation
 3. **Progressive Summarization** - Compact context as you progress
 4. **Explicit State Tracking** - Always know where you are in the process
+5. **Session Hygiene** - Use /clear and /compact strategically
+
+## Session Management: /clear vs /compact
+
+### /clear - Full Context Reset
+
+**What it does:** Completely clears the conversation context, starting fresh.
+
+**When to use /clear:**
+```markdown
+✅ After completing a major task or milestone
+✅ Before starting an unrelated task
+✅ When context is confused or corrupted
+✅ After complex debugging sessions
+✅ When switching between different projects
+✅ When conversation has accumulated irrelevant history
+```
+
+**When NOT to use /clear:**
+```markdown
+❌ In the middle of a multi-step task
+❌ When you need continuity from previous work
+❌ When recovering from an error (use checkpoint instead)
+❌ When iterating on a feature
+```
+
+**Best practice pattern:**
+```markdown
+1. Complete current task/milestone
+2. Commit any changes
+3. Update task status in task JSON
+4. Run sync-tasks
+5. /clear
+6. Start next task with fresh context
+```
+
+### /compact - Context Compression
+
+**What it does:** Compresses the conversation context while preserving key information and continuity.
+
+**When to use /compact:**
+```markdown
+✅ Mid-task when context is getting large
+✅ When you need to continue but reduce noise
+✅ After verbose tool outputs (large file reads, etc.)
+✅ When context exceeds ~60-70% capacity
+✅ Before complex operations that will add context
+✅ When you want to preserve continuity but reduce bloat
+```
+
+**When NOT to use /compact:**
+```markdown
+❌ When you need full detail from recent operations
+❌ Right before reviewing previous output
+❌ When debugging requires full history
+❌ At natural task boundaries (use /clear instead)
+```
+
+**Best practice pattern:**
+```markdown
+1. Notice context getting large
+2. Ensure current step is at a good stopping point
+3. /compact
+4. Briefly re-state what you're working on
+5. Continue with compressed context
+```
+
+### Decision Matrix
+
+| Scenario | Use /clear | Use /compact |
+|----------|-----------|--------------|
+| Task completed | ✅ | ❌ |
+| Mid-task, context bloated | ❌ | ✅ |
+| Starting unrelated work | ✅ | ❌ |
+| Need continuity but less noise | ❌ | ✅ |
+| Context confused/corrupted | ✅ | ❌ |
+| After large file operations | ❌ | ✅ |
+| Switching projects | ✅ | ❌ |
+| Iterating on same feature | ❌ | ✅ |
+
+### Preserving State Across /clear
+
+When you must /clear but need to preserve state:
+
+```markdown
+BEFORE /clear:
+1. Update task JSON with current state
+2. Write checkpoint file if needed
+3. Document any in-progress work in scratchpad
+4. Commit any changes
+
+AFTER /clear:
+1. Read relevant task JSON files
+2. Read checkpoint if resuming
+3. Briefly review scratchpad notes
+4. Continue from documented state
+```
+
+### Markdown Checklists for Large Tasks
+
+Create persistent checklists that survive /clear:
+
+```markdown
+# File: .claude/checklists/feature-auth.md
+
+## Feature: User Authentication
+
+### Phase 1: Setup
+- [x] Create user model
+- [x] Add database migration
+- [x] Set up JWT utilities
+
+### Phase 2: Implementation
+- [x] Login endpoint
+- [ ] Logout endpoint          ← CURRENT
+- [ ] Password reset flow
+- [ ] Session management
+
+### Phase 3: Testing
+- [ ] Unit tests
+- [ ] Integration tests
+- [ ] Security audit
+
+## Notes
+- Using bcrypt for password hashing
+- Token expiry: 24h access, 7d refresh
+- See decision log: .claude/scratchpad/decisions/auth-approach.md
+```
+
+**Usage:**
+```markdown
+1. Create checklist at task start
+2. Update as you progress
+3. /clear when needed - checklist persists
+4. After /clear, read checklist to resume
+```
 
 ## Context Budget Management
 
@@ -436,6 +572,10 @@ WHEN INTERRUPTED:
 ✅ Include resumption instructions
 ✅ Version your checkpoints
 ✅ Clean up old checkpoints
+✅ Use /compact mid-task when context grows
+✅ Use /clear between unrelated tasks
+✅ Create markdown checklists for large features
+✅ Update task JSON before any context reset
 
 ### DON'T:
 ❌ Store entire file contents in checkpoints
@@ -444,6 +584,9 @@ WHEN INTERRUPTED:
 ❌ Forget to update checkpoint after changes
 ❌ Include sensitive data in checkpoints
 ❌ Create checkpoints in tight loops
+❌ Use /clear in the middle of a task (use /compact)
+❌ Let context grow unbounded without /compact
+❌ Forget to re-establish context after /clear
 
 ## Integration with Task System
 
@@ -477,13 +620,40 @@ CREATE CHECKPOINT WHEN:
 - When context exceeds 50% budget
 ```
 
+## Quick Reference: Session Commands
+
+```markdown
+COMMAND CHEAT SHEET:
+
+/clear
+  - Full context reset
+  - Use: Between tasks, when confused
+  - Preserves: Nothing (use checkpoints)
+
+/compact
+  - Compress context, keep continuity
+  - Use: Mid-task, after verbose ops
+  - Preserves: Key context, recent work
+
+FREQUENCY GUIDELINES:
+- /compact: Every 30-60 minutes of continuous work
+- /clear: After each major milestone/task
+- Checkpoints: Every 3-5 significant steps
+```
+
 ## Conclusion
 
-Effective context management enables Claude 4 to handle complex, long-running tasks efficiently. By following these patterns:
+Effective context management enables Claude Code to handle complex, long-running tasks efficiently. By following these patterns:
 - Tasks can be resumed seamlessly
 - Context remains within token limits
 - Progress is transparent and trackable
 - Errors are recoverable
 - State is preserved accurately
+
+**Key habits:**
+- Use /compact proactively during long sessions
+- Use /clear at natural task boundaries
+- Create markdown checklists for multi-session features
+- Always update task JSON before context resets
 
 Always prioritize structure over narrative, checkpoint frequently, and maintain clear resumption paths.

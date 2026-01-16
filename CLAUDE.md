@@ -69,10 +69,16 @@ Use `.claude/commands/bootstrap.md` (primary bootstrap command with auto-detecti
 ### Reference Documentation
 **Key reference files** in `.claude/reference/`:
 - `task-schema-consolidated.md` - Authoritative task schema
-- `claude-4-parallel-tools.md` - Parallel execution patterns (renamed from parallel-tool-patterns.md)
-- `parallel-task-safety-checks.md` - Safety checks for parallel tasks (renamed from parallel-execution-gates.md)
-- `validation-gates-reference.md` - Validation concepts (renamed from validation-gates.md)
-- `claude-4-tool-usage.md` - Tool usage guidelines (renamed from coding-guidelines.md)
+- `claude-4-parallel-tools.md` - Parallel execution patterns
+- `parallel-task-safety-checks.md` - Safety checks for parallel tasks
+- `validation-gates-reference.md` - Validation concepts
+- `claude-4-tool-usage.md` - Tool usage guidelines
+- `extended-thinking-triggers.md` - When and how to use ultrathink
+- `multi-claude-patterns.md` - Coordinating multiple Claude instances
+- `headless-automation.md` - CI/CD and scripted automation
+- `visual-iteration-workflow.md` - UI/UX visual development
+- `permission-configuration.md` - Permission and safety settings
+- `context-management.md` - /clear, /compact, and checkpoint strategies
 
 ### Archive Directory
 **Historical and deprecated files**: `.archive/`
@@ -305,6 +311,47 @@ Execution:
 2. Use && for sequential commands
 3. Use parallel calls for independent commands
 ```
+
+## Quick Reference (Copy-Paste Ready)
+
+### Common Commands
+```bash
+# Task Management
+python scripts/task-manager.py sync          # Sync task overview
+python scripts/validation-gates.py pre --task-id {ID}   # Pre-execution validation
+python scripts/validation-gates.py post --task-id {ID}  # Post-execution validation
+
+# Health Monitoring
+python .claude/monitor/scripts/quick_status.py         # Quick health check
+python .claude/monitor/scripts/health_checker.py      # Full health check
+python .claude/monitor/scripts/dashboard_updater.py   # Update dashboard
+
+# Git Operations
+git status                    # Show working tree status
+git diff                      # Show unstaged changes
+git log --oneline -10        # Recent commits
+```
+
+### Extended Thinking Triggers
+Use these phrases to activate deeper reasoning:
+- **"think"** - Basic extended reasoning (simple multi-step)
+- **"think hard"** - Thorough analysis (debugging, moderate complexity)
+- **"think harder"** - Deep analysis (complex logic, multi-file changes)
+- **"ultrathink"** - Maximum depth (architecture decisions, difficulty 9-10 tasks)
+
+See `.claude/reference/extended-thinking-triggers.md` for full documentation.
+
+### Key Workflows
+- **Complex features:** Use `/explore-plan-code-commit` workflow
+- **Test-driven development:** Use `/tdd-cycle` workflow
+- **Visual UI work:** Use visual iteration pattern (see `.claude/reference/visual-iteration-workflow.md`)
+- **Multi-instance work:** See `.claude/reference/multi-claude-patterns.md`
+- **CI/CD automation:** See `.claude/reference/headless-automation.md`
+
+### Context Management
+- **`/clear`** - Reset context completely (use between unrelated tasks)
+- **`/compact`** - Compress context while preserving key information (use mid-task)
+- See `.claude/reference/context-management.md` for detailed strategies
 
 ## Current Focus
 
