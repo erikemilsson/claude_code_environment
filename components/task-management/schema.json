@@ -1,188 +1,52 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Claude Code Task Schema",
-  "description": "Schema for individual task files in the .claude/tasks/ directory",
+  "title": "Task Schema (Simplified)",
+  "description": "Minimal task tracking for Claude Code projects",
   "type": "object",
-  "required": [
-    "id",
-    "title",
-    "description",
-    "difficulty",
-    "status",
-    "created_date",
-    "dependencies",
-    "subtasks",
-    "parent_task"
-  ],
+  "required": ["id", "title", "status"],
   "properties": {
     "id": {
       "type": "string",
-      "description": "Unique task identifier (sequential numbering: '1', '2', '3', etc.)",
-      "pattern": "^[0-9]+$"
+      "description": "Task identifier (e.g., '1', '2', '3_1' for subtasks)"
     },
     "title": {
       "type": "string",
-      "description": "Brief task title",
-      "minLength": 1
+      "description": "Brief task title"
     },
     "description": {
       "type": "string",
-      "description": "Detailed task description including requirements and acceptance criteria"
+      "description": "What needs to be done"
     },
     "difficulty": {
       "type": "integer",
-      "description": "Task difficulty from 1-10 (based on LLM error probability). Tasks ≥7 should be broken down.",
+      "description": "1-10 scale. Tasks >= 7 should be broken down.",
       "minimum": 1,
       "maximum": 10
     },
     "status": {
       "type": "string",
-      "description": "Current task status",
       "enum": ["Pending", "In Progress", "Blocked", "Broken Down", "Finished"]
-    },
-    "created_date": {
-      "type": "string",
-      "description": "Date task was created (YYYY-MM-DD format)",
-      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
-    },
-    "updated_date": {
-      "type": "string",
-      "description": "Date task was last updated (YYYY-MM-DD format)",
-      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
-    },
-    "assigned_to": {
-      "type": ["string", "null"],
-      "description": "Person assigned to this task (optional)"
-    },
-    "estimated_hours": {
-      "type": "number",
-      "description": "Estimated hours to complete (optional)",
-      "minimum": 0
-    },
-    "actual_hours": {
-      "type": "number",
-      "description": "Actual hours spent (optional)",
-      "minimum": 0
     },
     "dependencies": {
       "type": "array",
-      "description": "Array of task IDs that must be completed before this task can start",
-      "items": {
-        "type": "string",
-        "pattern": "^[0-9]+$"
-      },
+      "description": "Task IDs that must complete first",
+      "items": { "type": "string" },
       "default": []
     },
     "subtasks": {
       "type": "array",
-      "description": "Array of task IDs for subtasks (populated when task is broken down)",
-      "items": {
-        "type": "string",
-        "pattern": "^[0-9]+$"
-      },
+      "description": "Child task IDs (when broken down)",
+      "items": { "type": "string" },
       "default": []
     },
     "parent_task": {
       "type": ["string", "null"],
-      "description": "Task ID of parent task (null if top-level task)",
-      "pattern": "^[0-9]+$"
-    },
-    "files_affected": {
-      "type": "array",
-      "description": "List of files or directories affected by this task (optional)",
-      "items": {
-        "type": "string"
-      }
+      "description": "Parent task ID if this is a subtask"
     },
     "notes": {
       "type": "string",
-      "description": "Additional notes, progress updates, or context",
+      "description": "Progress notes, completion summary, blockers",
       "default": ""
-    },
-    "blockers": {
-      "type": "array",
-      "description": "List of specific issues blocking progress (optional)",
-      "items": {
-        "type": "string"
-      }
-    },
-    "tags": {
-      "type": "array",
-      "description": "Categorization tags (optional)",
-      "items": {
-        "type": "string"
-      }
-    },
-    "breakdown_history": {
-      "type": ["string", "null"],
-      "description": "Date when task was broken down (YYYY-MM-DD format). Set when status becomes 'Broken Down'.",
-      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
-    },
-    "validation": {
-      "type": "object",
-      "description": "ATEF validation gate results (optional)",
-      "properties": {
-        "pre_gate_passed": {
-          "type": "boolean",
-          "description": "Whether pre-execution gate passed"
-        },
-        "post_gate_passed": {
-          "type": "boolean",
-          "description": "Whether post-execution gate passed"
-        },
-        "warnings": {
-          "type": "array",
-          "description": "Warnings from validation gates",
-          "items": {
-            "type": "string"
-          }
-        },
-        "gate_results": {
-          "type": "array",
-          "description": "Full gate result objects for audit trail",
-          "items": {
-            "type": "object"
-          }
-        }
-      }
-    },
-    "patterns": {
-      "type": "object",
-      "description": "ATEF pattern usage tracking (optional)",
-      "properties": {
-        "pattern_id": {
-          "type": "string",
-          "description": "Pattern file that was applied (e.g., 'power-query-bronze.pattern.md')"
-        },
-        "applied_at": {
-          "type": "string",
-          "description": "Timestamp when pattern was applied (ISO 8601)",
-          "format": "date-time"
-        },
-        "parameters": {
-          "type": "object",
-          "description": "Parameters used with pattern",
-          "additionalProperties": true
-        }
-      }
-    },
-    "checkpoints": {
-      "type": "array",
-      "description": "ATEF checkpoint IDs created for this task (optional)",
-      "items": {
-        "type": "string",
-        "pattern": "^chk-[0-9]+-[0-9]+$",
-        "description": "Checkpoint ID in format chk-{task_id}-{sequence}"
-      }
-    },
-    "errors_encountered": {
-      "type": "array",
-      "description": "ATEF error catalog IDs encountered during task (optional)",
-      "items": {
-        "type": "string",
-        "pattern": "^ERR-[A-Z]+-[0-9]+$",
-        "description": "Error ID in format ERR-{CATEGORY}-{NUMBER}"
-      }
     }
   }
 }
