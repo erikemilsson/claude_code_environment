@@ -1,0 +1,59 @@
+{
+  "id": "205",
+  "title": "Add health diagnosis command capability review",
+  "description": "Review all existing commands to identify which ones can perform health diagnosis functions. Audit the system for standardization, ensure consistency across health/monitoring commands, and verify the system is working as intended. IMPORTANT: Must ask user for confirmation before making any changes to the codebase.",
+  "difficulty": 5,
+  "status": "Pending",
+  "created_date": "2026-01-20",
+  "updated_date": "2026-01-20",
+  "completion_date": null,
+  "completion_notes": null,
+  "dependencies": [],
+  "subtasks": [],
+  "parent_task": null,
+  "files_affected": [
+    ".claude/commands/show-health.md",
+    ".claude/commands/run-diagnosis.md",
+    ".claude/commands/monitor.md",
+    ".claude/commands/view-dashboard.md",
+    ".claude/commands/show-dashboard.md"
+  ],
+  "notes": "Key areas to review:\n1. Identify all commands with health/diagnosis capabilities\n2. Check for overlapping functionality between commands\n3. Verify standardization of output formats\n4. Ensure consistent naming conventions\n5. Validate that monitoring scripts work correctly\n6. Document any gaps in health diagnosis coverage\n\nUSER APPROVAL REQUIRED before any changes are made.",
+  "confidence": 75,
+  "assumptions": [
+    {
+      "id": "a1",
+      "description": "Existing health commands (show-health, run-diagnosis, monitor) are functional",
+      "confidence": 80,
+      "status": "pending",
+      "impact": "medium",
+      "validation_method": "Execute each command and verify output",
+      "validated_date": null
+    },
+    {
+      "id": "a2",
+      "description": "Command naming follows consistent patterns",
+      "confidence": 70,
+      "status": "pending",
+      "impact": "low",
+      "validation_method": "Audit command file names and compare with documentation",
+      "validated_date": null
+    },
+    {
+      "id": "a3",
+      "description": "Health check scripts in .claude/monitor/scripts/ are up to date",
+      "confidence": 65,
+      "status": "pending",
+      "impact": "high",
+      "validation_method": "Run scripts and check for errors or deprecation warnings",
+      "validated_date": null
+    }
+  ],
+  "validation_status": "pending",
+  "momentum": {
+    "phase": "pending",
+    "velocity": 0,
+    "last_activity": "2026-01-20"
+  },
+  "decision_rationale": ""
+}
