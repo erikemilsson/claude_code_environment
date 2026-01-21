@@ -32,7 +32,7 @@ Instructions for Claude Code when working in this project.
 - `/complete-task {id}` - Start and finish tasks
 - `/breakdown {id}` - Split complex tasks into subtasks
 - `/sync-tasks` - Update task-overview.md from JSON files
-- `/update-tasks` - Check task system health
+- `/validate-task-system` - Comprehensive health check with auto-fix options
 
 ## Project Structure
 
