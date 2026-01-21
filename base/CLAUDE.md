@@ -30,10 +30,11 @@ Instructions for Claude Code when working in this project.
 
 ## Commands
 
-- `/complete-task {id}` - Start and finish tasks
+- `/complete-task {id}` - Start and finish tasks (includes work check)
 - `/breakdown {id}` - Split complex tasks into subtasks
 - `/sync-tasks` - Update task-overview.md from JSON files
 - `/health-check` - Combined task system and CLAUDE.md health check
+- `/check-work` - Review session changes for issues and fix them
 
 ## Project Structure
 
