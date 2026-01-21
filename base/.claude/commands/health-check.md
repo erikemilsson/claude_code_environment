@@ -4,9 +4,10 @@ Combined system health check for task management and CLAUDE.md.
 
 ## Usage
 ```
-/health-check              # Run both checks
-/health-check --tasks      # Only task system validation
-/health-check --claude-md  # Only CLAUDE.md audit
+/health-check                    # Run both checks
+/health-check --tasks            # Only task system validation
+/health-check --claude-md        # Only CLAUDE.md audit
+/health-check --report-only      # Show report without fix prompts
 ```
 
 ## Purpose
@@ -15,7 +16,7 @@ Over time, task systems drift from standards and CLAUDE.md files accumulate bloa
 
 ---
 
-# Part 1: Task System Validation
+## Part 1: Task System Validation
 
 Detects and fixes drift from task management standards.
 
@@ -23,24 +24,7 @@ Detects and fixes drift from task management standards.
 
 ### 1. Task JSON Schema Validation
 
-**Required fields:**
-| Field | Type | Valid Values |
-|-------|------|--------------|
-| `id` | string | Top-level: `"1"`, `"2"`, etc. Subtasks: `"1_1"`, `"1_2"`, etc. |
-| `title` | string | Non-empty |
-| `status` | string | `"Pending"`, `"In Progress"`, `"Blocked"`, `"Broken Down"`, `"Finished"` |
-| `difficulty` | number | 1-10 |
-
-**Optional fields:**
-| Field | Type | Format |
-|-------|------|--------|
-| `description` | string | - |
-| `created_date` | string | YYYY-MM-DD |
-| `dependencies` | array | Task ID strings |
-| `subtasks` | array | Task ID strings |
-| `parent_task` | string/null | Parent task ID |
-| `files_affected` | array | File paths |
-| `notes` | string | - |
+Validates required fields (id, title, status, difficulty) and optional fields per `.claude/reference/task-schema.md`.
 
 ### 2. Relationship Integrity
 
@@ -96,9 +80,19 @@ When breaking down tasks, IDs must not collide:
 | Missing created_date | Add current date |
 | Multiple "In Progress" tasks | Ask which to keep, set others to "Pending" |
 
+## Non-Fixable Issues (Manual Required)
+
+| Issue | Why Manual |
+|-------|------------|
+| Missing required field (id, title, status, difficulty) | Need human input for values |
+| Invalid JSON syntax | Need to examine file |
+| Circular dependencies | Need to understand intent |
+| Duplicate task IDs | Need to decide which to keep |
+| Unknown status value | Need to determine correct status |
+
 ---
 
-# Part 2: CLAUDE.md Audit
+## Part 2: CLAUDE.md Audit
 
 Detects bloat and offers guided cleanup.
 
@@ -141,9 +135,9 @@ Move to reference/:
 
 ---
 
-# Process
+## Process
 
-## Step 1: Scan
+### Step 1: Scan
 
 ```
 READ all .claude/tasks/task-*.json files
@@ -151,7 +145,7 @@ READ .claude/tasks/task-overview.md
 READ CLAUDE.md
 ```
 
-## Step 2: Run Checks
+### Step 2: Run Checks
 
 Run task validation checks (if not `--claude-md`):
 - Schema validation for each task file
@@ -166,7 +160,7 @@ Run CLAUDE.md audit (if not `--tasks`):
 - Section sizes
 - Code block lengths
 
-## Step 3: Report
+### Step 3: Report
 
 ```
 ## Health Check Report
@@ -189,13 +183,13 @@ Run CLAUDE.md audit (if not `--tasks`):
 Overall status: [HEALTHY / NEEDS ATTENTION / ISSUES FOUND]
 ```
 
-## Step 4: Offer Fixes
+### Step 4: Offer Fixes
 
 For each fixable issue, present options and apply immediately before moving to next.
 
 ---
 
-# When to Run
+## When to Run
 
 - Start of a work session
 - After extensive task operations
