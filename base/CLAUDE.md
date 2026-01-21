@@ -1,4 +1,5 @@
 # CLAUDE.md
+<!-- Target: <80 lines. Run /audit-claude-md to check -->
 
 Instructions for Claude Code when working in this project.
 
@@ -33,6 +34,7 @@ Instructions for Claude Code when working in this project.
 - `/breakdown {id}` - Split complex tasks into subtasks
 - `/sync-tasks` - Update task-overview.md from JSON files
 - `/validate-task-system` - Comprehensive health check with auto-fix options
+- `/audit-claude-md` - Check CLAUDE.md for bloat, guided cleanup
 
 ## Project Structure
 
