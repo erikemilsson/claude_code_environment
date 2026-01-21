@@ -9,11 +9,12 @@ Update task-overview.md from task JSON files.
 
 ## Process
 
-1. Read all `.claude/tasks/task-*.json` files
+1. Read all `.claude/tasks/task-*.json` files (active tasks only)
 2. Generate markdown table showing:
    - ID, Title, Status, Difficulty
    - Subtask progress for broken-down tasks
-3. Write to `.claude/tasks/task-overview.md`
+3. Add archive summary if tasks have been archived
+4. Write to `.claude/tasks/task-overview.md`
 
 ## Output Format
 
@@ -31,9 +32,20 @@ Update task-overview.md from task JSON files.
 | 3 | Deploy | Pending | 5 |
 
 Summary: 3/7 complete
+
+## Archived (50 tasks)
+Last archived: 2026-01-21
 ```
 
 ## When to Run
 - After completing any task
 - After breaking down a task
 - When starting a work session (to see current state)
+- After archiving tasks
+
+## Archive Integration
+
+- Only reads active tasks (not archived ones)
+- Shows archive summary at bottom if archive exists
+- Use `/archive-tasks` to move old finished tasks to archive
+- Use `/restore-task` to bring tasks back from archive

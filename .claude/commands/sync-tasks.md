@@ -302,6 +302,20 @@ When choosing which suggestion to show (if multiple apply):
 - When task relationships change
 - After updating belief tracking data
 - Before project reviews or reports
+- After archiving tasks
+
+## Archive Integration
+
+For large projects (100+ tasks), sync-tasks only processes active tasks:
+- Archived tasks are stored in `.claude/tasks/archive/`
+- Archive summary is shown at the bottom of task-overview.md
+- Use `/archive-tasks` to move old finished tasks to archive
+- Use `/restore-task` to bring tasks back from archive
+
+```markdown
+## Archived (150 tasks)
+Last archived: 2026-01-21
+```
 
 ## Integration
 - Automatically called by `complete-task` command

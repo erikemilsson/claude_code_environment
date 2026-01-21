@@ -551,6 +551,11 @@ class TaskManager:
 
                 lines.append(f"| {task_id} | {title} | {difficulty} | {status} | {confidence} | {deps_str} | {notes} |\n")
 
+            # Add archive summary if there are archived tasks
+            archive_summary = self.get_archive_summary()
+            if archive_summary:
+                lines.append(archive_summary)
+
             # Write to file
             with open(overview_file, 'w') as f:
                 f.writelines(lines)
@@ -809,17 +814,264 @@ class TaskManager:
 
         return results
 
+    # ============================================
+    # Archive Management Methods
+    # ============================================
+
+    def _get_archive_dir(self) -> Path:
+        """Get or create archive directory"""
+        archive_dir = self.tasks_dir / "archive"
+        archive_dir.mkdir(parents=True, exist_ok=True)
+        return archive_dir
+
+    def _get_archive_index_path(self) -> Path:
+        """Get path to archive index file"""
+        return self._get_archive_dir() / "archive-index.json"
+
+    def get_archive_index(self) -> Dict[str, Any]:
+        """
+        Read archive-index.json
+
+        Returns:
+            Dictionary with archive metadata and task summaries
+        """
+        index_path = self._get_archive_index_path()
+        if not index_path.exists():
+            return {"archived_at": None, "count": 0, "tasks": []}
+
+        try:
+            with open(index_path, 'r') as f:
+                return json.load(f)
+        except (json.JSONDecodeError, IOError) as e:
+            print(f"Error reading archive index: {e}")
+            return {"archived_at": None, "count": 0, "tasks": []}
+
+    def _save_archive_index(self, index: Dict[str, Any]) -> bool:
+        """Save archive index to file"""
+        index_path = self._get_archive_index_path()
+        try:
+            index["archived_at"] = datetime.now().strftime("%Y-%m-%d")
+            index["count"] = len(index.get("tasks", []))
+            with open(index_path, 'w') as f:
+                json.dump(index, f, indent=2)
+            return True
+        except IOError as e:
+            print(f"Error saving archive index: {e}")
+            return False
+
+    def _is_safe_to_archive(self, task_id: str) -> Tuple[bool, str]:
+        """
+        Check if a task can be safely archived
+
+        Returns:
+            Tuple of (is_safe, reason_if_not_safe)
+        """
+        task = self.load_task(task_id)
+        if not task:
+            return False, f"Task {task_id} not found"
+
+        # Must be finished
+        if task.status != TaskStatus.FINISHED.value:
+            return False, f"Task {task_id} is not finished (status: {task.status})"
+
+        # Check if any active tasks depend on this one
+        all_task_ids = self.get_all_task_ids()
+        for other_id in all_task_ids:
+            if other_id == task_id:
+                continue
+            other_task = self.load_task(other_id)
+            if other_task and other_task.dependencies:
+                if task_id in other_task.dependencies:
+                    if other_task.status != TaskStatus.FINISHED.value:
+                        return False, f"Active task {other_id} depends on {task_id}"
+
+        return True, ""
+
+    def _get_subtask_ids(self, task_id: str) -> List[str]:
+        """Get all subtask IDs for a parent task"""
+        task = self.load_task(task_id)
+        if not task or not task.subtasks:
+            return []
+        return list(task.subtasks)
+
+    def archive_completed_tasks(self, days_old: int = 7, dry_run: bool = False) -> List[str]:
+        """
+        Move finished tasks older than N days to archive
+
+        Args:
+            days_old: Only archive tasks finished more than this many days ago
+            dry_run: If True, just return what would be archived without moving
+
+        Returns:
+            List of archived task IDs
+        """
+        archive_dir = self._get_archive_dir()
+        archived = []
+        cutoff_date = datetime.now() - __import__('datetime').timedelta(days=days_old)
+
+        # Get all task IDs
+        all_task_ids = self.get_all_task_ids()
+
+        # Find archivable tasks (parents first, then subtasks)
+        archivable = []
+        for task_id in all_task_ids:
+            task = self.load_task(task_id)
+            if not task:
+                continue
+
+            # Skip subtasks - they'll be handled with their parents
+            if task.parent_task:
+                continue
+
+            # Check if finished and old enough
+            if task.status != TaskStatus.FINISHED.value:
+                continue
+
+            if task.completion_date:
+                try:
+                    completion = datetime.strptime(task.completion_date, "%Y-%m-%d")
+                    if completion > cutoff_date:
+                        continue
+                except ValueError:
+                    continue
+            else:
+                continue
+
+            # Check if safe to archive
+            is_safe, reason = self._is_safe_to_archive(task_id)
+            if not is_safe:
+                print(f"Skipping {task_id}: {reason}")
+                continue
+
+            archivable.append(task_id)
+
+        if dry_run:
+            print(f"Would archive {len(archivable)} tasks:")
+            for task_id in archivable:
+                task = self.load_task(task_id)
+                subtasks = self._get_subtask_ids(task_id)
+                if subtasks:
+                    print(f"  {task_id}: {task.title} (+ {len(subtasks)} subtasks)")
+                else:
+                    print(f"  {task_id}: {task.title}")
+            return archivable
+
+        # Load existing archive index
+        index = self.get_archive_index()
+
+        # Archive each task
+        for task_id in archivable:
+            task = self.load_task(task_id)
+            if not task:
+                continue
+
+            # Get subtasks to archive with parent
+            subtask_ids = self._get_subtask_ids(task_id)
+
+            # Move parent task file
+            src_file = self.tasks_dir / f"task-{task_id}.json"
+            dst_file = archive_dir / f"task-{task_id}.json"
+
+            try:
+                import shutil
+                shutil.move(str(src_file), str(dst_file))
+                archived.append(task_id)
+
+                # Add to index (lightweight summary only)
+                index["tasks"].append({
+                    "id": task_id,
+                    "title": task.title,
+                    "completion_date": task.completion_date,
+                    "difficulty": task.difficulty
+                })
+
+                # Move subtask files
+                for subtask_id in subtask_ids:
+                    subtask_src = self.tasks_dir / f"task-{subtask_id}.json"
+                    subtask_dst = archive_dir / f"task-{subtask_id}.json"
+                    if subtask_src.exists():
+                        shutil.move(str(subtask_src), str(subtask_dst))
+                        archived.append(subtask_id)
+
+            except Exception as e:
+                print(f"Error archiving {task_id}: {e}")
+
+        # Save updated index
+        self._save_archive_index(index)
+
+        print(f"Archived {len(archived)} tasks")
+        return archived
+
+    def restore_from_archive(self, task_id: str) -> bool:
+        """
+        Move task back from archive to active
+
+        Args:
+            task_id: ID of task to restore
+
+        Returns:
+            True if successful
+        """
+        archive_dir = self._get_archive_dir()
+        src_file = archive_dir / f"task-{task_id}.json"
+
+        if not src_file.exists():
+            print(f"Task {task_id} not found in archive")
+            return False
+
+        dst_file = self.tasks_dir / f"task-{task_id}.json"
+
+        try:
+            import shutil
+            shutil.move(str(src_file), str(dst_file))
+
+            # Update archive index
+            index = self.get_archive_index()
+            index["tasks"] = [t for t in index["tasks"] if t["id"] != task_id]
+            self._save_archive_index(index)
+
+            # Check if this is a parent task with subtasks
+            task = self.load_task(task_id)
+            if task and task.subtasks:
+                for subtask_id in task.subtasks:
+                    subtask_src = archive_dir / f"task-{subtask_id}.json"
+                    subtask_dst = self.tasks_dir / f"task-{subtask_id}.json"
+                    if subtask_src.exists():
+                        shutil.move(str(subtask_src), str(subtask_dst))
+
+            print(f"Restored task {task_id}")
+            return True
+
+        except Exception as e:
+            print(f"Error restoring {task_id}: {e}")
+            return False
+
+    def get_archive_summary(self) -> str:
+        """
+        Get a brief summary of archived tasks for display
+
+        Returns:
+            Markdown-formatted summary string
+        """
+        index = self.get_archive_index()
+        if index["count"] == 0:
+            return ""
+
+        return f"\n## Archived ({index['count']} tasks)\nLast archived: {index['archived_at']}\n"
+
 
 def main():
     """CLI interface for task manager"""
     import argparse
 
     parser = argparse.ArgumentParser(description="Task Manager - Core task operations")
-    parser.add_argument("command", choices=["validate", "sync", "metrics", "breakdown", "list"],
+    parser.add_argument("command", choices=["validate", "sync", "metrics", "breakdown", "list", "archive", "restore"],
                        help="Command to execute")
     parser.add_argument("--task-id", help="Task ID for operations")
     parser.add_argument("--subtasks", nargs="+", help="Subtask definitions (JSON strings)")
     parser.add_argument("--base-path", default=".", help="Base project path")
+    parser.add_argument("--days", type=int, default=7, help="Days old for archive (default: 7)")
+    parser.add_argument("--dry-run", action="store_true", help="Show what would be done without doing it")
 
     args = parser.parse_args()
 
@@ -902,6 +1154,20 @@ def main():
             task = manager.load_task(task_id)
             if task:
                 print(f"  {task_id}: {task.title} ({task.status})")
+
+    elif args.command == "archive":
+        archived = manager.archive_completed_tasks(days_old=args.days, dry_run=args.dry_run)
+        if not args.dry_run and archived:
+            # Sync overview after archiving
+            manager.sync_task_overview()
+
+    elif args.command == "restore":
+        if not args.task_id:
+            print("Task ID required for restore")
+            return
+        if manager.restore_from_archive(args.task_id):
+            # Sync overview after restoring
+            manager.sync_task_overview()
 
 
 if __name__ == "__main__":
