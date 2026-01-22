@@ -1,0 +1,23 @@
+{
+  "id": "303",
+  "title": "Add file conflict detection to bootstrap",
+  "description": "Prevent silent overwrites in scripts/bootstrap.py:325-330:\n\n**Pre-flight checks:**\n- Check if CLAUDE.md exists -> ERROR with suggestion to backup/remove\n- Check if .claude/ directory exists -> ERROR or prompt for merge\n- Check if any target files exist -> List conflicts\n\n**User options:**\n- --force flag to overwrite intentionally\n- --merge flag to preserve existing and add new\n- Default: fail safely with clear message\n\n**Integration with undo-bootstrap:**\n- Reference /undo-bootstrap command in error messages\n- Suggest backup before overwrite\n\n**Files to modify:**\n- scripts/bootstrap.py\n\n**Acceptance criteria:**\n- Existing CLAUDE.md never silently overwritten\n- Clear error listing all conflicting files\n- User has explicit opt-in for destructive operations",
+  "difficulty": 4,
+  "status": "Finished",
+  "created_date": "2026-01-22",
+  "updated_date": "2026-01-22",
+  "dependencies": [],
+  "subtasks": [],
+  "parent_task": null,
+  "tags": ["bootstrap", "high-priority", "data-safety"],
+  "notes": "Implemented _check_file_conflicts() method that checks all target files and .claude/ directory before writing. Added --force and --merge CLI flags with mutual exclusion. Error message lists all conflicts (first 10), shows options, and highlights critical files (CLAUDE.md, overview.md) with /undo-bootstrap reference. Merge mode adds files_skipped to results.",
+  "confidence": 95,
+  "assumptions": [],
+  "validation_status": "validated",
+  "momentum": {
+    "phase": "cruising",
+    "velocity": 80,
+    "last_activity": "2026-01-22"
+  },
+  "decision_rationale": "Default to safe behavior (fail on conflicts). --force for experienced users who know what they're doing. --merge for incremental additions. Made flags mutually exclusive to avoid confusion."
+}

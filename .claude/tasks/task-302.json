@@ -1,0 +1,23 @@
+{
+  "id": "302",
+  "title": "Improve bootstrap exception handling",
+  "description": "Replace single catch-all exception handler in scripts/bootstrap.py:343-344 with proper error handling:\n\n**Specific exceptions to handle:**\n- FileNotFoundError - spec file not found\n- PermissionError - cannot read/write files\n- OSError - disk full, directory issues\n- json.JSONDecodeError - malformed spec (if JSON)\n- UnicodeDecodeError - encoding issues\n\n**Per-file error tracking:**\n- Track which files succeeded/failed individually\n- Don't continue if critical files fail (CLAUDE.md, overview.md)\n- Allow graceful degradation for optional files\n\n**Rollback on failure:**\n- If bootstrap fails mid-way, clean up partial files\n- Or provide clear message about partial state\n\n**Files to modify:**\n- scripts/bootstrap.py\n\n**Acceptance criteria:**\n- Each exception type gets specific, actionable error message\n- Partial failures don't leave corrupted state\n- User knows exactly what failed and why",
+  "difficulty": 5,
+  "status": "Finished",
+  "created_date": "2026-01-22",
+  "updated_date": "2026-01-22",
+  "dependencies": [],
+  "subtasks": [],
+  "parent_task": null,
+  "tags": ["bootstrap", "critical", "error-handling"],
+  "notes": "Implemented comprehensive exception handling: SpecFileError for file issues, FileConflictError for existing files, FileCreationError for write failures. Added per-file try/catch with specific messages for PermissionError, OSError (disk full, read-only), UnicodeDecodeError (with latin-1 fallback). Implemented _rollback_files() method that tracks created files/dirs and cleans up on failure. Task files have graceful degradation (warnings instead of abort).",
+  "confidence": 95,
+  "assumptions": [],
+  "validation_status": "validated",
+  "momentum": {
+    "phase": "cruising",
+    "velocity": 80,
+    "last_activity": "2026-01-22"
+  },
+  "decision_rationale": "Created custom exception hierarchy for semantic error handling. Used tracking lists for rollback support. Kept task file creation non-critical since main files are more important."
+}

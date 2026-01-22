@@ -1,0 +1,23 @@
+{
+  "id": "301",
+  "title": "Fix bootstrap path handling and validation",
+  "description": "Fix critical path handling issues in scripts/bootstrap.py:\n\n**Path Expansion (line 306):**\n- Add Path.expanduser() for tilde expansion (~/path)\n- Add Path.resolve() for relative path resolution\n- Handle paths with spaces properly\n\n**Path Validation:**\n- Verify file exists before attempting to read\n- Check file is readable (permissions)\n- Validate file size > 0 bytes\n- Return clear error messages for each failure mode\n\n**Files to modify:**\n- scripts/bootstrap.py (primary)\n\n**Acceptance criteria:**\n- ~/Documents/spec.md works\n- ./spec.md works from any directory\n- \"/path/with spaces/spec.md\" works\n- Clear error message if file not found\n- Clear error message if file empty",
+  "difficulty": 5,
+  "status": "Finished",
+  "created_date": "2026-01-22",
+  "updated_date": "2026-01-22",
+  "dependencies": [],
+  "subtasks": [],
+  "parent_task": null,
+  "tags": ["bootstrap", "critical", "path-handling"],
+  "notes": "Implemented _resolve_spec_path() method that handles: tilde expansion via Path.expanduser(), relative path resolution via Path.resolve(), existence check, file-vs-directory check, permission check via os.access(), and empty file check via stat().st_size. All error cases return specific SpecFileError with actionable messages.",
+  "confidence": 95,
+  "assumptions": [],
+  "validation_status": "validated",
+  "momentum": {
+    "phase": "cruising",
+    "velocity": 80,
+    "last_activity": "2026-01-22"
+  },
+  "decision_rationale": "Used Path methods for robust cross-platform path handling. Separated validation into distinct checks for clear error messages."
+}

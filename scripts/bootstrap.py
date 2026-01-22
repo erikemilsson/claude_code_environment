@@ -14,8 +14,27 @@ import os
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Tuple
 from datetime import datetime
-import re
-import shutil
+import sys
+
+
+class BootstrapError(Exception):
+    """Base exception for bootstrap errors"""
+    pass
+
+
+class SpecFileError(BootstrapError):
+    """Error reading or validating spec file"""
+    pass
+
+
+class FileConflictError(BootstrapError):
+    """Error when target files already exist"""
+    pass
+
+
+class FileCreationError(BootstrapError):
+    """Error creating output files"""
+    pass
 
 
 class BootstrapAutomation:
@@ -286,9 +305,107 @@ This project was bootstrapped using automated template detection.
 
         return tasks
 
-    def bootstrap_environment(self, spec_path: str, output_path: str = ".") -> Dict[str, Any]:
+    def _resolve_spec_path(self, spec_path: str) -> Path:
+        """
+        Resolve and validate the specification file path.
+
+        Handles:
+        - Tilde expansion (~/path)
+        - Relative paths (./spec.md, ../spec.md)
+        - Paths with spaces
+
+        Raises:
+            SpecFileError: If path cannot be resolved or file is invalid
+        """
+        try:
+            # Expand tilde and resolve relative paths
+            path = Path(spec_path).expanduser().resolve()
+        except (OSError, RuntimeError) as e:
+            raise SpecFileError(f"Cannot resolve path '{spec_path}': {e}")
+
+        # Validate file exists
+        if not path.exists():
+            raise SpecFileError(f"Specification file not found: {path}")
+
+        # Validate it's a file, not a directory
+        if not path.is_file():
+            raise SpecFileError(f"Path is not a file: {path}")
+
+        # Check file is readable
+        if not os.access(path, os.R_OK):
+            raise SpecFileError(f"Cannot read file (permission denied): {path}")
+
+        # Check file has content
+        if path.stat().st_size == 0:
+            raise SpecFileError(f"Specification file is empty: {path}")
+
+        return path
+
+    def _check_file_conflicts(self, output_path: Path, structure: Dict[str, str],
+                              force: bool = False, merge: bool = False) -> List[str]:
+        """
+        Check for existing files that would be overwritten.
+
+        Args:
+            output_path: Target directory
+            structure: Files to be created
+            force: If True, allow overwriting
+            merge: If True, skip existing files
+
+        Returns:
+            List of conflicting file paths (only actual files, not directories)
+
+        Raises:
+            FileConflictError: If conflicts exist and neither force nor merge is set
+        """
+        conflicts = []
+        critical_files = ["CLAUDE.md", ".claude/context/overview.md"]
+
+        for file_path in structure.keys():
+            full_path = output_path / file_path
+            if full_path.exists():
+                conflicts.append(file_path)
+
+        # Check if .claude directory exists (informational, not counted as conflict)
+        claude_dir = output_path / ".claude"
+        claude_dir_exists = claude_dir.exists() and claude_dir.is_dir()
+
+        if conflicts and not force and not merge:
+            critical_conflicts = [f for f in conflicts if any(c in f for c in critical_files)]
+
+            error_msg = f"File conflicts detected ({len(conflicts)} files would be overwritten):\n"
+            for f in conflicts[:10]:  # Show first 10
+                error_msg += f"  - {f}\n"
+            if len(conflicts) > 10:
+                error_msg += f"  ... and {len(conflicts) - 10} more\n"
+
+            if claude_dir_exists and not any(f.startswith(".claude/") for f in conflicts):
+                error_msg += f"  - .claude/ directory exists (may contain other files)\n"
+
+            error_msg += "\nOptions:\n"
+            error_msg += "  --force  : Overwrite all existing files\n"
+            error_msg += "  --merge  : Keep existing files, only add new ones\n"
+
+            if critical_conflicts:
+                error_msg += "\n⚠️  Critical files would be overwritten:\n"
+                for f in critical_conflicts:
+                    error_msg += f"  - {f}\n"
+                error_msg += "\nConsider backing up your files or using /undo-bootstrap if available."
+
+            raise FileConflictError(error_msg)
+
+        return conflicts
+
+    def bootstrap_environment(self, spec_path: str, output_path: str = ".",
+                              force: bool = False, merge: bool = False) -> Dict[str, Any]:
         """
         Complete environment bootstrap from specification
+
+        Args:
+            spec_path: Path to specification file (supports ~, relative paths, spaces)
+            output_path: Output directory
+            force: Overwrite existing files without prompting
+            merge: Keep existing files, only add new ones
 
         Returns:
             Dictionary with bootstrap results
@@ -297,17 +414,35 @@ This project was bootstrapped using automated template detection.
             "template_detected": None,
             "confidence_scores": {},
             "files_created": [],
+            "files_skipped": [],
             "tasks_created": 0,
-            "errors": []
+            "errors": [],
+            "warnings": []
         }
 
+        created_files = []  # Track for rollback
+        created_dirs = []   # Track for rollback
+
         try:
-            # Read specification
-            with open(spec_path, 'r') as f:
-                spec_content = f.read()
+            # Task 301: Resolve and validate spec path
+            resolved_path = self._resolve_spec_path(spec_path)
+
+            # Read specification with proper encoding handling
+            try:
+                with open(resolved_path, 'r', encoding='utf-8') as f:
+                    spec_content = f.read()
+            except UnicodeDecodeError as e:
+                # Try with latin-1 as fallback
+                try:
+                    with open(resolved_path, 'r', encoding='latin-1') as f:
+                        spec_content = f.read()
+                    results["warnings"].append(f"File encoding issue, read as latin-1: {e}")
+                except Exception:
+                    raise SpecFileError(f"Cannot decode file (encoding error): {resolved_path}\n"
+                                       f"Try saving the file as UTF-8.")
 
             # Detect template
-            template_name, scores = self.detect_template(spec_content, spec_path)
+            template_name, scores = self.detect_template(spec_content, str(resolved_path))
             results["template_detected"] = template_name
             results["confidence_scores"] = scores
 
@@ -320,30 +455,137 @@ This project was bootstrapped using automated template detection.
             # Populate with spec content
             structure = self.populate_from_spec(structure, spec_content, indicators)
 
-            # Create directory structure and files
-            output_base = Path(output_path)
+            # Task 303: Check for file conflicts
+            output_base = Path(output_path).expanduser().resolve()
+            conflicts = self._check_file_conflicts(output_base, structure, force, merge)
+
+            if conflicts and merge:
+                results["files_skipped"] = conflicts
+                # Remove conflicting files from structure for merge mode
+                structure = {k: v for k, v in structure.items() if k not in conflicts}
+
+            # Create directory structure and files with per-file error handling
             for file_path, content in structure.items():
                 full_path = output_base / file_path
-                full_path.parent.mkdir(parents=True, exist_ok=True)
-                with open(full_path, 'w') as f:
-                    f.write(content)
-                results["files_created"].append(file_path)
+                try:
+                    # Track directories created
+                    parent_dir = full_path.parent
+                    if not parent_dir.exists():
+                        parent_dir.mkdir(parents=True, exist_ok=True)
+                        created_dirs.append(str(parent_dir))
+
+                    with open(full_path, 'w', encoding='utf-8') as f:
+                        f.write(content)
+                    created_files.append(str(full_path))
+                    results["files_created"].append(file_path)
+
+                except PermissionError:
+                    raise FileCreationError(f"Permission denied writing to: {full_path}\n"
+                                           f"Check directory permissions for: {parent_dir}")
+                except OSError as e:
+                    if "No space left" in str(e) or e.errno == 28:
+                        raise FileCreationError(f"Disk full - cannot create: {full_path}")
+                    elif "Read-only file system" in str(e):
+                        raise FileCreationError(f"Read-only filesystem: {full_path}")
+                    else:
+                        raise FileCreationError(f"OS error creating {full_path}: {e}")
 
             # Create initial tasks
             tasks = self.create_initial_tasks(indicators, template_name)
             tasks_dir = output_base / ".claude" / "tasks"
-            tasks_dir.mkdir(parents=True, exist_ok=True)
+
+            try:
+                if not tasks_dir.exists():
+                    tasks_dir.mkdir(parents=True, exist_ok=True)
+                    created_dirs.append(str(tasks_dir))
+            except PermissionError:
+                raise FileCreationError(f"Permission denied creating tasks directory: {tasks_dir}")
+            except OSError as e:
+                raise FileCreationError(f"Cannot create tasks directory: {e}")
 
             for task in tasks:
                 task_file = tasks_dir / f"task-{task['id']}.json"
-                with open(task_file, 'w') as f:
-                    json.dump(task, f, indent=2)
-                results["tasks_created"] += 1
+                try:
+                    with open(task_file, 'w', encoding='utf-8') as f:
+                        json.dump(task, f, indent=2)
+                    created_files.append(str(task_file))
+                    results["tasks_created"] += 1
+                except (PermissionError, OSError) as e:
+                    # Non-critical: warn but continue
+                    results["warnings"].append(f"Could not create task file {task_file}: {e}")
+
+        except SpecFileError as e:
+            results["errors"].append(f"Specification file error: {e}")
+            # No rollback needed - we haven't created anything yet
+
+        except FileConflictError as e:
+            results["errors"].append(str(e))
+            # No rollback needed - we detected conflicts before writing
+
+        except FileCreationError as e:
+            results["errors"].append(f"File creation error: {e}")
+            # Rollback: clean up partially created files
+            self._rollback_files(created_files, created_dirs, results)
 
         except Exception as e:
-            results["errors"].append(str(e))
+            results["errors"].append(f"Unexpected error: {type(e).__name__}: {e}")
+            # Attempt rollback for unexpected errors too
+            if created_files or created_dirs:
+                self._rollback_files(created_files, created_dirs, results)
 
         return results
+
+    def _rollback_files(self, created_files: List[str], created_dirs: List[str],
+                        results: Dict[str, Any]) -> None:
+        """
+        Clean up files created during a failed bootstrap.
+
+        Args:
+            created_files: List of file paths to remove
+            created_dirs: List of directory paths to remove (if empty)
+            results: Results dict to update with rollback info
+        """
+        rolled_back = []
+        rollback_errors = []
+
+        # Remove files first
+        for file_path in reversed(created_files):
+            try:
+                path = Path(file_path)
+                if path.exists():
+                    path.unlink()
+                    rolled_back.append(file_path)
+            except Exception as e:
+                rollback_errors.append(f"Could not remove {file_path}: {e}")
+
+        # Remove empty directories (in reverse order of creation)
+        # Also try to remove parent directories if they become empty
+        dirs_to_check = set(created_dirs)
+        for file_path in created_files:
+            # Add parent directories of files we removed
+            parent = Path(file_path).parent
+            while str(parent) != str(parent.parent):  # Stop at root
+                dirs_to_check.add(str(parent))
+                parent = parent.parent
+
+        # Sort by depth (deepest first) to remove nested dirs before parents
+        sorted_dirs = sorted(dirs_to_check, key=lambda d: d.count(os.sep), reverse=True)
+
+        for dir_path in sorted_dirs:
+            try:
+                path = Path(dir_path)
+                if path.exists() and path.is_dir():
+                    # Only remove if empty
+                    if not any(path.iterdir()):
+                        path.rmdir()
+                        rolled_back.append(dir_path)
+            except Exception as e:
+                rollback_errors.append(f"Could not remove directory {dir_path}: {e}")
+
+        if rolled_back:
+            results["warnings"].append(f"Rolled back {len(rolled_back)} files/directories due to error")
+        if rollback_errors:
+            results["warnings"].extend(rollback_errors)
 
     def _get_command_template(self, command_name: str) -> str:
         """Get command file template"""
@@ -462,26 +704,84 @@ Tasks with difficulty >= 7 MUST be broken down before execution.
 """
 
 
+def _read_spec_file(bootstrap: BootstrapAutomation, spec_path: str) -> Tuple[Path, str]:
+    """
+    Read specification file with proper error handling.
+
+    Args:
+        bootstrap: BootstrapAutomation instance for path resolution
+        spec_path: Path to specification file
+
+    Returns:
+        Tuple of (resolved_path, content)
+
+    Raises:
+        SystemExit: On any error (prints message first)
+    """
+    try:
+        resolved_path = bootstrap._resolve_spec_path(spec_path)
+    except SpecFileError as e:
+        print(f"Error: {e}")
+        sys.exit(1)
+
+    try:
+        with open(resolved_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+    except UnicodeDecodeError:
+        try:
+            with open(resolved_path, 'r', encoding='latin-1') as f:
+                content = f.read()
+        except Exception as e:
+            print(f"Error reading file: {e}")
+            sys.exit(1)
+
+    return resolved_path, content
+
+
 def main():
     """CLI interface"""
     import argparse
 
-    parser = argparse.ArgumentParser(description="Bootstrap Automation")
+    parser = argparse.ArgumentParser(
+        description="Bootstrap Automation - Smart template detection and environment generation",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  python bootstrap.py detect --spec ~/Documents/project-spec.md
+  python bootstrap.py bootstrap --spec ./spec.md --output ./my-project
+  python bootstrap.py bootstrap --spec "path/with spaces/spec.md" --force
+  python bootstrap.py bootstrap --spec ~/spec.md --merge
+
+Note: --force and --merge flags only apply to the 'bootstrap' command.
+        """
+    )
     parser.add_argument("command", choices=["detect", "generate", "bootstrap"],
                        help="Command to execute")
-    parser.add_argument("--spec", required=True, help="Specification file path")
+    parser.add_argument("--spec", required=True,
+                       help="Specification file path (supports ~, relative paths, paths with spaces)")
     parser.add_argument("--output", default=".", help="Output directory")
     parser.add_argument("--json", action="store_true", help="JSON output")
+    parser.add_argument("--force", action="store_true",
+                       help="Overwrite existing files without prompting (bootstrap only)")
+    parser.add_argument("--merge", action="store_true",
+                       help="Keep existing files, only add new ones (bootstrap only)")
 
     args = parser.parse_args()
+
+    # Validate mutually exclusive options
+    if args.force and args.merge:
+        print("Error: --force and --merge cannot be used together")
+        sys.exit(1)
+
+    # Warn if flags used with wrong command
+    if args.command != "bootstrap" and (args.force or args.merge):
+        print(f"Warning: --force and --merge only apply to 'bootstrap' command, ignoring for '{args.command}'")
 
     bootstrap = BootstrapAutomation(args.output)
 
     if args.command == "detect":
-        with open(args.spec, 'r') as f:
-            content = f.read()
-
-        template, scores = bootstrap.detect_template(content, args.spec)
+        resolved_path, content = _read_spec_file(bootstrap, args.spec)
+        template, scores = bootstrap.detect_template(content, str(resolved_path))
 
         if args.json:
             print(json.dumps({"template": template, "scores": scores}, indent=2))
@@ -492,10 +792,8 @@ def main():
                 print(f"  {tmpl}: {score:.1f}")
 
     elif args.command == "generate":
-        with open(args.spec, 'r') as f:
-            content = f.read()
-
-        template, _ = bootstrap.detect_template(content, args.spec)
+        resolved_path, content = _read_spec_file(bootstrap, args.spec)
+        template, _ = bootstrap.detect_template(content, str(resolved_path))
         structure = bootstrap.generate_base_structure(template)
 
         if args.json:
@@ -506,17 +804,29 @@ def main():
                 print(f"  {file_path}")
 
     elif args.command == "bootstrap":
-        results = bootstrap.bootstrap_environment(args.spec, args.output)
+        results = bootstrap.bootstrap_environment(
+            args.spec, args.output, force=args.force, merge=args.merge
+        )
 
         if args.json:
             print(json.dumps(results, indent=2))
         else:
-            print(f"Bootstrap Results:")
-            print(f"  Template: {results['template_detected']}")
-            print(f"  Files created: {len(results['files_created'])}")
-            print(f"  Tasks created: {results['tasks_created']}")
             if results['errors']:
-                print(f"  Errors: {results['errors']}")
+                print("Bootstrap Failed:")
+                for error in results['errors']:
+                    print(f"\n{error}")
+                sys.exit(1)
+            else:
+                print("Bootstrap Successful:")
+                print(f"  Template: {results['template_detected']}")
+                print(f"  Files created: {len(results['files_created'])}")
+                if results['files_skipped']:
+                    print(f"  Files skipped (merge mode): {len(results['files_skipped'])}")
+                print(f"  Tasks created: {results['tasks_created']}")
+                if results['warnings']:
+                    print("\nWarnings:")
+                    for warning in results['warnings']:
+                        print(f"  - {warning}")
 
 
 if __name__ == "__main__":
