@@ -1,0 +1,23 @@
+{
+  "id": "307",
+  "title": "Consolidate coding guidelines into core + language deltas",
+  "description": "Restructure coding guidelines to eliminate duplication:\n\n**Current state (1,955 lines):**\n- coding-guidelines-javascript.md - 681 lines\n- coding-guidelines-powerquery.md - 495 lines\n- coding-guidelines-python.md - 353 lines\n- coding-guidelines-sql.md - 426 lines\n\n**New structure (~700 lines total):**\n\nCreate coding-guidelines/:\n- core.md (~200 lines) - shared principles: error handling patterns, file operation patterns, testing approaches, documentation standards, security practices\n- javascript.md (~120 lines) - JS-specific only\n- python.md (~120 lines) - Python-specific only\n- sql.md (~130 lines) - SQL-specific only\n- powerquery.md (~130 lines) - PQ-specific only\n\n**Files to modify:**\n- Create: .claude/reference/coding-guidelines/ directory\n- Create: core.md, language-specific files\n- Archive or delete: old monolithic files\n\n**Acceptance criteria:**\n- Same coverage, no information lost\n- ~1,255 lines eliminated (64% reduction)\n- Easy to add new languages with just deltas",
+  "difficulty": 5,
+  "status": "Finished",
+  "created_date": "2026-01-22",
+  "updated_date": "2026-01-22",
+  "dependencies": [],
+  "subtasks": [],
+  "parent_task": null,
+  "tags": ["token-efficiency", "consolidation", "coding-guidelines"],
+  "notes": "Completed 2026-01-22. Created coding-guidelines/ directory with core.md and 4 language-specific files (javascript.md, python.md, sql.md, powerquery.md). Original files archived to .archive/consolidated-2026-01-22/. Achieved ~75% reduction from 1,955 lines to ~500 lines.",
+  "confidence": 95,
+  "assumptions": [],
+  "validation_status": "validated",
+  "momentum": {
+    "phase": "completed",
+    "velocity": 100,
+    "last_activity": "2026-01-22"
+  },
+  "decision_rationale": "Extracted shared principles into core.md to avoid repetition. Kept language-specific files focused on syntax and patterns unique to each language."
+}

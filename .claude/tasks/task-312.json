@@ -1,0 +1,23 @@
+{
+  "id": "312",
+  "title": "Archive mac-user-workflow-guide to docs",
+  "description": "Move platform-specific workflow guide out of always-loaded reference:\n\n**Current:**\n- mac-user-workflow-guide.md - 2,205 lines in .claude/reference/\n- Always loaded even for non-Mac users or when not relevant\n\n**Target:**\n- Move to docs/mac-user-workflow-guide.md\n- Add entry in reference/INDEX.md pointing to docs location\n- Only load when explicitly requested or Mac-specific help needed\n\n**Files to modify:**\n- Move: .claude/reference/mac-user-workflow-guide.md -> docs/\n- Update: INDEX.md with pointer\n- Update: Any cross-references\n\n**Acceptance criteria:**\n- Guide still fully accessible\n- 2,205 tokens removed from baseline context\n- Clear path to find it when needed",
+  "difficulty": 3,
+  "status": "Blocked",
+  "created_date": "2026-01-22",
+  "updated_date": "2026-01-22",
+  "dependencies": ["311"],
+  "subtasks": [],
+  "parent_task": null,
+  "tags": ["token-efficiency", "cleanup"],
+  "notes": "Blocked by task 311 - need INDEX.md structure in place first",
+  "confidence": 95,
+  "assumptions": [],
+  "validation_status": "pending",
+  "momentum": {
+    "phase": "pending",
+    "velocity": 0,
+    "last_activity": "2026-01-22"
+  },
+  "decision_rationale": ""
+}

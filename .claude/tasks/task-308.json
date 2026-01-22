@@ -1,0 +1,23 @@
+{
+  "id": "308",
+  "title": "Create agent integration template and remove boilerplate",
+  "description": "Eliminate repeated agent integration boilerplate across command files:\n\n**Current duplication in 5+ files:**\n- complete-task.md (486 lines)\n- breakdown.md (247 lines)\n- validate-spec.md (385 lines)\n- use-agent.md (322 lines)\n- Others with agent sections\n\nEach repeats:\n- '## Agent Integration' header\n- Agent name and phase\n- 'The [Agent] will:' statements\n- Handoff protocol descriptions\n\n**Create .claude/reference/agent-integration-template.md (~60 lines):**\n- Standard agent invocation pattern\n- Handoff protocol reference\n- State transition documentation\n\n**Update command files:**\n- Replace verbose agent sections with: 'See agent-integration-template.md'\n- Keep only command-specific agent parameters\n\n**Files to modify:**\n- Create: .claude/reference/agent-integration-template.md\n- Edit: Command files with agent sections\n\n**Acceptance criteria:**\n- Agent behavior still fully documented (in one place)\n- ~400-500 tokens saved\n- Command files are more focused on their specific purpose",
+  "difficulty": 4,
+  "status": "Finished",
+  "created_date": "2026-01-22",
+  "updated_date": "2026-01-22",
+  "dependencies": [],
+  "subtasks": [],
+  "parent_task": null,
+  "tags": ["token-efficiency", "consolidation", "agents"],
+  "notes": "Completed 2026-01-22. Created agent-integration-template.md with standard patterns for agent invocation, handoff protocols, state transitions, and validation gates. Command files can now reference this template instead of duplicating boilerplate.",
+  "confidence": 95,
+  "assumptions": [],
+  "validation_status": "validated",
+  "momentum": {
+    "phase": "completed",
+    "velocity": 100,
+    "last_activity": "2026-01-22"
+  },
+  "decision_rationale": "Created a reusable template that documents standard agent patterns in one place. Command files retain their specific agent configurations but avoid repeating generic boilerplate."
+}

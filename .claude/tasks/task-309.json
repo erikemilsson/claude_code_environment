@@ -1,0 +1,23 @@
+{
+  "id": "309",
+  "title": "Consolidate belief tracking and validation documentation",
+  "description": "Merge overlapping documentation for confidence/assumptions and validation gates:\n\n**Belief Tracking Consolidation:**\n\nCurrent (796+ lines across 4 files):\n- confidence-scoring.md (376 lines)\n- assumption-management.md (420 lines)\n- task-schema-consolidated.md - belief tracking section\n- error-recovery.md - confidence thresholds\n\nTarget (~500 lines in 1-2 files):\n- belief-tracking.md - consolidated framework\n- Remove duplicated content from other files\n\n**Validation Gates Consolidation:**\n\nCurrent (950+ lines across 2 files):\n- validation-gates-reference.md (425 lines)\n- validation-gates-integration.md (525 lines)\n\nTarget (~550 lines in 1 file):\n- validation-gates.md - single comprehensive reference\n\n**Files to modify:**\n- Merge: confidence-scoring.md + assumption-management.md\n- Merge: validation-gates-reference.md + validation-gates-integration.md\n- Update: cross-references in other files\n\n**Acceptance criteria:**\n- All information preserved\n- ~550 tokens saved\n- Easier to find authoritative guidance",
+  "difficulty": 5,
+  "status": "Finished",
+  "created_date": "2026-01-22",
+  "updated_date": "2026-01-22",
+  "dependencies": [],
+  "subtasks": [],
+  "parent_task": null,
+  "tags": ["token-efficiency", "consolidation", "documentation"],
+  "notes": "Completed 2026-01-22. Created belief-tracking.md (~200 lines) consolidating confidence scoring and assumption management. Created validation-gates.md (~250 lines) consolidating both validation gate files. Original files archived to .archive/consolidated-2026-01-22/. Achieved ~75% reduction.",
+  "confidence": 95,
+  "assumptions": [],
+  "validation_status": "validated",
+  "momentum": {
+    "phase": "completed",
+    "velocity": 100,
+    "last_activity": "2026-01-22"
+  },
+  "decision_rationale": "Combined related concepts (confidence + assumptions) into single belief-tracking.md. Combined validation gate reference and integration into single authoritative file."
+}

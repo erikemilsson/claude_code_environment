@@ -1,0 +1,23 @@
+{
+  "id": "311",
+  "title": "Implement selective reference loading",
+  "description": "Restructure reference loading from monolithic to on-demand:\n\n**Current problem:**\n- 35 reference files (~16,000 lines) always in context\n- Most sessions only need 10-20% of this content\n\n**New structure:**\n\nCreate .claude/reference/INDEX.md (~30 lines):\n- Topic-to-file mapping\n- When-to-load guidance\n- Quick reference for common needs\n\nReorganize into categories:\n```\nreference/\n  INDEX.md (always loaded)\n  shared-definitions.md (always loaded)\n  core/\n    task-management.md\n    validation-gates.md\n  tools/\n    claude-4-guide.md\n    tool-patterns.md\n  languages/ (load per-project)\n  advanced/ (load on-demand)\n    agents/\n```\n\n**Update CLAUDE.md:**\n- Reference INDEX.md for navigation\n- Remove 'load all references' patterns\n- Add guidance on when to load specific refs\n\n**Files to modify:**\n- Create: INDEX.md\n- Reorganize: reference/ directory structure\n- Update: CLAUDE.md loading patterns\n\n**Acceptance criteria:**\n- Default context reduced from ~16,000 to ~2,000 lines\n- All content still accessible when needed\n- Clear guidance on what to load when\n- ~13,000 tokens saved in typical sessions",
+  "difficulty": 6,
+  "status": "Pending",
+  "created_date": "2026-01-22",
+  "updated_date": "2026-01-22",
+  "dependencies": ["306", "307", "308", "309", "310"],
+  "subtasks": [],
+  "parent_task": null,
+  "tags": ["token-efficiency", "architecture", "high-impact"],
+  "notes": "Dependencies 307-310 completed 2026-01-22. Consolidated files now exist. Task can proceed. Blocked only by task 306 (if still pending).",
+  "confidence": 80,
+  "assumptions": ["Consolidation tasks complete successfully", "New file structure doesn't break existing workflows"],
+  "validation_status": "pending",
+  "momentum": {
+    "phase": "pending",
+    "velocity": 0,
+    "last_activity": "2026-01-22"
+  },
+  "decision_rationale": ""
+}
