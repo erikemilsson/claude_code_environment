@@ -11,7 +11,7 @@ Features:
 
 import json
 from pathlib import Path
-from typing import Dict, List, Set, Tuple, Optional
+from typing import Any, Dict, List, Set, Tuple, Optional
 from collections import deque, defaultdict
 import sys
 

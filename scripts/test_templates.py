@@ -34,9 +34,9 @@ class TestTemplateDetection:
         We need to create DAX measures and Power Query transformations
         for our data model. The M language scripts will process Excel files.
         """
-        template, scores = bootstrap.detect_template(spec)
+        template, result = bootstrap.detect_template(spec)
         assert template == "power-query"
-        assert scores["power-query"] > scores["base"]
+        assert result["scores"]["power-query"] > result["scores"]["base"]
 
     def test_research_template_detection(self):
         """Test research template detection"""
@@ -46,14 +46,14 @@ class TestTemplateDetection:
         This analysis will investigate hypothesis about consumer behavior
         through data analysis and statistical findings.
         """
-        template, scores = bootstrap.detect_template(spec)
+        template, result = bootstrap.detect_template(spec)
         assert template == "research"
 
     def test_base_template_fallback(self):
         """Test fallback to base template"""
         bootstrap = BootstrapAutomation()
         spec = "Simple project without specific keywords"
-        template, scores = bootstrap.detect_template(spec)
+        template, result = bootstrap.detect_template(spec)
         assert template == "base"
 
 

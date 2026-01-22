@@ -54,23 +54,23 @@ jobs:
     - name: Test template detection
       run: |
         cd scripts
-        python test-templates.py
+        python test_templates.py
 
     - name: Test task manager
       run: |
         cd scripts
-        python task-manager.py validate
-        python task-manager.py list
+        python task_manager.py validate
+        python task_manager.py list
 
     - name: Test validation gates
       run: |
         cd scripts
-        python validation-gates.py validate-all --json
+        python validation_gates.py validate-all --json
 
     - name: Test schema validator
       run: |
         cd scripts
-        python schema-validator.py health --json
+        python schema_validator.py health --json
 
     - name: Test CLI wrapper
       run: |
@@ -82,7 +82,7 @@ jobs:
     - name: Run pytest with coverage
       run: |
         cd scripts
-        pytest test-templates.py -v --cov=. --cov-report=xml --cov-report=term || true
+        pytest test_templates.py -v --cov=. --cov-report=xml --cov-report=term || true
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
@@ -155,18 +155,18 @@ jobs:
         cp test_task.json ../.claude/tasks/task-test_1.json
 
         # Test operations
-        python task-manager.py validate --task-id test_1
-        python validation-gates.py pre --task-id test_1 --json
-        python task-manager.py sync
+        python task_manager.py validate --task-id test_1
+        python validation_gates.py pre --task-id test_1 --json
+        python task_manager.py sync
 
     - name: Integration test - Analysis workflow
       run: |
         cd scripts
 
         # Test analysis operations
-        python dependency-analyzer.py cycles --json
-        python metrics-dashboard.py health --json
-        python pattern-matcher.py suggest-breakdown --text "implement authentication API"
+        python dependency_analyzer.py cycles --json
+        python metrics_dashboard.py health --json
+        python pattern_matcher.py suggest-breakdown --text "implement authentication API"
 
     - name: Integration test - CLI workflow
       run: |
