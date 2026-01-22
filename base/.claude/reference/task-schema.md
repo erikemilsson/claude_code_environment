@@ -20,7 +20,10 @@
   "description": "Detailed explanation of what needs to be done",
   "status": "Pending",
   "difficulty": 3,
+  "owner": "claude",
   "created_date": "2025-01-15",
+  "updated_date": "2025-01-15",
+  "completion_date": null,
   "dependencies": [],
   "subtasks": [],
   "parent_task": null,
@@ -60,6 +63,17 @@
 - Type: String (YYYY-MM-DD)
 - When the task was created
 
+### updated_date (optional)
+- Type: String (YYYY-MM-DD)
+- When the task was last modified
+- Used by health-check to detect stale "In Progress" tasks
+
+### completion_date (optional)
+- Type: String (YYYY-MM-DD)
+- When the task was finished
+- Set automatically when status changes to "Finished"
+- Used by archive-tasks to determine archive eligibility
+
 ### dependencies (optional)
 - Type: Array of task ID strings
 - Tasks that must finish before this one can start
@@ -80,6 +94,16 @@
 - Type: String
 - Additional context, warnings, or completion notes
 
+### owner (optional)
+- Type: String
+- Values:
+  - `claude` - Task Claude will do (default)
+  - `human` - Task requiring human action
+  - `both` - Collaborative task
+- Default: `"claude"` when not specified
+- Use for collaborative projects with mixed ownership
+- Subtasks inherit parent's owner unless explicitly overridden
+
 ## Status Rules
 
 1. Only work on tasks with status "Pending" or "In Progress"
@@ -96,7 +120,8 @@ For large projects (100+ tasks), finished tasks can be archived to reduce token 
 ```
 .claude/tasks/
 ├── task-*.json           # Active tasks
-├── task-overview.md      # Active task overview
+├── task-overview.md      # Active task overview (auto-generated)
+├── workflow-diagram.md   # Visual diagram (auto-generated for 20+ tasks)
 └── archive/
     ├── task-*.json       # Archived task files (full data)
     └── archive-index.json # Lightweight summary
@@ -109,7 +134,7 @@ For large projects (100+ tasks), finished tasks can be archived to reduce token 
   "archived_at": "2026-01-21",
   "count": 50,
   "tasks": [
-    {"id": "1", "title": "Setup project", "completion_date": "2026-01-10", "difficulty": 3}
+    {"id": "1", "title": "Setup project", "completion_date": "2026-01-10", "difficulty": 3, "owner": "claude"}
   ]
 }
 ```
@@ -123,7 +148,8 @@ For large projects (100+ tasks), finished tasks can be archived to reduce token 
 
 ### Commands
 
-- `/archive-tasks` - Move old finished tasks to archive
+- `/archive-tasks` - Move old finished tasks to archive (time-based, default 7 days)
+- `/archive-tasks --threshold N` - Archive until active count <= N (count-based)
 - `/archive-tasks --dry-run` - Preview what would be archived
 - `/restore-task {id}` - Restore a task from archive
 

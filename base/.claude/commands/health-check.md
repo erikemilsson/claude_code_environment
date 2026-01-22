@@ -4,9 +4,10 @@ Combined system health check for task management and CLAUDE.md.
 
 ## Usage
 ```
-/health-check                    # Run both checks
-/health-check --tasks            # Only task system validation
+/health-check                    # Run all checks (schema, semantic, CLAUDE.md)
+/health-check --tasks            # Only task system validation (schema + semantic)
 /health-check --claude-md        # Only CLAUDE.md audit
+/health-check --semantic         # Only semantic validation (staleness, ownership, orphans)
 /health-check --report-only      # Show report without fix prompts
 ```
 
@@ -68,6 +69,32 @@ When breaking down tasks, IDs must not collide:
 - Tasks with difficulty >= 7 should be `"Broken Down"` or have subtasks
 - Subtasks should have difficulty <= 6
 
+### 7. Semantic Validation (for 20+ task projects)
+
+These checks detect drift and staleness in large collaborative projects:
+
+**Stale "In Progress" Tasks**
+- Tasks with status `"In Progress"` for > 7 days without activity
+- Indicates abandoned work or forgotten state updates
+- Uses `updated_date` field if present, otherwise `created_date`
+
+**Owner-Capability Mismatch**
+- Claude-owned tasks that require human-only capabilities:
+  - UI tools (Power BI, Excel dashboards, Figma)
+  - Physical actions (hardware, deployment to air-gapped systems)
+  - External approvals (management sign-off, legal review)
+- Detection: Title/description keywords matched against capability patterns
+
+**Orphan Dependencies**
+- Tasks referencing dependency IDs that don't exist
+- Can happen after manual task deletion or archive errors
+- Critical for maintaining dependency graph integrity
+
+**Workflow Diagram Staleness**
+- `workflow-diagram.md` timestamp vs latest task modification
+- Warns if diagram is > 24 hours older than task changes
+- Suggests running `/generate-workflow-diagram`
+
 ## Task Auto-Fixes
 
 | Issue | Auto-Fix |
@@ -79,6 +106,15 @@ When breaking down tasks, IDs must not collide:
 | All subtasks Finished but parent not | Set parent status to "Finished" |
 | Missing created_date | Add current date |
 | Multiple "In Progress" tasks | Ask which to keep, set others to "Pending" |
+| Stale workflow diagram | Run /generate-workflow-diagram |
+| Orphan dependency reference | Remove invalid dependency ID from array |
+
+## Semantic Auto-Fixes
+
+| Issue | Auto-Fix |
+|-------|----------|
+| Stale "In Progress" (> 7 days) | Ask user: mark Pending, Blocked, or keep In Progress |
+| Owner-capability mismatch | Suggest changing owner to "human" (requires confirmation) |
 
 ## Non-Fixable Issues (Manual Required)
 
@@ -155,6 +191,12 @@ Run task validation checks (if not `--claude-md`):
 - Status rules
 - Difficulty ranges
 
+Run semantic validation (if not `--claude-md` and task count >= 20):
+- Stale "In Progress" detection
+- Owner-capability mismatch detection
+- Orphan dependency detection
+- Workflow diagram staleness check
+
 Run CLAUDE.md audit (if not `--tasks`):
 - Line counts
 - Section sizes
@@ -165,12 +207,22 @@ Run CLAUDE.md audit (if not `--tasks`):
 ```
 ## Health Check Report
 
-### Task System
+### Task System - Schema & Integrity
 ✅ N checks passed
 ⚠️ N warnings
 ❌ N errors
 
 [List specific issues]
+
+### Task System - Semantic Validation
+✅ No stale tasks
+⚠️ 2 tasks "In Progress" for > 7 days
+  - Task 15: "Build dashboard" (12 days)
+  - Task 23: "API refactor" (8 days)
+⚠️ 1 potential owner mismatch
+  - Task 45: "Configure Power BI" owned by claude (suggests human)
+✅ No orphan dependencies
+⚠️ Workflow diagram stale (3 days behind task changes)
 
 ### CLAUDE.md
 - Total lines: N [✅/⚠️/❌]
