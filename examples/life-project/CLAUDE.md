@@ -8,24 +8,12 @@ Planning and managing a kitchen renovation project.
 
 ## Task Management
 
-### Difficulty Scale (1-10)
-- **1-4**: Standard tasks - just do them
-- **5-6**: Substantial tasks - may take multiple steps
-- **7-8**: Large scope - MUST break down before starting
-- **9-10**: Multi-phase - MUST break down into phases
+See `.claude/reference/shared-definitions.md` for:
+- Difficulty scale (1-10) with breakdown rules
+- Status values and their meanings
+- Mandatory task workflow rules
 
-### Task Status
-- **Pending**: Not started
-- **In Progress**: Currently working (only one at a time)
-- **Blocked**: Cannot proceed (document why)
-- **Broken Down**: Split into subtasks (work on subtasks, not this)
-- **Finished**: Complete
-
-### Rules
-1. Break down tasks with difficulty >= 7 before starting
-2. Only one task "In Progress" at a time
-3. Run `/sync-tasks` after completing any task
-4. Parent tasks auto-complete when all subtasks finish
+**Key rule**: Break down tasks with difficulty >= 7 before starting.
 
 ## Commands
 

@@ -1,0 +1,23 @@
+{
+  "id": "304",
+  "title": "Improve spec parsing and validation",
+  "description": "Fix specification parsing issues in scripts/bootstrap.py:\n\n**Empty spec rejection (lines 304-307):**\n- Check file size > 100 bytes minimum\n- Check content has meaningful text (not just whitespace/headers)\n- Reject with helpful message about what a spec should contain\n\n**Requirements extraction (lines 141-148):**\n- Support numbered lists: 1., 2., etc.\n- Support paragraphs under Requirements heading\n- Support markdown tables\n- Support nested bullets\n- Cap at 10 requirements (already documented)\n\n**Project name extraction (lines 135-138):**\n- Fallback to filename if no # Title found\n- Handle specs without markdown headers\n- Never return None for project_name\n\n**Files to modify:**\n- scripts/bootstrap.py\n\n**Acceptance criteria:**\n- Empty/minimal specs rejected with helpful message\n- Requirements extracted from any common format\n- Project name always has a sensible value",
+  "difficulty": 5,
+  "status": "Finished",
+  "created_date": "2026-01-22",
+  "updated_date": "2026-01-22",
+  "dependencies": [],
+  "subtasks": [],
+  "parent_task": null,
+  "tags": ["bootstrap", "high-priority", "parsing"],
+  "notes": "Implemented: (1) Empty/minimal spec rejection with helpful messages (size<100 bytes, insufficient non-whitespace content, headers-only); (2) Requirements extraction from numbered lists (1. or 1)), nested bullets, markdown tables with ID/description parsing, and requirement-like paragraphs; (3) Project name fallback chain: markdown header → filename → 'New Project'. All changes in scripts/bootstrap.py.",
+  "confidence": 80,
+  "assumptions": [],
+  "validation_status": "pending",
+  "momentum": {
+    "phase": "pending",
+    "velocity": 0,
+    "last_activity": "2026-01-22"
+  },
+  "decision_rationale": ""
+}

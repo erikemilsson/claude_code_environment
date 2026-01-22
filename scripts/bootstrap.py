@@ -11,6 +11,7 @@ Features:
 
 import json
 import os
+import re
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Tuple
 from datetime import datetime
@@ -91,12 +92,17 @@ class BootstrapAutomation:
             }
         }
 
-    def detect_template(self, spec_content: str, spec_path: Optional[str] = None) -> Tuple[str, Dict[str, float]]:
+    def detect_template(self, spec_content: str, spec_path: Optional[str] = None) -> Tuple[str, Dict[str, Any]]:
         """
         Detect the best matching template from specification content
 
         Returns:
-            Tuple of (template_name, confidence_scores)
+            Tuple of (template_name, detection_result) where detection_result contains:
+            - scores: Dict[str, float] of template scores
+            - is_ambiguous: bool if top templates are too close
+            - alternatives: List of close alternatives if ambiguous
+            - phase_0_required: bool if Phase 0 assessment recommended
+            - explanation: str explaining the selection
         """
         scores = {}
         spec_lower = spec_content.lower()
@@ -117,27 +123,105 @@ class BootstrapAutomation:
                     if pattern in spec_path:
                         score += config["weight"] * 0.5
 
-            # Special condition checks
+            # Special condition checks - cap additive boosts to not override clear matches
             if "power" in spec_lower and "bi" in spec_lower:
                 if template_name == "power-query":
-                    score += 5
+                    # Cap boost at 50% of base keyword score or 5, whichever is smaller
+                    boost = min(5, score * 0.5) if score > 0 else 5
+                    score += boost
 
             if "research" in spec_lower and "data" in spec_lower:
                 if template_name == "research":
-                    score += 3
+                    boost = min(3, score * 0.3) if score > 0 else 3
+                    score += boost
 
             scores[template_name] = score
 
+        # Sort templates by score (highest first), excluding 'base'
+        sorted_templates = sorted(
+            [(name, score) for name, score in scores.items() if name != "base"],
+            key=lambda x: x[1],
+            reverse=True
+        )
+
+        # Build detection result
+        result = {
+            "scores": scores,
+            "is_ambiguous": False,
+            "alternatives": [],
+            "phase_0_required": False,
+            "explanation": ""
+        }
+
+        # Check for ambiguity: top 2 templates within 10% of each other
+        if len(sorted_templates) >= 2:
+            best_name, best_score = sorted_templates[0]
+            second_name, second_score = sorted_templates[1]
+
+            if best_score > 0:
+                score_difference = (best_score - second_score) / best_score
+                if score_difference < 0.15 and second_score >= 5:  # Within 15% is ambiguous
+                    result["is_ambiguous"] = True
+                    result["alternatives"] = [
+                        {"template": best_name, "score": best_score},
+                        {"template": second_name, "score": second_score}
+                    ]
+                    result["explanation"] = (
+                        f"Templates '{best_name}' ({best_score:.1f}) and '{second_name}' ({second_score:.1f}) "
+                        f"scored within 15% of each other. User should confirm which template to use."
+                    )
+
         # Select template with highest score
-        best_template = max(scores, key=scores.get)
+        best_template = sorted_templates[0][0] if sorted_templates and sorted_templates[0][1] >= 5 else "base"
+        best_score = scores.get(best_template, 0)
 
-        # Use base template if no significant match
-        if scores[best_template] < 5:
+        # Low confidence handling: suggest 'base' with explanation
+        if best_score < 5:
             best_template = "base"
+            if sorted_templates and sorted_templates[0][1] > 0:
+                closest = sorted_templates[0]
+                result["explanation"] = (
+                    f"No strong template match found. Best candidate was '{closest[0]}' "
+                    f"with score {closest[1]:.1f} (threshold: 5.0). Using 'base' template. "
+                    f"Consider providing more specific requirements for better template detection."
+                )
+            else:
+                result["explanation"] = (
+                    "No template keywords detected. Using 'base' template as default."
+                )
 
-        return best_template, scores
+        # Phase 0 detection: regulatory/compliance + ambiguity keywords
+        phase_0_triggers = {
+            "regulatory": ["compliance", "regulatory", "audit", "gdpr", "hipaa", "sox", "pci", "legal"],
+            "ambiguity": ["unclear", "tbd", "to be determined", "need clarification", "requirements pending",
+                         "scope undefined", "not finalized", "draft", "preliminary"]
+        }
 
-    def extract_indicators(self, spec_content: str) -> Dict[str, Any]:
+        has_regulatory = any(kw in spec_lower for kw in phase_0_triggers["regulatory"])
+        has_ambiguity = any(kw in spec_lower for kw in phase_0_triggers["ambiguity"])
+
+        if has_regulatory and has_ambiguity:
+            result["phase_0_required"] = True
+            result["explanation"] += (
+                " Phase 0 recommended: regulatory keywords detected alongside ambiguity indicators. "
+                "Clarify requirements before proceeding."
+            )
+        elif has_regulatory:
+            # Regulatory without ambiguity: just note it
+            result["explanation"] += " Note: regulatory/compliance keywords detected."
+        elif has_ambiguity:
+            result["phase_0_required"] = True
+            result["explanation"] += (
+                " Phase 0 recommended: specification contains ambiguity indicators. "
+                "Consider clarifying requirements before implementation."
+            )
+
+        if not result["explanation"]:
+            result["explanation"] = f"Selected '{best_template}' template with score {best_score:.1f}."
+
+        return best_template, result
+
+    def extract_indicators(self, spec_content: str, spec_path: Optional[str] = None) -> Dict[str, Any]:
         """Extract project indicators from specification"""
         indicators = {
             "project_name": None,
@@ -150,21 +234,103 @@ class BootstrapAutomation:
 
         lines = spec_content.split("\n")
 
-        # Extract project name (usually in title or first header)
+        # Extract project name with fallback chain
+        # 1. First try: markdown header
         for line in lines[:10]:
             if line.startswith("# "):
                 indicators["project_name"] = line[2:].strip()
                 break
 
-        # Extract requirements
+        # 2. Fallback: filename without extension
+        if not indicators["project_name"] and spec_path:
+            filename = Path(spec_path).stem
+            # Clean up filename: replace dashes/underscores with spaces, title case
+            clean_name = filename.replace('-', ' ').replace('_', ' ')
+            # Title case but preserve acronyms (all caps sequences)
+            words = clean_name.split()
+            processed_words = []
+            for word in words:
+                if word.isupper() and len(word) > 1:
+                    processed_words.append(word)  # Keep acronyms as-is
+                else:
+                    processed_words.append(word.capitalize())
+            indicators["project_name"] = ' '.join(processed_words)
+
+        # 3. Final fallback: generic name
+        if not indicators["project_name"]:
+            indicators["project_name"] = "New Project"
+
+        # Extract requirements from multiple formats
         in_requirements = False
+
         for line in lines:
-            if "requirement" in line.lower() or "objective" in line.lower():
+            stripped = line.strip()
+
+            # Check for requirements section header
+            if re.match(r'^#{1,3}\s*(requirements?|objectives?|goals?|features?)', stripped, re.IGNORECASE):
                 in_requirements = True
-            elif in_requirements and line.startswith("- "):
-                indicators["requirements"].append(line[2:].strip())
-            elif in_requirements and line.startswith("#"):
+                continue
+
+            # Exit section on next header
+            if in_requirements and re.match(r'^#{1,3}\s+', stripped) and not re.match(r'^#{1,3}\s*(requirements?|objectives?|goals?|features?)', stripped, re.IGNORECASE):
                 in_requirements = False
+                continue
+
+            if in_requirements:
+                # Format 1: Bullet points (-, *, •)
+                bullet_match = re.match(r'^[-*•]\s+(.+)$', stripped)
+                if bullet_match:
+                    indicators["requirements"].append(bullet_match.group(1).strip())
+                    continue
+
+                # Format 2: Numbered lists (1., 2., 1), 2), etc.)
+                numbered_match = re.match(r'^(\d+)[.)]\s+(.+)$', stripped)
+                if numbered_match:
+                    indicators["requirements"].append(numbered_match.group(2).strip())
+                    continue
+
+                # Format 3: Nested bullets (indented)
+                nested_match = re.match(r'^[\s\t]+[-*•]\s+(.+)$', line)
+                if nested_match:
+                    # Add as sub-requirement with indent marker
+                    indicators["requirements"].append(f"  - {nested_match.group(1).strip()}")
+                    continue
+
+                # Format 4: Markdown table rows (| col1 | col2 |)
+                table_match = re.match(r'^\|(.+)\|$', stripped)
+                if table_match:
+                    # Skip header separator rows (|---|---|)
+                    if re.match(r'^[\|\s\-:]+$', stripped):
+                        continue
+                    cells = [c.strip() for c in table_match.group(1).split('|') if c.strip()]
+                    if cells and not all(c.startswith('-') for c in cells):
+                        # Skip likely header rows (common header words)
+                        first_cell_lower = cells[0].lower()
+                        header_words = ['id', 'req', 'requirement', 'name', 'description', 'priority', 'status', '#']
+                        if not any(first_cell_lower == hw or first_cell_lower.endswith(' id') for hw in header_words):
+                            # Use first non-empty cell as requirement, or second if first is an ID
+                            if len(cells) > 1 and re.match(r'^[A-Z]{1,3}[-_]?\d+$', cells[0]):
+                                # First cell looks like an ID (R1, REQ-01, etc.), use description
+                                indicators["requirements"].append(cells[1])
+                            else:
+                                indicators["requirements"].append(cells[0])
+                    continue
+
+                # Format 5: Paragraphs - non-empty lines that could be requirements
+                if stripped and len(stripped) > 20 and not stripped.startswith(('|', '#', '---', '```')):
+                    # Only add if it looks like a requirement (has verb-like pattern)
+                    if re.search(r'\b(must|should|shall|will|need|require|implement|create|build|develop|support|enable|allow|provide)\b', stripped, re.IGNORECASE):
+                        indicators["requirements"].append(stripped)
+
+        # Estimate complexity before capping
+        req_count = len(indicators["requirements"])
+        if req_count > 10:
+            indicators["complexity"] = "high"
+        elif req_count < 3:
+            indicators["complexity"] = "low"
+
+        # Cap at 10 requirements (after complexity assessment)
+        indicators["requirements"] = indicators["requirements"][:10]
 
         # Detect technologies
         tech_keywords = ["python", "javascript", "sql", "react", "django", "flask",
@@ -172,12 +338,6 @@ class BootstrapAutomation:
         for tech in tech_keywords:
             if tech in spec_content.lower():
                 indicators["technologies"].append(tech)
-
-        # Estimate complexity
-        if len(indicators["requirements"]) > 10:
-            indicators["complexity"] = "high"
-        elif len(indicators["requirements"]) < 3:
-            indicators["complexity"] = "low"
 
         return indicators
 
@@ -190,6 +350,7 @@ class BootstrapAutomation:
             ".claude/context/overview.md": "# Project Overview\n\n",
             ".claude/tasks/task-overview.md": "# Task Overview\n\n*Generated by bootstrap*\n\n",
             ".claude/reference/difficulty-guide.md": self._get_difficulty_guide(),
+            ".claude/reference/shared-definitions.md": self._get_shared_definitions(),
             "CLAUDE.md": self._get_claude_md_template(template_name),
             "README.md": "# Project\n\n*Generated by bootstrap automation*\n"
         }
@@ -335,11 +496,54 @@ This project was bootstrapped using automated template detection.
         if not os.access(path, os.R_OK):
             raise SpecFileError(f"Cannot read file (permission denied): {path}")
 
-        # Check file has content
-        if path.stat().st_size == 0:
-            raise SpecFileError(f"Specification file is empty: {path}")
+        # Check minimum file size (at least 100 bytes of content)
+        file_size = path.stat().st_size
+        if file_size < 100:
+            raise SpecFileError(
+                f"Specification file too small ({file_size} bytes): {path}\n"
+                f"A valid specification should contain:\n"
+                f"  - Project title or name\n"
+                f"  - Description of what the project should do\n"
+                f"  - At least a few requirements or objectives"
+            )
 
         return path
+
+    def _validate_spec_content(self, content: str, path: Path) -> None:
+        """
+        Validate that specification content is meaningful.
+
+        Raises:
+            SpecFileError: If content is too minimal or lacks substance
+        """
+        # Strip whitespace and normalize
+        stripped = content.strip()
+
+        # Check if mostly whitespace
+        non_whitespace = re.sub(r'\s+', '', stripped)
+        if len(non_whitespace) < 50:
+            raise SpecFileError(
+                f"Specification file has insufficient content: {path}\n"
+                f"Found only {len(non_whitespace)} characters of actual text.\n"
+                f"A valid specification should contain:\n"
+                f"  - Project title or name\n"
+                f"  - Description of what the project should do\n"
+                f"  - At least a few requirements or objectives"
+            )
+
+        # Check if just headers without content
+        lines = [l.strip() for l in stripped.split('\n') if l.strip()]
+        header_lines = [l for l in lines if l.startswith('#')]
+        content_lines = [l for l in lines if not l.startswith('#') and len(l) > 10]
+
+        if len(header_lines) > 0 and len(content_lines) < 2:
+            raise SpecFileError(
+                f"Specification file contains only headers: {path}\n"
+                f"Found {len(header_lines)} header(s) but only {len(content_lines)} content line(s).\n"
+                f"Add descriptions under your headers explaining:\n"
+                f"  - What the project should accomplish\n"
+                f"  - Specific requirements or features needed"
+            )
 
     def _check_file_conflicts(self, output_path: Path, structure: Dict[str, str],
                               force: bool = False, merge: bool = False) -> List[str]:
@@ -441,13 +645,30 @@ This project was bootstrapped using automated template detection.
                     raise SpecFileError(f"Cannot decode file (encoding error): {resolved_path}\n"
                                        f"Try saving the file as UTF-8.")
 
+            # Validate spec content is meaningful (not just whitespace/headers)
+            self._validate_spec_content(spec_content, resolved_path)
+
             # Detect template
-            template_name, scores = self.detect_template(spec_content, str(resolved_path))
+            template_name, detection_result = self.detect_template(spec_content, str(resolved_path))
             results["template_detected"] = template_name
-            results["confidence_scores"] = scores
+            results["confidence_scores"] = detection_result["scores"]
+            results["is_ambiguous"] = detection_result["is_ambiguous"]
+            results["alternatives"] = detection_result.get("alternatives", [])
+            results["phase_0_required"] = detection_result["phase_0_required"]
+            results["detection_explanation"] = detection_result["explanation"]
+
+            # Add warnings for ambiguous or phase_0 cases
+            if detection_result["is_ambiguous"]:
+                results["warnings"].append(
+                    f"Template selection is ambiguous: {detection_result['explanation']}"
+                )
+            if detection_result["phase_0_required"]:
+                results["warnings"].append(
+                    "Phase 0 assessment recommended before implementation."
+                )
 
             # Extract indicators
-            indicators = self.extract_indicators(spec_content)
+            indicators = self.extract_indicators(spec_content, str(resolved_path))
 
             # Generate base structure
             structure = self.generate_base_structure(template_name)
@@ -635,6 +856,45 @@ python scripts/task-manager.py sync
 Tasks with difficulty >= 7 MUST be broken down before execution.
 """
 
+    def _get_shared_definitions(self) -> str:
+        """Get shared definitions for task management"""
+        return """# Shared Definitions
+
+Single source of truth for task management definitions.
+
+## Difficulty Scale (1-10)
+
+| Level | Category | Action |
+|-------|----------|--------|
+| 1-4 | Standard | Just do it |
+| 5-6 | Substantial | May take multiple steps |
+| 7-8 | Large scope | MUST break down first |
+| 9-10 | Multi-phase | MUST break down into phases |
+
+## Status Values
+
+| Status | Meaning | Rules |
+|--------|---------|-------|
+| Pending | Not started | Ready to work on |
+| In Progress | Currently working | Only ONE at a time |
+| Blocked | Cannot proceed | Document blocker in notes |
+| Broken Down | Split into subtasks | Work on subtasks, not this |
+| Finished | Complete | Auto-set when subtasks done |
+
+## Mandatory Rules
+
+**ALWAYS:**
+1. Break down tasks with difficulty >= 7 before starting
+2. Only one task "In Progress" at a time
+3. Run `/sync-tasks` after completing any task
+4. Parent tasks auto-complete when all subtasks finish
+
+**NEVER:**
+- Work on "Broken Down" tasks directly
+- Skip status updates
+- Work on multiple tasks simultaneously
+"""
+
     def _get_claude_md_template(self, template_name: str) -> str:
         """Get CLAUDE.md template for project"""
         return f"""# CLAUDE.md
@@ -643,17 +903,22 @@ Tasks with difficulty >= 7 MUST be broken down before execution.
 - **Template**: {template_name}
 - **Generated**: {datetime.now().strftime('%Y-%m-%d')}
 
+## Task Management
+
+See `.claude/reference/shared-definitions.md` for difficulty scale, status values, and rules.
+
+**Key rule**: Break down tasks with difficulty >= 7 before starting.
+
 ## Workflow
 1. Read `.claude/context/` for project understanding
 2. Check `.claude/tasks/task-overview.md` for current work
 3. Use validation gates before starting tasks
 4. Follow breakdown rules for high-difficulty tasks
 
-## Scripts Available
-- `task-manager.py` - Core task operations
-- `validation-gates.py` - Pre/post execution checks
-- `schema-validator.py` - JSON validation and repair
-- `bootstrap.py` - Environment generation
+## Commands
+- `/complete-task {{id}}` - Start and finish tasks
+- `/breakdown {{id}}` - Split complex tasks
+- `/sync-tasks` - Update task overview
 """
 
     def _get_phase_0_checklist(self) -> str:
@@ -781,14 +1046,32 @@ Note: --force and --merge flags only apply to the 'bootstrap' command.
 
     if args.command == "detect":
         resolved_path, content = _read_spec_file(bootstrap, args.spec)
-        template, scores = bootstrap.detect_template(content, str(resolved_path))
+        template, result = bootstrap.detect_template(content, str(resolved_path))
 
         if args.json:
-            print(json.dumps({"template": template, "scores": scores}, indent=2))
+            print(json.dumps({
+                "template": template,
+                "scores": result["scores"],
+                "is_ambiguous": result["is_ambiguous"],
+                "alternatives": result.get("alternatives", []),
+                "phase_0_required": result["phase_0_required"],
+                "explanation": result["explanation"]
+            }, indent=2))
         else:
             print(f"Detected template: {template}")
+            print(f"\nExplanation: {result['explanation']}")
+
+            if result["is_ambiguous"]:
+                print("\n⚠️  AMBIGUOUS: Top templates scored similarly:")
+                for alt in result["alternatives"]:
+                    print(f"  - {alt['template']}: {alt['score']:.1f}")
+                print("  Consider reviewing the spec or specifying template manually.")
+
+            if result["phase_0_required"]:
+                print("\n⚠️  PHASE 0 RECOMMENDED: Clarify requirements before implementation.")
+
             print("\nConfidence scores:")
-            for tmpl, score in sorted(scores.items(), key=lambda x: x[1], reverse=True):
+            for tmpl, score in sorted(result["scores"].items(), key=lambda x: x[1], reverse=True):
                 print(f"  {tmpl}: {score:.1f}")
 
     elif args.command == "generate":

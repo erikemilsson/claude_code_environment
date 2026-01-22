@@ -1,9 +1,9 @@
 # Task Overview
-*Last updated: 2026-01-22 22:55*
+*Last updated: 2026-01-22 23:47*
 
 ## Summary
 - **Total Tasks**: 182
-- **Status**: 173 Finished, 2 Blocked, 7 Pending
+- **Status**: 176 Finished, 2 Blocked, 4 Pending
 - **Average Confidence**: 66%
 - **Average Velocity**: 9
 - **Tasks Broken Down**: 8
@@ -178,9 +178,9 @@ Real-world scenario:... |
 | 301 | Fix bootstrap path handling and validation | 5 | Finished | 95% | - | Implemented _resolve_spec_path() method that handles: tilde expansion via Path.expanduser(), rela... |
 | 302 | Improve bootstrap exception handling | 5 | Finished | 95% | - | Implemented comprehensive exception handling: SpecFileError for file issues, FileConflictError fo... |
 | 303 | Add file conflict detection to bootstrap | 4 | Finished | 95% | - | Implemented _check_file_conflicts() method that checks all target files and .claude/ directory be... |
-| 304 | Improve spec parsing and validation | 5 | Pending | 80% | - |  |
-| 305 | Fix template detection edge cases | 5 | Pending | 75% | - |  |
-| 306 | Create shared-definitions.md and remove duplicates | 4 | Pending | 90% | - |  |
+| 304 | Improve spec parsing and validation | 5 | Finished | 80% | - | Implemented: (1) Empty/minimal spec rejection with helpful messages (size<100 bytes, insufficient... |
+| 305 | Fix template detection edge cases | 5 | Finished | 75% | - | Implemented: (1) Ambiguity detection when top 2 templates within 15% of each other - returns alte... |
+| 306 | Create shared-definitions.md and remove duplicates | 4 | Finished | 90% | - | Created shared-definitions.md (~50 lines) in: base/.claude/reference/, .claude/reference/, exampl... |
 | 307 | Consolidate coding guidelines into core + language deltas | 5 | Pending | 85% | - |  |
 | 308 | Create agent integration template and remove boilerplate | 4 | Pending | 85% | - |  |
 | 309 | Consolidate belief tracking and validation documentation | 5 | Pending | 80% | - |  |
