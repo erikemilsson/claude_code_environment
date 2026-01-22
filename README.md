@@ -78,7 +78,7 @@ Track work with JSON task files:
 - `/complete-task {id}` - Start and finish tasks
 - `/breakdown {id}` - Split complex tasks
 - `/sync-tasks` - Update overview
-- `/update-tasks` - Check health
+- `/health-check` - Check health
 
 ### Rules
 

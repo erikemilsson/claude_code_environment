@@ -61,7 +61,7 @@ Run `/sync-tasks` to generate the overview.
 
 ### Starting work
 
-1. Run `/update-tasks` to check system health
+1. Run `/health-check` to check system health
 2. Review `.claude/tasks/task-overview.md` to see what's pending
 3. Pick a task to work on
 

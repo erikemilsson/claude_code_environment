@@ -18,15 +18,18 @@ Start and finish a task with status tracking.
 4. Do the work
 
 ### Finishing
-1. Update status to "Finished"
-2. Add completion notes (what was done, any follow-ups needed)
-3. Check parent auto-completion:
+1. **Check work**: Review all changes made for this task
+   - Look for bugs, edge cases, inefficiencies, inconsistencies
+   - If issues found, fix them before proceeding
+2. Update status to "Finished"
+3. Add completion notes (what was done, any follow-ups needed)
+4. Check parent auto-completion:
    ```
    IF parent_task exists:
      IF all sibling subtasks are "Finished":
        Set parent status to "Finished"
    ```
-4. Run sync-tasks to update overview
+5. Run sync-tasks to update overview
 
 ## Example
 

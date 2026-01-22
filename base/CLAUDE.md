@@ -35,6 +35,7 @@ Instructions for Claude Code when working in this project.
 - `/sync-tasks` - Update task-overview.md from JSON files
 - `/health-check` - Combined task system and CLAUDE.md health check
 - `/archive-tasks` - Archive old finished tasks (for large projects)
+- `/restore-task {id}` - Restore a task from archive
 - `/generate-workflow-diagram` - Visual Claude/Human task diagram
 - `/check-work` - Review session changes for issues and fix them
 
@@ -51,7 +52,8 @@ Instructions for Claude Code when working in this project.
 │   └── workflow-diagram.md # Visual diagram (if 20+ tasks)
 └── reference/
     ├── task-schema.md     # Task JSON format
-    └── difficulty-guide.md # Scoring guide
+    ├── difficulty-guide.md # Scoring guide
+    └── claude-md-guide.md  # CLAUDE.md best practices
 ```
 
 ## Technology Stack

@@ -47,14 +47,19 @@ base/
     │   ├── complete-task.md
     │   ├── breakdown.md
     │   ├── sync-tasks.md
-    │   └── update-tasks.md
+    │   ├── health-check.md
+    │   ├── check-work.md
+    │   ├── archive-tasks.md
+    │   ├── restore-task.md
+    │   └── generate-workflow-diagram.md
     ├── context/
     │   └── overview.md    # Project context
     ├── tasks/
     │   └── task-overview.md
     └── reference/
         ├── task-schema.md
-        └── difficulty-guide.md
+        ├── difficulty-guide.md
+        └── claude-md-guide.md
 ```
 
 ### extras/
@@ -96,7 +101,7 @@ Tasks track what needs to be done. Each task has:
 - `/complete-task {id}` - Start and finish tasks
 - `/breakdown {id}` - Split complex tasks into subtasks
 - `/sync-tasks` - Update overview from JSON files
-- `/update-tasks` - Check task system health
+- `/health-check` - Check task system and CLAUDE.md health
 
 ## Next Steps
 

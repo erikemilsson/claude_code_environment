@@ -1,0 +1,50 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git status)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git branch*)",
+      "Bash(git show*)",
+      "Bash(git stash list)",
+
+      "Bash(npm test*)",
+      "Bash(npm run test*)",
+      "Bash(npm run lint*)",
+      "Bash(npm run build*)",
+      "Bash(npm run check*)",
+      "Bash(npm run typecheck*)",
+      "Bash(npx tsc --noEmit*)",
+      "Bash(npx eslint*)",
+      "Bash(npx prettier --check*)",
+
+      "Bash(pytest*)",
+      "Bash(python -m pytest*)",
+      "Bash(python -m mypy*)",
+      "Bash(python -m ruff*)",
+
+      "Bash(cargo test*)",
+      "Bash(cargo check*)",
+      "Bash(cargo clippy*)",
+
+      "Bash(go test*)",
+      "Bash(go vet*)",
+
+      "Bash(bun test*)",
+      "Bash(bun run test*)",
+      "Bash(bun run lint*)",
+      "Bash(bun run build*)",
+
+      "Bash(make test*)",
+      "Bash(make check*)",
+      "Bash(make lint*)",
+      "Bash(make build*)"
+    ],
+    "deny": [
+      "Bash(rm -rf /)*",
+      "Bash(*sudo*)",
+      "Bash(git push --force*)",
+      "Bash(git reset --hard*)"
+    ]
+  }
+}

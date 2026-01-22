@@ -29,10 +29,14 @@ A REST API for managing todo items with user authentication.
 
 ## Commands
 
-- `/complete-task {id}` - Start and finish tasks
+- `/complete-task {id}` - Start and finish tasks (includes work check)
 - `/breakdown {id}` - Split complex tasks into subtasks
 - `/sync-tasks` - Update task-overview.md from JSON files
-- `/update-tasks` - Check task system health
+- `/health-check` - Combined task system and CLAUDE.md health check
+- `/archive-tasks` - Archive old finished tasks (for large projects)
+- `/restore-task {id}` - Restore a task from archive
+- `/generate-workflow-diagram` - Visual Claude/Human task diagram
+- `/check-work` - Review session changes for issues and fix them
 
 ## Technology Stack
 
