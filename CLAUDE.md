@@ -84,10 +84,10 @@ Move deprecated content to `.archive/` with documentation in `.archive/README.md
 ## Reference Documentation
 
 Key files in `.claude/reference/`:
-- `task-schema-consolidated.md` - Task schema
-- `parallel-tool-patterns.md` - Parallel execution patterns
-- `extended-thinking-triggers.md` - Ultrathink usage
+- `shared-definitions.md` - Difficulty scale, status values, mandatory rules
+- `task-schema-consolidated.md` - Task JSON schema
 - `context-management.md` - /clear, /compact strategies
+- `extended-thinking-triggers.md` - Ultrathink usage
 
 ## Navigation
 
@@ -103,6 +103,8 @@ Key files in `.claude/reference/`:
 /sync-tasks              # Update task overview
 /complete-task {id}      # Start/finish tasks
 /breakdown {id}          # Split complex tasks
+/archive-tasks           # Archive completed tasks
+/restore-task {id}       # Restore from archive
 ```
 
 ### Extended Thinking

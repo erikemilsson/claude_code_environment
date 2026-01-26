@@ -7,9 +7,10 @@ This folder contains archived content from repository reorganizations.
 ```
 .archive/
 ├── README.md                    # This file
-├── MIGRATION-2024-12.md         # Historical context for December 2024 cleanup
-├── templates-summary.md         # Summary of the old 5-template system
-├── components-summary.md        # Summary of the old component library
+├── root-claude-extras-2026-01-26/  # Root .claude/ simplification
+│   ├── commands/               # 19 extra commands
+│   ├── reference/              # 28+ extra reference docs
+│   └── directories/            # 12 subsystem directories
 ├── deprecated-schemas/          # Old task schema versions
 ├── tasks/                       # Completed task JSON files (180 files)
 ├── phase-docs/                  # Phase planning documents
@@ -25,9 +26,16 @@ This folder contains archived content from repository reorganizations.
 
 ## January 2026 Reorganization
 
+### Root .claude/ Simplification (2026-01-26)
+The root `.claude/` directory was simplified to mirror the lite/ template:
+- **Kept:** 5 core commands, 4 reference docs, tasks
+- **Archived:** 19 commands, 28+ reference docs, 12 subsystem directories
+- See `root-claude-extras-2026-01-26/README.md` for details
+
+### Template Restructure (2026-01-26)
 The repository was restructured from `base/` + `extras/` + `examples/` to two complete environments:
-- **lite/** - Minimal task management only (~12 files)
-- **standard/** - Full-featured with Spec→Plan→Execute→Verify workflow (~35-45 files)
+- **lite/** - Minimal task management only (~11 files)
+- **standard/** - Full-featured with Spec→Plan→Execute→Verify workflow (~22 files)
 
 ### extras/ (14 files)
 Optional add-ons that were complex to integrate. Now consolidated into `standard/`:
