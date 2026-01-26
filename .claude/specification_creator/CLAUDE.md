@@ -52,7 +52,7 @@ Significant decisions made during spec creation should be documented:
 
 When suggesting spec additions involving technology/architecture decisions:
 - Note if a decision record would be valuable
-- Reference `.claude/reference/decision-guide.md` for when to create records
-- Decision records live in `.claude/context/decisions/`
+- Reference `.claude/support/reference/decision-guide.md` for when to create records
+- Decision records live in `.claude/support/decisions/`
 
-The specification_creator `.archive/` is for spec-session working documents. Formal decision records go in `.claude/context/decisions/`.
+The specification_creator `.archive/` is for spec-session working documents. Formal decision records go in `.claude/support/decisions/`.

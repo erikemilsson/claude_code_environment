@@ -7,8 +7,9 @@ Versioned specification system. The active spec is the source of truth for the p
 ```
 .claude/
 ├── spec_v{N}.md                 # Active specification (source of truth)
-├── previous_specifications/     # Archived spec versions
-│   └── spec_v{N-1}.md
+├── support/
+│   └── previous_specifications/ # Archived spec versions
+│       └── spec_v{N-1}.md
 └── specification_creator/       # Start Claude Code here for spec sessions
     ├── CLAUDE.md                # Rules for spec-building mode
     ├── README.md                # This file
@@ -70,7 +71,7 @@ During spec creation, Claude may produce research notes, question logs, or plann
 └── 2026-01-27_architecture-notes.md
 ```
 
-**Note:** This `.archive/` is for spec-session working documents. Formal decision records documenting technology/architecture choices should go in `.claude/context/decisions/` using the decision record format.
+**Note:** This `.archive/` is for spec-session working documents. Formal decision records documenting technology/architecture choices should go in `.claude/support/decisions/` using the decision record format.
 
 ### Updating (minor changes)
 
@@ -79,7 +80,7 @@ During spec creation, Claude may produce research notes, question logs, or plann
 
 ### Versioning (major changes)
 
-1. Copy `../spec_v{N}.md` to `../previous_specifications/`
+1. Copy `../spec_v{N}.md` to `../support/previous_specifications/`
 2. In the copied file: change `status: active` to `status: archived`
 3. Create new `../spec_v{N+1}.md` with `status: active`
 4. Set `created` and `updated` to today's date

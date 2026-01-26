@@ -12,7 +12,7 @@ The intelligent entry point for all project work. Handles spec-checking, state d
 ## What It Does
 
 1. **Checks against spec** - Every request is validated against the specification
-2. **Analyzes project state** - Reads phases.md, tasks, and current progress
+2. **Analyzes project state** - Reads task-overview, spec, and current progress
 3. **Decomposes spec into tasks** - When spec is ready but no tasks exist
 4. **Routes to specialists** - Invokes implement-agent or verify-agent as needed
 5. **Surfaces misalignments** - Points out when requests don't fit the spec
@@ -29,9 +29,8 @@ The intelligent entry point for all project work. Handles spec-checking, state d
 
 Read and analyze:
 - `.claude/spec_v{N}.md` - The specification (source of truth)
-- `.claude/context/phases.md` - Current phase status
-- `.claude/tasks/task-overview.md` - Task status
-- `.claude/context/questions.md` - Pending questions
+- `.claude/tasks/task-overview.md` - Task status and progress
+- `.claude/support/questions.md` - Pending questions
 
 ### Step 2: Spec Check (if request provided)
 
@@ -111,7 +110,7 @@ Invoke verify-agent with:
 
 ### Step 5: Handle Questions
 
-Questions accumulate in `.claude/context/questions.md` during work.
+Questions accumulate in `.claude/support/questions.md` during work.
 
 **Present questions when:**
 - Phase boundary reached
@@ -177,7 +176,7 @@ When breaking spec into tasks:
 
 ### Task Difficulty Scale
 
-See `.claude/reference/shared-definitions.md` for the difficulty scale.
+See `.claude/support/reference/shared-definitions.md` for the difficulty scale.
 
 Key rule: Tasks with difficulty 7+ must be broken down before starting.
 

@@ -87,7 +87,6 @@ When completing work, agents return:
 **What /work does:**
 - Verify spec exists and has content
 - Decompose spec into tasks (if no tasks exist)
-- Update phases.md (Spec: Complete, Execute: Active)
 - Present checkpoint to human
 - Invoke implement-agent with first available task
 
@@ -102,7 +101,6 @@ When completing work, agents return:
 - Self-review notes
 
 **What /work does:**
-- Update phases.md (Execute: Complete, Verify: Active)
 - Present checkpoint to human
 - Invoke verify-agent with implementation summary
 
@@ -117,7 +115,6 @@ When completing work, agents return:
 - Recommendations
 
 **What /work does:**
-- Update phases.md (Verify: Complete)
 - Present final checkpoint to human
 - Project complete (or loop back if issues)
 

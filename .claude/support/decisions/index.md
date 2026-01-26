@@ -26,6 +26,6 @@ Decisions that need to be made:
 
 ## Quick Links
 
-- Template: `.claude/reference/decision-template.md` (includes status/category reference)
-- Guide: `.claude/reference/decision-guide.md`
+- Template: `.claude/support/reference/decision-template.md` (includes status/category reference)
+- Guide: `.claude/support/reference/decision-guide.md`
 - Archive: `.archive/` (research documents)

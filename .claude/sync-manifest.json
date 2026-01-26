@@ -5,30 +5,28 @@
       ".claude/commands/*.md",
       ".claude/agents/*.md",
       ".claude/specification_creator/*.md",
-      ".claude/reference/shared-definitions.md",
-      ".claude/reference/task-schema.md",
-      ".claude/reference/agent-handoff.md",
-      ".claude/reference/workflow-guide.md",
-      ".claude/reference/decision-template.md",
-      ".claude/reference/decision-guide.md",
-      ".claude/learnings/README.md"
+      ".claude/support/reference/shared-definitions.md",
+      ".claude/support/reference/task-schema.md",
+      ".claude/support/reference/agent-handoff.md",
+      ".claude/support/reference/workflow-guide.md",
+      ".claude/support/reference/decision-template.md",
+      ".claude/support/reference/decision-guide.md",
+      ".claude/support/learnings/README.md"
     ],
     "customize": [
       "CLAUDE.md",
       "README.md",
-      ".claude/context/overview.md",
-      ".claude/context/phases.md",
-      ".claude/context/questions.md",
-      ".claude/context/decisions/index.md"
+      ".claude/support/questions.md",
+      ".claude/support/decisions/index.md"
     ],
     "ignore": [
       ".claude/tasks/*.json",
       ".claude/tasks/task-overview.md",
       ".claude/version.json",
       ".claude/sync-manifest.json",
-      ".claude/context/decisions/decision-*.md",
-      ".claude/context/decisions/.archive/*",
-      ".claude/learnings/*"
+      ".claude/support/decisions/decision-*.md",
+      ".claude/support/decisions/.archive/*",
+      ".claude/support/learnings/*"
     ]
   },
   "notes": "Paths relative to template root. Use glob patterns."

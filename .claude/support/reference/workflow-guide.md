@@ -149,7 +149,7 @@ Verification (against spec, by verify-agent)
 
 ## Questions System
 
-Questions accumulate during work in `.claude/context/questions.md`:
+Questions accumulate during work in `.claude/support/questions.md`:
 
 ```markdown
 ## Requirements

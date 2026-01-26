@@ -1,9 +1,0 @@
-# Ignore contents of subdirectories, but keep structure
-scratch/*
-!scratch/.gitkeep
-
-research/*
-!research/.gitkeep
-
-drafts/*
-!drafts/.gitkeep

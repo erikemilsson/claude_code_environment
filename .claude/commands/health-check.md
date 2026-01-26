@@ -27,7 +27,7 @@ Detects and fixes drift from task management standards.
 
 ### 1. Task JSON Schema Validation
 
-Validates required fields (id, title, status, difficulty) and optional fields per `.claude/reference/task-schema.md`.
+Validates required fields (id, title, status, difficulty) and optional fields per `.claude/support/reference/task-schema.md`.
 
 ### 2. Relationship Integrity
 
@@ -74,12 +74,12 @@ When breaking down tasks, IDs must not collide:
 ### 7. Questions and Workspace Staleness
 
 **Stale Questions:**
-- Questions in `.claude/context/questions.md` older than 14 days
+- Questions in `.claude/support/questions.md` older than 14 days
 - Warning: "N questions have been pending for over 14 days"
 - Suggests reviewing and answering or removing outdated questions
 
 **Stale Workspace Files:**
-- Files in `.claude/workspace/` older than 30 days
+- Files in `.claude/support/workspace/` older than 30 days
 - Warning: "N workspace files are over 30 days old"
 - Suggests graduating drafts to final locations or deleting scratch files
 
@@ -166,7 +166,7 @@ Detects bloat and offers guided cleanup.
 
 ## Fix Options (per issue)
 
-1. **Move** - Create `.claude/reference/{section-slug}.md`, replace with link
+1. **Move** - Create `.claude/support/reference/{section-slug}.md`, replace with link
 2. **Keep** - Mark as explicitly kept
 3. **Condense** - Rewrite to fewer lines
 4. **Skip** - No changes
@@ -179,7 +179,7 @@ Keep in CLAUDE.md:
 - Key conventions (brief list)
 - Navigation pointers
 
-Move to reference/:
+Move to support/reference/:
 - Detailed schemas (>8 lines)
 - Verbose examples
 - Full procedure documentation
@@ -195,8 +195,8 @@ Move to reference/:
 READ all .claude/tasks/task-*.json files
 READ .claude/tasks/task-overview.md
 READ CLAUDE.md
-READ all .claude/context/decisions/decision-*.md files
-READ .claude/context/decisions/index.md
+READ all .claude/support/decisions/decision-*.md files
+READ .claude/support/decisions/index.md
 ```
 
 ### Step 2: Run Checks
@@ -216,8 +216,8 @@ Run semantic validation (if not `--claude-md` and task count >= 20):
 - Workflow diagram staleness check
 
 Run questions and workspace staleness (always):
-- Questions older than 14 days in `.claude/context/questions.md`
-- Files older than 30 days in `.claude/workspace/`
+- Questions older than 14 days in `.claude/support/questions.md`
+- Files older than 30 days in `.claude/support/workspace/`
 
 Run CLAUDE.md audit (if not `--tasks` and not `--decisions`):
 - Line counts
@@ -311,7 +311,7 @@ Compares local `.claude/` files against the template repository to detect drift 
      "categories": {
        "sync": [
          ".claude/commands/*.md",
-         ".claude/reference/shared-definitions.md",
+         ".claude/support/reference/shared-definitions.md",
          ".claude/agents/*.md"
        ]
      }
@@ -350,7 +350,7 @@ File Comparison (sync category):
   [Warning] .claude/commands/breakdown.md - differs (12 lines changed)
   [Checkmark] .claude/agents/implement-agent.md - matches
   [Warning] .claude/agents/verify-agent.md - differs (new file in template)
-  [Checkmark] .claude/reference/shared-definitions.md - matches
+  [Checkmark] .claude/support/reference/shared-definitions.md - matches
 
 Suggested Actions:
   1. Review changelog for v1.1.0
@@ -373,12 +373,9 @@ git clone --depth 1 https://github.com/user/claude_code_environment /tmp/templat
 # Copy sync files
 cp /tmp/template/.claude/commands/*.md .claude/commands/
 cp /tmp/template/.claude/agents/*.md .claude/agents/
-cp /tmp/template/.claude/reference/shared-definitions.md .claude/reference/
-cp /tmp/template/.claude/reference/task-schema.md .claude/reference/
-cp /tmp/template/.claude/reference/agent-handoff.md .claude/reference/
-cp /tmp/template/.claude/reference/workflow-guide.md .claude/reference/
-cp /tmp/template/.claude/reference/decision-template.md .claude/reference/
-cp /tmp/template/.claude/reference/decision-guide.md .claude/reference/
+cp /tmp/template/.claude/specification_creator/*.md .claude/specification_creator/
+cp /tmp/template/.claude/support/reference/*.md .claude/support/reference/
+cp /tmp/template/.claude/support/learnings/README.md .claude/support/learnings/
 # Update version
 cp /tmp/template/.claude/version.json .claude/version.json
 # Cleanup
@@ -422,7 +419,7 @@ Each `decision-*.md` file must have valid frontmatter:
 #### 2. Index Consistency
 
 **Every decision file must have index entry:**
-- Scan `.claude/context/decisions/decision-*.md` files
+- Scan `.claude/support/decisions/decision-*.md` files
 - Compare against entries in `index.md`
 - Flag files missing from index
 
@@ -503,11 +500,11 @@ Decisions with status `approved` or `implemented` must have:
 
 **< 20 tasks:** Semantic validation (stale tasks, owner mismatch) skipped - only needed for larger projects
 
-**Workflow diagram missing:** If `.claude/context/workflow-diagram.md` doesn't exist, staleness check skipped
+**Workflow diagram missing:** If `.claude/support/workflow-diagram.md` doesn't exist, staleness check skipped
 
 **No decision records:** Reports "0 decisions - all checks pass" (healthy state for new projects)
 
-**Missing decisions/index.md:** Decision check skipped with note: "Create .claude/context/decisions/index.md to enable decision tracking"
+**Missing decisions/index.md:** Decision check skipped with note: "Create .claude/support/decisions/index.md to enable decision tracking"
 
 **Malformed frontmatter:** Flags as error, requires manual YAML fix
 
@@ -524,10 +521,10 @@ Decisions with status `approved` or `implemented` must have:
 
 ## Reference
 
-Task schema: `.claude/reference/task-schema.md`
-Difficulty guide: `.claude/reference/shared-definitions.md`
-Workflow guide: `.claude/reference/workflow-guide.md`
-Decision template: `.claude/reference/decision-template.md`
-Decision guide: `.claude/reference/decision-guide.md`
+Task schema: `.claude/support/reference/task-schema.md`
+Difficulty guide: `.claude/support/reference/shared-definitions.md`
+Workflow guide: `.claude/support/reference/workflow-guide.md`
+Decision template: `.claude/support/reference/decision-template.md`
+Decision guide: `.claude/support/reference/decision-guide.md`
 Version info: `.claude/version.json`
 Sync manifest: `.claude/sync-manifest.json`

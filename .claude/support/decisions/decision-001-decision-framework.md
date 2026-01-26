@@ -86,18 +86,17 @@ The template is designed for projects that may grow significantly. The directory
 ## Impact
 
 **Implementation Notes:**
-- Created `.claude/context/decisions/` directory structure
-- Added `decision-template.md` and `decision-guide.md` to reference/
+- Created `.claude/support/decisions/` directory structure
+- Added `decision-template.md` and `decision-guide.md` to support/reference/
 - Updated health-check.md with Part 4 validation
 - Updated sync-manifest.json and CLAUDE.md
 
 **Affected Areas:**
-- `.claude/context/decisions/` (new)
-- `.claude/reference/decision-*.md` (new)
+- `.claude/support/decisions/` (new)
+- `.claude/support/reference/decision-*.md` (new)
 - `.claude/commands/health-check.md` (updated)
 - `.claude/sync-manifest.json` (updated)
 - `CLAUDE.md` (updated)
-- `.claude/agents/plan-agent.md` (updated)
 
 **Risks:**
 - Index may drift from decision files if not maintained

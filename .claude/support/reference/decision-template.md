@@ -1,6 +1,6 @@
 # Decision Record Template
 
-Use this template when creating new decision records in `.claude/context/decisions/`.
+Use this template when creating new decision records in `.claude/support/decisions/`.
 
 ---
 

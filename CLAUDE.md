@@ -82,22 +82,22 @@ Tasks are tracked in `.claude/tasks/` as JSON files. The **Project Dashboard** a
 - Only one task "In Progress" at a time
 - Run `/sync-tasks` after completing any task
 
-See `.claude/reference/shared-definitions.md` for difficulty scale, status values, and owner definitions.
+See `.claude/support/reference/shared-definitions.md` for difficulty scale, status values, and owner definitions.
 
 ## Decisions
 
-Major decisions are documented in `.claude/context/decisions/`.
+Major decisions are documented in `.claude/support/decisions/`.
 
 - **Index:** `index.md` - all decisions with status
 - **Records:** `decision-*.md` - full analysis with comparison tables
 - **Research:** `.archive/` - background research documents
-- **Template:** `.claude/reference/decision-template.md`
+- **Template:** `.claude/support/reference/decision-template.md`
 
 When facing significant choices, create a decision record rather than deciding inline.
 
 ## Workspace
 
-When you need to create temporary documents (research, analysis, drafts), use `.claude/workspace/`:
+When you need to create temporary documents (research, analysis, drafts), use `.claude/support/workspace/`:
 
 - **scratch/** - Throwaway notes, quick analysis, temporary thinking
 - **research/** - Web search results, reference material, gathered context
@@ -131,38 +131,39 @@ Pre-approved permissions for consistent Claude Code behavior. Ensures the templa
 ```
 .claude/
 ├── spec_v{N}.md               # Project specification (source of truth)
-├── previous_specifications/   # Archived spec versions
-├── specification_creator/     # Start Claude Code here for spec sessions
-│   ├── CLAUDE.md             # Rules for spec-building mode
-│   └── README.md
+├── tasks/                     # Work status (source of truth)
+│   ├── task-*.json           # Individual task files
+│   └── task-overview.md      # Project Dashboard (auto-generated)
 ├── commands/                  # /work and task commands
 ├── agents/                    # Specialist agents
 │   ├── implement-agent.md    # Task execution
 │   └── verify-agent.md       # Validation against spec
-├── context/
-│   ├── overview.md           # Project context
-│   ├── phases.md             # Phase definitions and status
+├── specification_creator/     # Start Claude Code here for spec sessions
+│   ├── CLAUDE.md             # Rules for spec-building mode
+│   └── README.md
+├── support/                   # Supporting documentation
+│   ├── reference/            # Schemas, guides, definitions
+│   │   ├── task-schema.md
+│   │   ├── shared-definitions.md
+│   │   ├── workflow-guide.md
+│   │   ├── agent-handoff.md
+│   │   ├── decision-template.md
+│   │   └── decision-guide.md
 │   ├── decisions/            # Decision documentation
 │   │   ├── index.md          # Decision summary and pending
 │   │   ├── decision-*.md     # Individual decision records
 │   │   └── .archive/         # Research documents
+│   ├── learnings/            # Project-specific patterns
+│   │   └── README.md
+│   ├── previous_specifications/  # Archived spec versions
+│   ├── workspace/            # Claude's working area (gitignored)
+│   │   ├── scratch/          # Temporary notes, quick analysis
+│   │   ├── research/         # Web search results, reference material
+│   │   └── drafts/           # WIP docs before final location
 │   └── questions.md          # Accumulated questions for human
-├── learnings/                 # Project-specific patterns (ask Claude to check)
-│   └── README.md             # Usage guide
-├── reference/
-│   ├── task-schema.md        # Task JSON format
-│   ├── shared-definitions.md
-│   ├── workflow-guide.md     # Workflow explained
-│   ├── agent-handoff.md      # Agent coordination
-│   ├── decision-template.md  # Decision record format
-│   └── decision-guide.md     # Decision documentation guide
-├── tasks/
-│   ├── task-*.json           # Individual task files
-│   └── task-overview.md      # Project Dashboard (auto-generated)
-└── workspace/                 # Claude's working area (gitignored)
-    ├── scratch/              # Temporary notes, quick analysis
-    ├── research/             # Web search results, reference material
-    └── drafts/               # WIP docs before final location
+├── sync-manifest.json
+├── settings.local.json
+└── version.json
 ```
 
 ## Technology Stack

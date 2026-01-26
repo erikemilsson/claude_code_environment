@@ -19,3 +19,6 @@ __pycache__/
 
 # Local settings
 .claude/settings.local.json
+
+# Claude workspace (temporary working documents)
+.claude/support/workspace/

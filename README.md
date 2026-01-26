@@ -21,14 +21,10 @@ rm -rf .git && git init
 ```
 ├── CLAUDE.md                      # Instructions for Claude Code
 └── .claude/
-    ├── spec_v{N}.md               # Active project specification
-    ├── previous_specifications/   # Archived spec versions
-    ├── specification_creator/     # Separate environment for spec building
-    │   ├── CLAUDE.md              # Rules for spec-building mode
-    │   └── README.md              # How to use
-    ├── agents/                    # Specialist agents
-    │   ├── implement-agent.md     # Builds the solution
-    │   └── verify-agent.md        # Validates against spec
+    ├── spec_v{N}.md               # Source of truth: requirements
+    ├── tasks/                     # Source of truth: work status
+    │   ├── task-*.json            # Individual task files
+    │   └── task-overview.md       # Project Dashboard (auto-generated)
     ├── commands/                  # Slash commands
     │   ├── work.md                # Main entry point
     │   ├── complete-task.md       # Task completion
@@ -37,25 +33,25 @@ rm -rf .git && git init
     │   ├── health-check.md        # System health validation
     │   ├── archive-tasks.md       # Archive old tasks
     │   └── restore-task.md        # Restore archived tasks
-    ├── context/
-    │   ├── overview.md            # Project context
-    │   ├── phases.md              # Phase status tracking
+    ├── agents/                    # Specialist agents
+    │   ├── implement-agent.md     # Builds the solution
+    │   └── verify-agent.md        # Validates against spec
+    ├── specification_creator/     # Separate environment for spec building
+    │   ├── CLAUDE.md              # Rules for spec-building mode
+    │   └── README.md              # How to use
+    ├── support/                   # Supporting documentation
+    │   ├── reference/             # Schemas, guides, definitions
     │   ├── decisions/             # Decision documentation
     │   │   ├── index.md           # Decision summary
     │   │   ├── decision-*.md      # Individual records
     │   │   └── .archive/          # Research documents
+    │   ├── learnings/             # Project-specific patterns
+    │   ├── previous_specifications/  # Archived spec versions
+    │   ├── workspace/             # Claude's working area (gitignored)
     │   └── questions.md           # Questions for human
-    ├── learnings/                 # Project-specific patterns
-    │   └── README.md              # Usage guide
-    ├── reference/
-    │   ├── shared-definitions.md  # Difficulty scale, status values
-    │   ├── task-schema.md         # Task JSON format
-    │   ├── workflow-guide.md      # Workflow documentation
-    │   ├── agent-handoff.md       # Agent coordination
-    │   ├── decision-template.md   # Decision record format
-    │   └── decision-guide.md      # Decision documentation guide
-    └── tasks/
-        └── task-overview.md       # Task summary (auto-generated)
+    ├── sync-manifest.json
+    ├── settings.local.json
+    └── version.json
 ```
 
 ## Workflow
@@ -80,7 +76,7 @@ claude   # Start Claude Code here
 This gives you a dedicated session for defining requirements without implementation distractions. The specification_creator will:
 - Guide you through requirement gathering
 - Create versioned specs at `.claude/spec_v{N}.md`
-- Archive old versions to `.claude/previous_specifications/`
+- Archive old versions to `.claude/support/previous_specifications/`
 
 Once your spec is ready, return to the main project directory and run `/work` to begin execution.
 

@@ -102,7 +102,7 @@ Use qualitative ratings (Good/Moderate/Poor) or quantitative when available.
 
 Sometimes decisions require significant research: benchmarks, proof-of-concepts, vendor evaluations.
 
-Store research in `.claude/context/decisions/.archive/`:
+Store research in `.claude/support/decisions/.archive/`:
 - `YYYY-MM-DD_topic.md` - Research notes, findings
 - Link from the decision record's Research Notes
 
@@ -197,6 +197,6 @@ When superseding a decision:
 
 ## Templates and References
 
-- **Template**: `.claude/reference/decision-template.md`
-- **Index**: `.claude/context/decisions/index.md`
-- **Archive**: `.claude/context/decisions/.archive/`
+- **Template**: `.claude/support/reference/decision-template.md`
+- **Index**: `.claude/support/decisions/index.md`
+- **Archive**: `.claude/support/decisions/.archive/`
