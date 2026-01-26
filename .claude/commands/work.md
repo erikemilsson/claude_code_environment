@@ -12,7 +12,7 @@ The intelligent entry point for all project work. Handles spec-checking, state d
 ## What It Does
 
 1. **Checks against spec** - Every request is validated against the specification
-2. **Analyzes project state** - Reads task-overview, spec, and current progress
+2. **Analyzes project state** - Reads dashboard, spec, and current progress
 3. **Decomposes spec into tasks** - When spec is ready but no tasks exist
 4. **Routes to specialists** - Invokes implement-agent or verify-agent as needed
 5. **Surfaces misalignments** - Points out when requests don't fit the spec
@@ -29,7 +29,7 @@ The intelligent entry point for all project work. Handles spec-checking, state d
 
 Read and analyze:
 - `.claude/spec_v{N}.md` - The specification (source of truth)
-- `.claude/tasks/task-overview.md` - Task status and progress
+- `.claude/dashboard.md` - Task status and progress
 - `.claude/support/questions.md` - Pending questions
 
 ### Step 2: Spec Check (if request provided)

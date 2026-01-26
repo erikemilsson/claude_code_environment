@@ -48,14 +48,34 @@ When breaking down tasks, IDs must not collide:
 - Check for ID uniqueness across all task files
 - Verify no orphaned task files exist
 
-### 4. Task Overview Consistency
+### 4. Dashboard Consistency
 
-- Every task JSON has a corresponding row in overview
-- Every row in overview has a corresponding task JSON
-- Status, title, and difficulty match between JSON and overview
+- Every task JSON has a corresponding row in dashboard
+- Every row in dashboard has a corresponding task JSON
+- Status, title, and difficulty match between JSON and dashboard
 - Summary count is accurate
 
-### 5. Status Rules
+### 5. Dashboard Structure
+
+Validates that dashboard.md follows the canonical template structure:
+
+**Required sections (in order):**
+1. `# Dashboard` - Title
+2. `## Quick Status` - Summary table
+3. `## ⏰ Upcoming Deadlines` - Tasks with due dates
+4. `## ❗ Your Actions` - Human tasks
+5. `## 🤖 Claude Status` - Claude tasks
+6. `## 📊 Progress This Week` - Recent activity
+7. `## 💡 Notes & Ideas` - User section (preserved on sync)
+8. `## All Tasks` - Full task table
+
+**Validation:**
+- Check each required section header exists
+- Verify sections appear in correct order
+- Flag missing or out-of-order sections
+- Suggest running `/sync-tasks` to regenerate
+
+### 6. Status Rules
 
 | Status | Rules |
 |--------|-------|
@@ -65,13 +85,13 @@ When breaking down tasks, IDs must not collide:
 | `Broken Down` | Must have non-empty `subtasks` array |
 | `Finished` | If has subtasks, all subtasks must also be `Finished` |
 
-### 6. Difficulty Range
+### 7. Difficulty Range
 
 - Must be integer 1-10
 - Tasks with difficulty >= 7 should be `"Broken Down"` or have subtasks
 - Subtasks should have difficulty <= 6
 
-### 7. Questions and Workspace Staleness
+### 8. Questions and Workspace Staleness
 
 **Stale Questions:**
 - Questions in `.claude/support/questions.md` older than 14 days
@@ -83,7 +103,7 @@ When breaking down tasks, IDs must not collide:
 - Warning: "N workspace files are over 30 days old"
 - Suggests graduating drafts to final locations or deleting scratch files
 
-### 8. Semantic Validation (for 20+ task projects)
+### 9. Semantic Validation (for 20+ task projects)
 
 These checks detect drift and staleness in large collaborative projects:
 
@@ -113,7 +133,8 @@ These checks detect drift and staleness in large collaborative projects:
 
 | Issue | Auto-Fix |
 |-------|----------|
-| Overview doesn't match JSON | Run /sync-tasks |
+| Dashboard doesn't match JSON | Run /sync-tasks |
+| Dashboard structure invalid | Run /sync-tasks |
 | Parent missing subtask in array | Add subtask ID to parent's subtasks array |
 | Subtask missing parent_task field | Add parent_task field |
 | "Broken Down" with empty subtasks | Change status to "Pending" |
@@ -193,7 +214,7 @@ Move to support/reference/:
 
 ```
 READ all .claude/tasks/task-*.json files
-READ .claude/tasks/task-overview.md
+READ .claude/tasks/dashboard.md
 READ CLAUDE.md
 READ all .claude/support/decisions/decision-*.md files
 READ .claude/support/decisions/index.md

@@ -22,9 +22,9 @@ rm -rf .git && git init
 ├── CLAUDE.md                      # Instructions for Claude Code
 └── .claude/
     ├── spec_v{N}.md               # Source of truth: requirements
-    ├── tasks/                     # Source of truth: work status
-    │   ├── task-*.json            # Individual task files
-    │   └── task-overview.md       # Project Dashboard (auto-generated)
+    ├── dashboard.md               # Project Dashboard (auto-generated)
+    ├── tasks/                     # Task data
+    │   └── task-*.json            # Individual task files
     ├── commands/                  # Slash commands
     │   ├── work.md                # Main entry point
     │   ├── complete-task.md       # Task completion
@@ -87,7 +87,7 @@ Once your spec is ready, return to the main project directory and run `/work` to
 | `/work` | Main entry point - analyzes state, routes to agent |
 | `/complete-task {id}` | Start and finish tasks |
 | `/breakdown {id}` | Split complex tasks into subtasks |
-| `/sync-tasks` | Update task-overview.md |
+| `/sync-tasks` | Update dashboard.md |
 | `/health-check` | Validate system health |
 | `/archive-tasks` | Archive completed tasks |
 | `/restore-task {id}` | Restore from archive |

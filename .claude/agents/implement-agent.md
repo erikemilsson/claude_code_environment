@@ -18,7 +18,7 @@ The `/work` command invokes this agent when:
 
 ## Inputs
 
-- Task to execute (from /work or task-overview)
+- Task to execute (from /work or dashboard)
 - `.claude/spec_v{N}.md` - Specification for acceptance criteria
 - Codebase context
 - Any constraints from /work
@@ -35,7 +35,7 @@ The `/work` command invokes this agent when:
 ### Step 1: Select Task
 
 If no specific task provided:
-1. Read task-overview.md
+1. Read dashboard.md
 2. Find tasks with status "Pending"
 3. Check dependencies (all must be "Finished")
 4. Select highest priority unblocked task

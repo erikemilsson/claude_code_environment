@@ -161,10 +161,11 @@ For large projects (100+ tasks), finished tasks can be archived.
 ### Archive Structure
 
 ```
-.claude/tasks/
-├── task-*.json           # Active tasks
-├── task-overview.md      # Auto-generated summary
-└── archive/
+.claude/
+├── dashboard.md          # Auto-generated summary
+└── tasks/
+    ├── task-*.json       # Active tasks
+    └── archive/
     ├── task-*.json       # Archived task files
     └── archive-index.json # Lightweight summary
 ```

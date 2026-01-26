@@ -63,7 +63,7 @@ This project uses a phased workflow for autonomous work:
 ### Task Management
 - `/complete-task {id}` - Start and finish tasks
 - `/breakdown {id}` - Split complex tasks into subtasks
-- `/sync-tasks` - Update task-overview.md from JSON files
+- `/sync-tasks` - Update dashboard.md from JSON files
 - `/health-check` - Validate tasks, decisions, and CLAUDE.md health
 - `/archive-tasks` - Archive old finished tasks
 - `/restore-task {id}` - Restore a task from archive
@@ -73,7 +73,7 @@ This project uses a phased workflow for autonomous work:
 
 ## Task Rules
 
-Tasks are tracked in `.claude/tasks/` as JSON files. The **Project Dashboard** at `.claude/tasks/task-overview.md` shows:
+Tasks are tracked in `.claude/tasks/` as JSON files. The **Project Dashboard** at `.claude/dashboard.md` shows:
 - Quick status with task counts by owner
 - ⏰ **Upcoming Deadlines** - tasks with due dates sorted by urgency
 - 🎯 **Milestones** - project phases with progress tracking
@@ -136,10 +136,10 @@ Pre-approved permissions for consistent Claude Code behavior. Ensures the templa
 
 ```
 .claude/
+├── dashboard.md               # Project Dashboard (auto-generated)
 ├── spec_v{N}.md               # Project specification (source of truth)
-├── tasks/                     # Work status (source of truth)
-│   ├── task-*.json           # Individual task files
-│   └── task-overview.md      # Project Dashboard (auto-generated)
+├── tasks/                     # Task data
+│   └── task-*.json           # Individual task files
 ├── commands/                  # /work and task commands
 ├── agents/                    # Specialist agents
 │   ├── implement-agent.md    # Task execution

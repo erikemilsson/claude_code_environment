@@ -21,7 +21,7 @@
     ],
     "ignore": [
       ".claude/tasks/*.json",
-      ".claude/tasks/task-overview.md",
+      ".claude/dashboard.md",
       ".claude/version.json",
       ".claude/sync-manifest.json",
       ".claude/support/decisions/decision-*.md",
