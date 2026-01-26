@@ -57,6 +57,24 @@ See `task-schema.md` for complete field definitions including timeline fields (p
 }
 ```
 
+## Drift Prevention Fields
+
+Optional fields that track spec-to-task alignment:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `spec_fingerprint` | String | SHA-256 hash of spec at decomposition |
+| `spec_version` | String | Spec filename (e.g., "spec_v1") |
+| `spec_section` | String | Originating section heading |
+| `out_of_spec` | Boolean | Task not aligned with spec |
+
+These fields enable:
+- **Spec drift detection**: Warning when spec changes after tasks are created
+- **Out-of-spec tracking**: Identifying tasks created outside spec scope
+- **Spec provenance**: Tracing which tasks came from which spec sections
+
+See `task-schema.md` for detailed field documentation.
+
 ## Mandatory Rules
 
 **ALWAYS:**

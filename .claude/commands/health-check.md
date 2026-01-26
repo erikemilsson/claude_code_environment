@@ -109,6 +109,45 @@ Validates that dashboard.md follows the canonical template structure:
 
 These checks detect drift and staleness in large collaborative projects:
 
+### 10. Spec Fingerprint Validation
+
+Detects when the specification has changed since tasks were decomposed:
+
+**Check:**
+- Compute current spec SHA-256 hash
+- Compare against `spec_fingerprint` field in task files
+- Warn if fingerprints differ
+
+**Report format:**
+```
+[Warning] Spec has changed since tasks were decomposed
+  Current spec hash: sha256:xyz789...
+  Task fingerprint:  sha256:abc123...
+  Affected tasks: 12 tasks created from outdated spec
+```
+
+**Behavior:**
+- Tasks without `spec_fingerprint` field: treated as legacy, no warning
+- Only warn for projects with 10+ tasks (avoid noise for small projects)
+
+### 11. Out-of-Spec Task Tracking
+
+Reports tasks that were created outside the spec:
+
+**Check:**
+- Find all tasks with `"out_of_spec": true`
+- List in separate section of report
+
+**Report format:**
+```
+[Warning] 3 tasks marked out-of-spec
+  - Task 15: "Add social login" (not in spec)
+  - Task 23: "Custom analytics" (not in spec)
+  - Task 31: "Premium features" (not in spec)
+```
+
+**Note:** Out-of-spec tasks are valid but won't be verified against spec acceptance criteria.
+
 **Stale "In Progress" Tasks**
 - Tasks with status `"In Progress"` for > 7 days without activity
 - Indicates abandoned work or forgotten state updates
@@ -274,6 +313,16 @@ Run decision validation (if not `--tasks` and not `--claude-md`):
 [Checkmark] No orphan dependencies
 [Warning] Workflow diagram stale (3 days behind task changes)
 
+### Task System - Drift Detection
+[Checkmark] Spec fingerprint matches (or no fingerprints tracked)
+[Warning] Spec changed since decomposition
+  Current: sha256:xyz789...
+  Tasks:   sha256:abc123...
+[Warning] 3 tasks marked out-of-spec
+  - Task 15: "Add social login"
+  - Task 23: "Custom analytics"
+  - Task 31: "Premium features"
+
 ### Questions & Workspace
 [Checkmark] No stale questions
 [Warning] 2 workspace files over 30 days old
@@ -293,6 +342,10 @@ Run decision validation (if not `--tasks` and not `--claude-md`):
 [Warning] N dashboard inconsistencies
 [Warning] N stale decisions
 [Warning] N incomplete decisions
+[Warning] N missing implementation anchors
+  - DEC-003: implemented but no anchors
+[Warning] N anchor files not found
+  - DEC-007: src/auth/oauth.ts not found
 
 [List specific issues]
 
@@ -470,6 +523,26 @@ Decisions with status `approved` or `implemented` must have:
 - Non-empty Decision section (selected option and rationale)
 - At least one option in the comparison table (Options Comparison section)
 
+#### 5. Implementation Anchor Validation
+
+Validates that implemented decisions have traceable code anchors:
+
+**Check for `implemented` decisions:**
+- Must have non-empty `implementation_anchors` array
+- Each anchor file path must exist in the codebase
+- Warn if anchor file is missing
+
+**Report format:**
+```
+[Warning] DEC-003: implemented but missing anchors
+[Warning] DEC-007: anchor file not found: src/auth/oauth.ts
+```
+
+**Auto-fix options:**
+- Remove missing anchor from array
+- Mark decision for review
+- Suggest reverting status to `approved` if no valid anchors remain
+
 ### Decision Report Format
 
 ```
@@ -494,6 +567,8 @@ Decisions with status `approved` or `implemented` must have:
 | Status mismatch | Ask user which is correct, update the other |
 | Stale draft (> 30 days) | Ask user: delete, or set reminder |
 | Stale proposed (> 14 days) | Ask user: approve, reject, or extend |
+| Implemented without anchors | Ask user: add anchors, or revert to approved |
+| Anchor file not found | Ask user: update path, remove anchor, or mark for review |
 
 ### Non-Fixable Issues (Manual Required)
 
@@ -505,6 +580,54 @@ Decisions with status `approved` or `implemented` must have:
 | Invalid ID format | Need to determine correct ID |
 | Missing required field | Need human input for value |
 | Incomplete approved decision | Need to add Decision section content |
+
+---
+
+## Part 5: Lightweight Health Checks (Continuous)
+
+A subset of checks designed to run automatically after `/work`, `/work complete`, and `/breakdown` commands.
+
+### Purpose
+
+Catch common issues immediately without the overhead of a full health check.
+
+### Checks Performed
+
+| Check | What It Detects |
+|-------|-----------------|
+| Single "In Progress" rule | More than one task in progress |
+| Spec fingerprint comparison | Spec changed since decomposition |
+| Orphan dependency detection | References to deleted/missing tasks |
+| Out-of-spec count | Number of tasks marked out-of-spec |
+
+### Output Format
+
+**All clear:**
+```
+Quick check: ✓
+```
+
+**Issues found:**
+```
+Quick check: ⚠️ 2 issues
+  - Spec has changed since tasks were decomposed
+  - 3 tasks marked out-of-spec
+```
+
+### When Run Automatically
+
+- After `/work` completes (Step 6)
+- After `/work complete` (Step 8)
+- After `/breakdown` completes
+
+### Comparison to Full Health Check
+
+| Aspect | Lightweight | Full (`/health-check`) |
+|--------|-------------|------------------------|
+| Execution time | < 1 second | Several seconds |
+| Checks | 4 critical checks | All validations |
+| Auto-fix | No | Yes (prompts for fixes) |
+| Report | Single line + issues | Full report with sections |
 
 ---
 

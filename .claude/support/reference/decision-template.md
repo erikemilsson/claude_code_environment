@@ -28,6 +28,7 @@ decided:
 related:
   tasks: []
   decisions: []
+implementation_anchors: []
 ---
 
 # [Title]
@@ -151,3 +152,47 @@ Include enough context for someone unfamiliar to understand.]
 - **Comparison table**: Forces structured thinking; reveals non-obvious differences.
 - **Be honest about trade-offs**: Every choice has costs.
 - **Link related items**: Connect to tasks and other decisions.
+
+---
+
+## Implementation Anchors
+
+When a decision reaches `implemented` status, add anchors to track where the decision is realized in code:
+
+```yaml
+implementation_anchors:
+  - file: "src/auth/oauth.ts"
+    line: 45
+    description: "OAuth provider configuration"
+  - file: "src/middleware/auth.ts"
+    line: 12
+    description: "JWT validation middleware"
+```
+
+### Anchor Fields
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `file` | Yes | Relative path from project root |
+| `line` | No | Line number (approximate is fine) |
+| `description` | Yes | Brief description of what this anchor represents |
+
+### Why Anchors Matter
+
+- **Drift detection**: `/health-check` validates that anchor files exist
+- **Impact analysis**: When revisiting a decision, know exactly where it's implemented
+- **Onboarding**: New team members can trace decisions to code
+- **Refactoring**: Know which decisions are affected when files move
+
+### When to Add Anchors
+
+- When setting status to `implemented`
+- After refactoring code that implements a decision
+- When extending an implementation to new locations
+
+### Health Check Integration
+
+`/health-check --decisions` validates:
+- All `implemented` decisions have at least one anchor
+- Anchor files exist in the codebase
+- Warns about missing files (suggests updating anchors or reverting status)

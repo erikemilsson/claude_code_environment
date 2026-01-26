@@ -36,6 +36,34 @@ Read and analyze:
 - `.claude/dashboard.md` - Task status and progress
 - `.claude/support/questions.md` - Pending questions
 
+### Step 1b: Spec Drift Detection
+
+After reading the spec, compute and check its fingerprint:
+
+1. **Compute current spec fingerprint** - SHA-256 hash of spec file content
+2. **Check existing tasks** - Read `spec_fingerprint` from task files
+3. **Compare fingerprints:**
+
+```
+If tasks exist with spec_fingerprint:
+├─ Fingerprints match → Continue normally
+└─ Fingerprints differ → Surface drift warning:
+   "The spec has changed since tasks were decomposed.
+    Options:
+    1. Review changes - Show what's different
+    2. Re-decompose - Create new tasks from updated spec
+    3. Acknowledge - Mark tasks as reviewed against new spec
+    4. Continue anyway - Proceed with warning noted"
+```
+
+**Hash computation:**
+```bash
+sha256sum .claude/spec_v{N}.md | cut -d' ' -f1
+# Prefix with "sha256:" → "sha256:a1b2c3d4..."
+```
+
+**Note:** Tasks without `spec_fingerprint` are treated as legacy (no warning).
+
 ### Step 2: Spec Check (if request provided)
 
 When the user provides a request or task:
@@ -50,6 +78,11 @@ Check request against spec:
     2. Proceed anyway (won't be verified against spec)
     3. Skip for now"
 ```
+
+**If user selects "Proceed anyway":**
+- Create task with `"out_of_spec": true`
+- Dashboard shows ⚠️ prefix for these tasks
+- Health check reports out-of-spec tasks separately
 
 **What counts as "significant":**
 - New features or capabilities
@@ -87,10 +120,14 @@ Check request against spec:
 Break the spec into granular tasks:
 
 1. **Read spec thoroughly** - Understand all requirements and acceptance criteria
-2. **Identify work items** - Each distinct piece of functionality
-3. **Create task files** - One JSON per task, difficulty ≤ 6
-4. **Map dependencies** - What must complete before what
-5. **Regenerate dashboard** - Read all task-*.json and milestone-*.json files and regenerate dashboard.md
+2. **Compute spec fingerprint** - SHA-256 hash of spec content (see Step 1b)
+3. **Identify work items** - Each distinct piece of functionality
+4. **Create task files** - One JSON per task, difficulty ≤ 6, with provenance:
+   - `spec_fingerprint` - Hash computed in step 2
+   - `spec_version` - Filename of spec (e.g., "spec_v1")
+   - `spec_section` - Originating section heading (e.g., "## Authentication")
+5. **Map dependencies** - What must complete before what
+6. **Regenerate dashboard** - Read all task-*.json and milestone-*.json files and regenerate dashboard.md
    - Preserve the Notes & Ideas section between `<!-- USER SECTION -->` markers
    - Calculate milestone progress (finished tasks / total tasks per milestone)
    - Determine milestone status: ⏳ Pending → 🔄 In Progress → ✅ Complete (or ⚠️/🔴 if past target)
@@ -100,6 +137,7 @@ Task creation guidelines:
 - Difficulty 1-6 (break down anything larger)
 - Explicit dependencies
 - Owner: claude/human/both
+- Include spec provenance fields (fingerprint, version, section)
 
 #### If Executing
 
@@ -135,6 +173,29 @@ Questions accumulate in `.claude/support/questions.md` during work.
 ## Scope
 - [Question about boundaries or priorities]
 ```
+
+### Step 6: Lightweight Health Check
+
+Run quick validation checks after completing the main action:
+
+**Checks performed:**
+- Single "In Progress" task rule (only one allowed)
+- Spec fingerprint comparison (current spec vs task fingerprints)
+- Orphan dependency detection (references to non-existent tasks)
+- Out-of-spec task count
+
+**Output format:**
+```
+Quick check: ✓
+```
+or
+```
+Quick check: ⚠️ 2 issues
+  - Spec has changed since tasks were decomposed
+  - 3 tasks marked out-of-spec
+```
+
+**Note:** This is a lightweight subset of `/health-check`. Use `/health-check` for full validation.
 
 ---
 
@@ -274,6 +335,8 @@ Use `/work complete` for manual task completion outside of implement-agent's wor
 6. **Regenerate dashboard** - Read all task-*.json and milestone-*.json files and update dashboard.md
    (including milestone progress calculations)
 7. **Auto-archive check** - If active task count > 100, archive old tasks
+8. **Lightweight health check** - Run quick validation (see Step 6 in main process)
+   - Output: `Quick check: ✓` or `Quick check: ⚠️ N issues`
 
 ### Rules
 

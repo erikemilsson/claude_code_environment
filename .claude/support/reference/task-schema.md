@@ -67,6 +67,10 @@
 | milestone | String | Milestone ID this task belongs to (e.g., "M1") |
 | external_dependency | Object | External blocker - see External Dependencies below |
 | notes | String | Context, warnings, or completion notes |
+| spec_fingerprint | String | SHA-256 hash of spec at task decomposition (drift detection) |
+| spec_version | String | Spec filename when task was created (e.g., "spec_v1") |
+| spec_section | String | Originating section heading from spec |
+| out_of_spec | Boolean | Task not aligned with spec (user chose "proceed anyway") |
 
 ## Owner Values
 
@@ -107,6 +111,47 @@ The `owner` field determines who is responsible and where tasks appear in the da
 
 Priority affects display order in Ready sections - critical tasks appear first.
 Only critical and high show emoji prefixes in the dashboard to reduce visual noise.
+
+## Drift Prevention Fields
+
+These fields track spec-to-task alignment and detect when specs evolve after tasks are created:
+
+### spec_fingerprint
+
+SHA-256 hash of the spec file content when tasks were decomposed:
+
+```json
+{
+  "spec_fingerprint": "sha256:a1b2c3d4..."
+}
+```
+
+When `/work` runs, it compares the current spec hash against task fingerprints. If different, the spec has changed since decomposition.
+
+### spec_version and spec_section
+
+Track which spec and section a task originated from:
+
+```json
+{
+  "spec_version": "spec_v1",
+  "spec_section": "## Authentication"
+}
+```
+
+Enables tracking which tasks need review when specific sections change.
+
+### out_of_spec
+
+Marks tasks that don't align with the spec but were created anyway:
+
+```json
+{
+  "out_of_spec": true
+}
+```
+
+Set when user selects "proceed anyway" on spec misalignment. Dashboard shows ⚠️ prefix for these tasks. Health check reports them separately.
 
 ## External Dependencies
 
