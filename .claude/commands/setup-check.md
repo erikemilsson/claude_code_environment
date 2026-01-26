@@ -24,23 +24,30 @@ Run all checks and output a summary report. This helps new users ensure they've 
    - ✓ Pass: Updated to user's fork/repo
    - ⚠ Warn: Still points to template repo
 
-3. **Specification file**
-   - Check if `.claude/spec_v1.md` exists
-   - Check for placeholder content like "[Brief description"
+3. **Specification file exists**
+   - Check if `.claude/spec_v1.md` (or higher version) exists
+   - Check for placeholder content like "[Brief description", "YYYY-MM-DD"
    - ✓ Pass: Spec file has real content
    - ⚠ Warn: Spec missing or contains placeholder text
 
-4. **README.md customization**
+4. **Specification readiness** (gate for `/work`)
+   - Assess against readiness criteria from `specification_creator/reference/spec-checklist.md`
+   - Check for red flags: `[TBD]`, vague statements, missing sections
+   - ✓ Pass: Spec is ready for `/work`
+   - ⚠ Warn: Spec needs more detail
+   - ✗ Fail: Major gaps - run `/iterate` in specification_creator
+
+5. **README.md customization**
    - Check for template boilerplate
    - ✓ Pass: README appears customized
    - ⚠ Warn: README still contains template text
 
-5. **settings.local.json paths**
+6. **settings.local.json paths**
    - Verify paths in permissions match current directory
    - ✓ Pass: Paths are correct
    - ⚠ Warn: Paths need updating
 
-6. **.gitignore configuration**
+7. **.gitignore configuration**
    - Check standard entries exist
    - ✓ Pass: Properly configured
    - ⚠ Warn: Missing recommended entries
@@ -53,23 +60,26 @@ Run all checks and output a summary report. This helps new users ensure they've 
 ### Results
 
 ✓ CLAUDE.md customized
-✓ .gitignore configured
-⚠ version.json source_repo still points to template
-  → Update to your fork URL
-⚠ spec_v1.md contains placeholder text
-  → Run specification_creator to create your spec
+✓ version.json configured
+✓ Spec file exists
+⚠ Spec readiness: needs more detail
+  → Missing acceptance criteria
+  → Run /iterate in specification_creator
 ✓ README.md customized
 ✓ settings.local.json paths correct
+✓ .gitignore configured
 
 ### Summary
 
-5/6 checks passed
-2 warnings to address
+6/7 checks passed
+1 warning to address
+
+**Ready for /work:** No ← Spec not ready
 
 ### Next Steps
 
-1. Update version.json with your repository URL
-2. Create your project specification using specification_creator/
+1. cd .claude/specification_creator && claude
+2. Run /iterate to improve spec readiness
 ```
 
 ## Check Details
@@ -98,7 +108,29 @@ The spec should exist at `.claude/spec_v1.md` (or higher version).
 Should not contain placeholder patterns like:
 - `[Brief description`
 - `[Your project`
-- `TBD`
+- `YYYY-MM-DD`
+
+### Spec Readiness
+
+Assess the spec against readiness criteria (see `specification_creator/reference/spec-checklist.md`):
+
+**Must have for "Ready":**
+- Problem and users are clear
+- Core components/architecture decided
+- Has testable acceptance criteria
+- Remaining questions are implementation details (not blockers)
+
+**Red flags (cause warning/fail):**
+- Placeholder text: `[TBD]`, `[describe here]`, `YYYY-MM-DD`
+- Vague statements: "make it better", "should be fast"
+- Requirements that are really tasks: "add login button"
+- Missing sections: no acceptance criteria, no scope definition
+- Unresolved blocking questions
+
+**Output guidance:**
+- ✓ Pass: All core criteria met, no red flags
+- ⚠ Warn: Some criteria met but gaps remain (list specific gaps)
+- ✗ Fail: Major gaps - can't explain what it does or no acceptance criteria
 
 ### settings.local.json
 
@@ -107,6 +139,17 @@ Verify the working directory in permission paths matches the actual project path
 ## When to Run
 
 - After cloning the template for a new project
-- Before starting actual development work
+- **Before running `/work`** - this is the readiness gate
 - When onboarding new team members
 - After updating from template (to check for new required config)
+
+## Relationship to /work
+
+`/setup-check` is the gate before `/work`. The workflow is:
+
+1. Create spec: `cd .claude/specification_creator && claude` → `/iterate`
+2. Configure project: Fix CLAUDE.md, version.json, README.md
+3. Validate: `/setup-check` → all green
+4. Build: `/work`
+
+If `/setup-check` shows spec readiness warnings, return to specification_creator and run `/iterate` until the spec is ready.
