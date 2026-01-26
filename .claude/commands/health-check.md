@@ -9,8 +9,7 @@ Combined system health check for tasks, decisions, and CLAUDE.md.
 /health-check --claude-md        # Only CLAUDE.md audit
 /health-check --decisions        # Only decision system validation
 /health-check --semantic         # Only semantic validation (staleness, ownership, orphans)
-/health-check --sync-check       # Compare local files against template repo
-/health-check --sync-update      # Update local files from template (with confirmation)
+/health-check --sync-check       # Check template sync, show diffs, offer to update
 /health-check --report-only      # Show report without fix prompts
 ```
 
@@ -433,7 +432,7 @@ For each fixable issue, present options and apply immediately before moving to n
 
 ## Part 3: Template Sync Check
 
-Compares local `.claude/` files against the template repository to detect drift from template updates.
+Compares local `.claude/` files against the template repository, shows differences, and offers to update.
 
 ### Requirements
 
@@ -441,194 +440,140 @@ Compares local `.claude/` files against the template repository to detect drift 
 - `.claude/sync-manifest.json` - Lists files in `sync` category
 - `gh` CLI installed and authenticated (or use GitHub MCP tools)
 
-### Process
-
-1. **Read local version.json** to get template info:
-   ```json
-   {
-     "template_version": "1.0.0",
-     "source_repo": "https://github.com/user/claude_code_environment",
-     "template_name": "standard"
-   }
-   ```
-
-2. **Read sync-manifest.json** to get files to compare:
-   ```json
-   {
-     "categories": {
-       "sync": [
-         ".claude/commands/*.md",
-         ".claude/support/reference/shared-definitions.md",
-         ".claude/agents/*.md"
-       ]
-     }
-   }
-   ```
-
-3. **Fetch template version** from remote repo:
-   ```bash
-   gh api repos/{owner}/{repo}/contents/.claude/version.json \
-     --jq '.content' | base64 -d | jq '.template_version'
-   ```
-
-4. **Compare each sync file** against template:
-   ```bash
-   # For each file in sync category
-   gh api repos/{owner}/{repo}/contents/{path} \
-     --jq '.content' | base64 -d > /tmp/template-file
-   diff local-file /tmp/template-file
-   ```
-
-### Sync Report
-
-```
-### Template Sync Check
-
-Template: standard v1.0.0 (2026-01-26)
-Source: https://github.com/user/claude_code_environment
-
-Version Status:
-  Local:  v1.0.0
-  Remote: v1.1.0
-  [Warning] Template has been updated
-
-File Comparison (sync category):
-  [Checkmark] .claude/commands/work.md - matches
-  [Warning] .claude/commands/breakdown.md - differs (12 lines changed)
-  [Checkmark] .claude/agents/implement-agent.md - matches
-  [Warning] .claude/agents/verify-agent.md - differs (new file in template)
-  [Checkmark] .claude/support/reference/shared-definitions.md - matches
-
-Suggested Actions:
-  1. Review changelog for v1.1.0
-  2. Update changed files from template
-  3. Update version.json after applying changes
-```
-
-### Update Instructions
-
-**To update a single file:**
-```bash
-gh api repos/{owner}/{repo}/contents/{path} \
-  --jq '.content' | base64 -d > {local-path}
-```
-
-**To update all sync files:**
-```bash
-# Clone template repo temporarily
-git clone --depth 1 https://github.com/user/claude_code_environment /tmp/template
-# Copy sync files
-cp /tmp/template/.claude/commands/*.md .claude/commands/
-cp /tmp/template/.claude/agents/*.md .claude/agents/
-cp /tmp/template/.claude/specification_creator/*.md .claude/specification_creator/
-cp /tmp/template/.claude/support/reference/*.md .claude/support/reference/
-cp /tmp/template/.claude/support/learnings/README.md .claude/support/learnings/
-# Update version
-cp /tmp/template/.claude/version.json .claude/version.json
-# Cleanup
-rm -rf /tmp/template
-```
-
-### Offline Mode
-
-If GitHub is unavailable, `--sync-check` will report:
-```
-[Warning] Cannot reach template repository
-  - Check network connection
-  - Verify gh CLI is authenticated: gh auth status
-  - Skip sync check with: /health-check --tasks --claude-md
-```
-
-### Sync Update (`--sync-update`)
-
-Automatically updates local files from the template repository. Only affects files in the `sync` category of sync-manifest.json.
-
-#### Safety Principles
+### Safety Principles
 
 1. **No silent deletions** - Files are never removed without explicit user confirmation
 2. **Preview before apply** - Shows all changes before making them
 3. **Sync category only** - Never touches `customize` or `ignore` category files
 4. **Preserves local additions** - Files that exist locally but not in template are kept
 
-#### Process
+### Process
 
-1. **Fetch template** - Clone template repo to temporary directory
-2. **Categorize changes** - Group files into: modified, new, local-only
-3. **Present summary** - Show what will change before any modifications
-4. **Apply with confirmation** - Update files after user approval
+#### Step 1: Gather Information
 
-#### Update Summary Format
+Read local configuration:
+```json
+// .claude/version.json
+{
+  "template_version": "1.0.0",
+  "source_repo": "https://github.com/user/claude_code_environment"
+}
+
+// .claude/sync-manifest.json
+{
+  "categories": {
+    "sync": [".claude/commands/*.md", ".claude/agents/*.md", ...]
+  }
+}
+```
+
+Fetch template from remote:
+```bash
+git clone --depth 1 {source_repo} /tmp/template
+```
+
+#### Step 2: Compare and Report
+
+Categorize all files in the `sync` category:
+
+| Category | Meaning |
+|----------|---------|
+| **Up to date** | Local matches template |
+| **Modified** | Template has changes |
+| **New in template** | File added in template |
+| **Local only** | File exists locally but not in template |
+
+#### Step 3: Show Results and Offer Update
 
 ```
-### Template Sync Update
+### Template Sync Check
 
-Template: standard v1.0.0 → v1.1.0
 Source: https://github.com/user/claude_code_environment
+Version: v1.0.0 (local) → v1.1.0 (template)
 
-## Files to Update (modified in template)
+## Status
 
-| File | Changes |
-|------|---------|
-| .claude/commands/work.md | +15 -8 lines |
-| .claude/agents/implement-agent.md | +23 -5 lines |
-| .claude/commands/health-check.md | +45 -12 lines |
+✓ Up to date (3 files)
+  .claude/commands/status.md
+  .claude/commands/breakdown.md
+  .claude/support/reference/task-schema.md
 
-## New Files (added in template)
+⚠️ Modified in template (3 files)
+  .claude/commands/work.md (+15 -8 lines)
+  .claude/agents/implement-agent.md (+23 -5 lines)
+  .claude/commands/health-check.md (+45 -12 lines)
 
-| File | Description |
-|------|-------------|
-| .claude/commands/new-feature.md | New command added in v1.1.0 |
++ New in template (1 file)
+  .claude/commands/new-feature.md
 
-## Local-Only Files (not in template)
-
-| File | Action |
-|------|--------|
-| .claude/commands/my-custom.md | Keep (not in sync category) |
+• Local only (1 file)
+  .claude/commands/my-custom.md
 
 ---
 
-[A] Apply all updates
-[P] Preview diffs for modified files
+[U] Update all modified/new files
+[P] Preview diffs first
 [S] Select files individually
-[C] Cancel
+[K] Keep current (no changes)
 ```
 
-#### Individual File Selection
+### Preview Diffs
+
+When `[P]` is selected, show diffs for each modified file:
+
+```
+## Diff: .claude/commands/work.md
+
+@@ -19,7 +19,7 @@ What It Does
+-5. **Routes to specialists** - Invokes implement-agent
++5. **Routes to specialists** - Reads and follows implement-agent workflow
+
+@@ -212,8 +212,12 @@ If Executing
+-Invoke implement-agent with:
++**CRITICAL:** You must read implement-agent.md and follow its workflow.
+...
+
+[N] Next file  [U] Update this file  [S] Skip this file  [Q] Quit preview
+```
+
+### Individual File Selection
 
 When `[S]` is selected:
 
 ```
 ## Select Files to Update
 
-Modified files:
+Modified:
   [1] .claude/commands/work.md (+15 -8)
   [2] .claude/agents/implement-agent.md (+23 -5)
   [3] .claude/commands/health-check.md (+45 -12)
 
-New files:
+New:
   [4] .claude/commands/new-feature.md
 
-Enter numbers to update (comma-separated), or:
-  [A] All  [N] None  [C] Cancel
+Enter numbers (comma-separated), or:
+  [A] All  [N] None  [B] Back
 
 Selection: _
 ```
 
-#### Handling Local-Only Files
+### Handling Local-Only Files
 
-Files that exist locally but not in the template are **never automatically deleted**:
+Files that exist locally but not in the template are **never automatically deleted**.
+
+If local-only files exist in the `sync` category:
 
 ```
-## Local Files Not in Template
+## Local-Only Files
 
 These files exist locally but not in the template:
-  - .claude/commands/custom-workflow.md
-  - .claude/agents/custom-agent.md
+  • .claude/commands/custom-workflow.md
+  • .claude/agents/custom-agent.md
 
-Options:
-  [K] Keep all (recommended - these may be intentional customizations)
-  [R] Review individually
-  [C] Cancel update
+These may be intentional customizations. What would you like to do?
+
+[K] Keep all (recommended)
+[R] Review individually
 
 Selection: _
 ```
@@ -640,83 +585,124 @@ If `[R]` is selected:
 
 This file exists locally but not in the template.
 
-Options:
-  [K] Keep - This is an intentional local customization
-  [D] Delete - This file is no longer needed
-  [S] Skip - Decide later
+[K] Keep - Intentional local customization
+[D] Delete - No longer needed
+[S] Skip - Decide later
 
 Selection: _
 ```
 
-#### Post-Update Actions
+### Applying Updates
 
-After successful update:
-
-1. **Update version.json** - Set `template_version` to match remote
-2. **Show summary** - List all changes made
-3. **Suggest next steps** - Review changes, test functionality
+Before any modifications:
+1. Create backup in `.claude/support/workspace/sync-backup-{timestamp}/`
+2. Show confirmation of what will change
 
 ```
-### Sync Complete
+## Confirm Update
+
+Will update:
+  • .claude/commands/work.md
+  • .claude/agents/implement-agent.md
+  • .claude/commands/health-check.md
+
+Will add:
+  • .claude/commands/new-feature.md
+
+Will keep (local-only):
+  • .claude/commands/my-custom.md
+
+Backup location: .claude/support/workspace/sync-backup-20260127-143022/
+
+[Y] Yes, apply updates  [N] Cancel
+
+Selection: _
+```
+
+### Post-Update Summary
+
+```
+### Sync Complete ✓
 
 Updated:
   ✓ .claude/commands/work.md
   ✓ .claude/agents/implement-agent.md
   ✓ .claude/commands/health-check.md
-  + .claude/commands/new-feature.md (new)
+
+Added:
+  + .claude/commands/new-feature.md
 
 Kept (local-only):
-  • .claude/commands/custom-workflow.md
+  • .claude/commands/my-custom.md
 
-Version updated: v1.0.0 → v1.1.0
+Version: v1.0.0 → v1.1.0
+
+Backup saved to: .claude/support/workspace/sync-backup-20260127-143022/
+(Auto-deleted after 7 days)
 
 Next steps:
   1. Review the updated files
   2. Run /health-check to verify system health
-  3. Test your workflows with the updated commands
+  3. Test your workflows
 ```
 
-#### Conflict Handling
+### Conflict Handling
 
-If a sync file has local modifications that differ from both the old and new template versions:
+If a sync file has local modifications that differ from the expected template version:
 
 ```
-## Conflict Detected
+## Conflict: .claude/commands/work.md
 
-File: .claude/commands/work.md
+This file has local changes that aren't in the template.
+Updating will overwrite your modifications.
 
-This file has local modifications that aren't in the template.
-Updating will overwrite your changes.
-
-Options:
-  [O] Overwrite with template version
-  [K] Keep local version (skip this file)
-  [D] Show diff (local vs template)
-  [M] Merge manually (opens diff view)
+[O] Overwrite with template
+[K] Keep local version
+[D] Show diff
+[M] Merge manually
 
 Selection: _
 ```
 
-#### Error Recovery
+### Error Recovery
 
-If update is interrupted:
+If sync is interrupted:
 
 ```
-[Warning] Previous sync update was interrupted
+[Warning] Previous sync was interrupted
 
-Partial state detected:
   - 2 files updated before interruption
-  - 1 file partially written
+  - Backup exists at: .claude/support/workspace/sync-backup-20260127-143022/
 
-Options:
-  [R] Resume update from where it stopped
-  [S] Start fresh (re-fetch template)
-  [C] Cancel and restore backup
+[R] Resume from where it stopped
+[S] Start fresh
+[X] Restore backup and cancel
 
 Selection: _
 ```
 
-**Backup behavior:** Before any modifications, the original files are backed up to `.claude/support/workspace/sync-backup-{timestamp}/`. Backups are automatically cleaned up after 7 days.
+### Offline Mode
+
+If GitHub is unavailable:
+```
+[Warning] Cannot reach template repository
+  - Check network connection
+  - Verify gh CLI: gh auth status
+  - Skip with: /health-check --tasks --claude-md
+```
+
+### Up-to-Date Response
+
+If everything matches:
+```
+### Template Sync Check ✓
+
+Source: https://github.com/user/claude_code_environment
+Version: v1.1.0
+
+All 12 sync files are up to date.
+No action needed.
+```
 
 ---
 
