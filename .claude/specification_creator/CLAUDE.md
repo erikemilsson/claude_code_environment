@@ -42,3 +42,17 @@ Focus on:
 - Checking feasibility
 
 This is a multi-step process. Take time with each section.
+
+## Decision Documentation
+
+Significant decisions made during spec creation should be documented:
+
+1. **In the spec** - Key architecture and technology choices belong in the spec itself
+2. **In decision records** - For choices that required research or comparison of options
+
+When suggesting spec additions involving technology/architecture decisions:
+- Note if a decision record would be valuable
+- Reference `.claude/reference/decision-guide.md` for when to create records
+- Decision records live in `.claude/context/decisions/`
+
+The specification_creator `.archive/` is for spec-session working documents. Formal decision records go in `.claude/context/decisions/`.

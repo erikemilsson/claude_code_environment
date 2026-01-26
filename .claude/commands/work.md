@@ -176,10 +176,10 @@ When breaking spec into tasks:
 - Difficulty ≤ 6
 
 ### Task Difficulty Scale
-- **1-2**: Single clear action (add a field, fix a bug)
-- **3-4**: Multiple related actions (build a form with validation)
-- **5-6**: Some design decisions (implement an API endpoint)
-- **7+**: Too big - break it down further
+
+See `.claude/reference/shared-definitions.md` for the difficulty scale.
+
+Key rule: Tasks with difficulty 7+ must be broken down before starting.
 
 ### Implementation Stages
 Organize execute-phase tasks into logical stages:

@@ -70,6 +70,8 @@ During spec creation, Claude may produce research notes, question logs, or plann
 └── 2026-01-27_architecture-notes.md
 ```
 
+**Note:** This `.archive/` is for spec-session working documents. Formal decision records documenting technology/architecture choices should go in `.claude/context/decisions/` using the decision record format.
+
 ### Updating (minor changes)
 
 1. Edit the active `../spec_v{N}.md` directly
