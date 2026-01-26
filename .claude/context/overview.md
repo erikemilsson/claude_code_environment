@@ -1,5 +1,9 @@
 # Project Overview
 
+> **This file vs spec_v{N}.md:**
+> - **overview.md** = Current state, context, links, informal notes. Update freely.
+> - **spec_v{N}.md** = Formal requirements, acceptance criteria, constraints. Change through spec revision process.
+
 ## Purpose
 
 [What this project aims to accomplish]

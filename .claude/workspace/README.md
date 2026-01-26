@@ -24,3 +24,22 @@ Claude's working area for temporary and in-progress documents.
 | API docs, reference material | `research/` |
 | Design docs in progress | `drafts/` |
 | Spec sections being drafted | `drafts/` |
+
+## Graduation: Moving drafts to final locations
+
+When a draft is ready to become permanent, move it to the appropriate location:
+
+| Draft type | Destination |
+|------------|-------------|
+| Design docs | `.claude/context/` or project's docs folder |
+| Spec sections | `.claude/spec_v{N}.md` (via spec revision process) |
+| Decision research | `.claude/context/decisions/.archive/` |
+| API documentation | Project's docs folder |
+| Throwaway notes | Delete when done |
+
+**Process:**
+1. Discuss with human where the draft should go
+2. Move/copy content to destination
+3. Delete original from workspace
+
+**Staleness:** Files in `workspace/` older than 30 days trigger a warning in `/health-check`.

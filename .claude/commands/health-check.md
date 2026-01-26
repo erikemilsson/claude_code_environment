@@ -71,7 +71,19 @@ When breaking down tasks, IDs must not collide:
 - Tasks with difficulty >= 7 should be `"Broken Down"` or have subtasks
 - Subtasks should have difficulty <= 6
 
-### 7. Semantic Validation (for 20+ task projects)
+### 7. Questions and Workspace Staleness
+
+**Stale Questions:**
+- Questions in `.claude/context/questions.md` older than 14 days
+- Warning: "N questions have been pending for over 14 days"
+- Suggests reviewing and answering or removing outdated questions
+
+**Stale Workspace Files:**
+- Files in `.claude/workspace/` older than 30 days
+- Warning: "N workspace files are over 30 days old"
+- Suggests graduating drafts to final locations or deleting scratch files
+
+### 8. Semantic Validation (for 20+ task projects)
 
 These checks detect drift and staleness in large collaborative projects:
 
@@ -117,6 +129,8 @@ These checks detect drift and staleness in large collaborative projects:
 |-------|----------|
 | Stale "In Progress" (> 7 days) | Ask user: mark Pending, Blocked, or keep In Progress |
 | Owner-capability mismatch | Suggest changing owner to "human" (requires confirmation) |
+| Stale questions (> 14 days) | List questions, ask user to answer or mark as no longer relevant |
+| Stale workspace files (> 30 days) | List files, ask user: graduate to final location, or delete |
 
 ## Non-Fixable Issues (Manual Required)
 
@@ -201,6 +215,10 @@ Run semantic validation (if not `--claude-md` and task count >= 20):
 - Orphan dependency detection
 - Workflow diagram staleness check
 
+Run questions and workspace staleness (always):
+- Questions older than 14 days in `.claude/context/questions.md`
+- Files older than 30 days in `.claude/workspace/`
+
 Run CLAUDE.md audit (if not `--tasks` and not `--decisions`):
 - Line counts
 - Section sizes
@@ -233,6 +251,12 @@ Run decision validation (if not `--tasks` and not `--claude-md`):
   - Task 45: "Configure Power BI" owned by claude (suggests human)
 [Checkmark] No orphan dependencies
 [Warning] Workflow diagram stale (3 days behind task changes)
+
+### Questions & Workspace
+[Checkmark] No stale questions
+[Warning] 2 workspace files over 30 days old
+  - workspace/drafts/api-design.md (45 days)
+  - workspace/scratch/notes.md (32 days)
 
 ### CLAUDE.md
 - Total lines: N [status]

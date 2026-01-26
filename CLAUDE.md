@@ -108,6 +108,24 @@ When you need to create temporary documents (research, analysis, drafts), use `.
 - Use simple descriptive names (`api-comparison.md`, not `task-5-research.md`)
 - When a draft is ready to become permanent, discuss where it should go
 
+## Template Configuration Files
+
+Two files control template behavior:
+
+### sync-manifest.json
+
+Defines which files sync from template updates vs stay project-specific:
+
+| Category | Purpose | Examples |
+|----------|---------|----------|
+| `sync` | Updated from template | Commands, agents, reference docs |
+| `customize` | User-editable, template provides defaults | CLAUDE.md, context/, decisions/index.md |
+| `ignore` | Project-specific data, never synced | Tasks, decision records, learnings |
+
+### settings.local.json
+
+Pre-approved permissions for consistent Claude Code behavior. Ensures the template works the same way for everyone using it. Contains tool permissions that would otherwise require per-session approval.
+
 ## Project Structure
 
 ```

@@ -44,3 +44,24 @@ Keep entries concise and actionable:
 - **Include context** - When does this pattern apply? What triggers it?
 - **Update over time** - Remove outdated learnings, refine patterns that evolve
 - **Project-specific** - These aren't synced from template; each project accumulates its own
+
+## Maintenance
+
+**When to review:** At project milestones, phase completions, or quarterly.
+
+**What to check:**
+- Remove learnings now captured in the spec (they've graduated)
+- Remove learnings that no longer apply (codebase changed)
+- Consolidate duplicate or overlapping entries
+- Update examples if APIs or patterns have evolved
+
+**Tracking staleness:** Add a date header to each learning entry:
+```markdown
+## [Pattern Name]
+*Added: 2026-01-15*
+
+**Context:** When this applies
+...
+```
+
+Learnings without dates or older than 6 months should be reviewed for relevance.
