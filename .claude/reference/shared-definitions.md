@@ -74,7 +74,24 @@ See `task-schema.md` for complete field definitions.
 
 ## Owner Field
 
-Tasks can have an `owner` field:
-- `claude` - Claude will do this task (default when not specified)
-- `human` - Requires human action
-- `both` - Collaborative task
+Tasks have an `owner` field that determines responsibility and dashboard placement:
+
+| Value | Emoji | Dashboard Section | When to Use |
+|-------|-------|-------------------|-------------|
+| `claude` | 🤖 | Claude Status | Autonomous work (default when omitted) |
+| `human` | ❗ | Your Actions | Requires human action |
+| `both` | 👥 | Both sections | Collaborative work |
+
+**Human tasks** - Configure secrets, make decisions, external actions, review/approve
+**Claude tasks** - Write code, implement features, tests, docs, research
+**Both tasks** - Human provides direction, Claude implements (appears in BOTH dashboard sections with 👥)
+
+## Task ID Conventions
+
+| Pattern | Meaning | Example |
+|---------|---------|---------|
+| `N` | Top-level task | `1`, `2`, `3` |
+| `N_M` | Sequential subtask | `1_1`, `1_2` (must do in order) |
+| `N_Ma` | Parallel subtask | `1_1a`, `1_1b` (can do simultaneously) |
+
+Use underscores for sequential dependencies, letters for parallel work within a sequence.

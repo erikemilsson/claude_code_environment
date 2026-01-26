@@ -70,14 +70,19 @@ This project uses a phased workflow for autonomous work:
 
 ## Task Rules
 
-Tasks are tracked in `.claude/tasks/` as JSON files.
+Tasks are tracked in `.claude/tasks/` as JSON files. The **Project Dashboard** at `.claude/tasks/task-overview.md` shows:
+- Quick status with task counts by owner
+- ❗ **Your Actions** - human tasks ready or waiting
+- 🤖 **Claude Status** - what Claude is working on
+- 💡 **Notes & Ideas** - your preserved notes section
+- Full task list with all details
 
 **Key rules:**
 - Break down tasks with difficulty >= 7 before starting
 - Only one task "In Progress" at a time
 - Run `/sync-tasks` after completing any task
 
-See `.claude/reference/shared-definitions.md` for difficulty scale and status values.
+See `.claude/reference/shared-definitions.md` for difficulty scale, status values, and owner definitions.
 
 ## Decisions
 
@@ -122,7 +127,7 @@ When facing significant choices, create a decision record rather than deciding i
 │   └── decision-guide.md     # Decision documentation guide
 └── tasks/
     ├── task-*.json           # Individual task files
-    └── task-overview.md      # Auto-generated summary
+    └── task-overview.md      # Project Dashboard (auto-generated)
 ```
 
 ## Technology Stack

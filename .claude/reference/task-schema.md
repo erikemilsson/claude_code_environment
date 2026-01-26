@@ -48,7 +48,7 @@
 | Field | Type | Description |
 |-------|------|-------------|
 | description | String | Detailed explanation when title isn't enough |
-| owner | String | claude (default), human, or both |
+| owner | String | claude (default), human, or both - see Owner Values below |
 | created_date | String | YYYY-MM-DD format |
 | updated_date | String | YYYY-MM-DD format |
 | completion_date | String | YYYY-MM-DD format, set when Finished |
@@ -57,6 +57,34 @@
 | parent_task | String | Parent task ID if this is a subtask |
 | files_affected | Array | File paths this task will modify |
 | notes | String | Context, warnings, or completion notes |
+
+## Owner Values
+
+The `owner` field determines who is responsible and where tasks appear in the dashboard:
+
+| Value | Emoji | Dashboard Section | When to Use |
+|-------|-------|-------------------|-------------|
+| `claude` | 🤖 | Claude Status | Tasks Claude can do autonomously (default) |
+| `human` | ❗ | Your Actions | Requires human action (config, decisions, external) |
+| `both` | 👥 | Both sections | Collaborative work (appears in BOTH dashboard sections) |
+
+### Examples by Owner
+
+**`claude`** (default - omit field if this):
+- Write code, implement features
+- Create tests, documentation
+- Refactor, fix bugs
+- Research and analysis
+
+**`human`**:
+- Configure API keys, secrets
+- Make business decisions
+- External actions (deploy, purchase, contact)
+- Review and approve
+
+**`both`**:
+- Design work (human provides direction, Claude implements)
+- Content requiring human judgment (Claude drafts, human refines)
 
 ## Status Rules
 
