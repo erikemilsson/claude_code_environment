@@ -34,7 +34,9 @@ The Spec → Plan → Execute → Verify workflow for autonomous multi-phase pro
 - Scope is clear
 - Human approved specification
 
-**Agent:** spec-agent
+**Process:** Manual (human-guided via specification_creator)
+
+To create or revise the spec, start a Claude Code session from `.claude/specification_creator/`. Claude will guide you through iterative Q&A but you edit the spec directly.
 
 ### Plan Phase
 

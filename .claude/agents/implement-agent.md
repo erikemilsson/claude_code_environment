@@ -13,7 +13,7 @@ Specialist for executing tasks and writing code.
 
 - Task to execute (from task-overview or orchestrator)
 - Implementation plan and phase context
-- Specification for acceptance criteria
+- `.claude/spec_v{N}.md` - Specification for acceptance criteria
 - Codebase context
 
 ## Outputs

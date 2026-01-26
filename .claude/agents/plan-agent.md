@@ -11,8 +11,8 @@ Specialist for creating implementation plans and breaking work into tasks.
 
 ## Inputs
 
-- Completed specification (from spec phase)
-- `.claude/context/overview.md` - Project context
+- `.claude/spec_v{N}.md` - The project specification (source of truth)
+- `.claude/context/overview.md` - Additional project context
 - Existing codebase structure (if any)
 - Technology constraints
 

@@ -12,7 +12,7 @@ Specialist for testing and validating implementations against specifications.
 ## Inputs
 
 - Completed implementation (all execute tasks finished)
-- Specification with acceptance criteria
+- `.claude/spec_v{N}.md` - Specification with acceptance criteria
 - Test files and test commands
 - Quality standards/requirements
 

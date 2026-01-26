@@ -30,6 +30,17 @@ Instructions for Claude Code when working in this project.
 
 [Brief description of what this project does]
 
+## Specification
+
+The project specification lives at `.claude/spec_v{N}.md`.
+
+**Do not edit the specification directly.** If you identify improvements:
+1. Quote the relevant section
+2. Explain the suggested change
+3. Let the user make the edit
+
+To create or revise specifications, start a Claude Code instance from `.claude/specification_creator/`.
+
 ## Workflow: Spec → Plan → Execute → Verify
 
 This project uses a phased workflow for autonomous work:
@@ -71,26 +82,30 @@ See `.claude/reference/shared-definitions.md` for difficulty scale and status va
 
 ```
 .claude/
-├── commands/          # /work and task commands
-├── agents/            # Specialist agents
+├── spec_v{N}.md               # Project specification (source of truth)
+├── previous_specifications/   # Archived spec versions
+├── specification_creator/     # Start Claude Code here for spec sessions
+│   ├── CLAUDE.md             # Rules for spec-building mode
+│   └── README.md
+├── commands/                  # /work and task commands
+├── agents/                    # Specialist agents
 │   ├── orchestrator.md
-│   ├── spec-agent.md
 │   ├── plan-agent.md
 │   ├── implement-agent.md
 │   └── verify-agent.md
 ├── context/
-│   ├── overview.md    # Project context
-│   ├── phases.md      # Phase definitions and status
-│   ├── decisions.md   # Decision log
-│   └── questions.md   # Accumulated questions for human
+│   ├── overview.md           # Project context
+│   ├── phases.md             # Phase definitions and status
+│   ├── decisions.md          # Decision log
+│   └── questions.md          # Accumulated questions for human
 ├── reference/
-│   ├── task-schema.md       # Task JSON format (with phases)
+│   ├── task-schema.md        # Task JSON format (with phases)
 │   ├── shared-definitions.md
-│   ├── workflow-guide.md    # Workflow explained
-│   └── agent-handoff.md     # Agent coordination
+│   ├── workflow-guide.md     # Workflow explained
+│   └── agent-handoff.md      # Agent coordination
 └── tasks/
-    ├── task-*.json        # Individual task files
-    └── task-overview.md   # Auto-generated summary
+    ├── task-*.json           # Individual task files
+    └── task-overview.md      # Auto-generated summary
 ```
 
 ## Technology Stack

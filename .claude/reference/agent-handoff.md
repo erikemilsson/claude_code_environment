@@ -7,7 +7,7 @@ How agents coordinate in the Spec → Plan → Execute → Verify workflow.
 | Agent | Phase | Primary Responsibility |
 |-------|-------|------------------------|
 | Orchestrator | All | Route work, manage transitions |
-| Spec Agent | Spec | Create specifications |
+| (manual) | Spec | Human creates spec via specification_creator |
 | Plan Agent | Plan | Create implementation plans |
 | Implement Agent | Execute | Write code, complete tasks |
 | Verify Agent | Verify | Test and validate |
@@ -76,15 +76,15 @@ When completing work, return:
 
 ### Spec → Plan
 
-**Trigger:** Spec agent reports specification complete
+**Trigger:** Human indicates spec is complete (spec exists at `.claude/spec_v{N}.md`)
 
 **Handoff includes:**
 - Completed specification document
 - Acceptance criteria
 - Constraints and requirements
-- Any remaining non-blocking questions
 
 **Orchestrator action:**
+- Verify spec_v{N}.md exists and has content
 - Update phases.md (Spec: Complete, Plan: Active)
 - Present checkpoint to human
 - Invoke plan-agent with spec context

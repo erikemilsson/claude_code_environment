@@ -19,7 +19,7 @@ Context-aware entry point for the Spec→Plan→Execute→Verify workflow.
 
 ```
 IF no spec exists OR spec incomplete:
-  → Route to spec-agent
+  → Stop and prompt user to create spec via specification_creator
 
 ELSE IF no plan exists OR plan incomplete:
   → Route to plan-agent
@@ -30,6 +30,8 @@ ELSE IF tasks exist AND work remains:
 ELSE IF implementation complete:
   → Route to verify-agent
 ```
+
+**Note:** The Spec phase is manual. If no spec exists at `.claude/spec_v{N}.md`, direct the user to create one by starting a Claude Code session from `.claude/specification_creator/`.
 
 ## Process
 
@@ -47,7 +49,7 @@ Determine which phase needs work:
 
 | Condition | Phase | Agent |
 |-----------|-------|-------|
-| Missing or incomplete specification | Spec | spec-agent |
+| Missing or incomplete specification | Spec | (manual - specification_creator) |
 | Missing or incomplete plan | Plan | plan-agent |
 | Tasks pending | Execute | implement-agent |
 | Work complete, needs validation | Verify | verify-agent |

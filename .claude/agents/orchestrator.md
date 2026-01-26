@@ -40,7 +40,7 @@ Evaluate project readiness:
 
 | Check | Result |
 |-------|--------|
-| Spec exists and is complete? | If no → SPEC phase |
+| Spec exists and is complete? | If no → Stop, direct user to specification_creator |
 | Plan exists and is complete? | If no → PLAN phase |
 | Tasks remain to execute? | If yes → EXECUTE phase |
 | Implementation complete? | If yes → VERIFY phase |
@@ -51,10 +51,12 @@ Based on determined phase:
 
 | Phase | Agent | Purpose |
 |-------|-------|---------|
-| Spec | spec-agent | Create/complete specification |
+| Spec | (manual) | User creates spec via specification_creator |
 | Plan | plan-agent | Create/complete implementation plan |
 | Execute | implement-agent | Work on tasks |
 | Verify | verify-agent | Validate implementation |
+
+**Note:** The Spec phase is human-guided. If no spec exists, prompt the user to create one by starting a Claude Code session from `.claude/specification_creator/`.
 
 ### 4. Monitor for Checkpoints
 

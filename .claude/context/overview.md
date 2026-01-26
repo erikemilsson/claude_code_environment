@@ -10,39 +10,17 @@
 
 ## Specification
 
-### Problem Statement
-[What problem are we solving?]
+**See:** `.claude/spec_v{N}.md` for the full project specification.
 
-### Goals
-- **Primary:** [Main outcome]
-- **Secondary:** [Nice-to-haves]
-- **Non-goals:** [Explicitly out of scope]
-
-### Requirements
-
-**Functional:**
-- [What the system must do]
-
-**Non-Functional:**
-- [Performance, security, scalability requirements]
-
-### Acceptance Criteria
-- [ ] [Testable criterion 1]
-- [ ] [Testable criterion 2]
+To create or revise the specification, start a Claude Code instance from `.claude/specification_creator/`.
 
 ## Key Components
 
 [Main parts of the system and how they relate]
 
-## Constraints
-
-- [Technology constraints]
-- [Timeline constraints]
-- [External dependencies]
-
 ## Notes
 
-[Important context, constraints, or decisions]
+[Important context, constraints, or decisions not captured in the spec]
 
 ## Links
 
