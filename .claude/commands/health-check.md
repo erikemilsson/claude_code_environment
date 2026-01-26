@@ -278,14 +278,14 @@ Compares local `.claude/` files against the template repository to detect drift 
 
 3. **Fetch template version** from remote repo:
    ```bash
-   gh api repos/{owner}/{repo}/contents/standard/.claude/version.json \
+   gh api repos/{owner}/{repo}/contents/.claude/version.json \
      --jq '.content' | base64 -d | jq '.template_version'
    ```
 
 4. **Compare each sync file** against template:
    ```bash
    # For each file in sync category
-   gh api repos/{owner}/{repo}/contents/standard/{path} \
+   gh api repos/{owner}/{repo}/contents/{path} \
      --jq '.content' | base64 -d > /tmp/template-file
    diff local-file /tmp/template-file
    ```
@@ -320,7 +320,7 @@ Suggested Actions:
 
 **To update a single file:**
 ```bash
-gh api repos/{owner}/{repo}/contents/standard/{path} \
+gh api repos/{owner}/{repo}/contents/{path} \
   --jq '.content' | base64 -d > {local-path}
 ```
 
@@ -329,14 +329,14 @@ gh api repos/{owner}/{repo}/contents/standard/{path} \
 # Clone template repo temporarily
 git clone --depth 1 https://github.com/user/claude_code_environment /tmp/template
 # Copy sync files
-cp /tmp/template/standard/.claude/commands/*.md .claude/commands/
-cp /tmp/template/standard/.claude/agents/*.md .claude/agents/
-cp /tmp/template/standard/.claude/reference/shared-definitions.md .claude/reference/
-cp /tmp/template/standard/.claude/reference/task-schema.md .claude/reference/
-cp /tmp/template/standard/.claude/reference/agent-handoff.md .claude/reference/
-cp /tmp/template/standard/.claude/reference/workflow-guide.md .claude/reference/
+cp /tmp/template/.claude/commands/*.md .claude/commands/
+cp /tmp/template/.claude/agents/*.md .claude/agents/
+cp /tmp/template/.claude/reference/shared-definitions.md .claude/reference/
+cp /tmp/template/.claude/reference/task-schema.md .claude/reference/
+cp /tmp/template/.claude/reference/agent-handoff.md .claude/reference/
+cp /tmp/template/.claude/reference/workflow-guide.md .claude/reference/
 # Update version
-cp /tmp/template/standard/.claude/version.json .claude/version.json
+cp /tmp/template/.claude/version.json .claude/version.json
 # Cleanup
 rm -rf /tmp/template
 ```

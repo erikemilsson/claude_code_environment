@@ -11,7 +11,7 @@ cd my-project
 rm -rf .git && git init
 
 # Customize for your project
-# 1. Edit CLAUDE.md - Add project description, tech stack, conventions
+# 1. Edit CLAUDE.md - Delete the meta section (everything above the ---), then customize
 # 2. Edit .claude/context/overview.md - Add specification and context
 # 3. Edit this README.md - Replace with your project documentation
 ```
@@ -32,6 +32,7 @@ rm -rf .git && git init
     │   ├── complete-task.md  # Task completion
     │   ├── breakdown.md      # Task decomposition
     │   ├── sync-tasks.md     # Update task overview
+    │   ├── health-check.md   # System health validation
     │   ├── archive-tasks.md  # Archive old tasks
     │   └── restore-task.md   # Restore archived tasks
     ├── context/
