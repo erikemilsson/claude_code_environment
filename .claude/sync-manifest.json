@@ -7,21 +7,25 @@
       ".claude/reference/shared-definitions.md",
       ".claude/reference/task-schema.md",
       ".claude/reference/agent-handoff.md",
-      ".claude/reference/workflow-guide.md"
+      ".claude/reference/workflow-guide.md",
+      ".claude/reference/decision-template.md",
+      ".claude/reference/decision-guide.md"
     ],
     "customize": [
       "CLAUDE.md",
       "README.md",
       ".claude/context/overview.md",
       ".claude/context/phases.md",
-      ".claude/context/decisions.md",
-      ".claude/context/questions.md"
+      ".claude/context/questions.md",
+      ".claude/context/decisions/index.md"
     ],
     "ignore": [
       ".claude/tasks/*.json",
       ".claude/tasks/task-overview.md",
       ".claude/version.json",
-      ".claude/sync-manifest.json"
+      ".claude/sync-manifest.json",
+      ".claude/context/decisions/decision-*.md",
+      ".claude/context/decisions/.archive/*"
     ]
   },
   "notes": "Paths relative to template root. Use glob patterns."

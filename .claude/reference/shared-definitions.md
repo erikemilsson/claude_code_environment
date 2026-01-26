@@ -29,15 +29,6 @@ Ask: "Can this be completed in one focused session?"
 | Broken Down | Split into subtasks | Work on subtasks, not this |
 | Finished | Complete | Auto-set when subtasks done |
 
-## Phase Values (Standard Environment)
-
-| Phase | Purpose | Typical Tasks |
-|-------|---------|---------------|
-| spec | Define what to build | Requirements, acceptance criteria |
-| plan | Design how to build | Architecture, task breakdown |
-| execute | Build the implementation | Coding, file creation |
-| verify | Confirm it works | Testing, validation |
-
 ## Task JSON Structure
 
 ### Minimal Task
@@ -58,7 +49,6 @@ Ask: "Can this be completed in one focused session?"
   "description": "Detailed explanation",
   "status": "Pending",
   "difficulty": 3,
-  "phase": "execute",
   "owner": "claude",
   "dependencies": [],
   "subtasks": [],

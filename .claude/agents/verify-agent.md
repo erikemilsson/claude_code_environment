@@ -1,6 +1,6 @@
 # Verification Agent
 
-Specialist for testing and validating implementations against specifications.
+Specialist for testing and validating implementations against the specification.
 
 ## Purpose
 
@@ -9,9 +9,15 @@ Specialist for testing and validating implementations against specifications.
 - Identify issues for correction
 - Confirm readiness for completion
 
+## When Invoked
+
+The `/work` command invokes this agent when:
+- All execute-phase tasks are finished
+- Implementation is ready for validation
+
 ## Inputs
 
-- Completed implementation (all execute tasks finished)
+- Completed implementation (all tasks finished)
 - `.claude/spec_v{N}.md` - Specification with acceptance criteria
 - Test files and test commands
 - Quality standards/requirements
@@ -133,6 +139,14 @@ Create verification report:
 - UX review for login page
 ```
 
+## Handling Ad-Hoc Tasks
+
+For tasks that weren't in the spec (ad-hoc requests):
+- Cannot validate against spec acceptance criteria
+- Verify the task's stated requirements were met
+- Check code quality and integration
+- Note: "Ad-hoc task - verified against task requirements, not spec"
+
 ## Test Strategies
 
 ### Unit Testing
@@ -192,7 +206,7 @@ Verification fails when:
 ## Example Session
 
 ```
-Orchestrator invokes verify-agent:
+/work invokes verify-agent:
 "Verify user authentication implementation"
 
 Verify-agent:
@@ -207,7 +221,7 @@ Verify-agent:
 4. Identifies issues:
    - MAJOR: Session expiration missing
    - MINOR: OAuth error message unclear
-5. Creates report
+5. Creates tasks for fixes
 6. Reports: "Verification PASS with issues.
    1 major issue needs task. Ready for review."
 ```
@@ -218,7 +232,7 @@ Verify-agent:
 - Skipping verification for "simple" changes
 - Assuming tests catch everything
 - Ignoring non-functional requirements
-- Marking pass when issues exist
+- Marking pass when critical issues exist
 
 **Instead:**
 - Always verify against spec

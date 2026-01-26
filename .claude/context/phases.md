@@ -1,6 +1,6 @@
 # Project Phases
 
-**Current Phase:** [Spec / Plan / Execute / Verify]
+**Current Phase:** [Spec / Execute / Verify]
 
 **Last Updated:** [Date]
 
@@ -9,7 +9,6 @@
 | Phase | Status | Progress | Notes |
 |-------|--------|----------|-------|
 | Spec | [Pending/Active/Complete] | [%] | |
-| Plan | [Pending/Active/Complete] | [%] | |
 | Execute | [Pending/Active/Complete] | [%] | |
 | Verify | [Pending/Active/Complete] | [%] | |
 
@@ -18,7 +17,7 @@
 ## Spec Phase
 
 **Status:** [Pending / Active / Complete]
-**Goal:** Define what needs to be built
+**Goal:** Define what needs to be built and key decisions
 
 **Checklist:**
 - [ ] Problem statement documented
@@ -26,28 +25,11 @@
 - [ ] Functional requirements listed
 - [ ] Non-functional requirements addressed
 - [ ] Acceptance criteria are testable
+- [ ] Key architecture decisions made
 - [ ] No blocking questions remain
 
 **Notes:**
 [Any relevant notes about the specification]
-
----
-
-## Plan Phase
-
-**Status:** [Pending / Active / Complete]
-**Goal:** Design how to build it
-
-**Checklist:**
-- [ ] Architecture approach decided
-- [ ] Implementation phases defined
-- [ ] Tasks created (difficulty <= 6)
-- [ ] Dependencies mapped
-- [ ] Risks identified
-- [ ] Human approved approach
-
-**Notes:**
-[Any relevant notes about the plan]
 
 ---
 
@@ -59,6 +41,7 @@
 **Progress:** [X/Y] tasks complete
 
 **Checklist:**
+- [ ] Tasks decomposed from spec
 - [ ] All tasks completed
 - [ ] No blocked tasks remain
 - [ ] Code follows project conventions

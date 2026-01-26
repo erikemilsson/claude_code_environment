@@ -1,29 +1,30 @@
 # Agent Handoff Guide
 
-How agents coordinate in the Spec → Plan → Execute → Verify workflow.
+How agents coordinate in the Spec → Execute → Verify workflow.
 
 ## Agent Responsibilities
 
 | Agent | Phase | Primary Responsibility |
 |-------|-------|------------------------|
-| Orchestrator | All | Route work, manage transitions |
 | (manual) | Spec | Human creates spec via specification_creator |
-| Plan Agent | Plan | Create implementation plans |
 | Implement Agent | Execute | Write code, complete tasks |
 | Verify Agent | Verify | Test and validate |
 
-## Orchestrator Role
+## The `/work` Command as Coordinator
 
-The orchestrator is the coordinator:
+The `/work` command handles coordination (no separate orchestrator agent):
 
 ```
-User → Orchestrator → Specialist Agent → Orchestrator → User
-         ↓                    ↓                ↓
-    Analyze state       Do focused work    Report results
+User → /work → Specialist Agent → /work → User
+         ↓            ↓              ↓
+    Analyze state  Do focused    Report results
+    Check spec     work
 ```
 
-**Responsibilities:**
-- Determine current phase
+**What `/work` handles:**
+- Analyze current state
+- Check requests against spec
+- Decompose spec into tasks (when needed)
 - Select appropriate agent
 - Pass context to agent
 - Collect questions
@@ -32,14 +33,14 @@ User → Orchestrator → Specialist Agent → Orchestrator → User
 
 ## Handoff Protocol
 
-### Orchestrator → Specialist
+### /work → Specialist
 
-When invoking a specialist, provide:
+When invoking a specialist, /work provides:
 
 ```markdown
 ## Context
 - Current phase: [phase]
-- Project overview: [summary]
+- Spec summary: [key requirements]
 - Recent activity: [what happened]
 
 ## Task
@@ -47,12 +48,12 @@ When invoking a specialist, provide:
 
 ## Constraints
 - Questions to avoid: [already asked]
-- Time/scope limits: [if any]
+- Scope limits: [if any]
 ```
 
-### Specialist → Orchestrator
+### Specialist → /work
 
-When completing work, return:
+When completing work, agents return:
 
 ```markdown
 ## Completed
@@ -74,33 +75,19 @@ When completing work, return:
 
 ## Phase Transitions
 
-### Spec → Plan
+### Spec → Execute
 
-**Trigger:** Human indicates spec is complete (spec exists at `.claude/spec_v{N}.md`)
+**Trigger:** Spec exists at `.claude/spec_v{N}.md` and is complete
 
 **Handoff includes:**
-- Completed specification document
+- Specification document
 - Acceptance criteria
 - Constraints and requirements
 
-**Orchestrator action:**
-- Verify spec_v{N}.md exists and has content
-- Update phases.md (Spec: Complete, Plan: Active)
-- Present checkpoint to human
-- Invoke plan-agent with spec context
-
-### Plan → Execute
-
-**Trigger:** Plan agent reports plan complete
-
-**Handoff includes:**
-- Architecture decisions
-- Task list with dependencies
-- Risk assessment
-- Decisions log updates
-
-**Orchestrator action:**
-- Update phases.md (Plan: Complete, Execute: Active)
+**What /work does:**
+- Verify spec exists and has content
+- Decompose spec into tasks (if no tasks exist)
+- Update phases.md (Spec: Complete, Execute: Active)
 - Present checkpoint to human
 - Invoke implement-agent with first available task
 
@@ -114,7 +101,7 @@ When completing work, return:
 - Any discovered issues
 - Self-review notes
 
-**Orchestrator action:**
+**What /work does:**
 - Update phases.md (Execute: Complete, Verify: Active)
 - Present checkpoint to human
 - Invoke verify-agent with implementation summary
@@ -129,10 +116,28 @@ When completing work, return:
 - Issues found (if any)
 - Recommendations
 
-**Orchestrator action:**
+**What /work does:**
 - Update phases.md (Verify: Complete)
 - Present final checkpoint to human
 - Project complete (or loop back if issues)
+
+## Spec Alignment Checks
+
+When a user request doesn't align with spec, /work handles the conversation:
+
+```
+User: /work "Add feature X"
+        ↓
+/work checks against spec
+        ↓
+Not in spec → Surface it:
+  "This isn't covered in the spec. Options:
+   1. Add to spec: [suggestion]
+   2. Proceed anyway
+   3. Skip"
+```
+
+This keeps the spec as the living source of truth.
 
 ## Question Handling
 
@@ -148,7 +153,7 @@ Agents add questions to questions.md:
 
 ### At Checkpoints
 
-Orchestrator presents accumulated questions:
+/work presents accumulated questions:
 
 1. Group by category
 2. Prioritize blocking questions
@@ -172,7 +177,7 @@ Orchestrator presents accumulated questions:
 ### Agent Failure
 
 If an agent fails:
-1. Orchestrator logs error
+1. /work logs error
 2. Preserves partial progress
 3. Presents error to human
 4. Awaits human direction
@@ -199,17 +204,11 @@ If work isn't progressing:
 - Don't do work outside your responsibility
 - Document everything for handoff
 - Flag issues early
-
-### For Orchestrator
-
-- Always verify state before routing
-- Don't skip checkpoints
-- Present clear summaries
-- Keep context flowing between agents
+- Report spec misalignments back to /work
 
 ### For Transitions
 
 - Verify exit criteria before transitioning
 - Don't rush past checkpoints
-- Preserve all context for next agent
+- Preserve all context for next phase
 - Update all status documents

@@ -4,30 +4,37 @@ Specialist for executing tasks and writing code.
 
 ## Purpose
 
-- Execute tasks following the plan
+- Execute tasks following the spec
 - Write code, create files, make changes
 - Document what was done
-- Identify issues for verification
+- Flag issues discovered during implementation
+
+## When Invoked
+
+The `/work` command invokes this agent when:
+- Tasks exist with status "Pending"
+- Dependencies are satisfied
+- Spec check has passed (handled by /work)
 
 ## Inputs
 
-- Task to execute (from task-overview or orchestrator)
-- Implementation plan and phase context
+- Task to execute (from /work or task-overview)
 - `.claude/spec_v{N}.md` - Specification for acceptance criteria
 - Codebase context
+- Any constraints from /work
 
 ## Outputs
 
 - Code changes and new files
 - Updated task status (Finished)
 - Completion notes on task
-- Issues discovered (added to questions.md)
+- Issues discovered (added to questions.md or new tasks)
 
 ## Workflow
 
 ### Step 1: Select Task
 
-Choose next task to work on:
+If no specific task provided:
 1. Read task-overview.md
 2. Find tasks with status "Pending"
 3. Check dependencies (all must be "Finished")
@@ -37,7 +44,7 @@ Choose next task to work on:
 
 Before coding:
 - Read task description fully
-- Review related spec requirements
+- Review related spec sections
 - Check what files will be affected
 - Understand the "done" criteria
 
@@ -122,7 +129,7 @@ If you cannot proceed:
 1. Set status to "Blocked"
 2. Document blocker in notes
 3. Add question to questions.md
-4. Continue with other unblocked tasks
+4. Report back to /work
 
 ### Non-Blocking Issues
 
@@ -138,6 +145,13 @@ If task grows larger than expected:
 2. Create follow-up tasks for extras
 3. Note: "MVP complete. Additional work in tasks X, Y"
 
+### Spec Misalignment Discovered
+
+If during implementation you realize something doesn't align with spec:
+1. Stop and note the misalignment
+2. Report back - /work will handle the spec check conversation
+3. Don't proceed with misaligned work
+
 ## Handoff Criteria
 
 Task is complete when:
@@ -147,15 +161,10 @@ Task is complete when:
 - Notes document what was done
 - Status set to "Finished"
 
-Phase is complete when:
-- All phase tasks "Finished"
-- No blocked tasks remain
-- Ready for verification
-
 ## Example Session
 
 ```
-Orchestrator invokes implement-agent:
+/work invokes implement-agent:
 "Execute task 4: Add user validation"
 
 Implement-agent:
@@ -183,6 +192,7 @@ Implement-agent:
 - Making changes outside task scope
 - Leaving tasks "In Progress" for long periods
 - Forgetting to update notes
+- Proceeding when you notice spec misalignment
 
 **Instead:**
 - One task at a time
@@ -190,3 +200,4 @@ Implement-agent:
 - Create new tasks for discovered work
 - Complete or block tasks promptly
 - Document what was actually done
+- Flag misalignments back to /work

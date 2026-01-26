@@ -1,0 +1,9 @@
+# Research Archive
+
+This directory contains background research documents for decisions.
+
+Naming convention: `YYYY-MM-DD_topic.md`
+
+Examples:
+- `2026-01-15_oauth-library-comparison.md`
+- `2026-01-20_database-benchmarks.md`

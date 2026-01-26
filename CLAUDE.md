@@ -41,35 +41,36 @@ The project specification lives at `.claude/spec_v{N}.md`.
 
 To create or revise specifications, start a Claude Code instance from `.claude/specification_creator/`.
 
-## Workflow: Spec → Plan → Execute → Verify
+## Workflow: Spec → Execute → Verify
 
 This project uses a phased workflow for autonomous work:
 
-1. **Spec** - Define what needs to be built (requirements, constraints, acceptance criteria)
-2. **Plan** - Design how to build it (architecture, tasks, dependencies)
-3. **Execute** - Build it (implementation, following the plan)
-4. **Verify** - Confirm it works (testing, validation against spec)
+1. **Spec** - Define what needs to be built (requirements, constraints, acceptance criteria, key decisions)
+2. **Execute** - Build it (tasks decomposed from spec, implementation)
+3. **Verify** - Confirm it works (testing, validation against spec)
 
-**Primary command:** `/work` - Context-aware entry point that determines the current phase and routes to the appropriate agent.
+**Primary command:** `/work` - Intelligent entry point that checks requests against spec, decomposes spec into tasks, and routes to specialist agents.
 
-**Human checkpoints:** At phase boundaries and quality gate failures.
+**Core principle:** The spec is the living source of truth. All work should align with it, or the spec should be updated intentionally.
+
+**Human checkpoints:** At phase boundaries, quality gate failures, and when requests don't align with spec.
 
 ## Commands
 
 ### Primary
-- `/work` - Start or continue work (analyzes state, routes to appropriate agent)
+- `/work` - Start or continue work (checks spec alignment, decomposes tasks, routes to agents)
 
 ### Task Management
 - `/complete-task {id}` - Start and finish tasks
 - `/breakdown {id}` - Split complex tasks into subtasks
 - `/sync-tasks` - Update task-overview.md from JSON files
-- `/health-check` - Validate task system, semantic drift, and CLAUDE.md health
+- `/health-check` - Validate tasks, decisions, and CLAUDE.md health
 - `/archive-tasks` - Archive old finished tasks
 - `/restore-task {id}` - Restore a task from archive
 
 ## Task Rules
 
-Tasks are tracked in `.claude/tasks/` as JSON files with phase tracking.
+Tasks are tracked in `.claude/tasks/` as JSON files.
 
 **Key rules:**
 - Break down tasks with difficulty >= 7 before starting
@@ -77,6 +78,17 @@ Tasks are tracked in `.claude/tasks/` as JSON files with phase tracking.
 - Run `/sync-tasks` after completing any task
 
 See `.claude/reference/shared-definitions.md` for difficulty scale and status values.
+
+## Decisions
+
+Major decisions are documented in `.claude/context/decisions/`.
+
+- **Index:** `index.md` - all decisions with status
+- **Records:** `decision-*.md` - full analysis with comparison tables
+- **Research:** `.archive/` - background research documents
+- **Template:** `.claude/reference/decision-template.md`
+
+When facing significant choices, create a decision record rather than deciding inline.
 
 ## Project Structure
 
@@ -89,20 +101,23 @@ See `.claude/reference/shared-definitions.md` for difficulty scale and status va
 │   └── README.md
 ├── commands/                  # /work and task commands
 ├── agents/                    # Specialist agents
-│   ├── orchestrator.md
-│   ├── plan-agent.md
-│   ├── implement-agent.md
-│   └── verify-agent.md
+│   ├── implement-agent.md    # Task execution
+│   └── verify-agent.md       # Validation against spec
 ├── context/
 │   ├── overview.md           # Project context
 │   ├── phases.md             # Phase definitions and status
-│   ├── decisions.md          # Decision log
+│   ├── decisions/            # Decision documentation
+│   │   ├── index.md          # Decision summary and pending
+│   │   ├── decision-*.md     # Individual decision records
+│   │   └── .archive/         # Research documents
 │   └── questions.md          # Accumulated questions for human
 ├── reference/
-│   ├── task-schema.md        # Task JSON format (with phases)
+│   ├── task-schema.md        # Task JSON format
 │   ├── shared-definitions.md
 │   ├── workflow-guide.md     # Workflow explained
-│   └── agent-handoff.md      # Agent coordination
+│   ├── agent-handoff.md      # Agent coordination
+│   ├── decision-template.md  # Decision record format
+│   └── decision-guide.md     # Decision documentation guide
 └── tasks/
     ├── task-*.json           # Individual task files
     └── task-overview.md      # Auto-generated summary

@@ -1,12 +1,13 @@
 # Health Check
 
-Combined system health check for task management and CLAUDE.md.
+Combined system health check for tasks, decisions, and CLAUDE.md.
 
 ## Usage
 ```
-/health-check                    # Run all checks (schema, semantic, CLAUDE.md)
+/health-check                    # Run all checks (tasks, CLAUDE.md, decisions)
 /health-check --tasks            # Only task system validation (schema + semantic)
 /health-check --claude-md        # Only CLAUDE.md audit
+/health-check --decisions        # Only decision system validation
 /health-check --semantic         # Only semantic validation (staleness, ownership, orphans)
 /health-check --sync-check       # Compare local files against template repo
 /health-check --report-only      # Show report without fix prompts
@@ -14,7 +15,7 @@ Combined system health check for task management and CLAUDE.md.
 
 ## Purpose
 
-Over time, task systems drift from standards and CLAUDE.md files accumulate bloat. This command catches both issues in one pass.
+Over time, task systems drift from standards, decision records become stale, and CLAUDE.md files accumulate bloat. This command catches all these issues in one pass.
 
 ---
 
@@ -180,6 +181,8 @@ Move to reference/:
 READ all .claude/tasks/task-*.json files
 READ .claude/tasks/task-overview.md
 READ CLAUDE.md
+READ all .claude/context/decisions/decision-*.md files
+READ .claude/context/decisions/index.md
 ```
 
 ### Step 2: Run Checks
@@ -198,10 +201,16 @@ Run semantic validation (if not `--claude-md` and task count >= 20):
 - Orphan dependency detection
 - Workflow diagram staleness check
 
-Run CLAUDE.md audit (if not `--tasks`):
+Run CLAUDE.md audit (if not `--tasks` and not `--decisions`):
 - Line counts
 - Section sizes
 - Code block lengths
+
+Run decision validation (if not `--tasks` and not `--claude-md`):
+- Schema validation for each decision file
+- Index consistency checks
+- Staleness detection
+- Completeness verification
 
 ### Step 3: Report
 
@@ -229,6 +238,15 @@ Run CLAUDE.md audit (if not `--tasks`):
 - Total lines: N [status]
 - Sections: N flagged
 - Code blocks: N flagged
+
+[List specific issues]
+
+### Decision System
+[Checkmark] N decision records found
+[Checkmark] Schema validation passed
+[Warning] N index inconsistencies
+[Warning] N stale decisions
+[Warning] N incomplete decisions
 
 [List specific issues]
 
@@ -306,7 +324,7 @@ Version Status:
 File Comparison (sync category):
   [Checkmark] .claude/commands/complete-task.md - matches
   [Warning] .claude/commands/breakdown.md - differs (12 lines changed)
-  [Checkmark] .claude/agents/orchestrator.md - matches
+  [Checkmark] .claude/agents/implement-agent.md - matches
   [Warning] .claude/agents/verify-agent.md - differs (new file in template)
   [Checkmark] .claude/reference/shared-definitions.md - matches
 
@@ -335,6 +353,8 @@ cp /tmp/template/.claude/reference/shared-definitions.md .claude/reference/
 cp /tmp/template/.claude/reference/task-schema.md .claude/reference/
 cp /tmp/template/.claude/reference/agent-handoff.md .claude/reference/
 cp /tmp/template/.claude/reference/workflow-guide.md .claude/reference/
+cp /tmp/template/.claude/reference/decision-template.md .claude/reference/
+cp /tmp/template/.claude/reference/decision-guide.md .claude/reference/
 # Update version
 cp /tmp/template/.claude/version.json .claude/version.json
 # Cleanup
@@ -350,6 +370,98 @@ If GitHub is unavailable, `--sync-check` will report:
   - Verify gh CLI is authenticated: gh auth status
   - Skip sync check with: /health-check --tasks --claude-md
 ```
+
+---
+
+## Part 4: Decision System Validation
+
+Validates the decision documentation system for schema compliance and consistency.
+
+### Validation Checks
+
+#### 1. Decision Record Schema
+
+Each `decision-*.md` file must have valid frontmatter:
+
+**Required fields:**
+- `id` - Format: `DEC-NNN` (e.g., DEC-001, DEC-042)
+- `title` - Non-empty string
+- `status` - One of: `draft`, `proposed`, `approved`, `implemented`, `superseded`
+- `category` - One of: `architecture`, `technology`, `process`, `scope`, `methodology`, `vendor`
+- `created` - Valid date in YYYY-MM-DD format
+
+**Optional fields:**
+- `decided` - Date when decision was finalized
+- `related.tasks` - Array of task IDs
+- `related.decisions` - Array of decision IDs
+
+#### 2. Index Consistency
+
+**Every decision file must have index entry:**
+- Scan `.claude/context/decisions/decision-*.md` files
+- Compare against entries in `index.md`
+- Flag files missing from index
+
+**Every index entry must have file:**
+- Parse decision log table in `index.md`
+- Verify each entry has corresponding `decision-{NNN}-*.md` file
+- Flag orphan index entries
+
+**Status match:**
+- Status in file frontmatter must match status in index table
+- Flag mismatches
+
+#### 3. Staleness Detection
+
+**Draft staleness:**
+- Decisions with status `draft` created > 30 days ago
+- Warning: "DEC-001 has been in draft for 45 days"
+
+**Proposed staleness:**
+- Decisions with status `proposed` created > 14 days ago without resolution
+- Warning: "DEC-002 awaiting approval for 21 days"
+
+#### 4. Completeness (for approved/implemented)
+
+Decisions with status `approved` or `implemented` must have:
+- Non-empty Decision section (selected option and rationale)
+- At least one option in the comparison table (Options Comparison section)
+
+### Decision Report Format
+
+```
+### Decision System
+[Checkmark] N decision records found
+[Checkmark] Schema validation passed
+[Warning] 1 index inconsistency
+  - DEC-003: missing from index.md
+[Warning] 2 stale decisions
+  - DEC-001: draft for 45 days
+  - DEC-002: proposed for 21 days
+[Warning] 1 incomplete decision
+  - DEC-004: approved but missing Decision section
+```
+
+### Decision Auto-Fixes
+
+| Issue | Auto-Fix |
+|-------|----------|
+| File missing from index | Add entry to index.md with data from frontmatter |
+| Index entry missing file | Remove orphan entry from index.md |
+| Status mismatch | Ask user which is correct, update the other |
+| Stale draft (> 30 days) | Ask user: delete, or set reminder |
+| Stale proposed (> 14 days) | Ask user: approve, reject, or extend |
+
+### Non-Fixable Issues (Manual Required)
+
+| Issue | Why Manual |
+|-------|------------|
+| Invalid frontmatter syntax | Need to examine YAML |
+| Invalid status value | Need to determine correct status |
+| Invalid category value | Need to determine correct category |
+| Invalid ID format | Need to determine correct ID |
+| Missing required field | Need human input for value |
+| Incomplete approved decision | Need to add Decision section content |
 
 ---
 
@@ -369,6 +481,12 @@ If GitHub is unavailable, `--sync-check` will report:
 
 **Workflow diagram missing:** If `.claude/context/workflow-diagram.md` doesn't exist, staleness check skipped
 
+**No decision records:** Reports "0 decisions - all checks pass" (healthy state for new projects)
+
+**Missing decisions/index.md:** Decision check skipped with note: "Create .claude/context/decisions/index.md to enable decision tracking"
+
+**Malformed frontmatter:** Flags as error, requires manual YAML fix
+
 ---
 
 ## When to Run
@@ -385,5 +503,7 @@ If GitHub is unavailable, `--sync-check` will report:
 Task schema: `.claude/reference/task-schema.md`
 Difficulty guide: `.claude/reference/shared-definitions.md`
 Workflow guide: `.claude/reference/workflow-guide.md`
+Decision template: `.claude/reference/decision-template.md`
+Decision guide: `.claude/reference/decision-guide.md`
 Version info: `.claude/version.json`
 Sync manifest: `.claude/sync-manifest.json`

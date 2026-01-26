@@ -49,10 +49,10 @@ Generated: {date}
 
 ## Full Task List
 
-| ID | Title | Status | Difficulty | Phase | Owner |
-|----|-------|--------|------------|-------|-------|
-| 1 | Setup project | Finished | 3 | plan | claude |
-| 2 | Build API | In Progress | 5 | execute | claude |
+| ID | Title | Status | Difficulty | Owner |
+|----|-------|--------|------------|-------|
+| 1 | Setup project | Finished | 3 | claude |
+| 2 | Build API | In Progress | 5 | claude |
 
 Summary: 3/7 complete
 ```

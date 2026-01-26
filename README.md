@@ -1,6 +1,6 @@
 # Claude Code Environment Template
 
-A ready-to-use project template for Claude Code with Spec→Plan→Execute→Verify workflow.
+A ready-to-use project template for Claude Code with Spec→Execute→Verify workflow.
 
 ## Setup
 
@@ -26,9 +26,7 @@ rm -rf .git && git init
     ├── specification_creator/     # Separate environment for spec building
     │   ├── CLAUDE.md              # Rules for spec-building mode
     │   └── README.md              # How to use
-    ├── agents/                    # Specialist agents for each phase
-    │   ├── orchestrator.md        # Routes to appropriate agent
-    │   ├── plan-agent.md          # Designs implementation
+    ├── agents/                    # Specialist agents
     │   ├── implement-agent.md     # Builds the solution
     │   └── verify-agent.md        # Validates against spec
     ├── commands/                  # Slash commands
@@ -42,13 +40,17 @@ rm -rf .git && git init
     ├── context/
     │   ├── overview.md            # Project context
     │   ├── phases.md              # Phase status tracking
-    │   ├── decisions.md           # Decision log
+    │   ├── decisions/             # Decision documentation
+    │   │   ├── index.md           # Decision summary
+    │   │   └── decision-*.md      # Individual records
     │   └── questions.md           # Questions for human
     ├── reference/
     │   ├── shared-definitions.md  # Difficulty scale, status values
     │   ├── task-schema.md         # Task JSON format
     │   ├── workflow-guide.md      # Workflow documentation
-    │   └── agent-handoff.md       # Agent coordination
+    │   ├── agent-handoff.md       # Agent coordination
+    │   ├── decision-template.md   # Decision record format
+    │   └── decision-guide.md      # Decision documentation guide
     └── tasks/
         └── task-overview.md       # Task summary (auto-generated)
 ```
@@ -56,11 +58,12 @@ rm -rf .git && git init
 ## Workflow
 
 1. **Spec** - Create specification using the specification_creator (see below)
-2. **Plan** - Design architecture and create tasks
-3. **Execute** - Implement following the plan
-4. **Verify** - Validate against acceptance criteria
+2. **Execute** - Implement (tasks decomposed from spec by /work)
+3. **Verify** - Validate against acceptance criteria
 
-Use `/work` to start or continue work. Claude analyzes the current state and routes to the appropriate phase.
+Use `/work` to start or continue work. Claude checks requests against the spec, decomposes tasks, and routes to the appropriate agent.
+
+**Core principle:** The spec is the living source of truth. All work aligns with it, or the spec is updated intentionally.
 
 ## Creating Specifications
 
@@ -76,7 +79,7 @@ This gives you a dedicated session for defining requirements without implementat
 - Create versioned specs at `.claude/spec_v{N}.md`
 - Archive old versions to `.claude/previous_specifications/`
 
-Once your spec is ready, return to the main project directory and run `/work` to begin planning.
+Once your spec is ready, return to the main project directory and run `/work` to begin execution.
 
 ## Commands
 

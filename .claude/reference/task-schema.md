@@ -11,7 +11,7 @@
 }
 ```
 
-## Full Task (with Phase Tracking)
+## Full Task
 
 ```json
 {
@@ -20,7 +20,6 @@
   "description": "Detailed explanation of what needs to be done",
   "status": "Pending",
   "difficulty": 3,
-  "phase": "execute",
   "owner": "claude",
   "created_date": "2026-01-15",
   "updated_date": "2026-01-15",
@@ -44,18 +43,6 @@
 | status | String | Pending, In Progress, Blocked, Broken Down, Finished |
 | difficulty | Number | 1-10 scale (see shared-definitions.md) |
 
-### Phase Tracking (Standard Environment)
-
-| Field | Type | Description |
-|-------|------|-------------|
-| phase | String | spec, plan, execute, verify |
-
-Phase values:
-- `spec` - Specification work (requirements, acceptance criteria)
-- `plan` - Planning work (architecture, task breakdown)
-- `execute` - Implementation work (coding, creating files)
-- `verify` - Verification work (testing, validation)
-
 ### Optional Fields
 
 | Field | Type | Description |
@@ -77,29 +64,6 @@ Phase values:
 2. Never work directly on "Broken Down" tasks - work on subtasks
 3. "Broken Down" tasks auto-complete when all subtasks are "Finished"
 4. Document blockers when setting status to "Blocked"
-
-## Phase Integration
-
-Tasks are grouped by phase:
-
-```
-Phase: Spec
-  - Task 1: Document requirements
-  - Task 2: Define acceptance criteria
-
-Phase: Plan
-  - Task 3: Design architecture
-  - Task 4: Create task breakdown
-
-Phase: Execute
-  - Task 5: Implement user model
-  - Task 6: Add authentication
-  - Task 7: Create API endpoints
-
-Phase: Verify
-  - Task 8: Run test suite
-  - Task 9: Validate acceptance criteria
-```
 
 ## Task Archiving
 
