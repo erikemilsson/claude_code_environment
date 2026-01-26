@@ -1,0 +1,47 @@
+{
+  "id": "1",
+  "title": "Restore and enhance health-check command with repo sync capability",
+  "description": "Restore the health-check command from .archive/examples/development-project/.claude/commands/health-check.md and enhance it with GitHub repository comparison functionality. The enhanced command should be able to compare a local project's .claude/ structure against this template repository to identify drift and missing updates. This requires the version tracking system (Task 2) and sync manifest (Task 3) to be in place first.",
+  "difficulty": 7,
+  "status": "Pending",
+  "created_date": "2026-01-26",
+  "updated_date": "2026-01-26",
+  "completion_date": null,
+  "completion_notes": null,
+  "dependencies": ["2", "3"],
+  "subtasks": [],
+  "parent_task": null,
+  "files_affected": [
+    "lite/.claude/commands/health-check.md",
+    "standard/.claude/commands/health-check.md"
+  ],
+  "notes": "Blocked until version tracking (Task 2) and sync manifest (Task 3) are complete. Will need breakdown once unblocked due to difficulty 7. Key enhancement: compare local .claude/ against erikemilsson/claude_code_environment repo via GitHub API or local clone.",
+  "confidence": 65,
+  "assumptions": [
+    {
+      "id": "a1",
+      "description": "Archived health-check.md provides a solid foundation to build upon",
+      "confidence": 90,
+      "status": "validated",
+      "impact": "medium",
+      "validation_method": "Review archived file content",
+      "validated_date": "2026-01-26"
+    },
+    {
+      "id": "a2",
+      "description": "GitHub API or gh CLI can be used for repo comparison without authentication issues",
+      "confidence": 75,
+      "status": "pending",
+      "impact": "high",
+      "validation_method": "Test gh CLI access to public repo",
+      "validated_date": null
+    }
+  ],
+  "validation_status": "partial",
+  "momentum": {
+    "phase": "pending",
+    "velocity": 0,
+    "last_activity": "2026-01-26"
+  },
+  "decision_rationale": ""
+}

@@ -1,0 +1,53 @@
+{
+  "id": "4",
+  "title": "Audit standard/ workflow agents for holistic coherence",
+  "description": "Review all agents in standard/.claude/agents/ (orchestrator.md, spec-agent.md, plan-agent.md, implement-agent.md, verify-agent.md) to ensure: (1) file path references are correct and consistent, (2) terminology aligns across all agents, (3) handoff protocols between agents are clear, (4) alignment with Spec->Plan->Execute->Verify workflow documented in CLAUDE.md.",
+  "difficulty": 6,
+  "status": "Pending",
+  "created_date": "2026-01-26",
+  "updated_date": "2026-01-26",
+  "completion_date": null,
+  "completion_notes": null,
+  "dependencies": [],
+  "subtasks": [],
+  "parent_task": null,
+  "files_affected": [
+    "standard/.claude/agents/orchestrator.md",
+    "standard/.claude/agents/spec-agent.md",
+    "standard/.claude/agents/plan-agent.md",
+    "standard/.claude/agents/implement-agent.md",
+    "standard/.claude/agents/verify-agent.md",
+    "standard/.claude/reference/agent-handoff.md",
+    "standard/.claude/reference/workflow-guide.md",
+    "standard/CLAUDE.md"
+  ],
+  "notes": "This audit may reveal additional tasks needed. Check for: dead links, outdated references, inconsistent phase names, unclear handoff triggers. Focus on coherence as a system, not just individual correctness.",
+  "confidence": 75,
+  "assumptions": [
+    {
+      "id": "a1",
+      "description": "Five agents cover the complete workflow",
+      "confidence": 85,
+      "status": "pending",
+      "impact": "high",
+      "validation_method": "Map workflow stages to agents",
+      "validated_date": null
+    },
+    {
+      "id": "a2",
+      "description": "Agents use consistent terminology for workflow phases",
+      "confidence": 60,
+      "status": "pending",
+      "impact": "medium",
+      "validation_method": "Extract and compare terminology across files",
+      "validated_date": null
+    }
+  ],
+  "validation_status": "pending",
+  "momentum": {
+    "phase": "pending",
+    "velocity": 0,
+    "last_activity": "2026-01-26"
+  },
+  "decision_rationale": ""
+}
