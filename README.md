@@ -42,8 +42,11 @@ rm -rf .git && git init
     │   ├── phases.md              # Phase status tracking
     │   ├── decisions/             # Decision documentation
     │   │   ├── index.md           # Decision summary
-    │   │   └── decision-*.md      # Individual records
+    │   │   ├── decision-*.md      # Individual records
+    │   │   └── .archive/          # Research documents
     │   └── questions.md           # Questions for human
+    ├── learnings/                 # Project-specific patterns
+    │   └── README.md              # Usage guide
     ├── reference/
     │   ├── shared-definitions.md  # Difficulty scale, status values
     │   ├── task-schema.md         # Task JSON format
