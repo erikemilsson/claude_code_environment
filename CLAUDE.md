@@ -1,118 +1,78 @@
 # CLAUDE.md
 
-Instructions for Claude Code when working in this repository.
+Instructions for Claude Code when working in this project.
 
-> **Optimized for Claude Opus 4.5** - This system is calibrated for Opus 4.5's capabilities.
+## Project Overview
 
-## Repository Purpose
+[Brief description of what this project does]
 
-This is a **template repository** for bootstrapping new Claude Code project environments. It contains two complete, copy-paste-ready environments:
+## Workflow: Spec → Plan → Execute → Verify
 
-1. **lite/** - Minimal task management (~11 files)
-2. **standard/** - Full-featured with Spec→Plan→Execute→Verify workflow (~22 files)
+This project uses a phased workflow for autonomous work:
 
-## Repository Structure
+1. **Spec** - Define what needs to be built (requirements, constraints, acceptance criteria)
+2. **Plan** - Design how to build it (architecture, tasks, dependencies)
+3. **Execute** - Build it (implementation, following the plan)
+4. **Verify** - Confirm it works (testing, validation against spec)
 
-```
-claude_code_environment/
-├── lite/                    # Quick start, task management only
-│   ├── CLAUDE.md           # Simple project instructions
-│   ├── README.md           # Project docs template
-│   └── .claude/            # Commands, context, reference, tasks
-│
-├── standard/               # Full-featured for complex projects
-│   ├── CLAUDE.md          # Full workflow instructions
-│   ├── README.md          # Project docs template
-│   └── .claude/           # Commands, agents, context, reference, tasks
-│
-├── .claude/                # THIS REPO's own environment
-└── .archive/               # Old templates, extras, examples
-```
+**Primary command:** `/work` - Context-aware entry point that determines the current phase and routes to the appropriate agent.
 
-## Core Workflow
+**Human checkpoints:** At phase boundaries and quality gate failures.
 
-**How users start a new project:**
+## Commands
 
-```bash
-# Simple project
-cp -r /path/to/claude_code_environment/lite/ /path/to/new-project/
+### Primary
+- `/work` - Start or continue work (analyzes state, routes to appropriate agent)
 
-# Complex project
-cp -r /path/to/claude_code_environment/standard/ /path/to/new-project/
+### Task Management
+- `/complete-task {id}` - Start and finish tasks
+- `/breakdown {id}` - Split complex tasks into subtasks
+- `/sync-tasks` - Update task-overview.md from JSON files
+- `/health-check` - Validate task system, semantic drift, and CLAUDE.md health
+- `/archive-tasks` - Archive old finished tasks
+- `/restore-task {id}` - Restore a task from archive
 
-# Edit CLAUDE.md and .claude/context/overview.md
-# Start working
-```
+## Task Rules
 
-## Task Management
+Tasks are tracked in `.claude/tasks/` as JSON files with phase tracking.
 
-See `.claude/reference/shared-definitions.md` for difficulty scale, status values, and mandatory rules.
-
-**Key rules**:
+**Key rules:**
 - Break down tasks with difficulty >= 7 before starting
 - Only one task "In Progress" at a time
 - Run `/sync-tasks` after completing any task
 
-## Working in This Repository
+See `.claude/reference/shared-definitions.md` for difficulty scale and status values.
 
-### Modifying lite/
+## Project Structure
 
-The lite/ folder should stay minimal. Only add files if they're essential for basic task management.
-
-### Modifying standard/
-
-The standard/ folder contains the full workflow. Changes should maintain the Spec→Plan→Execute→Verify flow.
-
-### Archiving
-
-Move deprecated content to `.archive/` with documentation in `.archive/README.md`.
-
-## Tool Usage
-
-**Prefer parallel execution** when operations are independent:
-- Multiple Read operations in single message
-- Independent Bash commands simultaneously
-- Multiple Grep/Glob searches concurrently
-
-**Use specialized tools** instead of Bash:
-- Read (not cat) for reading files
-- Write (not echo) for creating files
-- Edit (not sed) for modifying files
-- Glob (not find) for file patterns
-- Grep (not grep/rg) for content search
-
-## Reference Documentation
-
-Key files in `.claude/reference/`:
-- `shared-definitions.md` - Difficulty scale, status values, mandatory rules
-- `task-schema-consolidated.md` - Task JSON schema
-- `context-management.md` - /clear, /compact strategies
-- `extended-thinking-triggers.md` - Ultrathink usage
-
-## Navigation
-
-- **Understanding lite**: See `lite/CLAUDE.md`
-- **Understanding standard**: See `standard/CLAUDE.md`
-- **Repository tasks**: See `.claude/tasks/task-overview.md`
-- **Archived content**: See `.archive/README.md`
-
-## Quick Reference
-
-### Commands
 ```
-/sync-tasks              # Update task overview
-/complete-task {id}      # Start/finish tasks
-/breakdown {id}          # Split complex tasks
-/archive-tasks           # Archive completed tasks
-/restore-task {id}       # Restore from archive
+.claude/
+├── commands/          # /work and task commands
+├── agents/            # Specialist agents
+│   ├── orchestrator.md
+│   ├── spec-agent.md
+│   ├── plan-agent.md
+│   ├── implement-agent.md
+│   └── verify-agent.md
+├── context/
+│   ├── overview.md    # Project context
+│   ├── phases.md      # Phase definitions and status
+│   ├── decisions.md   # Decision log
+│   └── questions.md   # Accumulated questions for human
+├── reference/
+│   ├── task-schema.md       # Task JSON format (with phases)
+│   ├── shared-definitions.md
+│   ├── workflow-guide.md    # Workflow explained
+│   └── agent-handoff.md     # Agent coordination
+└── tasks/
+    ├── task-*.json        # Individual task files
+    └── task-overview.md   # Auto-generated summary
 ```
 
-### Extended Thinking
-- **"think"** - Basic reasoning
-- **"think hard"** - Thorough analysis
-- **"think harder"** - Deep analysis
-- **"ultrathink"** - Maximum depth (difficulty 9-10)
+## Technology Stack
 
-### Context Management
-- **`/clear`** - Reset context completely
-- **`/compact`** - Compress context while preserving key info
+[List key technologies, frameworks, languages]
+
+## Conventions
+
+[Project-specific coding conventions, naming patterns, etc.]

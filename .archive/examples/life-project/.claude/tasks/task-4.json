@@ -1,8 +1,0 @@
-{
-  "id": "4",
-  "title": "Apply for renovation permit",
-  "description": "Submit permit application with design plans",
-  "status": "Pending",
-  "difficulty": 3,
-  "dependencies": ["1", "2"]
-}

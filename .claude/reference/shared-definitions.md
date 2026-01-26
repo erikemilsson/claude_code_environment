@@ -1,17 +1,23 @@
 # Shared Definitions
 
-Single source of truth for task management definitions. Referenced by CLAUDE.md and commands.
+Single source of truth for task management definitions.
 
 ## Difficulty Scale (1-10)
 
-| Level | Category | Action |
-|-------|----------|--------|
-| 1-4 | Standard | Just do it |
-| 5-6 | Substantial | May take multiple steps |
-| 7-8 | Large scope | MUST break down first |
-| 9-10 | Multi-phase | MUST break down into phases |
+| Level | Category | Action | Examples |
+|-------|----------|--------|----------|
+| 1-2 | Routine | Just do it | Fix typo, add field, update config |
+| 3-4 | Standard | May take multiple steps | CRUD for entity, API endpoint, OAuth integration |
+| 5-6 | Substantial | Design decisions needed | New module, real-time features, RBAC |
+| 7-8 | Large scope | **MUST break down first** | Microservice migration, replace database |
+| 9-10 | Multi-phase | **MUST break down into phases** | Architecture redesign, security overhaul |
 
-> See `task-schema-consolidated.md` for detailed examples by level.
+### When to Break Down
+
+Ask: "Can this be completed in one focused session?"
+- **Yes** → Difficulty 1-6, just do it
+- **No, too much scope** → Difficulty 7-8, break into chunks
+- **No, need discovery** → Difficulty 9-10, break into phases
 
 ## Status Values
 
@@ -22,6 +28,46 @@ Single source of truth for task management definitions. Referenced by CLAUDE.md 
 | Blocked | Cannot proceed | Document blocker in notes |
 | Broken Down | Split into subtasks | Work on subtasks, not this |
 | Finished | Complete | Auto-set when subtasks done |
+
+## Phase Values (Standard Environment)
+
+| Phase | Purpose | Typical Tasks |
+|-------|---------|---------------|
+| spec | Define what to build | Requirements, acceptance criteria |
+| plan | Design how to build | Architecture, task breakdown |
+| execute | Build the implementation | Coding, file creation |
+| verify | Confirm it works | Testing, validation |
+
+## Task JSON Structure
+
+### Minimal Task
+```json
+{
+  "id": "1",
+  "title": "Brief description",
+  "status": "Pending",
+  "difficulty": 3
+}
+```
+
+### Full Task
+```json
+{
+  "id": "1",
+  "title": "Brief description",
+  "description": "Detailed explanation",
+  "status": "Pending",
+  "difficulty": 3,
+  "phase": "execute",
+  "owner": "claude",
+  "dependencies": [],
+  "subtasks": [],
+  "parent_task": null,
+  "notes": ""
+}
+```
+
+See `task-schema.md` for complete field definitions.
 
 ## Mandatory Rules
 
@@ -36,15 +82,9 @@ Single source of truth for task management definitions. Referenced by CLAUDE.md 
 - Skip status updates
 - Work on multiple tasks simultaneously
 
-## Task JSON Structure (Minimal)
+## Owner Field
 
-```json
-{
-  "id": "1",
-  "title": "Brief description",
-  "status": "Pending",
-  "difficulty": 3
-}
-```
-
-> See `task-schema-consolidated.md` for full field definitions.
+Tasks can have an `owner` field:
+- `claude` - Claude will do this task (default when not specified)
+- `human` - Requires human action
+- `both` - Collaborative task

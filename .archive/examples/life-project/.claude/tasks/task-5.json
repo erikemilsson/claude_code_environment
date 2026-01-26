@@ -1,9 +1,0 @@
-{
-  "id": "5",
-  "title": "Coordinate construction phase",
-  "description": "Manage demolition, rough-in, and installation",
-  "status": "Pending",
-  "difficulty": 8,
-  "dependencies": ["2", "3", "4"],
-  "notes": "Will need to break down once contractor is selected"
-}

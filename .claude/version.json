@@ -1,9 +1,9 @@
 {
   "template_version": "1.0.0",
   "template_release_date": "2026-01-26",
-  "template_name": "root",
+  "template_name": "standard",
   "source_repo": "https://github.com/user/claude_code_environment",
-  "project_version": "1.0.0",
+  "project_version": "0.1.0",
   "project_initialized": "2026-01-26",
-  "notes": "Root template repository version. This tracks the source template versions."
+  "notes": "Standard template - full Spec→Plan→Execute→Verify workflow. Update project_version and project_initialized for your project."
 }

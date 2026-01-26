@@ -1,247 +1,52 @@
-<!-- Type: Agent-Invoked | Task Orchestrator Agent -->
-<!-- Template Variables:
-{{PROJECT_NAME}} - Filled during bootstrap
-{{DOMAIN_CONTEXT}} - From specification
-{{DIFFICULTY_DIMENSIONS}} - Custom difficulty scoring if applicable
--->
+# Breakdown Task
 
-# Breakdown Task Command
+Split a complex task into smaller subtasks.
 
-## Purpose
-MUST split high-difficulty tasks (≥7) into manageable subtasks (≤6 difficulty each). This command now uses the **Task Orchestrator Agent** for intelligent task decomposition and hierarchy management.
-
-## Agent Integration
-
-**This command invokes the Task Orchestrator Agent**:
-```markdown
-AGENT: Task Orchestrator
-PHASE: Task Planning
-OWNERSHIP: Task breakdown, hierarchy management, dependency analysis
+## Usage
+```
+/breakdown {id}
 ```
 
-The Task Orchestrator will:
-1. Analyze task complexity across multiple dimensions
-2. Select optimal breakdown strategy
-3. Create subtasks with minimal dependencies
-4. Validate hierarchy and circular dependencies
-5. Hand off to Execution Guardian when ready
+## When to Use
+- Task difficulty >= 7
+- Task feels too big to complete in one session
+- Multiple distinct pieces of work
 
-## Context Required
-- Task ID to break down
-- Understanding of task scope and requirements
-- `.claude/agents/task-orchestrator.md` - Agent definition
-- `.claude/agent-config.json` - Agent ownership matrix
+## Process
 
-## Process (Agent-Driven)
-
-### 1. Invoke Task Orchestrator
-```markdown
-User: "Break down task 003"
-
-System: Task 003 has difficulty 8
-System: Activating Task Orchestrator Agent
-
-Task Orchestrator: "Analyzing task complexity..."
-Task Orchestrator: "Evaluating breakdown strategies..."
-```
-
-### 2. Agent Performs Complexity Analysis
-The Task Orchestrator will automatically:
-- Assess technical, cognitive, operational complexity
-- Identify integration points and uncertainties
-- Determine optimal number of subtasks
-- Select breakdown strategy (functional, architectural, temporal, etc.)
-
-### 3. Agent Creates Subtasks
-```markdown
-Task Orchestrator: "Breaking down into 4 subtasks..."
-Task Orchestrator: "Optimizing for parallel execution..."
-Task Orchestrator: "Setting dependencies..."
-
-Created subtasks:
-- 003_1: "Design schema" (difficulty: 4)
-- 003_2: "Create models" (difficulty: 3)
-- 003_3: "Implement endpoints" (difficulty: 5)
-- 003_4: "Add tests" (difficulty: 4)
-```
-
-### 4. Agent Validates Hierarchy
-```markdown
-Task Orchestrator: "Validating task hierarchy..."
-Task Orchestrator: "No circular dependencies detected"
-Task Orchestrator: "Critical path: 003_1 → 003_2 → 003_3"
-Task Orchestrator: "Parallel possible: [003_3, 003_4]"
-```
-
-### 5. Agent Handoff
-```markdown
-Task Orchestrator: "Breakdown complete. 4 subtasks ready."
-Task Orchestrator: "Updating parent status to 'Broken Down'"
-Task Orchestrator: "Handing off to Execution Guardian for task 003_1..."
-
-Execution Guardian: "Received handoff. Ready to execute subtasks..."
-```
-
-## Script Integration (If Available)
-
-**The Task Orchestrator uses Python scripts for analysis:**
-```bash
-# Analyze complexity
-python scripts/breakdown-suggester.py analyze --task-id {ID}
-
-# Validate dependencies
-python scripts/dependency-analyzer.py check --task-id {ID}
-
-# Update hierarchy
-python scripts/task-manager.py update-hierarchy --parent {ID}
-
-# Sync overview
-python scripts/task-manager.py sync-overview
-```
-
-## Monitoring Integration
-
-**The Task Orchestrator triggers monitoring during breakdown:**
-
-### Pre-Breakdown Monitoring
-```bash
-# Check system health before complex operation
-python .claude/monitor/scripts/health_checker.py --check-before-breakdown {ID}
-
-# Update dashboard with breakdown start
-python .claude/monitor/scripts/dashboard_updater.py --breakdown-start {ID}
-```
-
-### During Breakdown Monitoring
-```bash
-# Monitor subtask creation
-python .claude/monitor/scripts/dashboard_updater.py --subtask-created {SUBTASK_ID}
-
-# If complexity issues detected
-python .claude/monitor/scripts/diagnose.py --complexity-warning {ID}
-```
-
-### Post-Breakdown Monitoring
-```bash
-# Update monitoring after breakdown complete
-python .claude/monitor/scripts/health_checker.py --check-after-breakdown {ID}
-
-# Update dashboard with breakdown results
-python .claude/monitor/scripts/dashboard_updater.py --breakdown-complete {ID} --subtasks {COUNT}
-
-# Generate breakdown metrics
-python .claude/monitor/scripts/quick_status.py --breakdown-metrics {ID}
-```
-
-## Manual Process (Fallback if agent unavailable)
-
-### Pre-Breakdown Validation Gate [MANDATORY]
-
-**BEFORE any breakdown, execute this gate:**
-```
-VALIDATION_GATE: breakdown_decision
-├── CHECK: Task file exists and readable
-├── CHECK: Difficulty >= 7 OR user requested
-├── CHECK: Task can be decomposed logically
-├── CHECK: Each subtask achievable at difficulty <= 6
-├── CHECK: Clear dependency chain possible
-├── CHECK: Not already broken down
-└── RESULT:
-    ├── PASS → Proceed with breakdown
-    └── FAIL → Stop (explain why breakdown inappropriate)
-```
-
-1. **READ** task file `.claude/tasks/task-{id}.json`
-2. **TRIGGER** Pre-Breakdown Monitoring:
-   ```bash
-   python .claude/monitor/scripts/health_checker.py --check-before-breakdown {id}
-   python .claude/monitor/scripts/dashboard_updater.py --breakdown-start {id}
+1. Read the task and understand scope
+2. Identify logical components (aim for 3-6 subtasks)
+3. Create subtask files:
+   ```json
+   {
+     "id": "{parent_id}_{n}",
+     "title": "Specific subtask title",
+     "status": "Pending",
+     "difficulty": 4,
+     "parent_task": "{parent_id}"
+   }
    ```
-3. **EXECUTE** Pre-Breakdown Validation Gate
+4. Update parent task:
+   ```json
+   {
+     "status": "Broken Down",
+     "subtasks": ["1_1", "1_2", "1_3"],
+     "notes": "Broken down into 3 subtasks"
+   }
    ```
-   IF gate FAILS:
-     IF difficulty < 7 AND not user requested:
-       INFORM: "Task difficulty {X} doesn't require breakdown"
-       python .claude/monitor/scripts/dashboard_updater.py --breakdown-skipped {id}
-       STOP
-     ELSE:
-       python .claude/monitor/scripts/diagnose.py --breakdown-blocked {id}
-       EXPLAIN why breakdown cannot proceed
-       SUGGEST alternatives
-   ```
-4. **ANALYZE AND DECOMPOSE** task:
-   - IDENTIFY logical components
-   - ENSURE each subtask is independently completable
-   - ASSIGN difficulty ≤ 6 to each subtask
-   - MAP dependencies between subtasks
+5. Run `/sync-tasks`
 
-**SUBTASK VALIDATION GATE [For each subtask]:**
-```
-VALIDATION_GATE: subtask_creation
-├── CHECK: Difficulty <= 6
-├── CHECK: Has clear deliverable/outcome
-├── CHECK: Independently testable
-├── CHECK: No circular dependencies
-├── CHECK: Title is specific and actionable
-└── RESULT:
-    ├── PASS → Add to subtask list
-    └── FAIL → Refine subtask definition
-```
-5. **CREATE subtask files IN PARALLEL**:
-   - GENERATE unique IDs (parent_id_1, parent_id_2, etc.)
-   - WRITE clear, imperative descriptions
-   - SET `parent_task` field to original task ID
-   - POPULATE dependency arrays
-   - INITIALIZE progress tracking structure
-   ```bash
-   # Monitor each subtask creation
-   FOR each subtask:
-     python .claude/monitor/scripts/dashboard_updater.py --subtask-created {subtask_id}
-   ```
-6. **UPDATE parent task IMMEDIATELY**:
-   - SET status = "Broken Down"
-   - SET subtasks = [array of all subtask IDs]
-   - ADD note: "Broken Down (0/X done)"
-   - PRESERVE existing belief tracking data
-7. **EXECUTE sync-tasks** to regenerate overview
-8. **FINALIZE breakdown monitoring**:
-   ```bash
-   # Update monitoring with breakdown completion
-   python .claude/monitor/scripts/health_checker.py --check-after-breakdown {id}
-   python .claude/monitor/scripts/dashboard_updater.py --breakdown-complete {id} --subtasks {count}
-   python .claude/monitor/scripts/quick_status.py --breakdown-metrics {id}
-   ```
+## Example
 
-## Output Location
-- New task files: `.claude/tasks/task-{new-id}.json` for each subtask
-- Updated parent task file
-- Updated task-overview.md
+**Before:** Task 5 "Build auth system" (difficulty 8)
 
-## MANDATORY Rules
+**After:**
+- Task 5: status = "Broken Down", subtasks = ["5_1", "5_2", "5_3"]
+- Task 5_1: "Setup OAuth providers" (difficulty 5)
+- Task 5_2: "Create login/logout flows" (difficulty 4)
+- Task 5_3: "Add session management" (difficulty 5)
 
-**ALWAYS:**
-- CREATE all subtask files in a single parallel operation
-- VERIFY each subtask difficulty ≤ 6
-- ENSURE subtasks are independently testable
-- SET parent task status to "Broken Down"
-- PRESERVE all existing parent task data
-
-**NEVER:**
-- Work on parent task after breakdown
-- Create subtasks with difficulty > 6
-- Forget to set parent_task field in subtasks
-- Skip dependency mapping
-- Modify parent completion manually (auto-completes)
-
-## Parallel Execution Opportunities
-
-```markdown
-PARALLEL OPERATIONS:
-1. CREATE all subtask JSON files simultaneously
-2. READ related documentation while analyzing
-
-SEQUENTIAL REQUIREMENTS:
-1. MUST read parent before creating subtasks
-2. MUST update parent after creating subtasks
-3. MUST run sync-tasks after all updates
-```
+## Rules
+- Keep subtask difficulty <= 6
+- Subtasks should be independently completable
+- Parent auto-completes when all subtasks finish

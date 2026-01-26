@@ -1,9 +1,0 @@
-{
-  "template_version": "1.0.0",
-  "template_release_date": "2026-01-26",
-  "template_name": "lite",
-  "source_repo": "https://github.com/user/claude_code_environment",
-  "project_version": "0.1.0",
-  "project_initialized": "2026-01-26",
-  "notes": "Lite template - minimal task management. Update project_version and project_initialized for your project."
-}

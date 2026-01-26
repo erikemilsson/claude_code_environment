@@ -25,7 +25,7 @@ Move a task from archive back to active tasks.
 
 ## Example
 
-```bash
+```
 # Restore a single task
 /restore-task 42
 
@@ -38,9 +38,3 @@ Move a task from archive back to active tasks.
 - Parent tasks restore with all their subtasks
 - Restored tasks keep their original completion status
 - You may want to change status back to "In Progress" if reworking
-
-## Script Usage
-
-```bash
-python scripts/task-manager.py restore --task-id 42
-```

@@ -1,9 +1,0 @@
-{
-  "id": "2_3",
-  "title": "Add auth middleware",
-  "description": "Middleware to verify JWT and protect routes",
-  "status": "Pending",
-  "difficulty": 4,
-  "parent_task": "2",
-  "dependencies": ["2_2"]
-}
