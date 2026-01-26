@@ -95,6 +95,19 @@ Major decisions are documented in `.claude/context/decisions/`.
 
 When facing significant choices, create a decision record rather than deciding inline.
 
+## Workspace
+
+When you need to create temporary documents (research, analysis, drafts), use `.claude/workspace/`:
+
+- **scratch/** - Throwaway notes, quick analysis, temporary thinking
+- **research/** - Web search results, reference material, gathered context
+- **drafts/** - Work-in-progress documents before they move to their final location
+
+**Rules:**
+- Never create working documents in the project root or other locations
+- Use simple descriptive names (`api-comparison.md`, not `task-5-research.md`)
+- When a draft is ready to become permanent, discuss where it should go
+
 ## Project Structure
 
 ```
@@ -125,9 +138,13 @@ When facing significant choices, create a decision record rather than deciding i
 │   ├── agent-handoff.md      # Agent coordination
 │   ├── decision-template.md  # Decision record format
 │   └── decision-guide.md     # Decision documentation guide
-└── tasks/
-    ├── task-*.json           # Individual task files
-    └── task-overview.md      # Project Dashboard (auto-generated)
+├── tasks/
+│   ├── task-*.json           # Individual task files
+│   └── task-overview.md      # Project Dashboard (auto-generated)
+└── workspace/                 # Claude's working area (gitignored)
+    ├── scratch/              # Temporary notes, quick analysis
+    ├── research/             # Web search results, reference material
+    └── drafts/               # WIP docs before final location
 ```
 
 ## Technology Stack
