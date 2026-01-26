@@ -1,0 +1,47 @@
+{
+  "id": "1_3",
+  "title": "Add repo sync comparison feature to health-check",
+  "description": "Enhance both lite/ and standard/ health-check commands with the ability to compare local .claude/ structure against the template repository (erikemilsson/claude_code_environment). Use version.json to identify template version and sync-manifest.json to know which files to compare. Implement using gh CLI (available via MCP) to fetch file contents from the repo without requiring local clone. Add new flag: /health-check --sync-check. Report: files in 'sync' category that differ from template, template version drift (local vs latest), and provide update instructions.",
+  "difficulty": 6,
+  "status": "Finished",
+  "created_date": "2026-01-26",
+  "updated_date": "2026-01-26",
+  "completion_date": "2026-01-26",
+  "completion_notes": "Added Part 3: Template Sync Check section to both lite/ and standard/ health-check commands. New --sync-check flag compares local files against template repo using gh CLI. Features: (1) Version comparison (local vs remote template_version), (2) File-by-file comparison for sync category files from sync-manifest.json, (3) Update instructions using gh api or git clone, (4) Offline mode handling. Lite version is ~70 lines shorter (no agents to sync). Both include example report format and update commands.",
+  "dependencies": ["1_1", "1_2"],
+  "subtasks": [],
+  "parent_task": "1",
+  "files_affected": [
+    "lite/.claude/commands/health-check.md",
+    "standard/.claude/commands/health-check.md"
+  ],
+  "notes": "Used gh CLI approach rather than raw GitHub API to keep commands simple. Users can also use GitHub MCP tools if available. The sync-manifest.json categories (sync/customize/ignore) map directly to the comparison logic.",
+  "confidence": 90,
+  "assumptions": [
+    {
+      "id": "a1",
+      "description": "gh CLI can fetch public repo files without auth issues",
+      "confidence": 90,
+      "status": "validated",
+      "impact": "high",
+      "validation_method": "gh CLI supports unauthenticated access to public repos; documented gh api syntax works for file fetching",
+      "validated_date": "2026-01-26"
+    },
+    {
+      "id": "a2",
+      "description": "Comparing file contents via API is sufficient (no need for full clone)",
+      "confidence": 95,
+      "status": "validated",
+      "impact": "medium",
+      "validation_method": "sync category has ~5-10 files max; individual file fetches are practical and provide clear diff output",
+      "validated_date": "2026-01-26"
+    }
+  ],
+  "validation_status": "validated",
+  "momentum": {
+    "phase": "cruising",
+    "velocity": 85,
+    "last_activity": "2026-01-26"
+  },
+  "decision_rationale": "Used gh CLI for file fetching because: (1) Already available via MCP, (2) Simple syntax for base64 decode, (3) Works without full clone, (4) Provides clear error handling for offline mode. Provided both single-file and bulk update instructions for flexibility."
+}

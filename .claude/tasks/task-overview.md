@@ -1,74 +1,87 @@
 # Task Overview
 *Generated: 2026-01-26*
-*Total Tasks: 5 | Pending: 3 | Finished: 2*
+*Total Tasks: 9 | Pending: 0 | In Progress: 0 | Finished: 9*
 
 ## Project Health Summary
-**Overall Confidence:** [████████░░] 80%
-**Momentum:** Building ▓ | **Validation Rate:** 100% (4/4 validated)
-**Risk Level:** 🟢 Good (no blockers, 1 task needs breakdown)
+**Overall Confidence:** [██████████] 95%
+**Momentum:** Cruising ▓▓▓▓ | **Validation Rate:** 100%
+**Risk Level:** 🟢 Excellent (all tasks complete)
 
 ## Active Tasks
 
 | Status | ID | Title | Diff | Deps | Confidence | Health |
 |--------|-----|-------|------|------|------------|--------|
-| ⏸ | 1 | Restore and enhance health-check command | 7 | [2✓,3✓] | 65% | 🟡 |
+| ✓ | 1 | Restore and enhance health-check command | 7 | [2✓,3✓] | 95% | 🟢 |
+| ✓ | 1_1 | Restore base health-check to lite/ | 4 | - | 95% | 🟢 |
+| ✓ | 1_2 | Restore full health-check to standard/ | 4 | [1_1✓] | 95% | 🟢 |
+| ✓ | 1_3 | Add repo sync comparison feature | 6 | [1_1✓,1_2✓] | 90% | 🟢 |
+| ✓ | 1_4 | Test health-check and document usage | 3 | [1_3✓] | 95% | 🟢 |
 | ✓ | 2 | Implement version tracking system | 5 | - | 95% | 🟢 |
 | ✓ | 3 | Define sync manifest for structural files | 4 | - | 95% | 🟢 |
-| ⏸ | 4 | Audit standard/ workflow agents | 6 | - | 75% | 🟢 |
-| ⏸ | 5 | Verify Opus 4.5 difficulty scale calibration | 4 | - | 70% | 🟢 |
+| ✓ | 4 | Audit standard/ workflow agents | 6 | - | 95% | 🟢 |
+| ✓ | 5 | Verify Opus 4.5 difficulty scale calibration | 4 | - | 95% | 🟢 |
 
 ### Status Legend
 ⏸ = Pending | ⚡ = In Progress | ✓ = Finished | 📦 = Broken Down
 
 ## Task Status Distribution
 ```
-Finished:    [████░░░░░░] 40% (2 tasks)
-Pending:     [██████░░░░] 60% (3 tasks)
+Finished:    [██████████] 100% (9 tasks)
+Pending:     [░░░░░░░░░░] 0%
 In Progress: [░░░░░░░░░░] 0%
-```
-
-## Confidence Levels
-```
-High (90-100%):    [████░░░░░░] 2 tasks (Tasks 2, 3)
-Good (70-79%):     [████░░░░░░] 2 tasks (Tasks 4, 5)
-Moderate (60-69%): [██░░░░░░░░] 1 task (Task 1)
-Average: 80%
 ```
 
 ## Recently Completed
 
+### Task 4 - Agent Coherence Audit (2026-01-26)
+Comprehensive audit of all 5 agents in standard/.claude/agents/:
+- File paths consistent across all agents
+- Terminology aligned ("Spec → Plan → Execute → Verify")
+- Handoff protocols documented in agent-handoff.md
+- No issues found - system is coherent as a whole
+
+### Task 5 - Difficulty Scale Calibration (2026-01-26)
+Verified difficulty scale calibration for Opus 4.5:
+- Current breakpoints (7+ = breakdown, 9-10 = phases) are appropriate
+- Extended thinking triggers align with difficulty levels
+- Validated against task completion patterns (tasks 1, 1_1-1_4)
+- No changes needed - scale is production-ready
+
+### Task 1 - Health-Check Command (2026-01-26)
+Restored and enhanced health-check.md for both templates with sync capability:
+- **lite/** (~300 lines): Task validation, CLAUDE.md audit, template sync check
+- **standard/** (~390 lines): All lite features + semantic validation for 20+ tasks
+- New `--sync-check` flag compares local files against template repo via gh CLI
+- Updated CLAUDE.md in both templates to list the command
+- Edge cases documented (empty tasks, missing files, offline mode)
+
 ### Task 2 - Version Tracking System (2026-01-26)
 Implemented hybrid versioning: semantic version (v1.0.0) + release date.
-- Created: `.claude/version.json`, `lite/.claude/version.json`, `standard/.claude/version.json`
-- Schema: template_version, template_release_date, template_name, source_repo, project_version, project_initialized
 
 ### Task 3 - Sync Manifest (2026-01-26)
-Created sync-manifest.json with three categories:
-- **sync**: commands/*.md, reference docs (must match template)
-- **customize**: CLAUDE.md, README.md, context files
-- **ignore**: tasks/*.json, version.json, sync-manifest.json
+Created sync-manifest.json with three categories: sync, customize, ignore.
 
 ## Dependency Graph
 ```
 Task 2 (Version tracking) ✓ ──┐
-                              ├──▶ Task 1 (Health-check) [UNBLOCKED]
-Task 3 (Sync manifest) ✓ ─────┘
+                              ├──▶ Task 1 (Health-check) ✓
+Task 3 (Sync manifest) ✓ ─────┘         │
+                                        └── 1_1✓ → 1_2✓ → 1_3✓ → 1_4✓
 
-Tasks 4, 5: Independent
+Tasks 4, 5: Independent ✓
 ```
 
-## Next Steps
+## Project Status: COMPLETE 🎉
 
-**Task 1 is now unblocked** but requires breakdown (difficulty 7).
+All tasks finished. The template repository is production-ready:
 
-Suggested action:
-```
-/breakdown 1
-```
-
-Other available tasks (no breakdown needed):
-- Task 4: Audit standard/ workflow agents (difficulty 6)
-- Task 5: Verify Opus 4.5 difficulty scale (difficulty 4)
+1. **lite/** - Minimal task management template
+2. **standard/** - Full Spec→Plan→Execute→Verify workflow template
+3. **Health-check command** - Available in both templates
+4. **Version tracking** - version.json in place
+5. **Sync manifest** - sync-manifest.json defines file categories
+6. **Agent coherence** - Verified
+7. **Difficulty scale** - Calibrated for Opus 4.5
 
 ---
 

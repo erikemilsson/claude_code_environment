@@ -22,6 +22,7 @@ See `.claude/reference/shared-definitions.md` for difficulty scale and status va
 - `/complete-task {id}` - Start and finish tasks
 - `/breakdown {id}` - Split complex tasks into subtasks
 - `/sync-tasks` - Update task-overview.md from JSON files
+- `/health-check` - Validate task system and CLAUDE.md health
 - `/archive-tasks` - Archive old finished tasks
 - `/restore-task {id}` - Restore a task from archive
 
