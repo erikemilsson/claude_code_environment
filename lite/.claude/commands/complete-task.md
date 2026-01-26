@@ -19,7 +19,7 @@ Start and finish a task with status tracking.
 
 ### Finishing
 1. **Check work**: Review all changes made for this task
-   - Look for bugs, edge cases, inefficiencies, inconsistencies
+   - Look for bugs, edge cases, inefficiencies
    - If issues found, fix them before proceeding
 2. Update status to "Finished"
 3. Add completion notes (what was done, any follow-ups needed)
@@ -29,7 +29,7 @@ Start and finish a task with status tracking.
      IF all sibling subtasks are "Finished":
        Set parent status to "Finished"
    ```
-5. Run sync-tasks to update overview
+5. Run `/sync-tasks` to update overview
 
 ## Example
 

@@ -6,33 +6,27 @@ Instructions for Claude Code when working in this repository.
 
 ## Repository Purpose
 
-This is a **template repository** for bootstrapping new Claude Code project environments. It contains:
+This is a **template repository** for bootstrapping new Claude Code project environments. It contains two complete, copy-paste-ready environments:
 
-1. **base/** - A minimal, ready-to-copy project structure
-2. **extras/** - Optional add-ons for specific use cases
-3. **examples/** - Working examples showing the structure in use
-4. **.claude/** - This repo's own environment (for maintaining this repo)
+1. **lite/** - Minimal task management (~11 files)
+2. **standard/** - Full-featured with Spec→Plan→Execute→Verify workflow (~22 files)
 
 ## Repository Structure
 
 ```
 claude_code_environment/
-├── base/                    # THE copy-paste folder (minimal)
-│   ├── CLAUDE.md           # Project instructions template
+├── lite/                    # Quick start, task management only
+│   ├── CLAUDE.md           # Simple project instructions
 │   ├── README.md           # Project docs template
-│   └── .claude/            # Task management structure
+│   └── .claude/            # Commands, context, reference, tasks
 │
-├── extras/                  # Optional add-ons
-│   ├── development/        # Source of truth, assumptions, pitfalls
-│   ├── project-management/ # Phases, decisions, handoffs
-│   └── advanced/           # Agents, planning workflows
+├── standard/               # Full-featured for complex projects
+│   ├── CLAUDE.md          # Full workflow instructions
+│   ├── README.md          # Project docs template
+│   └── .claude/           # Commands, agents, context, reference, tasks
 │
-├── examples/               # Working examples
-│   ├── development-project/
-│   └── life-project/
-│
-├── .claude/                # THIS REPO's environment
-└── .archive/               # Old templates, scripts, docs, tests
+├── .claude/                # THIS REPO's own environment
+└── .archive/               # Old templates, extras, examples
 ```
 
 ## Core Workflow
@@ -40,12 +34,15 @@ claude_code_environment/
 **How users start a new project:**
 
 ```bash
-cp -r /path/to/claude_code_environment/base/ /path/to/new-project/
+# Simple project
+cp -r /path/to/claude_code_environment/lite/ /path/to/new-project/
+
+# Complex project
+cp -r /path/to/claude_code_environment/standard/ /path/to/new-project/
+
 # Edit CLAUDE.md and .claude/context/overview.md
 # Start working
 ```
-
-No generation, no templates to choose - just copy and customize.
 
 ## Task Management
 
@@ -58,17 +55,13 @@ See `.claude/reference/shared-definitions.md` for difficulty scale, status value
 
 ## Working in This Repository
 
-### Modifying base/
+### Modifying lite/
 
-The base/ folder should stay minimal. Only add files if they're needed by >80% of projects.
+The lite/ folder should stay minimal. Only add files if they're essential for basic task management.
 
-### Adding extras
+### Modifying standard/
 
-Add new extras to `extras/` with clear documentation about when to use them.
-
-### Updating examples
-
-Examples should be generic. Keep them simple and illustrative.
+The standard/ folder contains the full workflow. Changes should maintain the Spec→Plan→Execute→Verify flow.
 
 ### Archiving
 
@@ -98,8 +91,8 @@ Key files in `.claude/reference/`:
 
 ## Navigation
 
-- **Understanding base**: See `base/CLAUDE.md`
-- **Understanding extras**: See `README.md` (Optional Extras section)
+- **Understanding lite**: See `lite/CLAUDE.md`
+- **Understanding standard**: See `standard/CLAUDE.md`
 - **Repository tasks**: See `.claude/tasks/task-overview.md`
 - **Archived content**: See `.archive/README.md`
 
@@ -110,7 +103,6 @@ Key files in `.claude/reference/`:
 /sync-tasks              # Update task overview
 /complete-task {id}      # Start/finish tasks
 /breakdown {id}          # Split complex tasks
-/tdd-cycle               # Test-driven development
 ```
 
 ### Extended Thinking

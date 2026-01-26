@@ -1,50 +1,72 @@
 # Claude Code Environment
 
-A ready-to-use project structure for Claude Code with built-in task management.
+Ready-to-use project structures for Claude Code with built-in task management.
 
 > **Optimized for Claude Opus 4.5** - Task difficulty and workflow design assume Opus 4.5 capabilities.
 
 ## Quick Start
 
+Choose an environment and copy it to your project:
+
 ```bash
-# Copy base folder to your new project
-cp -r /path/to/claude_code_environment/base/ /path/to/your-project/
+# For simple projects - task management only
+cp -r /path/to/claude_code_environment/lite/ /path/to/your-project/
 
-# Edit CLAUDE.md with your project details
-# Edit .claude/context/overview.md with project context
-
-# Create your first task and start working
+# For complex projects - full workflow with agents
+cp -r /path/to/claude_code_environment/standard/ /path/to/your-project/
 ```
 
-That's it. No generation, no templates to choose from, just copy and customize.
+Edit `CLAUDE.md` with your project details and start working.
 
-## What's Included
+## Two Environments
+
+### lite/ (~11 files)
+
+**Best for:** Quick start, simple projects, any project type
+
+Task management only:
+- Track work with JSON task files
+- Break down complex tasks
+- Sync task overview
+- Archive old tasks
 
 ```
-claude_code_environment/
-├── base/                   # Copy this to start a project
-│   ├── CLAUDE.md          # Project instructions for Claude
-│   ├── README.md          # Project documentation template
-│   └── .claude/
-│       ├── settings.json  # Pre-configured permissions
-│       ├── commands/      # Task management commands
-│       ├── context/       # Project context
-│       ├── tasks/         # Task tracking
-│       └── reference/     # Schema and guides
-│
-├── extras/                 # Optional add-ons (copy what you need)
-│   ├── development/       # Source of truth, assumptions, pitfalls
-│   ├── project-management/ # Phases, decisions, handoffs
-│   └── advanced/          # Agents, planning workflows
-│
-└── examples/              # Working examples
-    ├── development-project/  # Generic coding project
-    └── life-project/         # Generic PM project
+lite/
+├── CLAUDE.md
+├── README.md
+└── .claude/
+    ├── commands/     # breakdown, complete-task, sync-tasks, etc.
+    ├── context/      # overview.md
+    ├── reference/    # task-schema, shared-definitions
+    └── tasks/        # task-overview.md
 ```
 
-## Core Features
+### standard/ (~22 files)
 
-### Task Management
+**Best for:** Large projects, autonomous multi-phase work, complex development
+
+Everything in lite/ plus:
+- **Spec → Plan → Execute → Verify** workflow
+- `/work` command as single entry point
+- Specialist agents (orchestrator, spec, plan, implement, verify)
+- Phase tracking and decision logging
+- Question accumulation for batch human review
+
+```
+standard/
+├── CLAUDE.md
+├── README.md
+└── .claude/
+    ├── commands/     # work, breakdown, complete-task, etc.
+    ├── agents/       # orchestrator, spec, plan, implement, verify
+    ├── context/      # overview, phases, decisions, questions
+    ├── reference/    # workflow-guide, agent-handoff, task-schema
+    └── tasks/        # task-overview.md
+```
+
+## Core Concepts
+
+### Task Management (Both Environments)
 
 Track work with JSON task files:
 
@@ -68,10 +90,15 @@ Track work with JSON task files:
 
 ### Commands
 
+**lite/ commands:**
 - `/complete-task {id}` - Start and finish tasks
 - `/breakdown {id}` - Split complex tasks
 - `/sync-tasks` - Update overview
-- `/health-check` - Check health
+- `/archive-tasks` - Archive old tasks
+- `/restore-task {id}` - Restore from archive
+
+**standard/ adds:**
+- `/work` - Context-aware entry point (analyzes state, routes to agents)
 
 ### Rules
 
@@ -80,58 +107,44 @@ Track work with JSON task files:
 3. Run `/sync-tasks` after completing tasks
 4. Parent tasks auto-complete when subtasks finish
 
-## Daily Workflow
+## Workflow
 
-### Starting work
-1. Review `.claude/tasks/task-overview.md` for pending tasks
-2. Pick a task to work on
+### lite/ Workflow
 
-### Working on a task
-1. Run `/complete-task {id}` to mark as In Progress
-2. Do the work
-3. Run `/complete-task {id}` again to mark as Finished
-4. Run `/sync-tasks` to update overview
+1. Review `task-overview.md` for pending tasks
+2. Run `/complete-task {id}` to start
+3. Do the work
+4. Run `/complete-task {id}` to finish
+5. Run `/sync-tasks` to update overview
 
-### Breaking down complex tasks
-For difficulty >= 7:
-1. Run `/breakdown {id}` - creates subtasks with difficulty <= 6
-2. Work on subtasks instead of parent
-3. Parent auto-completes when all subtasks finish
+### standard/ Workflow
 
-## Optional Extras
+1. Run `/work` - analyzes project state
+2. Routes to appropriate phase (Spec → Plan → Execute → Verify)
+3. Agent does focused work, accumulates questions
+4. Human checkpoint at phase boundaries
+5. Continue until complete
 
-Copy from `extras/` only when needed. Start simple.
+## Which to Choose?
 
-### development/
-For software projects:
-- **source-of-truth-template.md** - When multiple docs sources exist
-- **assumptions-template.md** - Track decisions made with incomplete info
-- **llm-pitfalls-template.md** - Domain-specific LLM mistakes to avoid
+**Use lite/ when:**
+- Starting a new project quickly
+- Project scope is well-defined
+- Don't need phase tracking
+- Want minimal overhead
 
-Copy to: `.claude/context/`
-
-### project-management/
-For tracking phases and decisions:
-- **phases-template.md** - Distinct project phases with inputs/outputs
-- **decisions-template.md** - Document rationale for choices
-- **handoff-guide-command.md** - Tasks split between Claude and human
-
-Copy to: `.claude/context/` or `.claude/commands/`
-
-### advanced/
-For complex projects needing agents or specification development. Most projects don't need this.
-
-## Examples
-
-- **development-project/** - A Todo API project showing task breakdown
-- **life-project/** - A kitchen renovation showing project management
+**Use standard/ when:**
+- Building something complex
+- Requirements need refinement
+- Want autonomous multi-phase work
+- Need decision tracking and question batching
 
 ## Tips
 
+- **Start with lite/** - You can always add standard/ features later
 - **Keep tasks focused** - One task = one deliverable
-- **Use notes** - Track what was done, issues encountered, follow-ups
-- **Sync frequently** - Run `/sync-tasks` after completing or breaking down tasks
-- **Don't over-engineer** - The base/ template is sufficient for most projects
+- **Use notes** - Track what was done, issues encountered
+- **Sync frequently** - Run `/sync-tasks` after completing tasks
 
 ---
 

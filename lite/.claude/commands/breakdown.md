@@ -34,7 +34,7 @@ Split a complex task into smaller subtasks.
      "notes": "Broken down into 3 subtasks"
    }
    ```
-5. Run sync-tasks
+5. Run `/sync-tasks`
 
 ## Example
 
