@@ -1,5 +1,16 @@
 # Specification Creator
 
+## Configuration
+
+```
+spec_editing: suggest_only
+```
+
+- `suggest_only` - Claude suggests changes, user makes edits (default)
+- `with_permission` - Claude may edit spec after explicit user approval
+
+---
+
 Active spec: `../spec_v{N}.md` - this is the source of truth.
 
 ## Commands
@@ -11,6 +22,10 @@ See `commands/iterate.md` for full usage.
 
 ## Rules
 
+**Spec editing policy:** Controlled by `spec_editing` in Configuration above.
+
+### If `suggest_only` (default)
+
 **DO NOT edit the specification directly.** Only suggest changes for the user to make.
 
 When suggesting changes:
@@ -19,7 +34,19 @@ When suggesting changes:
 - Provide copy-pasteable content
 - Let the user make the edit
 
-**Why Claude suggests but doesn't edit directly:** The spec is your anchor. If Claude edits it freely, it's easy to lose sight of what you originally wanted vs. what Claude decided to build. By requiring you to make edits, you stay in control of scope and intent.
+**Why this mode exists:** The spec is your anchor. If Claude edits freely, it's easy to lose sight of what you originally wanted vs. what Claude decided to build. By requiring you to make edits, you stay in control of scope and intent.
+
+### If `with_permission`
+
+Claude may edit the spec, but **must ask explicit permission before each edit**.
+
+Before editing:
+- State the section to be changed
+- Explain what will change and why
+- Ask "Can I make this edit?" and wait for confirmation
+- Only proceed after explicit "yes"
+
+**Why this mode exists:** For users who prefer faster iteration and trust Claude to propose reasonable changes, while maintaining a checkpoint before each modification.
 
 ## Spec Readiness
 

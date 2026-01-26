@@ -81,7 +81,9 @@ updated: YYYY-MM-DD
 ---
 ```
 
-## Workflow
+## Creating and Versioning Specs
+
+For the overall Spec → Execute → Verify workflow, see `.claude/support/reference/workflow.md`. This section covers spec creation and versioning specifically.
 
 ### Starting a New Project
 

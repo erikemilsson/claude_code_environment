@@ -65,17 +65,13 @@ To create or revise specifications, start a Claude Code instance from `.claude/s
 
 ## Workflow: Spec → Execute → Verify
 
-This project uses a phased workflow for autonomous work:
+This project uses a phased workflow: **Spec** (define requirements) → **Execute** (build via implement-agent) → **Verify** (validate via verify-agent). Two specialist agents check each other's work, eliminating the blind spots of self-validation.
 
-1. **Spec** - Define what needs to be built (requirements, constraints, acceptance criteria, key decisions)
-2. **Execute** - Build it (tasks decomposed from spec, implementation)
-3. **Verify** - Confirm it works (testing, validation against spec)
+**Primary command:** `/work` - Checks requests against spec, decomposes spec into tasks, routes to specialist agents.
 
-**Primary command:** `/work` - Intelligent entry point that checks requests against spec, decomposes spec into tasks, and routes to specialist agents.
+**Core principle:** The spec is the living source of truth. All work aligns with it, or the spec is updated intentionally.
 
-**Core principle:** The spec is the living source of truth. All work should align with it, or the spec should be updated intentionally.
-
-**Human checkpoints:** At phase boundaries, quality gate failures, and when requests don't align with spec.
+For details on phases, agent handoffs, and checkpoints, see `.claude/support/reference/workflow.md`.
 
 ## Commands
 
@@ -90,31 +86,6 @@ This project uses a phased workflow for autonomous work:
 
 ### Setup
 - `/setup-check` - Validate template configuration (run after cloning)
-
-## Agent Synergy: Implement + Verify
-
-This project uses two specialist agents that check each other's work:
-
-| Agent | Role | Focus |
-|-------|------|-------|
-| **implement-agent** | Builder | Executes tasks, writes code, marks tasks finished |
-| **verify-agent** | Validator | Tests against spec, finds issues, ensures quality |
-
-**Why two agents?**
-A single agent implementing and validating its own work has blind spots.
-By separating concerns:
-- implement-agent focuses purely on building (no self-validation bias)
-- verify-agent validates against the spec with fresh perspective
-- Issues caught by verify-agent become new tasks for implement-agent
-
-**The workflow:**
-1. `/work` invokes implement-agent for pending tasks
-2. implement-agent builds and marks tasks finished
-3. When all tasks are done, `/work` invokes verify-agent
-4. verify-agent tests against spec acceptance criteria
-5. Issues found become new tasks, back to implement-agent
-
-This separation produces higher quality output than a single agent could achieve alone.
 
 ## Task Rules
 

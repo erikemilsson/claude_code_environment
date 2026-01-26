@@ -2,6 +2,8 @@
 
 The intelligent entry point for all project work. Handles spec-checking, state detection, task decomposition, task completion, and routing to specialist agents.
 
+For workflow concepts (phases, agent synergy, checkpoints), see `.claude/support/reference/workflow.md`.
+
 ## Usage
 ```
 /work                    # Auto-detect what needs doing
@@ -20,10 +22,6 @@ The intelligent entry point for all project work. Handles spec-checking, state d
 5. **Routes to specialists** - Invokes implement-agent or verify-agent as needed
 6. **Surfaces misalignments** - Points out when requests don't fit the spec
 7. **Auto-syncs dashboard** - Regenerates dashboard.md after any task changes
-
-## Core Principle
-
-**The spec is the living source of truth.** All work should align with it, or the spec should be updated intentionally.
 
 ---
 
@@ -236,36 +234,14 @@ Spec says: "User authentication with email and password"
 
 When breaking spec into tasks:
 
-### Good Decomposition
 - Each task has clear "done" criteria
 - Tasks are independently testable
 - Dependencies are explicit
-- Difficulty ≤ 6
+- Difficulty ≤ 6 (break down anything larger)
 
-### Task Difficulty Scale
+Organize tasks into implementation stages (Foundation → Core → Polish → Validation). See `.claude/support/reference/workflow.md` for stage definitions.
 
-See `.claude/support/reference/shared-definitions.md` for the difficulty scale.
-
-Key rule: Tasks with difficulty 7+ must be broken down before starting.
-
-### Implementation Stages
-Organize execute-phase tasks into logical stages:
-
-```
-Stage 1: Foundation
-- Setup, core infrastructure, basic scaffolding
-
-Stage 2: Core Features
-- Main functionality from spec
-
-Stage 3: Polish
-- Edge cases, error handling, UX
-
-Stage 4: Validation
-- Testing, documentation, verification
-```
-
-Note: These are organizational stages for tasks, not to be confused with workflow phases (Spec → Execute → Verify).
+For the difficulty scale, see `.claude/support/reference/shared-definitions.md`.
 
 ---
 

@@ -85,6 +85,48 @@ To create or revise the spec, start a Claude Code session from `.claude/specific
 
 ---
 
+## Agent Synergy: Implement + Verify
+
+This project uses two specialist agents that check each other's work:
+
+| Agent | Role | Focus |
+|-------|------|-------|
+| **implement-agent** | Builder | Executes tasks, writes code, marks tasks finished |
+| **verify-agent** | Validator | Tests against spec, finds issues, ensures quality |
+
+**Why two agents?**
+A single agent implementing and validating its own work has blind spots.
+By separating concerns:
+- implement-agent focuses purely on building (no self-validation bias)
+- verify-agent validates against the spec with fresh perspective
+- Issues caught by verify-agent become new tasks for implement-agent
+
+**The workflow:**
+1. `/work` invokes implement-agent for pending tasks
+2. implement-agent builds and marks tasks finished
+3. When all tasks are done, `/work` invokes verify-agent
+4. verify-agent tests against spec acceptance criteria
+5. Issues found become new tasks, back to implement-agent
+
+This separation produces higher quality output than a single agent could achieve alone.
+
+---
+
+## Implementation Stages
+
+When decomposing the spec into execute-phase tasks, organize them into logical stages:
+
+| Stage | Focus | Examples |
+|-------|-------|----------|
+| **Foundation** | Setup, core infrastructure, basic scaffolding | Project structure, database schema, auth setup |
+| **Core Features** | Main functionality from spec | Primary user flows, API endpoints, business logic |
+| **Polish** | Edge cases, error handling, UX | Validation, error messages, loading states |
+| **Validation** | Testing, documentation, verification | Unit tests, integration tests, API docs |
+
+**Note:** These are organizational stages for tasks within the Execute phase, not to be confused with workflow phases (Spec → Execute → Verify).
+
+---
+
 ## The `/work` Command as Coordinator
 
 The `/work` command handles coordination (no separate orchestrator agent):
