@@ -17,6 +17,8 @@ Add files as you discover useful patterns. Common categories:
 
 | Category | What to capture |
 |----------|-----------------|
+| `spec-extraction.md` | Converting PDFs/regulations into structured specs, resolving ambiguities |
+| `critical-llm-knowledge.md` | Rules where Claude consistently struggles, counterintuitive patterns |
 | `task-strategies.md` | Effective task decomposition approaches, sequencing patterns |
 | `api-patterns.md` | API design conventions, error handling patterns |
 | `testing-patterns.md` | Test strategies, mock patterns, coverage approaches |
