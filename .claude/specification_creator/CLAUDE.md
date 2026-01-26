@@ -2,6 +2,13 @@
 
 Active spec: `../spec_v{N}.md` - this is the source of truth.
 
+## Commands
+
+- `/iterate` - Structured spec review (checks gaps, asks questions, suggests content)
+- `/iterate {section}` - Focus on specific section (overview, architecture, requirements, acceptance, questions)
+
+See `commands/iterate.md` for full usage.
+
 ## Rules
 
 **DO NOT edit the specification directly.** Only suggest changes for the user to make.
@@ -9,13 +16,52 @@ Active spec: `../spec_v{N}.md` - this is the source of truth.
 When suggesting changes:
 - Quote the specific section
 - Explain what to change and why
+- Provide copy-pasteable content
 - Let the user make the edit
+
+## Spec Readiness
+
+Before a spec can move to task decomposition (`/work`), it must pass the readiness checklist.
+
+See `reference/spec-checklist.md` for:
+- Required criteria per section
+- Red flags that indicate incomplete sections
+- Readiness levels (Not Ready → Minimally Ready → Well-Defined)
+
+## Workflow
+
+### Using /iterate (Recommended)
+
+1. Run `/iterate` to auto-detect the weakest area, or `/iterate {section}` to focus
+2. Answer Claude's questions (max 4 at a time)
+3. Review Claude's suggested content
+4. Edit the spec yourself with the suggestions
+5. Run `/iterate` again or specify next section
+6. Repeat until checklist passes
+
+### Freeform Discussion
+
+For exploratory conversations:
+1. Read the current spec thoroughly
+2. Identify one area to discuss
+3. Ask clarifying questions (max 4 at a time)
+4. Suggest specific, copy-pasteable changes
+5. Wait for user to make edits
+6. Repeat for next area
+
+## Question Guidelines
+
+When asking questions:
+- Maximum 4 questions at a time
+- Be specific and answerable
+- Build on each other logically
+- Extract concrete details, not opinions
+- Show example answers when helpful
 
 ## Archive
 
 Store research, notes, and planning documents in `.archive/`.
 
-Naming convention:
 ```
 .archive/
 ├── YYYY-MM-DD_topic.md           # General research/notes
@@ -23,25 +69,7 @@ Naming convention:
 └── YYYY-MM-DD_questions.md       # Question logs
 ```
 
-## Specification Review Process
-
-Work through the specification iteratively:
-
-1. **Read** the current spec thoroughly
-2. **Identify** one area to discuss (scope, architecture, requirements, etc.)
-3. **Ask** clarifying questions about that area
-4. **Suggest** specific changes based on answers
-5. **Wait** for user to make edits
-6. **Repeat** for next area
-
-Focus on:
-- Removing ambiguities
-- Clarifying scope
-- Identifying inconsistencies
-- Surfacing missing details
-- Checking feasibility
-
-This is a multi-step process. Take time with each section.
+**Note:** This `.archive/` is for spec-session working documents. Formal decision records go in `.claude/support/decisions/`.
 
 ## Decision Documentation
 
@@ -53,6 +81,16 @@ Significant decisions made during spec creation should be documented:
 When suggesting spec additions involving technology/architecture decisions:
 - Note if a decision record would be valuable
 - Reference `.claude/support/reference/decision-guide.md` for when to create records
-- Decision records live in `.claude/support/decisions/`
 
-The specification_creator `.archive/` is for spec-session working documents. Formal decision records go in `.claude/support/decisions/`.
+## Structure
+
+```
+specification_creator/
+├── CLAUDE.md              # This file (rules for spec sessions)
+├── README.md              # How to use this system
+├── commands/
+│   └── iterate.md         # /iterate command definition
+├── reference/
+│   └── spec-checklist.md  # Readiness criteria
+└── .archive/              # Session working documents
+```

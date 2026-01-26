@@ -5,6 +5,8 @@
       ".claude/commands/*.md",
       ".claude/agents/*.md",
       ".claude/specification_creator/*.md",
+      ".claude/specification_creator/commands/*.md",
+      ".claude/specification_creator/reference/*.md",
       ".claude/support/reference/shared-definitions.md",
       ".claude/support/reference/task-schema.md",
       ".claude/support/reference/workflow.md",
