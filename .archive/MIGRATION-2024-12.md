@@ -1,5 +1,7 @@
 # Repository Cleanup Migration Guide (December 2024)
 
+> **Note (January 2025)**: This document references paths like `.archive/legacy-commands/` and `.archive/historical-docs/` that were further consolidated in January 2025. See `templates-summary.md` and `components-summary.md` for the current archive structure.
+
 This guide documents the major cleanup performed on December 21, 2024 to eliminate ambiguity and confusion in the Claude Code Environment repository.
 
 ## Overview

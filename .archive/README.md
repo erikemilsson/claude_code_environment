@@ -1,76 +1,51 @@
 # Archive
 
-This folder contains archived files from the repository reorganization (January 2025).
+This folder contains archived content from the repository reorganization (January 2025).
 
-## What's Here
+## Structure
 
-### templates/
+```
+.archive/
+├── README.md                    # This file
+├── MIGRATION-2024-12.md         # Historical context for December 2024 cleanup
+├── templates-summary.md         # Summary of the old 5-template system
+├── components-summary.md        # Summary of the old component library
+└── deprecated-schemas/          # Old task schema versions
+    ├── task-schema.md
+    ├── task-schema-v2.md
+    └── enhanced-task-schema.md
+```
 
-The old template system with 5 template types:
-- base
-- data-analytics
-- documentation-content
-- life-projects
-- power-query
-- research-analysis
+## What Was Archived
 
-**Replaced by**: `base/` folder (single, simple template)
+### Templates (69 files)
+The old 5-template system (base, data-analytics, documentation-content, life-projects, power-query, research-analysis) was replaced by `base/` + `extras/`.
 
-### components/
+See `templates-summary.md` for details.
 
-Modular components designed for template composition:
-- checkpoint-system
-- error-catalog
-- pattern-library
-- task-management
-- validation-gates
+### Components (46 files)
+The modular component library (checkpoint-system, error-catalog, pattern-library, task-management, validation-gates) was consolidated into `base/` and `extras/`.
 
-**Replaced by**: Components moved directly into `base/` and `extras/`
+See `components-summary.md` for details.
 
-### universal-template/
-
-An attempt at a "one size fits all" template with agents, specification development, and executive summaries.
-
-**Replaced by**: `base/` + `extras/advanced/`
-
-### examples/
-
-Old examples including:
-- complete-projects (pension calculator)
-- project-specific-commands
-- specifications
-
-**Replaced by**: `examples/` with generic development-project and life-project
-
-### bootstrap/
-
-The old bootstrap system for generating environments from templates:
-- bootstrap.md
-- bootstrap-tutorial.md
-- show-bootstrap-details.md
-- undo-bootstrap.md
-
-**Replaced by**: Simple copy workflow (no generation needed)
-
-### sample-project/
-
-A sample generated project from the bootstrap system.
-
-**Replaced by**: `examples/development-project/`
-
-### Legacy Files
-
-- `legacy-template-reference.md` - Comprehensive reference for old template system
-- `PHASE-0-PATTERN.md` - Phase 0 pattern for Power Query projects
-- `claude-4-tasks-summary.md` - Task summary documentation
+### Other Deletions
+- `scripts/` (19 files) - Python automation, overengineered
+- `test/` (24 files) - Tests for deprecated machinery
+- `examples/` (51 files) - Replaced by `/examples/`
+- `sample-project/` (13 files) - Replaced by `examples/development-project/`
+- `universal-template/` (24 files) - Replaced by `base/` + `extras/advanced/`
+- `docs/` (3 files) - Merged into root README
+- `bootstrap/` (4 files) - Replaced by simple copy workflow
+- `legacy-commands/` (1 file) - Obsolete bootstrap command
+- `historical-docs/` - Was empty
 
 ## When to Reference
 
-Only look at archived files if:
-- You need to understand historical decisions
+Only reference archived files if:
+- Understanding historical decisions
 - Looking for patterns not yet migrated
-- Debugging issues with old templates
+- Researching why something was changed
 
 ## Don't Use
 
-These files are archived, not maintained. Use `base/` and `extras/` instead.
+These files are archived and not maintained. Use `base/` and `extras/` instead.
