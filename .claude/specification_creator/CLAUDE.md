@@ -87,6 +87,29 @@ When asking questions:
 - Extract concrete details, not opinions
 - Show example answers when helpful
 
+## Working with Vision Documents
+
+Vision documents capture ideation, design philosophy, and future thinking. Common sources:
+- Brainstorming sessions in Claude Desktop
+- Product thinking documents
+- Technical architecture explorations
+
+**Distillation workflow:**
+1. Save vision doc to `.claude/vision/`
+2. Run `/iterate distill`
+3. Answer questions to extract Phase 1 scope
+4. Spec links to vision via `vision_source:` frontmatter
+
+**Once a spec exists, the spec is the single source of truth.** Vision docs become historical context only—useful for understanding original intent or planning future phases, but not consulted during implementation.
+
+**When to use distill vs regular iterate:**
+
+| Situation | Use |
+|-----------|-----|
+| Starting from scratch | `/iterate` (bootstrap mode) |
+| Have existing vision/design doc | `/iterate distill` |
+| Building out partial spec | `/iterate` or `/iterate {section}` |
+
 ## Archive
 
 Store research, notes, and planning documents in `.archive/`.

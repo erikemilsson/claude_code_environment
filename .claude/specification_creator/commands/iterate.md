@@ -7,6 +7,7 @@ Structured spec review that identifies gaps, asks focused questions, and suggest
 ```
 /iterate                    # Continue building the spec (auto-detects what's needed)
 /iterate {topic}            # Focus on a specific area
+/iterate distill            # Extract buildable spec from vision document
 ```
 
 ## What It Does
@@ -29,6 +30,51 @@ Structured spec review that identifies gaps, asks focused questions, and suggest
 Read `../spec_v{N}.md` and assess its current state.
 
 ### Step 2: Determine Mode
+
+**If user specified `/iterate distill`:**
+
+Enter distill mode. Extract buildable spec from a vision document.
+
+1. **Locate vision doc:**
+   - Check `.claude/vision/` for existing documents
+   - If multiple exist, list them and ask which to use
+   - If none exist, ask user to provide the document (paste or file path)
+
+2. **Read and summarize the vision:**
+   ```
+   I've read your vision document: [filename]
+
+   Summary: [2-3 sentence summary of core concept]
+
+   Key themes I see:
+   - [theme 1]
+   - [theme 2]
+   - [theme 3]
+   ```
+
+3. **Ask distillation questions:**
+   ```
+   Let's extract a buildable Phase 1 spec.
+
+   1. What's the core value proposition in one sentence?
+      (From your vision, I see: "[extracted summary]" - confirm or refine?)
+
+   2. What must be working for this to be useful at all?
+      (Your vision mentions several features - which are essential vs. nice-to-have for Phase 1?)
+
+   3. What's explicitly NOT in Phase 1?
+      (Your vision has ambitious ideas - which do we defer?)
+
+   4. Who's the first user and what's their critical path?
+   ```
+
+4. **Generate spec content:**
+   - Include `vision_source:` in frontmatter linking to the vision doc
+   - Extract concrete requirements from vision's abstract concepts
+   - Add "Deferred to Future Phases" section for items not in Phase 1
+   - Format as copy-pasteable content
+
+---
 
 **If spec is empty or only has placeholders:**
 

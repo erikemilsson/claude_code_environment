@@ -63,6 +63,16 @@ The project specification lives at `.claude/spec_v{N}.md`.
 
 To create or revise specifications, start a Claude Code instance from `.claude/specification_creator/`.
 
+## Vision Documents
+
+If you have a vision/design document from ideation (e.g., Claude Desktop brainstorming):
+
+1. Save it to `.claude/vision/`
+2. Start Claude Code from `.claude/specification_creator/`
+3. Run `/iterate distill` to extract a buildable spec
+
+Vision docs capture intent and philosophy; specs capture buildable scope. Both are preserved.
+
 ## Workflow: Spec → Execute → Verify
 
 This project uses a phased workflow: **Spec** (define requirements) → **Execute** (build via implement-agent) → **Verify** (validate via verify-agent). Two specialist agents check each other's work, eliminating the blind spots of self-validation.
@@ -154,6 +164,8 @@ Pre-approved permissions for consistent Claude Code behavior. Ensures the templa
 .claude/
 ├── dashboard.md               # Project Dashboard (auto-generated)
 ├── spec_v{N}.md               # Project specification (source of truth)
+├── vision/                    # Vision documents from ideation
+│   └── {project}-vision.md   # Design philosophy, future roadmap
 ├── tasks/                     # Task data
 │   ├── task-*.json           # Individual task files
 │   └── milestone-*.json      # Milestone definitions
