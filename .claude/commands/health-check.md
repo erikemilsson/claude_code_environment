@@ -111,7 +111,9 @@ These checks detect drift and staleness in large collaborative projects:
 
 ### 10. Spec Fingerprint Validation (Granular)
 
-Detects when the specification has changed since tasks were decomposed, with section-level granularity:
+Detects when the specification has changed since tasks were decomposed, with section-level granularity.
+
+**See also:** `/work` Step 1b performs the same drift detection during normal workflow. Keep algorithms in sync.
 
 **Full spec check:**
 - Compute current spec SHA-256 hash
@@ -222,10 +224,10 @@ Reports tasks that were created outside the spec:
 - Can happen after manual task deletion or archive errors
 - Critical for maintaining dependency graph integrity
 
-**Workflow Diagram Staleness**
+**Workflow Diagram Staleness** (if diagram exists)
 - `workflow-diagram.md` timestamp vs latest task modification
 - Warns if diagram is > 24 hours older than task changes
-- Suggests running `/generate-workflow-diagram`
+- Suggests manually updating the diagram
 
 ## Task Auto-Fixes
 
@@ -239,7 +241,7 @@ Reports tasks that were created outside the spec:
 | All subtasks Finished but parent not | Set parent status to "Finished" |
 | Missing created_date | Add current date |
 | Multiple "In Progress" tasks | Ask which to keep, set others to "Pending" |
-| Stale workflow diagram | Run /generate-workflow-diagram |
+| Stale workflow diagram | Prompt user to update diagram manually |
 | Orphan dependency reference | Remove invalid dependency ID from array |
 
 ## Semantic Auto-Fixes

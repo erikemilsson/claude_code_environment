@@ -19,7 +19,7 @@ For workflow concepts (phases, agent synergy, checkpoints), see `.claude/support
 2. **Analyzes project state** - Reads dashboard, spec, and current progress
 3. **Decomposes spec into tasks** - When spec is ready but no tasks exist
 4. **Completes tasks** - Marks tasks as finished with `/work complete`
-5. **Routes to specialists** - Invokes implement-agent or verify-agent as needed
+5. **Routes to specialists** - Reads and follows implement-agent or verify-agent workflows
 6. **Surfaces misalignments** - Points out when requests don't fit the spec
 7. **Auto-syncs dashboard** - Regenerates dashboard.md after any task changes
 
@@ -69,6 +69,8 @@ echo -n "## Authentication\nContent here..." | sha256sum | cut -d' ' -f1
 ```
 
 **Note:** Tasks without `spec_fingerprint` are treated as legacy (no warning). Tasks without `section_fingerprint` fall back to full-spec comparison.
+
+**See also:** `/health-check` performs the same drift detection as a validation check. Keep algorithms in sync.
 
 ### Granular Reconciliation UI
 
@@ -159,8 +161,8 @@ Check request against spec:
 
 **If a specific request was provided** (and passed spec check):
 1. Create a task for the request (or find existing matching task)
-2. Invoke implement-agent on that task
-3. Skip to Step 5 (questions)
+2. Read `.claude/agents/implement-agent.md` and follow its workflow for that task
+3. Continue to Step 5 (questions) and Step 6 (health check)
 
 **If no request provided** (auto-detect mode):
 
@@ -169,8 +171,8 @@ Check request against spec:
 | No spec exists | Stop - direct user to create spec via `specification_creator/` |
 | Spec incomplete | Stop - prompt user to complete spec |
 | Spec complete, no tasks | **Decompose** - create tasks from spec |
-| Tasks pending | **Execute** - invoke implement-agent on next available task |
-| All tasks finished | **Verify** - invoke verify-agent |
+| Tasks pending | **Execute** - read & follow implement-agent workflow (see Step 4) |
+| All tasks finished | **Verify** - read & follow verify-agent workflow (see Step 4) |
 
 ### Step 4: Execute Action
 
@@ -212,14 +214,20 @@ Task creation guidelines:
 
 #### If Executing
 
-Invoke implement-agent with:
+**CRITICAL:** You must read `.claude/agents/implement-agent.md` and follow its complete workflow. Do not implement directly.
+
+The agent workflow handles: task selection, status updates, implementation, self-review, completion, and dashboard regeneration.
+
+Context to have ready:
 - Current task context
-- Relevant spec sections
+- Relevant spec sections (from `.claude/spec_v{N}.md`)
 - Any constraints or notes
 
 #### If Verifying
 
-Invoke verify-agent with:
+**CRITICAL:** You must read `.claude/agents/verify-agent.md` and follow its complete workflow. Do not verify directly.
+
+Pass to verify-agent:
 - List of completed work
 - Spec acceptance criteria
 - Test commands available

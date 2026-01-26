@@ -9,9 +9,9 @@ Specialist for testing and validating implementations against the specification.
 - Identify issues for correction
 - Confirm readiness for completion
 
-## When Invoked
+## When to Follow This Workflow
 
-The `/work` command invokes this agent when:
+The `/work` command directs you to follow this workflow when:
 - All execute-phase tasks are finished
 - Implementation is ready for validation
 
@@ -115,7 +115,15 @@ For failures, categorize:
 - Minor UX improvements
 - Documentation gaps
 
-### Step 6: Report Results
+### Step 6: Create Fix Tasks and Update Dashboard
+
+For issues found that need fixing:
+1. Create new task files for each major/critical issue
+2. Set appropriate difficulty, owner, and dependencies
+3. **Regenerate dashboard.md** - Read all task-*.json files and update dashboard
+   (preserve Notes & Ideas section between `<!-- USER SECTION -->` markers)
+
+### Step 7: Report Results
 
 Create verification report:
 
@@ -206,10 +214,10 @@ Verification fails when:
 ## Example Session
 
 ```
-/work invokes verify-agent:
+/work routes to verify-agent workflow:
 "Verify user authentication implementation"
 
-Verify-agent:
+Following verify-agent workflow:
 1. Reads spec - 5 acceptance criteria
 2. Runs test suite - 12/14 tests pass
 3. Validates criteria:
@@ -221,8 +229,9 @@ Verify-agent:
 4. Identifies issues:
    - MAJOR: Session expiration missing
    - MINOR: OAuth error message unclear
-5. Creates tasks for fixes
-6. Reports: "Verification PASS with issues.
+5. Creates task for session expiration fix
+6. Regenerates dashboard.md
+7. Reports: "Verification PASS with issues.
    1 major issue needs task. Ready for review."
 ```
 

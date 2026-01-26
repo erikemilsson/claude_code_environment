@@ -9,9 +9,9 @@ Specialist for executing tasks and writing code.
 - Document what was done
 - Flag issues discovered during implementation
 
-## When Invoked
+## When to Follow This Workflow
 
-The `/work` command invokes this agent when:
+The `/work` command directs you to follow this workflow when:
 - Tasks exist with status "Pending"
 - Dependencies are satisfied
 - Spec check has passed (handled by /work)
@@ -40,13 +40,26 @@ If no specific task provided:
 3. Check dependencies (all must be "Finished")
 4. Select highest priority unblocked task
 
+### Step 1b: Validate Task
+
+Before proceeding, verify the task is workable:
+
+| Check | Fail Action |
+|-------|-------------|
+| `owner` is "human" | Stop - report back that task requires human action |
+| `owner` is "both" | Proceed - Claude handles implementation portion |
+| `difficulty` >= 7 | Stop - report back that task needs breakdown first (use `/breakdown`) |
+| `status` is "Broken Down" | Stop - work on subtasks instead, not this task |
+
+If any check fails, do not proceed to Step 2.
+
 ### Step 2: Understand Task
 
 Before coding:
 - Read task description fully
-- Review related spec sections
+- Read `.claude/spec_v{N}.md` and find the relevant sections (use task's `spec_section` field if present)
 - Check what files will be affected
-- Understand the "done" criteria
+- Understand the "done" criteria from spec acceptance criteria
 
 ### Step 3: Set In Progress
 
@@ -169,10 +182,10 @@ Task is complete when:
 ## Example Session
 
 ```
-/work invokes implement-agent:
+/work routes to implement-agent workflow:
 "Execute task 4: Add user validation"
 
-Implement-agent:
+Following implement-agent workflow:
 1. Reads task 4 - Add email/password validation
 2. Checks spec - Email format, password 8+ chars
 3. Sets status "In Progress"

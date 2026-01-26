@@ -102,9 +102,9 @@ By separating concerns:
 - Issues caught by verify-agent become new tasks for implement-agent
 
 **The workflow:**
-1. `/work` invokes implement-agent for pending tasks
-2. implement-agent builds and marks tasks finished
-3. When all tasks are done, `/work` invokes verify-agent
+1. `/work` reads and follows implement-agent workflow for pending tasks
+2. implement-agent workflow: build, update status, regenerate dashboard
+3. When all tasks are done, `/work` reads and follows verify-agent workflow
 4. verify-agent tests against spec acceptance criteria
 5. Issues found become new tasks, back to implement-agent
 
@@ -211,7 +211,7 @@ When completing work, agents return:
 - Verify spec exists and has content
 - Decompose spec into tasks (if no tasks exist)
 - Present checkpoint to human
-- Invoke implement-agent with first available task
+- Read and follow implement-agent workflow for first available task
 
 ### Execute → Verify
 
@@ -225,7 +225,7 @@ When completing work, agents return:
 
 **What /work does:**
 - Present checkpoint to human
-- Invoke verify-agent with implementation summary
+- Read and follow verify-agent workflow with implementation summary
 
 ### Verify → Complete
 

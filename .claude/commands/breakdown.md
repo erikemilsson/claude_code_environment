@@ -16,16 +16,23 @@ Split a complex task into smaller subtasks.
 
 1. Read the task and understand scope
 2. Identify logical components (aim for 3-6 subtasks)
-3. Create subtask files:
+3. Create subtask files (inheriting spec provenance from parent):
    ```json
    {
      "id": "{parent_id}_{n}",
      "title": "Specific subtask title",
      "status": "Pending",
      "difficulty": 4,
-     "parent_task": "{parent_id}"
+     "parent_task": "{parent_id}",
+     "spec_fingerprint": "{copy from parent}",
+     "spec_version": "{copy from parent}",
+     "spec_section": "{copy from parent}",
+     "section_fingerprint": "{copy from parent}",
+     "section_snapshot_ref": "{copy from parent}"
    }
    ```
+
+   **Important:** Copy all spec provenance fields from the parent task. This ensures subtasks are tracked for spec drift detection.
 4. Update parent task:
    ```json
    {
