@@ -59,17 +59,39 @@ This project uses a phased workflow for autonomous work:
 
 ### Primary
 - `/work` - Start or continue work (checks spec alignment, decomposes tasks, routes to agents)
+- `/work complete` - Complete current in-progress task (or `/work complete {id}`)
 
 ### Task Management
-- `/complete-task {id}` - Start and finish tasks
 - `/breakdown {id}` - Split complex tasks into subtasks
-- `/sync-tasks` - Update dashboard.md from JSON files
 - `/health-check` - Validate tasks, decisions, and CLAUDE.md health
-- `/archive-tasks` - Archive old finished tasks
-- `/restore-task {id}` - Restore a task from archive
 
 ### Setup
 - `/setup-check` - Validate template configuration (run after cloning)
+
+## Agent Synergy: Implement + Verify
+
+This project uses two specialist agents that check each other's work:
+
+| Agent | Role | Focus |
+|-------|------|-------|
+| **implement-agent** | Builder | Executes tasks, writes code, marks tasks finished |
+| **verify-agent** | Validator | Tests against spec, finds issues, ensures quality |
+
+**Why two agents?**
+A single agent implementing and validating its own work has blind spots.
+By separating concerns:
+- implement-agent focuses purely on building (no self-validation bias)
+- verify-agent validates against the spec with fresh perspective
+- Issues caught by verify-agent become new tasks for implement-agent
+
+**The workflow:**
+1. `/work` invokes implement-agent for pending tasks
+2. implement-agent builds and marks tasks finished
+3. When all tasks are done, `/work` invokes verify-agent
+4. verify-agent tests against spec acceptance criteria
+5. Issues found become new tasks, back to implement-agent
+
+This separation produces higher quality output than a single agent could achieve alone.
 
 ## Task Rules
 
@@ -86,7 +108,7 @@ Tasks are tracked in `.claude/tasks/` as JSON files. The **Project Dashboard** a
 **Key rules:**
 - Break down tasks with difficulty >= 7 before starting
 - Only one task "In Progress" at a time
-- Run `/sync-tasks` after completing any task
+- Dashboard regenerates automatically after task changes
 
 See `.claude/support/reference/shared-definitions.md` for difficulty scale, status values, and owner definitions.
 
@@ -151,8 +173,7 @@ Pre-approved permissions for consistent Claude Code behavior. Ensures the templa
 │   ├── reference/            # Schemas, guides, definitions
 │   │   ├── task-schema.md
 │   │   ├── shared-definitions.md
-│   │   ├── workflow-guide.md
-│   │   ├── agent-handoff.md
+│   │   ├── workflow.md
 │   │   ├── decision-template.md
 │   │   └── decision-guide.md
 │   ├── decisions/            # Decision documentation

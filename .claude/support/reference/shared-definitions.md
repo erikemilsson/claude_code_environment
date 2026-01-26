@@ -62,7 +62,7 @@ See `task-schema.md` for complete field definitions including timeline fields (p
 **ALWAYS:**
 1. Break down tasks with difficulty >= 7 before starting
 2. Only one task "In Progress" at a time
-3. Run `/sync-tasks` after completing any task
+3. Dashboard regenerates automatically after task changes
 4. Parent tasks auto-complete when all subtasks finish
 
 **NEVER:**

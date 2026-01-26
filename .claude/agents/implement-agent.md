@@ -87,7 +87,12 @@ Update task:
 }
 ```
 
-Run `/sync-tasks`.
+Check parent auto-completion:
+- If this task has a `parent_task` field
+- And all sibling subtasks are now "Finished"
+- Set the parent task status to "Finished"
+
+Regenerate dashboard.md from task JSON files (preserving the Notes & Ideas section between `<!-- USER SECTION -->` markers).
 
 ## Implementation Guidelines
 
@@ -180,7 +185,8 @@ Implement-agent:
    - Status: "Finished"
    - Notes: "Added validateEmail(), validatePassword() in auth.js.
             Tests in auth.test.js cover edge cases."
-7. Runs /sync-tasks
+   - Checks if parent task should auto-complete
+7. Regenerates dashboard.md
 8. Reports: "Task 4 complete. 3 tasks remaining in phase."
 ```
 

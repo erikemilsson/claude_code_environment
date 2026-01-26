@@ -73,7 +73,7 @@ Validates that dashboard.md follows the canonical template structure:
 - Check each required section header exists
 - Verify sections appear in correct order
 - Flag missing or out-of-order sections
-- Suggest running `/sync-tasks` to regenerate
+- Suggest regenerating dashboard.md
 
 ### 6. Status Rules
 
@@ -133,8 +133,8 @@ These checks detect drift and staleness in large collaborative projects:
 
 | Issue | Auto-Fix |
 |-------|----------|
-| Dashboard doesn't match JSON | Run /sync-tasks |
-| Dashboard structure invalid | Run /sync-tasks |
+| Dashboard doesn't match JSON | Regenerate dashboard.md |
+| Dashboard structure invalid | Regenerate dashboard.md |
 | Parent missing subtask in array | Add subtask ID to parent's subtasks array |
 | Subtask missing parent_task field | Add parent_task field |
 | "Broken Down" with empty subtasks | Change status to "Pending" |
@@ -367,7 +367,7 @@ Version Status:
   [Warning] Template has been updated
 
 File Comparison (sync category):
-  [Checkmark] .claude/commands/complete-task.md - matches
+  [Checkmark] .claude/commands/work.md - matches
   [Warning] .claude/commands/breakdown.md - differs (12 lines changed)
   [Checkmark] .claude/agents/implement-agent.md - matches
   [Warning] .claude/agents/verify-agent.md - differs (new file in template)
@@ -544,7 +544,7 @@ Decisions with status `approved` or `implemented` must have:
 
 Task schema: `.claude/support/reference/task-schema.md`
 Difficulty guide: `.claude/support/reference/shared-definitions.md`
-Workflow guide: `.claude/support/reference/workflow-guide.md`
+Workflow guide: `.claude/support/reference/workflow.md`
 Decision template: `.claude/support/reference/decision-template.md`
 Decision guide: `.claude/support/reference/decision-guide.md`
 Version info: `.claude/version.json`

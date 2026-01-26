@@ -156,7 +156,7 @@ Save as `milestone-M1.json` in `.claude/tasks/`. Tasks reference via `"milestone
 
 ## Task Archiving
 
-For large projects (100+ tasks), finished tasks can be archived.
+For large projects (100+ tasks), finished tasks are automatically archived.
 
 ### Archive Structure
 
@@ -166,11 +166,15 @@ For large projects (100+ tasks), finished tasks can be archived.
 └── tasks/
     ├── task-*.json       # Active tasks
     └── archive/
-    ├── task-*.json       # Archived task files
-    └── archive-index.json # Lightweight summary
+        ├── task-*.json       # Archived task files
+        └── archive-index.json # Lightweight summary
 ```
 
-### Commands
+### Auto-Archive Behavior
 
-- `/archive-tasks` - Move old finished tasks to archive
-- `/restore-task {id}` - Restore a task from archive
+When active task count exceeds 100, `/work` automatically:
+1. Identifies finished tasks older than 7 days
+2. Moves them to `.claude/tasks/archive/`
+3. Updates archive-index.json
+
+Archived tasks remain available for reference but don't clutter the dashboard.

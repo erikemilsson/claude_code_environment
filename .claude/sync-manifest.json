@@ -7,8 +7,7 @@
       ".claude/specification_creator/*.md",
       ".claude/support/reference/shared-definitions.md",
       ".claude/support/reference/task-schema.md",
-      ".claude/support/reference/agent-handoff.md",
-      ".claude/support/reference/workflow-guide.md",
+      ".claude/support/reference/workflow.md",
       ".claude/support/reference/decision-template.md",
       ".claude/support/reference/decision-guide.md",
       ".claude/support/learnings/README.md"

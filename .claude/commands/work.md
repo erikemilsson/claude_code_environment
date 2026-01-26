@@ -1,12 +1,14 @@
 # Work Command
 
-The intelligent entry point for all project work. Handles spec-checking, state detection, task decomposition, and routing to specialist agents.
+The intelligent entry point for all project work. Handles spec-checking, state detection, task decomposition, task completion, and routing to specialist agents.
 
 ## Usage
 ```
 /work                    # Auto-detect what needs doing
 /work {task-id}          # Work on specific task
 /work {request}          # Handle ad-hoc request
+/work complete           # Complete current in-progress task
+/work complete {id}      # Complete specific task
 ```
 
 ## What It Does
@@ -14,8 +16,10 @@ The intelligent entry point for all project work. Handles spec-checking, state d
 1. **Checks against spec** - Every request is validated against the specification
 2. **Analyzes project state** - Reads dashboard, spec, and current progress
 3. **Decomposes spec into tasks** - When spec is ready but no tasks exist
-4. **Routes to specialists** - Invokes implement-agent or verify-agent as needed
-5. **Surfaces misalignments** - Points out when requests don't fit the spec
+4. **Completes tasks** - Marks tasks as finished with `/work complete`
+5. **Routes to specialists** - Invokes implement-agent or verify-agent as needed
+6. **Surfaces misalignments** - Points out when requests don't fit the spec
+7. **Auto-syncs dashboard** - Regenerates dashboard.md after any task changes
 
 ## Core Principle
 
@@ -86,7 +90,8 @@ Break the spec into granular tasks:
 2. **Identify work items** - Each distinct piece of functionality
 3. **Create task files** - One JSON per task, difficulty ≤ 6
 4. **Map dependencies** - What must complete before what
-5. **Run /sync-tasks** - Generate overview
+5. **Regenerate dashboard** - Read all task-*.json files and regenerate dashboard.md
+   (preserving the Notes & Ideas section between `<!-- USER SECTION -->` markers)
 
 Task creation guidelines:
 - Clear, actionable titles ("Add user validation" not "Backend stuff")
@@ -221,6 +226,83 @@ Reports:
 # Handle ad-hoc request (gets spec-checked)
 /work "Add rate limiting to the API"
 
+# Complete the current in-progress task
+/work complete
+
+# Complete a specific task
+/work complete 5
+
 # After answering questions, continue
 /work
 ```
+
+---
+
+## Task Completion (`/work complete`)
+
+Use `/work complete` for manual task completion outside of implement-agent's workflow. This is useful when:
+- Completing human-owned tasks
+- Marking tasks done that were worked on outside the normal flow
+- Quick tasks that don't need the full implement-agent process
+
+**Note:** When implement-agent executes tasks, it handles completion internally (Steps 3-6 of its workflow). You don't need to run `/work complete` after implement-agent finishes.
+
+### Process
+
+1. **Identify task** - If no ID provided, use current "In Progress" task
+2. **Validate task is completable:**
+   - Status must be "In Progress" (not "Pending", "Broken Down", or "Finished")
+   - For quick tasks, first set status to "In Progress", then complete
+   - Dependencies must all be "Finished"
+3. **Check work** - Review all changes made for this task
+   - Look for bugs, edge cases, inefficiencies
+   - If issues found, fix them before proceeding
+4. **Update task file:**
+   ```json
+   {
+     "status": "Finished",
+     "completion_date": "YYYY-MM-DD",
+     "updated_date": "YYYY-MM-DD",
+     "notes": "What was done, any follow-ups needed"
+   }
+   ```
+5. **Check parent auto-completion:**
+   - If parent_task exists and all sibling subtasks are "Finished"
+   - Set parent status to "Finished"
+6. **Regenerate dashboard** - Read all task-*.json files and update dashboard.md
+7. **Auto-archive check** - If active task count > 100, archive old tasks
+
+### Rules
+
+- Never work on "Broken Down" tasks directly - work on their subtasks
+- Parent tasks auto-complete when all subtasks finish
+- Always add notes about what was actually done
+
+---
+
+## Auto-Archive
+
+After regenerating the dashboard, check if archiving is needed:
+
+1. **Count active tasks** - All non-archived task-*.json files
+2. **If count > 100:**
+   - Identify finished tasks older than 7 days
+   - Move to `.claude/tasks/archive/`
+   - Update archive-index.json with lightweight summaries
+   - Regenerate dashboard again
+
+### Archive Structure
+
+```
+.claude/tasks/archive/
+├── task-1.json           # Full task data (preserved)
+├── task-2.json
+└── archive-index.json    # Lightweight summary
+```
+
+### Referencing Archived Tasks
+
+When a task ID is referenced but not found in active tasks:
+- Check `.claude/tasks/archive/` for context
+- Read archived task for reference (provides historical context)
+- Archived tasks are read-only reference material

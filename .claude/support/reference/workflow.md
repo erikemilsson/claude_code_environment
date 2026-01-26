@@ -17,6 +17,8 @@ The Spec → Execute → Verify workflow for autonomous multi-phase projects.
 
 **Core principle:** The spec is the living source of truth. All work should align with it, or the spec should be updated intentionally.
 
+---
+
 ## Phase Details
 
 ### Spec Phase
@@ -81,6 +83,124 @@ To create or revise the spec, start a Claude Code session from `.claude/specific
 
 **Agent:** verify-agent
 
+---
+
+## The `/work` Command as Coordinator
+
+The `/work` command handles coordination (no separate orchestrator agent):
+
+```
+User → /work → Specialist Agent → /work → User
+         ↓            ↓              ↓
+    Analyze state  Do focused    Report results
+    Check spec     work
+```
+
+**What `/work` handles:**
+- Analyze current state
+- Check requests against spec
+- Decompose spec into tasks (when needed)
+- Complete tasks (`/work complete`)
+- Select appropriate agent
+- Pass context to agent
+- Collect questions
+- Trigger checkpoints
+- Report progress
+- Auto-sync dashboard after changes
+
+---
+
+## Handoff Protocol
+
+### /work → Specialist
+
+When invoking a specialist, /work provides:
+
+```markdown
+## Context
+- Current phase: [phase]
+- Spec summary: [key requirements]
+- Recent activity: [what happened]
+
+## Task
+[What the specialist should do]
+
+## Constraints
+- Questions to avoid: [already asked]
+- Scope limits: [if any]
+```
+
+### Specialist → /work
+
+When completing work, agents return:
+
+```markdown
+## Completed
+- [What was accomplished]
+
+## Output
+- [Files created/modified]
+- [Status updates made]
+
+## Questions Generated
+- [New questions for human]
+
+## Recommendations
+- [Suggested next steps]
+
+## Issues
+- [Problems encountered]
+```
+
+---
+
+## Phase Transitions
+
+### Spec → Execute
+
+**Trigger:** Spec exists at `.claude/spec_v{N}.md` and is complete
+
+**Handoff includes:**
+- Specification document
+- Acceptance criteria
+- Constraints and requirements
+
+**What /work does:**
+- Verify spec exists and has content
+- Decompose spec into tasks (if no tasks exist)
+- Present checkpoint to human
+- Invoke implement-agent with first available task
+
+### Execute → Verify
+
+**Trigger:** All execute tasks finished
+
+**Handoff includes:**
+- List of completed tasks
+- Files modified
+- Any discovered issues
+- Self-review notes
+
+**What /work does:**
+- Present checkpoint to human
+- Invoke verify-agent with implementation summary
+
+### Verify → Complete
+
+**Trigger:** Verify agent reports verification passed
+
+**Handoff includes:**
+- Test results
+- Acceptance criteria validation
+- Issues found (if any)
+- Recommendations
+
+**What /work does:**
+- Present final checkpoint to human
+- Project complete (or loop back if issues)
+
+---
+
 ## Human Checkpoints
 
 Humans are involved at:
@@ -108,44 +228,7 @@ When questions accumulate:
 - Non-trivial questions need human input
 - Blocking questions prevent progress
 
-## The `/work` Command
-
-Primary entry point for the workflow:
-
-```
-/work              # Start or continue work
-/work 5            # Continue work on specific task
-/work "request"    # Handle ad-hoc request (gets spec-checked)
-```
-
-What it does:
-1. Checks request against spec (if request provided)
-2. Analyzes project state
-3. Determines current phase
-4. Decomposes spec into tasks (if needed)
-5. Routes to appropriate agent
-6. Accumulates questions during work
-7. Presents questions at checkpoints
-
-## Spec-First Philosophy
-
-All work flows from the specification:
-
-```
-Spec (source of truth)
-  ↓
-Tasks (decomposed from spec, or ad-hoc with spec check)
-  ↓
-Implementation (by implement-agent)
-  ↓
-Verification (against spec, by verify-agent)
-```
-
-**For ad-hoc requests:**
-- /work checks against spec
-- Significant additions prompt spec update discussion
-- Minor fixes proceed without spec change
-- This keeps the spec as a living, accurate document
+---
 
 ## Questions System
 
@@ -156,7 +239,8 @@ Questions accumulate during work in `.claude/support/questions.md`:
 - Should login require email verification?
 
 ## Technical
-- Preferred caching solution?
+- [BLOCKING] What caching solution to use?
+- Should we add rate limiting?
 
 ## Scope
 - Is mobile support in v1?
@@ -168,10 +252,59 @@ Questions accumulate during work in `.claude/support/questions.md`:
 - **Scope:** What's in/out
 - **Dependencies:** External systems/blockers
 
+### Blocking vs Non-Blocking
+
+**Blocking:** Cannot proceed without answer
+- Mark with `[BLOCKING]` prefix
+- Triggers immediate checkpoint
+
+**Non-Blocking:** Can proceed with assumption
+- Note assumption made
+- Present at next phase boundary
+
+### At Checkpoints
+
+/work presents accumulated questions:
+
+1. Group by category
+2. Prioritize blocking questions
+3. Present to human
+4. Wait for answers
+5. Clear answered questions
+6. Continue work
+
 **When presented:**
 - At phase boundaries
 - At quality gate failures
 - When explicitly blocking
+
+---
+
+## Error Handling
+
+### Agent Failure
+
+If an agent fails:
+1. /work logs error
+2. Preserves partial progress
+3. Presents error to human
+4. Awaits human direction
+
+### Conflicting State
+
+If state is inconsistent:
+1. Document the conflict
+2. Ask human to clarify
+3. Do not proceed until resolved
+
+### Infinite Loops
+
+If work isn't progressing:
+1. After 3 iterations, checkpoint
+2. Present situation to human
+3. Get explicit direction
+
+---
 
 ## Best Practices
 
@@ -189,6 +322,13 @@ Questions accumulate during work in `.claude/support/questions.md`:
 - Complete current phase before moving on
 - Get human approval at transitions
 - Don't gold-plate
+
+### For Specialists
+- Stay focused on your phase
+- Don't do work outside your responsibility
+- Document everything for handoff
+- Flag issues early
+- Report spec misalignments back to /work
 
 ### Document Everything
 - Log decisions as they're made
