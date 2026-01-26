@@ -141,11 +141,32 @@ Milestones are lightweight date markers for project phases:
   "title": "MVP Complete",
   "type": "milestone",
   "target_date": "2026-02-01",
-  "status": "Pending"
+  "status": "Pending",
+  "description": "Core functionality complete and working"
 }
 ```
 
 Save as `milestone-M1.json` in `.claude/tasks/`. Tasks reference via `"milestone": "M1"`.
+
+### Milestone Status Values
+
+| Status | Icon | Meaning | Auto-determined by |
+|--------|------|---------|-------------------|
+| Pending | ⏳ | Not started | No tasks finished |
+| In Progress | 🔄 | Work underway | Some tasks finished, not all |
+| Complete | ✅ | Done | All linked tasks finished |
+| At Risk | ⚠️ | May miss target | Past target date, not complete |
+| Overdue | 🔴 | Missed target | Significantly past target |
+
+Milestone status is calculated automatically based on:
+1. Count of tasks with `"milestone": "M1"` that are "Finished"
+2. Comparison of current date to `target_date`
+
+### Dashboard Integration
+
+Milestones appear in two dashboard sections:
+- **🎯 Milestones** - Dedicated section showing all milestones with progress
+- **⏰ Timeline** - Milestones shown in **bold** alongside task due dates
 
 ## Status Rules
 

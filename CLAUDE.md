@@ -82,6 +82,7 @@ This project uses a phased workflow for autonomous work:
 ### Primary
 - `/work` - Start or continue work (checks spec alignment, decomposes tasks, routes to agents)
 - `/work complete` - Complete current in-progress task (or `/work complete {id}`)
+- `/status` - Quick read-only view of project state (no modifications)
 
 ### Task Management
 - `/breakdown {id}` - Split complex tasks into subtasks
@@ -119,6 +120,7 @@ This separation produces higher quality output than a single agent could achieve
 
 Tasks are tracked in `.claude/tasks/` as JSON files. The **Project Dashboard** at `.claude/dashboard.md` shows:
 - 🚨 **Needs Your Attention** - decisions pending, tasks ready for you, reviews needed
+- 🎯 **Milestones** - project phase progress and targets
 - ⏰ **Timeline** - upcoming deadlines and milestones
 - 🤖 **Claude Status** - what Claude is working on
 - 📊 **Progress This Week** - recent completions and activity
@@ -182,7 +184,8 @@ Pre-approved permissions for consistent Claude Code behavior. Ensures the templa
 ├── dashboard.md               # Project Dashboard (auto-generated)
 ├── spec_v{N}.md               # Project specification (source of truth)
 ├── tasks/                     # Task data
-│   └── task-*.json           # Individual task files
+│   ├── task-*.json           # Individual task files
+│   └── milestone-*.json      # Milestone definitions
 ├── commands/                  # /work and task commands
 ├── agents/                    # Specialist agents
 │   ├── implement-agent.md    # Task execution

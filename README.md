@@ -27,12 +27,10 @@ rm -rf .git && git init
     │   └── task-*.json            # Individual task files
     ├── commands/                  # Slash commands
     │   ├── work.md                # Main entry point
-    │   ├── complete-task.md       # Task completion
+    │   ├── status.md              # Read-only status view
     │   ├── breakdown.md           # Task decomposition
-    │   ├── sync-tasks.md          # Update task overview
     │   ├── health-check.md        # System health validation
-    │   ├── archive-tasks.md       # Archive old tasks
-    │   └── restore-task.md        # Restore archived tasks
+    │   └── setup-check.md         # Template configuration check
     ├── agents/                    # Specialist agents
     │   ├── implement-agent.md     # Builds the solution
     │   └── verify-agent.md        # Validates against spec
@@ -84,13 +82,12 @@ Once your spec is ready, return to the main project directory and run `/work` to
 
 | Command | Description |
 |---------|-------------|
-| `/work` | Main entry point - analyzes state, routes to agent |
-| `/complete-task {id}` | Start and finish tasks |
+| `/work` | Main entry point - checks spec, decomposes tasks, routes to agents |
+| `/work complete` | Complete current in-progress task (or `/work complete {id}`) |
+| `/status` | Quick read-only view of project state |
 | `/breakdown {id}` | Split complex tasks into subtasks |
-| `/sync-tasks` | Update dashboard.md |
 | `/health-check` | Validate system health |
-| `/archive-tasks` | Archive completed tasks |
-| `/restore-task {id}` | Restore from archive |
+| `/setup-check` | Validate template configuration (run after cloning) |
 
 ## License
 

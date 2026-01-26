@@ -90,8 +90,10 @@ Break the spec into granular tasks:
 2. **Identify work items** - Each distinct piece of functionality
 3. **Create task files** - One JSON per task, difficulty ≤ 6
 4. **Map dependencies** - What must complete before what
-5. **Regenerate dashboard** - Read all task-*.json files and regenerate dashboard.md
-   (preserving the Notes & Ideas section between `<!-- USER SECTION -->` markers)
+5. **Regenerate dashboard** - Read all task-*.json and milestone-*.json files and regenerate dashboard.md
+   - Preserve the Notes & Ideas section between `<!-- USER SECTION -->` markers
+   - Calculate milestone progress (finished tasks / total tasks per milestone)
+   - Determine milestone status: ⏳ Pending → 🔄 In Progress → ✅ Complete (or ⚠️/🔴 if past target)
 
 Task creation guidelines:
 - Clear, actionable titles ("Add user validation" not "Backend stuff")
@@ -269,7 +271,8 @@ Use `/work complete` for manual task completion outside of implement-agent's wor
 5. **Check parent auto-completion:**
    - If parent_task exists and all sibling subtasks are "Finished"
    - Set parent status to "Finished"
-6. **Regenerate dashboard** - Read all task-*.json files and update dashboard.md
+6. **Regenerate dashboard** - Read all task-*.json and milestone-*.json files and update dashboard.md
+   (including milestone progress calculations)
 7. **Auto-archive check** - If active task count > 100, archive old tasks
 
 ### Rules

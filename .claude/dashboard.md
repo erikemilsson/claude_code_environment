@@ -1,6 +1,6 @@
 # Dashboard
 
-*Auto-generated after task changes. Last updated: {date}*
+*Auto-generated after task changes. Last updated: (regenerated on sync)*
 
 ## 🚨 Needs Your Attention
 
@@ -26,11 +26,23 @@ Everything waiting on you, in one place.
 
 ---
 
+## 🎯 Milestones
+
+| Status | Milestone | Target | Progress | Tasks |
+|--------|-----------|--------|----------|-------|
+| *No milestones defined* | | | | |
+
+**Status icons:** ✅ Complete | 🔄 In Progress | ⏳ Pending | ⚠️ At Risk | 🔴 Overdue
+
+---
+
 ## ⏰ Timeline
 
 | Date | Item | Type |
 |------|------|------|
 | *No upcoming deadlines* | | |
+
+*Milestones shown in **bold***
 
 ---
 
@@ -80,9 +92,9 @@ Everything waiting on you, in one place.
 
 ## 📝 All Tasks
 
-| ID | Title | Status | Diff | Owner | Due | Deps |
-|----|-------|--------|------|-------|-----|------|
-| *No tasks yet* | | | | | | |
+| ID | Title | Status | Diff | Owner | Due | Milestone | Deps |
+|----|-------|--------|------|-------|-----|-----------|------|
+| *No tasks yet* | | | | | | | |
 
 *Summary: 0/0 complete (0%)*
 

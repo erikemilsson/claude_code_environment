@@ -62,13 +62,14 @@ Validates that dashboard.md follows the canonical template structure:
 **Required sections (in order):**
 1. `# Dashboard` - Title
 2. `## 🚨 Needs Your Attention` - Consolidated attention section
-3. `## ⏰ Timeline` - Deadlines and milestones
-4. `## Quick Status` - Summary table
-5. `## 🤖 Claude Status` - Claude tasks
-6. `## 📊 Progress This Week` - Recent activity
-7. `## 📋 All Decisions` - Decision log
-8. `## 📝 All Tasks` - Full task table
-9. `## 💡 Notes & Ideas` - User section (preserved on sync)
+3. `## 🎯 Milestones` - Project phase progress and targets
+4. `## ⏰ Timeline` - Deadlines and milestones
+5. `## Quick Status` - Summary table
+6. `## 🤖 Claude Status` - Claude tasks
+7. `## 📊 Progress This Week` - Recent activity
+8. `## 📋 All Decisions` - Decision log
+9. `## 📝 All Tasks` - Full task table
+10. `## 💡 Notes & Ideas` - User section (preserved on sync)
 
 **Validation:**
 - Check each required section header exists

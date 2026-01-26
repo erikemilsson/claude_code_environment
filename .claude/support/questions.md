@@ -2,7 +2,7 @@
 
 Questions that need human input. Reviewed at phase boundaries.
 
-**Last Updated:** [Date]
+**Last Updated:** *(updated when questions change)*
 
 ---
 
@@ -24,25 +24,25 @@ Questions that need human input. Reviewed at phase boundaries.
 
 Questions about what the system should do:
 
-- [Question about features or behavior]
+- *(none yet)*
 
 ## Technical
 
 Questions about implementation approach:
 
-- [Question about technology or architecture]
+- *(none yet)*
 
 ## Scope
 
 Questions about boundaries and priorities:
 
-- [Question about what's in/out of scope]
+- *(none yet)*
 
 ## Dependencies
 
 Questions about external systems or blockers:
 
-- [Question about integrations or prerequisites]
+- *(none yet)*
 
 ---
 
@@ -52,7 +52,7 @@ Move answered questions here for reference:
 
 | Question | Answer | Date |
 |----------|--------|------|
-| [Question] | [Answer] | [Date] |
+| *(none yet)* | | |
 
 ---
 

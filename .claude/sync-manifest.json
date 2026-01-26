@@ -9,8 +9,7 @@
       ".claude/support/reference/task-schema.md",
       ".claude/support/reference/workflow.md",
       ".claude/support/reference/decision-template.md",
-      ".claude/support/reference/decision-guide.md",
-      ".claude/support/learnings/README.md"
+      ".claude/support/reference/decision-guide.md"
     ],
     "customize": [
       "CLAUDE.md",
