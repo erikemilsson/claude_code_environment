@@ -1,0 +1,44 @@
+# Learnings
+
+Project-specific patterns, strategies, and insights accumulated over time.
+
+## Purpose
+
+This folder stores learnings that help Claude work more effectively on your specific project. Unlike core reference docs, these are discovered through experience rather than defined upfront.
+
+**Claude doesn't auto-read these files.** Ask explicitly when you want to leverage them:
+- "Check learnings for patterns on X"
+- "Look at the API patterns before implementing"
+- "What strategies have worked for task breakdown?"
+
+## Usage
+
+Add files as you discover useful patterns. Common categories:
+
+| Category | What to capture |
+|----------|-----------------|
+| `task-strategies.md` | Effective task decomposition approaches, sequencing patterns |
+| `api-patterns.md` | API design conventions, error handling patterns |
+| `testing-patterns.md` | Test strategies, mock patterns, coverage approaches |
+| `architecture-notes.md` | Structural decisions, module boundaries |
+| `gotchas.md` | Non-obvious issues, edge cases, things that broke |
+
+## Format
+
+Keep entries concise and actionable:
+
+```markdown
+## [Pattern Name]
+
+**Context:** When this applies
+**Pattern:** What to do
+**Example:** Brief code/command example (optional)
+**Why:** Reasoning (optional)
+```
+
+## Guidelines
+
+- **Be specific** - "Use retry with exponential backoff for external APIs" beats "handle errors well"
+- **Include context** - When does this pattern apply? What triggers it?
+- **Update over time** - Remove outdated learnings, refine patterns that evolve
+- **Project-specific** - These aren't synced from template; each project accumulates its own

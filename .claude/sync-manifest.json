@@ -10,7 +10,8 @@
       ".claude/reference/agent-handoff.md",
       ".claude/reference/workflow-guide.md",
       ".claude/reference/decision-template.md",
-      ".claude/reference/decision-guide.md"
+      ".claude/reference/decision-guide.md",
+      ".claude/learnings/README.md"
     ],
     "customize": [
       "CLAUDE.md",
@@ -26,7 +27,8 @@
       ".claude/version.json",
       ".claude/sync-manifest.json",
       ".claude/context/decisions/decision-*.md",
-      ".claude/context/decisions/.archive/*"
+      ".claude/context/decisions/.archive/*",
+      ".claude/learnings/*"
     ]
   },
   "notes": "Paths relative to template root. Use glob patterns."

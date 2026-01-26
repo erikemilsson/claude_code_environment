@@ -111,6 +111,8 @@ When facing significant choices, create a decision record rather than deciding i
 │   │   ├── decision-*.md     # Individual decision records
 │   │   └── .archive/         # Research documents
 │   └── questions.md          # Accumulated questions for human
+├── learnings/                 # Project-specific patterns (ask Claude to check)
+│   └── README.md             # Usage guide
 ├── reference/
 │   ├── task-schema.md        # Task JSON format
 │   ├── shared-definitions.md
