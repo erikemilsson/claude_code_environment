@@ -15,8 +15,7 @@
     "customize": [
       "CLAUDE.md",
       "README.md",
-      ".claude/support/questions.md",
-      ".claude/support/decisions/index.md"
+      ".claude/support/questions.md"
     ],
     "ignore": [
       ".claude/tasks/*.json",

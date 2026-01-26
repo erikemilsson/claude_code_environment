@@ -61,13 +61,14 @@ Validates that dashboard.md follows the canonical template structure:
 
 **Required sections (in order):**
 1. `# Dashboard` - Title
-2. `## Quick Status` - Summary table
-3. `## ⏰ Upcoming Deadlines` - Tasks with due dates
-4. `## ❗ Your Actions` - Human tasks
+2. `## 🚨 Needs Your Attention` - Consolidated attention section
+3. `## ⏰ Timeline` - Deadlines and milestones
+4. `## Quick Status` - Summary table
 5. `## 🤖 Claude Status` - Claude tasks
 6. `## 📊 Progress This Week` - Recent activity
-7. `## 💡 Notes & Ideas` - User section (preserved on sync)
-8. `## All Tasks` - Full task table
+7. `## 📋 All Decisions` - Decision log
+8. `## 📝 All Tasks` - Full task table
+9. `## 💡 Notes & Ideas` - User section (preserved on sync)
 
 **Validation:**
 - Check each required section header exists
@@ -214,10 +215,9 @@ Move to support/reference/:
 
 ```
 READ all .claude/tasks/task-*.json files
-READ .claude/tasks/dashboard.md
+READ .claude/dashboard.md
 READ CLAUDE.md
 READ all .claude/support/decisions/decision-*.md files
-READ .claude/support/decisions/index.md
 ```
 
 ### Step 2: Run Checks
@@ -247,7 +247,7 @@ Run CLAUDE.md audit (if not `--tasks` and not `--decisions`):
 
 Run decision validation (if not `--tasks` and not `--claude-md`):
 - Schema validation for each decision file
-- Index consistency checks
+- Dashboard consistency checks
 - Staleness detection
 - Completeness verification
 
@@ -289,7 +289,7 @@ Run decision validation (if not `--tasks` and not `--claude-md`):
 ### Decision System
 [Checkmark] N decision records found
 [Checkmark] Schema validation passed
-[Warning] N index inconsistencies
+[Warning] N dashboard inconsistencies
 [Warning] N stale decisions
 [Warning] N incomplete decisions
 
@@ -437,20 +437,20 @@ Each `decision-*.md` file must have valid frontmatter:
 - `related.tasks` - Array of task IDs
 - `related.decisions` - Array of decision IDs
 
-#### 2. Index Consistency
+#### 2. Dashboard Consistency
 
-**Every decision file must have index entry:**
+**Every decision file must have dashboard entry:**
 - Scan `.claude/support/decisions/decision-*.md` files
-- Compare against entries in `index.md`
-- Flag files missing from index
+- Compare against entries in dashboard's "All Decisions" table
+- Flag files missing from dashboard
 
-**Every index entry must have file:**
-- Parse decision log table in `index.md`
+**Every dashboard entry must have file:**
+- Parse decision log table in dashboard
 - Verify each entry has corresponding `decision-{NNN}-*.md` file
-- Flag orphan index entries
+- Flag orphan dashboard entries
 
 **Status match:**
-- Status in file frontmatter must match status in index table
+- Status in file frontmatter must match status in dashboard table
 - Flag mismatches
 
 #### 3. Staleness Detection
@@ -475,8 +475,8 @@ Decisions with status `approved` or `implemented` must have:
 ### Decision System
 [Checkmark] N decision records found
 [Checkmark] Schema validation passed
-[Warning] 1 index inconsistency
-  - DEC-003: missing from index.md
+[Warning] 1 dashboard inconsistency
+  - DEC-003: missing from dashboard
 [Warning] 2 stale decisions
   - DEC-001: draft for 45 days
   - DEC-002: proposed for 21 days
@@ -488,8 +488,8 @@ Decisions with status `approved` or `implemented` must have:
 
 | Issue | Auto-Fix |
 |-------|----------|
-| File missing from index | Add entry to index.md with data from frontmatter |
-| Index entry missing file | Remove orphan entry from index.md |
+| File missing from dashboard | Add entry to dashboard's All Decisions with data from frontmatter |
+| Dashboard entry missing file | Remove orphan entry from dashboard |
 | Status mismatch | Ask user which is correct, update the other |
 | Stale draft (> 30 days) | Ask user: delete, or set reminder |
 | Stale proposed (> 14 days) | Ask user: approve, reject, or extend |
@@ -524,8 +524,6 @@ Decisions with status `approved` or `implemented` must have:
 **Workflow diagram missing:** If `.claude/support/workflow-diagram.md` doesn't exist, staleness check skipped
 
 **No decision records:** Reports "0 decisions - all checks pass" (healthy state for new projects)
-
-**Missing decisions/index.md:** Decision check skipped with note: "Create .claude/support/decisions/index.md to enable decision tracking"
 
 **Malformed frontmatter:** Flags as error, requires manual YAML fix
 

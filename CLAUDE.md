@@ -30,6 +30,28 @@ Instructions for Claude Code when working in this project.
 
 [Brief description of what this project does]
 
+## How This System Works
+
+**Your primary interface is the dashboard** (`.claude/dashboard.md`). It shows everything you need:
+- What needs your attention (decisions, reviews, blockers)
+- What Claude is working on
+- Timeline and upcoming deadlines
+- Progress and recent activity
+
+**What you do:**
+- Write code and documentation (outside `.claude/`)
+- Make decisions when Claude surfaces options
+- Review and approve at phase boundaries
+- Update the spec when requirements change
+
+**What Claude does:**
+- Tracks tasks and progress (in `.claude/tasks/`)
+- Implements according to spec
+- Surfaces decision points to you
+- Validates work against acceptance criteria
+
+**You shouldn't need to dig into `.claude/` internals** - the dashboard brings everything to you.
+
 ## Specification
 
 The project specification lives at `.claude/spec_v{N}.md`.
@@ -96,14 +118,13 @@ This separation produces higher quality output than a single agent could achieve
 ## Task Rules
 
 Tasks are tracked in `.claude/tasks/` as JSON files. The **Project Dashboard** at `.claude/dashboard.md` shows:
-- Quick status with task counts by owner
-- ⏰ **Upcoming Deadlines** - tasks with due dates sorted by urgency
-- 🎯 **Milestones** - project phases with progress tracking
-- ❗ **Your Actions** - human tasks ready or waiting (+ external dependencies)
+- 🚨 **Needs Your Attention** - decisions pending, tasks ready for you, reviews needed
+- ⏰ **Timeline** - upcoming deadlines and milestones
 - 🤖 **Claude Status** - what Claude is working on
 - 📊 **Progress This Week** - recent completions and activity
+- 📋 **All Decisions** - decision log with status
+- 📝 **All Tasks** - full task list with details
 - 💡 **Notes & Ideas** - your preserved notes section
-- Full task list with all details
 
 **Key rules:**
 - Break down tasks with difficulty >= 7 before starting
@@ -116,7 +137,7 @@ See `.claude/support/reference/shared-definitions.md` for difficulty scale, stat
 
 Major decisions are documented in `.claude/support/decisions/`.
 
-- **Index:** `index.md` - all decisions with status
+- **Dashboard tracks all decisions** - Status, pending items, and timeline in one place
 - **Records:** `decision-*.md` - full analysis with comparison tables
 - **Research:** `.archive/` - background research documents
 - **Template:** `.claude/support/reference/decision-template.md`
@@ -147,8 +168,8 @@ Defines which files sync from template updates vs stay project-specific:
 | Category | Purpose | Examples |
 |----------|---------|----------|
 | `sync` | Updated from template | Commands, agents, reference docs |
-| `customize` | User-editable, template provides defaults | CLAUDE.md, context/, decisions/index.md |
-| `ignore` | Project-specific data, never synced | Tasks, decision records, learnings |
+| `customize` | User-editable, template provides defaults | CLAUDE.md, README.md, questions.md |
+| `ignore` | Project-specific data, never synced | Tasks, dashboard, decision records, learnings |
 
 ### settings.local.json
 
@@ -177,7 +198,6 @@ Pre-approved permissions for consistent Claude Code behavior. Ensures the templa
 │   │   ├── decision-template.md
 │   │   └── decision-guide.md
 │   ├── decisions/            # Decision documentation
-│   │   ├── index.md          # Decision summary and pending
 │   │   ├── decision-*.md     # Individual decision records
 │   │   └── .archive/         # Research documents
 │   ├── learnings/            # Project-specific patterns
