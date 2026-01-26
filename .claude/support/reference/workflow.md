@@ -259,6 +259,14 @@ When requests don't align with spec:
 - Options: add to spec, proceed anyway, or skip
 - Keeps spec as source of truth
 
+### Spec Drift (Granular Reconciliation)
+When spec changes after tasks were decomposed:
+- /work detects which specific sections changed
+- Shows diff of changed content
+- Groups affected tasks by section
+- Options per section: apply suggestions, review individually, or skip
+- Enables targeted updates without re-decomposing all tasks
+
 ### Quality Gate Failures
 When something goes wrong:
 - Tests fail
@@ -345,6 +353,55 @@ If work isn't progressing:
 1. After 3 iterations, checkpoint
 2. Present situation to human
 3. Get explicit direction
+
+---
+
+## Spec Drift and Reconciliation
+
+When the specification evolves after tasks are decomposed, granular reconciliation helps keep tasks aligned without starting over.
+
+### How It Works
+
+1. **At decomposition time:**
+   - Full spec is hashed and stored in each task (`spec_fingerprint`)
+   - Each section is individually hashed (`section_fingerprint`)
+   - A snapshot is saved for diff generation (`section_snapshot_ref`)
+
+2. **When /work runs:**
+   - Current spec hash is compared to task fingerprints
+   - If different, section-level analysis identifies which parts changed
+   - Only affected tasks are flagged for review
+
+3. **Reconciliation UI:**
+   - Shows diff of changed sections
+   - Groups affected tasks by section
+   - Offers targeted update options
+
+### Reconciliation Options
+
+| Option | Effect |
+|--------|--------|
+| **Apply suggestions** | Auto-update task descriptions based on spec changes |
+| **Review individually** | Step through each affected task one by one |
+| **Skip section** | Acknowledge change without updating tasks |
+| **Mark out-of-spec** | Flag task as no longer aligned with spec |
+
+### Benefits
+
+- **Targeted updates**: Only tasks from changed sections need review
+- **Visible diffs**: See exactly what changed in each section
+- **Preserves work**: Unchanged sections and their tasks remain intact
+- **Backward compatible**: Tasks without section fingerprints fall back to full-spec comparison
+
+### When to Re-decompose vs Reconcile
+
+| Scenario | Recommendation |
+|----------|---------------|
+| Minor clarifications | Reconcile - update affected tasks |
+| New section added | Create new tasks for new section only |
+| Section deleted | Mark affected tasks out-of-spec or delete |
+| Major rewrite | Re-decompose from scratch |
+| Architecture change | Re-decompose from scratch |
 
 ---
 

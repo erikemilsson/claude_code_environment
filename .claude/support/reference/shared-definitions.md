@@ -63,17 +63,80 @@ Optional fields that track spec-to-task alignment:
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `spec_fingerprint` | String | SHA-256 hash of spec at decomposition |
+| `spec_fingerprint` | String | SHA-256 hash of full spec at decomposition |
 | `spec_version` | String | Spec filename (e.g., "spec_v1") |
 | `spec_section` | String | Originating section heading |
+| `section_fingerprint` | String | SHA-256 hash of specific section at decomposition |
+| `section_snapshot_ref` | String | Reference to snapshot file for diffs |
 | `out_of_spec` | Boolean | Task not aligned with spec |
 
 These fields enable:
 - **Spec drift detection**: Warning when spec changes after tasks are created
+- **Granular section tracking**: Detecting which specific sections changed
 - **Out-of-spec tracking**: Identifying tasks created outside spec scope
 - **Spec provenance**: Tracing which tasks came from which spec sections
+- **Diff generation**: Showing exactly what changed via snapshot comparison
 
 See `task-schema.md` for detailed field documentation.
+
+## Section Parsing Algorithm
+
+How spec files are parsed into sections for fingerprinting:
+
+### Definition
+
+```
+Section = ## heading + all content until next ## or EOF
+```
+
+### Parsing Rules
+
+1. **Strip YAML frontmatter** - Remove `---` delimited frontmatter before parsing
+2. **Extract ## level headings** - Each `## Title` starts a new section
+3. **Include ### subsections** - Subsections belong to their parent ## section
+4. **Normalize heading text** - Trim whitespace from heading
+5. **Compute fingerprint** - `sha256(heading + "\n" + content)`
+
+### Example
+
+Given spec:
+```markdown
+---
+version: 1
+---
+
+# Project Spec
+
+## Authentication
+
+Users can log in with email and password.
+
+### Password Requirements
+
+- Minimum 8 characters
+- Must include number
+
+## API Endpoints
+
+RESTful API with JSON responses.
+```
+
+Produces sections:
+| Section | Content |
+|---------|---------|
+| `## Authentication` | "Users can log in...\n\n### Password Requirements\n\n- Minimum 8 characters..." |
+| `## API Endpoints` | "RESTful API with JSON responses." |
+
+Note: `# Project Spec` (H1) is not a section - only H2 (`##`) headings define sections.
+
+### Edge Cases
+
+| Scenario | Handling |
+|----------|----------|
+| No ## headings | Entire spec content (after frontmatter) is one "section" |
+| Empty section | Section with heading but no content - fingerprint is hash of heading only |
+| Consecutive ## | Creates sections with empty content between them |
+| Content before first ## | Ignored for section purposes (preamble) |
 
 ## Mandatory Rules
 

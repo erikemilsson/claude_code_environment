@@ -11,7 +11,8 @@
       ".claude/support/reference/task-schema.md",
       ".claude/support/reference/workflow.md",
       ".claude/support/reference/decision-template.md",
-      ".claude/support/reference/decision-guide.md"
+      ".claude/support/reference/decision-guide.md",
+      ".claude/support/previous_specifications/README.md"
     ],
     "customize": [
       "CLAUDE.md",
@@ -25,7 +26,8 @@
       ".claude/sync-manifest.json",
       ".claude/support/decisions/decision-*.md",
       ".claude/support/decisions/.archive/*",
-      ".claude/support/learnings/*"
+      ".claude/support/learnings/*",
+      ".claude/support/previous_specifications/*.md"
     ]
   },
   "notes": "Paths relative to template root. Use glob patterns."

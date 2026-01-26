@@ -34,24 +34,25 @@ Read and analyze:
 - `.claude/dashboard.md` - Task status and progress
 - `.claude/support/questions.md` - Pending questions
 
-### Step 1b: Spec Drift Detection
+### Step 1b: Spec Drift Detection (Granular)
 
-After reading the spec, compute and check its fingerprint:
+After reading the spec, perform section-level drift detection:
 
 1. **Compute current spec fingerprint** - SHA-256 hash of spec file content
-2. **Check existing tasks** - Read `spec_fingerprint` from task files
+2. **Check existing tasks** - Read `spec_fingerprint` and `section_fingerprint` from task files
 3. **Compare fingerprints:**
 
 ```
 If tasks exist with spec_fingerprint:
-├─ Fingerprints match → Continue normally
-└─ Fingerprints differ → Surface drift warning:
-   "The spec has changed since tasks were decomposed.
-    Options:
-    1. Review changes - Show what's different
-    2. Re-decompose - Create new tasks from updated spec
-    3. Acknowledge - Mark tasks as reviewed against new spec
-    4. Continue anyway - Proceed with warning noted"
+├─ Full spec fingerprint matches → Continue normally
+└─ Full spec fingerprint differs → Perform granular section analysis:
+   1. Parse current spec into sections (## level headings)
+   2. Load snapshot from section_snapshot_ref (if exists)
+   3. Parse snapshot spec into sections
+   4. For each section, compare fingerprints
+   5. Identify which sections changed
+   6. Group affected tasks by changed section
+   7. Present granular reconciliation UI
 ```
 
 **Hash computation:**
@@ -60,7 +61,67 @@ sha256sum .claude/spec_v{N}.md | cut -d' ' -f1
 # Prefix with "sha256:" → "sha256:a1b2c3d4..."
 ```
 
-**Note:** Tasks without `spec_fingerprint` are treated as legacy (no warning).
+**Section fingerprint computation:**
+```bash
+# For each ## section, hash: heading + all content until next ## or EOF
+echo -n "## Authentication\nContent here..." | sha256sum | cut -d' ' -f1
+# Prefix with "sha256:" → "sha256:e5f6g7h8..."
+```
+
+**Note:** Tasks without `spec_fingerprint` are treated as legacy (no warning). Tasks without `section_fingerprint` fall back to full-spec comparison.
+
+### Granular Reconciliation UI
+
+When section-level drift is detected, present a targeted UI:
+
+```
+## Spec Drift Detected
+
+### Changed: ## Authentication (3 tasks affected)
+
+**Diff:**
+- User authentication with email and password
++ User authentication with email, password, or OAuth (Google, GitHub)
++ Session timeout: 30 minutes of inactivity
+
+**Affected Tasks:**
+| ID | Title | Suggested Action |
+|----|-------|------------------|
+| 3 | Implement login flow | Review: OAuth added |
+| 4 | Password validation | No change needed |
+| 7 | Session management | Review: Timeout added |
+
+[A] Apply suggestions  [R] Review individually  [S] Skip section
+
+### Changed: ## API Endpoints (1 task affected)
+...
+```
+
+**Options per section:**
+- **Apply suggestions** - Auto-update task descriptions with suggested changes
+- **Review individually** - Step through each affected task
+- **Skip section** - Acknowledge change, keep tasks as-is
+
+**Individual task review (when [R] selected):**
+```
+## Task 3: Implement login flow
+
+Current description: Create login endpoint with email/password
+
+Spec change: OAuth support (Google, GitHub) added
+
+Suggested update: Create login endpoint supporting email/password and OAuth
+
+[A] Apply  [E] Edit  [S] Skip  [O] Mark out-of-spec
+```
+
+**Edge cases:**
+| Scenario | Handling |
+|----------|----------|
+| New section added | Report: "New section '## NewFeature' - may need new tasks" |
+| Section deleted | Flag affected tasks, suggest mark as out-of-spec or delete |
+| Section renamed | Detected as delete + add; user manually reassigns tasks |
+| No snapshot file | Fall back to full-spec comparison (legacy behavior) |
 
 ### Step 2: Spec Check (if request provided)
 
@@ -119,23 +180,35 @@ Break the spec into granular tasks:
 
 1. **Read spec thoroughly** - Understand all requirements and acceptance criteria
 2. **Compute spec fingerprint** - SHA-256 hash of spec content (see Step 1b)
-3. **Identify work items** - Each distinct piece of functionality
-4. **Create task files** - One JSON per task, difficulty ≤ 6, with provenance:
-   - `spec_fingerprint` - Hash computed in step 2
+3. **Save spec snapshot** - Copy current spec to `.claude/support/previous_specifications/spec_v{N}_decomposed.md`
+4. **Parse spec into sections** - Extract ## level headings and their content
+5. **Compute section fingerprints** - SHA-256 hash of each section (heading + content)
+6. **Identify work items** - Each distinct piece of functionality per section
+7. **Create task files** - One JSON per task, difficulty ≤ 6, with full provenance:
+   - `spec_fingerprint` - Hash of full spec computed in step 2
    - `spec_version` - Filename of spec (e.g., "spec_v1")
    - `spec_section` - Originating section heading (e.g., "## Authentication")
-5. **Map dependencies** - What must complete before what
-6. **Regenerate dashboard** - Read all task-*.json and milestone-*.json files and regenerate dashboard.md
+   - `section_fingerprint` - Hash of specific section computed in step 5
+   - `section_snapshot_ref` - Snapshot filename (e.g., "spec_v1_decomposed.md")
+8. **Map dependencies** - What must complete before what
+9. **Regenerate dashboard** - Read all task-*.json and milestone-*.json files and regenerate dashboard.md
    - Preserve the Notes & Ideas section between `<!-- USER SECTION -->` markers
    - Calculate milestone progress (finished tasks / total tasks per milestone)
    - Determine milestone status: ⏳ Pending → 🔄 In Progress → ✅ Complete (or ⚠️/🔴 if past target)
+
+**Spec snapshot process:**
+```
+1. Create directory if needed: .claude/support/previous_specifications/
+2. Copy: .claude/spec_v{N}.md → .claude/support/previous_specifications/spec_v{N}_decomposed.md
+3. This snapshot is used later for generating diffs when sections change
+```
 
 Task creation guidelines:
 - Clear, actionable titles ("Add user validation" not "Backend stuff")
 - Difficulty 1-6 (break down anything larger)
 - Explicit dependencies
 - Owner: claude/human/both
-- Include spec provenance fields (fingerprint, version, section)
+- Include all spec provenance fields (fingerprint, version, section, section_fingerprint, section_snapshot_ref)
 
 #### If Executing
 
@@ -179,6 +252,7 @@ Run quick validation checks after completing the main action:
 **Checks performed:**
 - Single "In Progress" task rule (only one allowed)
 - Spec fingerprint comparison (current spec vs task fingerprints)
+- Section change count (if section fingerprints exist)
 - Orphan dependency detection (references to non-existent tasks)
 - Out-of-spec task count
 
@@ -189,7 +263,7 @@ Quick check: ✓
 or
 ```
 Quick check: ⚠️ 2 issues
-  - Spec has changed since tasks were decomposed
+  - Spec changed: 2 sections modified (4 tasks affected)
   - 3 tasks marked out-of-spec
 ```
 

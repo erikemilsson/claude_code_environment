@@ -33,7 +33,12 @@
   "files_affected": [],
   "milestone": null,
   "external_dependency": null,
-  "notes": ""
+  "notes": "",
+  "spec_fingerprint": "sha256:a1b2c3d4...",
+  "spec_version": "spec_v1",
+  "spec_section": "## Authentication",
+  "section_fingerprint": "sha256:e5f6g7h8...",
+  "section_snapshot_ref": "spec_v1_decomposed.md"
 }
 ```
 
@@ -70,6 +75,8 @@
 | spec_fingerprint | String | SHA-256 hash of spec at task decomposition (drift detection) |
 | spec_version | String | Spec filename when task was created (e.g., "spec_v1") |
 | spec_section | String | Originating section heading from spec |
+| section_fingerprint | String | SHA-256 hash of the specific section content at decomposition |
+| section_snapshot_ref | String | Reference to snapshot file for generating diffs (e.g., "spec_v1_decomposed.md") |
 | out_of_spec | Boolean | Task not aligned with spec (user chose "proceed anyway") |
 
 ## Owner Values
@@ -140,6 +147,30 @@ Track which spec and section a task originated from:
 ```
 
 Enables tracking which tasks need review when specific sections change.
+
+### section_fingerprint and section_snapshot_ref
+
+Enable granular per-section drift detection:
+
+```json
+{
+  "section_fingerprint": "sha256:abc123...",
+  "section_snapshot_ref": "spec_v1_decomposed.md"
+}
+```
+
+| Field | Purpose |
+|-------|---------|
+| `section_fingerprint` | SHA-256 hash of the specific section content at decomposition time. Allows detecting changes to individual sections without triggering alerts for unrelated changes. |
+| `section_snapshot_ref` | Reference to the snapshot file in `.claude/support/previous_specifications/`. Used to generate diffs showing exactly what changed in a section. |
+
+**How it works:**
+1. When tasks are decomposed from spec, each task's originating section is hashed
+2. The full spec is saved as a snapshot (e.g., `spec_v1_decomposed.md`)
+3. When `/work` runs, it compares current section fingerprints against task fingerprints
+4. Only tasks from changed sections are flagged for review
+
+This provides more targeted drift detection than full-spec fingerprinting alone.
 
 ### out_of_spec
 

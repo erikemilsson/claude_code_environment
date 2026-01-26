@@ -176,7 +176,7 @@ Pre-approved permissions for consistent Claude Code behavior. Ensures the templa
 │   │   └── .archive/         # Research documents
 │   ├── learnings/            # Project-specific patterns
 │   │   └── README.md
-│   ├── previous_specifications/  # Archived spec versions
+│   ├── previous_specifications/  # Spec snapshots at decomposition (for drift detection)
 │   ├── workspace/            # Claude's working area (gitignored)
 │   │   ├── scratch/          # Temporary notes, quick analysis
 │   │   ├── research/         # Web search results, reference material

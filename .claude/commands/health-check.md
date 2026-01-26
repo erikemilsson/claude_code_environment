@@ -109,28 +109,85 @@ Validates that dashboard.md follows the canonical template structure:
 
 These checks detect drift and staleness in large collaborative projects:
 
-### 10. Spec Fingerprint Validation
+### 10. Spec Fingerprint Validation (Granular)
 
-Detects when the specification has changed since tasks were decomposed:
+Detects when the specification has changed since tasks were decomposed, with section-level granularity:
 
-**Check:**
+**Full spec check:**
 - Compute current spec SHA-256 hash
 - Compare against `spec_fingerprint` field in task files
-- Warn if fingerprints differ
+- If different, proceed to section-level analysis
+
+**Section-level check (when full spec differs):**
+- Load snapshot from `section_snapshot_ref` (if exists)
+- Parse both current spec and snapshot into sections
+- Compare `section_fingerprint` for each task against current section hash
+- Identify which specific sections changed
+- Group affected tasks by section
 
 **Report format:**
 ```
 [Warning] Spec has changed since tasks were decomposed
-  Current spec hash: sha256:xyz789...
-  Task fingerprint:  sha256:abc123...
-  Affected tasks: 12 tasks created from outdated spec
+
+Per-section analysis:
+  ## Authentication - CHANGED (3 tasks affected)
+    - Task 3: Implement login flow
+    - Task 4: Password validation
+    - Task 7: Session management
+
+  ## API Endpoints - CHANGED (1 task affected)
+    - Task 12: Create REST endpoints
+
+  ## Database Schema - unchanged (2 tasks)
+  ## Deployment - unchanged (1 task)
+
+Summary:
+  Changed sections: 2
+  Affected tasks: 4
+  Unchanged tasks: 3
+```
+
+**New section detection:**
+```
+[Info] New section detected: ## OAuth Integration
+  This section was added after task decomposition.
+  Consider creating new tasks for this functionality.
+```
+
+**Deleted section detection:**
+```
+[Warning] Section removed: ## Legacy Support
+  2 tasks reference this deleted section:
+    - Task 15: Maintain backward compatibility
+    - Task 16: Legacy API wrapper
+  Consider marking these tasks as out-of-spec or deleting them.
 ```
 
 **Behavior:**
 - Tasks without `spec_fingerprint` field: treated as legacy, no warning
+- Tasks without `section_fingerprint` field: fall back to full-spec comparison
 - Only warn for projects with 10+ tasks (avoid noise for small projects)
 
-### 11. Out-of-Spec Task Tracking
+### 11. Section Fingerprint Field Validation
+
+For tasks created after this feature was implemented:
+
+**Check:**
+- Tasks with `spec_fingerprint` should also have `section_fingerprint`
+- Tasks with `section_fingerprint` should have `section_snapshot_ref`
+- Snapshot file in `section_snapshot_ref` should exist
+
+**Report format:**
+```
+[Warning] 3 tasks missing section-level fingerprints
+  - Task 5: has spec_fingerprint but missing section_fingerprint
+  - Task 8: has section_fingerprint but missing section_snapshot_ref
+  - Task 12: section_snapshot_ref points to missing file
+```
+
+**Note:** This is informational only - tasks without section fingerprints work fine using full-spec comparison.
+
+### 12. Out-of-Spec Task Tracking
 
 Reports tasks that were created outside the spec:
 
@@ -316,8 +373,20 @@ Run decision validation (if not `--tasks` and not `--claude-md`):
 ### Task System - Drift Detection
 [Checkmark] Spec fingerprint matches (or no fingerprints tracked)
 [Warning] Spec changed since decomposition
-  Current: sha256:xyz789...
-  Tasks:   sha256:abc123...
+
+Per-section analysis:
+  ## Authentication - CHANGED (3 tasks affected)
+    - Task 3, Task 4, Task 7
+  ## API Endpoints - CHANGED (1 task affected)
+    - Task 12
+  ## Database Schema - unchanged
+  ## Deployment - unchanged
+
+[Info] 1 new section detected
+  - ## OAuth Integration (no tasks yet)
+[Warning] 1 section removed
+  - ## Legacy Support (2 orphaned tasks)
+
 [Warning] 3 tasks marked out-of-spec
   - Task 15: "Add social login"
   - Task 23: "Custom analytics"
@@ -596,7 +665,8 @@ Catch common issues immediately without the overhead of a full health check.
 | Check | What It Detects |
 |-------|-----------------|
 | Single "In Progress" rule | More than one task in progress |
-| Spec fingerprint comparison | Spec changed since decomposition |
+| Spec fingerprint comparison | Spec changed since decomposition (full spec level) |
+| Section change count | Number of sections that changed (if section fingerprints exist) |
 | Orphan dependency detection | References to deleted/missing tasks |
 | Out-of-spec count | Number of tasks marked out-of-spec |
 
@@ -610,7 +680,7 @@ Quick check: ✓
 **Issues found:**
 ```
 Quick check: ⚠️ 2 issues
-  - Spec has changed since tasks were decomposed
+  - Spec changed: 2 sections modified (4 tasks affected)
   - 3 tasks marked out-of-spec
 ```
 
@@ -625,7 +695,7 @@ Quick check: ⚠️ 2 issues
 | Aspect | Lightweight | Full (`/health-check`) |
 |--------|-------------|------------------------|
 | Execution time | < 1 second | Several seconds |
-| Checks | 4 critical checks | All validations |
+| Checks | 5 critical checks | All validations |
 | Auto-fix | No | Yes (prompts for fixes) |
 | Report | Single line + issues | Full report with sections |
 
