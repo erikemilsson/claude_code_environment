@@ -21,6 +21,9 @@
   "status": "Pending",
   "difficulty": 3,
   "owner": "claude",
+  "priority": "medium",
+  "due_date": "2026-02-15",
+  "estimated_hours": 4,
   "created_date": "2026-01-15",
   "updated_date": "2026-01-15",
   "completion_date": null,
@@ -28,6 +31,8 @@
   "subtasks": [],
   "parent_task": null,
   "files_affected": [],
+  "milestone": null,
+  "external_dependency": null,
   "notes": ""
 }
 ```
@@ -49,6 +54,9 @@
 |-------|------|-------------|
 | description | String | Detailed explanation when title isn't enough |
 | owner | String | claude (default), human, or both - see Owner Values below |
+| priority | String | low, medium (default), high, critical - see Priority Values below |
+| due_date | String | YYYY-MM-DD deadline for the task |
+| estimated_hours | Number | Rough planning estimate in hours |
 | created_date | String | YYYY-MM-DD format |
 | updated_date | String | YYYY-MM-DD format |
 | completion_date | String | YYYY-MM-DD format, set when Finished |
@@ -56,6 +64,8 @@
 | subtasks | Array | Task IDs (only when Broken Down) |
 | parent_task | String | Parent task ID if this is a subtask |
 | files_affected | Array | File paths this task will modify |
+| milestone | String | Milestone ID this task belongs to (e.g., "M1") |
+| external_dependency | Object | External blocker - see External Dependencies below |
 | notes | String | Context, warnings, or completion notes |
 
 ## Owner Values
@@ -85,6 +95,57 @@ The `owner` field determines who is responsible and where tasks appear in the da
 **`both`**:
 - Design work (human provides direction, Claude implements)
 - Content requiring human judgment (Claude drafts, human refines)
+
+## Priority Values
+
+| Value | Emoji | Meaning |
+|-------|-------|---------|
+| critical | 🔴 | Blocking other work, immediate attention required |
+| high | 🟠 | Important, should be done soon |
+| medium | (none) | Normal priority (default when omitted) |
+| low | (none) | Nice to have, do when time permits |
+
+Priority affects display order in Ready sections - critical tasks appear first.
+Only critical and high show emoji prefixes in the dashboard to reduce visual noise.
+
+## External Dependencies
+
+For tasks blocked by external factors (not other tasks):
+
+```json
+{
+  "external_dependency": {
+    "type": "permit|vendor|approval|delivery",
+    "contact": "who to follow up with",
+    "requested_date": "2026-01-20",
+    "expected_date": "2026-01-28",
+    "notes": "Awaiting production API keys"
+  }
+}
+```
+
+| Type | When to Use |
+|------|-------------|
+| permit | Legal, regulatory, compliance approvals |
+| vendor | Third-party service, API access, contracts |
+| approval | Internal stakeholder sign-off |
+| delivery | Physical items, hardware, materials |
+
+## Milestones
+
+Milestones are lightweight date markers for project phases:
+
+```json
+{
+  "id": "M1",
+  "title": "MVP Complete",
+  "type": "milestone",
+  "target_date": "2026-02-01",
+  "status": "Pending"
+}
+```
+
+Save as `milestone-M1.json` in `.claude/tasks/`. Tasks reference via `"milestone": "M1"`.
 
 ## Status Rules
 

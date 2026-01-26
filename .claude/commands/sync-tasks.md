@@ -10,10 +10,16 @@ Update the project dashboard (task-overview.md) from task JSON files.
 ## Process
 
 1. Read all `.claude/tasks/task-*.json` files (active tasks only)
-2. Calculate statistics by owner and status
-3. **Preserve user notes section** (content between `<!-- USER SECTION -->` markers)
-4. Generate dashboard with user-facing summary at top
-5. Generate full task list at bottom
+2. Read all `.claude/tasks/milestone-*.json` files (if any exist)
+3. Calculate statistics by owner and status
+4. **Preserve user notes section** (content between `<!-- USER SECTION -->` markers)
+5. Generate dashboard with:
+   - Quick Status (counts)
+   - Upcoming Deadlines (tasks with due_date)
+   - Milestones (if any exist)
+   - Your Actions / Claude Status sections
+   - Progress This Week
+   - All Tasks table
 6. Add archive summary if tasks have been archived
 7. Write to `.claude/tasks/task-overview.md`
 
@@ -32,17 +38,40 @@ Update the project dashboard (task-overview.md) from task JSON files.
 
 *(Counts show pending/actionable tasks per owner, plus blocked across all)*
 
+## ⏰ Upcoming Deadlines
+
+| Due | ID | Task | Owner |
+|-----|----|----|-------|
+| Tomorrow | 6 | 🔴 Deploy MVP | ❗ |
+| Jan 30 | 7 | 🟠 API docs | 🤖 |
+
+*No deadlines set* (shown when no tasks have due_date)
+
+## 🎯 Milestones
+
+| Target | Milestone | Progress |
+|--------|-----------|----------|
+| Feb 1  | MVP Complete | 3/8 tasks (37%) |
+| Feb 15 | Beta Launch | 0/5 tasks |
+
+*(Only shown when milestone files exist)*
+
 ## ❗ Your Actions
 
 ### Ready Now
 | ID | Task | Difficulty |
 |----|------|------------|
-| 5  | Configure API keys | 2 |
+| 5  | 🔴 Configure API keys | 2 |
 
 ### Waiting On Claude
 | ID | Task | Blocked By |
 |----|------|------------|
 | 8  | Deploy to production | #7 (Claude building API) |
+
+### External Dependencies
+| ID | Task | Type | Expected |
+|----|------|------|----------|
+| 12 | Setup vendor API | vendor | Jan 28 |
 
 ## 🤖 Claude Status
 
@@ -54,12 +83,23 @@ Update the project dashboard (task-overview.md) from task JSON files.
 ### Ready to Start
 | ID | Task | Difficulty |
 |----|------|------------|
-| 9  | Write unit tests | 4 |
+| 9  | 🟠 Write unit tests | 4 |
+| 10 | Write docs | 3 |
 
 ### Blocked
 | ID | Task | Blocked By |
 |----|------|------------|
-| 10 | Integration tests | #9 (unit tests) |
+| 11 | Integration tests | #9 (unit tests) |
+
+## 📊 Progress This Week
+
+| Completed | Started | Created |
+|-----------|---------|---------|
+| 5 tasks   | 2 tasks | 3 tasks |
+
+Recent completions:
+- #12 Add user validation (Jan 25)
+- #8 Setup database (Jan 24)
 
 ## 💡 Notes & Ideas
 
@@ -73,12 +113,12 @@ Update the project dashboard (task-overview.md) from task JSON files.
 
 ## All Tasks
 
-| ID | Title | Status | Diff | Owner | Deps |
-|----|-------|--------|------|-------|------|
-| 1  | Setup project | Finished | 3 | 🤖 | - |
-| 5  | Configure keys | Pending | 2 | ❗ | - |
-| 7  | Build REST API | In Progress | 5 | 🤖 | - |
-| 8  | Deploy to prod | Pending | 3 | ❗ | #7 |
+| ID | Title | Status | Diff | Owner | Due | Deps |
+|----|-------|--------|------|-------|-----|------|
+| 1  | Setup project | Finished | 3 | 🤖 | - | - |
+| 5  | Configure keys | Pending | 2 | ❗ | Jan 27 | - |
+| 7  | Build REST API | In Progress | 5 | 🤖 | Feb 1 | - |
+| 8  | Deploy to prod | Pending | 3 | ❗ | Feb 5 | #7 |
 
 *Summary: 7/15 complete (47%)*
 ```
@@ -95,6 +135,49 @@ See `shared-definitions.md` for full owner definitions. Summary:
 **Ready Now**: Task is `Pending` AND all dependencies are `Finished`
 
 **Waiting/Blocked**: Task is `Pending` AND has unfinished dependencies
+
+## Priority Display
+
+Tasks in Ready sections are sorted by priority (critical → high → medium → low).
+Only critical and high priorities show emoji prefixes:
+
+| Priority | Prefix |
+|----------|--------|
+| critical | 🔴 |
+| high | 🟠 |
+| medium | (none) |
+| low | (none) |
+
+## Upcoming Deadlines Section
+
+Shows tasks with `due_date` field set, sorted by date:
+- "Today", "Tomorrow", or date format (Jan 30)
+- Owner shown as emoji (❗/🤖/👥)
+- Priority emoji prefix on task title
+- Only shows non-finished tasks
+
+## Milestones Section
+
+Only generated when `milestone-*.json` files exist:
+- Lists milestones by target_date
+- Shows progress as "X/Y tasks (Z%)" based on tasks with matching `milestone` field
+- Milestones with all tasks finished show ✓
+
+## External Dependencies Section
+
+Under "Your Actions", shows tasks with `external_dependency` field:
+- Type: permit, vendor, approval, delivery
+- Expected date from `external_dependency.expected_date`
+- Contact info available in task details
+
+## Progress This Week Section
+
+Calculates from date fields:
+- Completed: tasks with `completion_date` in last 7 days
+- Started: tasks with `updated_date` in last 7 days that moved to In Progress
+- Created: tasks with `created_date` in last 7 days
+
+Lists recent completions with task ID, title, and completion date.
 
 ## User Notes Preservation
 

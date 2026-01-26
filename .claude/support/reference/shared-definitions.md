@@ -29,7 +29,23 @@ Ask: "Can this be completed in one focused session?"
 | Broken Down | Split into subtasks | Work on subtasks, not this |
 | Finished | Complete | Auto-set when subtasks done |
 
+## Priority Values
+
+See `task-schema.md` for full priority definitions. Summary:
+
+| Value | Emoji | Meaning |
+|-------|-------|---------|
+| critical | 🔴 | Blocking other work, immediate attention |
+| high | 🟠 | Important, should be done soon |
+| medium | (none) | Normal priority (default) |
+| low | (none) | Nice to have, do when time permits |
+
+Priority affects sorting in Ready sections (critical → high → medium → low).
+Only critical and high show emoji prefixes in the dashboard.
+
 ## Task JSON Structure
+
+See `task-schema.md` for complete field definitions including timeline fields (priority, due_date, milestone, external_dependency).
 
 ### Minimal Task
 ```json
@@ -40,24 +56,6 @@ Ask: "Can this be completed in one focused session?"
   "difficulty": 3
 }
 ```
-
-### Full Task
-```json
-{
-  "id": "1",
-  "title": "Brief description",
-  "description": "Detailed explanation",
-  "status": "Pending",
-  "difficulty": 3,
-  "owner": "claude",
-  "dependencies": [],
-  "subtasks": [],
-  "parent_task": null,
-  "notes": ""
-}
-```
-
-See `task-schema.md` for complete field definitions.
 
 ## Mandatory Rules
 

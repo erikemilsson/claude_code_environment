@@ -68,12 +68,18 @@ This project uses a phased workflow for autonomous work:
 - `/archive-tasks` - Archive old finished tasks
 - `/restore-task {id}` - Restore a task from archive
 
+### Setup
+- `/setup-check` - Validate template configuration (run after cloning)
+
 ## Task Rules
 
 Tasks are tracked in `.claude/tasks/` as JSON files. The **Project Dashboard** at `.claude/tasks/task-overview.md` shows:
 - Quick status with task counts by owner
-- ❗ **Your Actions** - human tasks ready or waiting
+- ⏰ **Upcoming Deadlines** - tasks with due dates sorted by urgency
+- 🎯 **Milestones** - project phases with progress tracking
+- ❗ **Your Actions** - human tasks ready or waiting (+ external dependencies)
 - 🤖 **Claude Status** - what Claude is working on
+- 📊 **Progress This Week** - recent completions and activity
 - 💡 **Notes & Ideas** - your preserved notes section
 - Full task list with all details
 

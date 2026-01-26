@@ -15,21 +15,24 @@ Start and finish a task with status tracking.
    - Status must be "Pending" or "In Progress" (not "Broken Down" or "Finished")
    - Dependencies must all be "Finished"
 3. Set status to "In Progress"
-4. Do the work
+4. Set `updated_date` to today (YYYY-MM-DD)
+5. Do the work
 
 ### Finishing
 1. **Check work**: Review all changes made for this task
    - Look for bugs, edge cases, inefficiencies
    - If issues found, fix them before proceeding
 2. Update status to "Finished"
-3. Add completion notes (what was done, any follow-ups needed)
-4. Check parent auto-completion:
+3. Set `completion_date` to today (YYYY-MM-DD)
+4. Set `updated_date` to today (YYYY-MM-DD)
+5. Add completion notes (what was done, any follow-ups needed)
+6. Check parent auto-completion:
    ```
    IF parent_task exists:
      IF all sibling subtasks are "Finished":
        Set parent status to "Finished"
    ```
-5. Run `/sync-tasks` to update overview
+7. Run `/sync-tasks` to update overview
 
 ## Example
 
@@ -50,6 +53,8 @@ Start and finish a task with status tracking.
   "title": "Add user validation",
   "status": "Finished",
   "difficulty": 4,
+  "updated_date": "2026-01-26",
+  "completion_date": "2026-01-26",
   "notes": "Added email format and password strength checks in auth.py"
 }
 ```
