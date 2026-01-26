@@ -5,23 +5,20 @@ Structured spec review that identifies gaps, asks focused questions, and suggest
 ## Usage
 
 ```
-/iterate                    # Auto-detect weakest area from checklist
-/iterate overview           # Focus on Overview section
-/iterate architecture       # Focus on Architecture section
-/iterate requirements       # Focus on Requirements section
-/iterate acceptance         # Focus on Acceptance Criteria section
-/iterate questions          # Focus on Open Questions section
-/iterate {custom topic}     # Focus on specific topic you name
+/iterate                    # Continue building the spec (auto-detects what's needed)
+/iterate {topic}            # Focus on a specific area
 ```
 
 ## What It Does
 
-1. **Reads current spec** and checklist
-2. **Identifies focus area** (your choice or weakest section)
-3. **Asks up to 4 questions** about that area
+1. **Reads current spec** and assesses completeness
+2. **Determines mode:**
+   - Empty/placeholder spec → Bootstrap mode (foundational questions)
+   - Partial spec → Identify weakest area and improve it
+3. **Asks up to 4 questions** about the focus area
 4. **Generates suggested content** based on your answers
 5. **You edit the spec** with the suggestions
-6. **Repeat** until section is solid
+6. **Repeat** until spec is ready
 
 ---
 
@@ -29,31 +26,47 @@ Structured spec review that identifies gaps, asks focused questions, and suggest
 
 ### Step 1: Load Context
 
-Read:
-- `../spec_v{N}.md` - Current specification
-- `reference/spec-checklist.md` - Readiness criteria
+Read `../spec_v{N}.md` and assess its current state.
 
-### Step 2: Determine Focus Area
+### Step 2: Determine Mode
 
-**If user specified an area:** Use that area.
+**If spec is empty or only has placeholders:**
 
-**If no area specified:** Evaluate spec against checklist and identify:
-1. Sections with placeholder text (highest priority)
-2. Sections missing required criteria
-3. Sections with red flags
+Enter bootstrap mode. Start with foundational questions:
 
-Select the weakest area. Report:
 ```
-Checking spec against readiness checklist...
+The spec is empty. Let's build it from the ground up.
 
-Section Status:
-- Overview: Needs work (missing problem statement)
-- Architecture: Not started (placeholder text)
-- Requirements: Partial (2 of 3 criteria met)
-- Acceptance Criteria: Partial (3 criteria, need 5+)
-- Open Questions: Blocking (architecture questions unresolved)
+1. In one sentence, what does this project do?
 
-Focusing on: Architecture (has placeholder text)
+2. Who will use this? (Be specific - role or persona, not just "users")
+
+3. What's the core problem this solves?
+
+4. How serious/complete does this project need to be?
+   (Quick prototype, MVP for real users, production-grade system, etc.)
+```
+
+The answer to #4 calibrates the entire spec process - a prototype needs less rigor than a production system.
+
+**If spec has content:**
+
+Assess readiness and identify the weakest area. Report:
+
+```
+Checking spec readiness...
+
+Current state:
+- Has clear problem statement: ✓ / ✗
+- Users identified: ✓ / ✗
+- Core components described: ✓ / ✗
+- Key decisions documented: ✓ / ✗
+- Acceptance criteria defined: ✓ / ✗
+- Blocking questions resolved: ✓ / ✗
+
+Overall: Ready for /work | Needs more detail | Major gaps
+
+Focusing on: [weakest area]
 ```
 
 ### Step 3: Ask Questions (max 4)
@@ -62,24 +75,7 @@ Generate focused questions for the target area. Questions should:
 - Be specific and answerable
 - Build on each other logically
 - Extract concrete details, not opinions
-- Avoid yes/no when possible
-
-**Question format:**
-```
-## Architecture Questions
-
-1. What are the main components of this system?
-   (e.g., "web frontend, API server, database" or "CLI tool, config files")
-
-2. How do these components communicate?
-   (e.g., "REST API", "message queue", "direct function calls")
-
-3. Where does data live and how does it flow?
-   (e.g., "User submits form → API validates → stored in Postgres")
-
-4. What's the deployment model?
-   (e.g., "single server", "containerized microservices", "serverless functions")
-```
+- Include example answers when helpful
 
 **Wait for user responses before proceeding.**
 
@@ -88,151 +84,57 @@ Generate focused questions for the target area. Questions should:
 Based on answers, generate spec-ready content:
 
 ```
-## Suggested Content for Architecture Section
+## Suggested Content
 
-Based on your answers, here's suggested content to add:
-
----
-
-### Components
-
-```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│   React     │────▶│   Express   │────▶│  PostgreSQL │
-│   Frontend  │◀────│   API       │◀────│  Database   │
-└─────────────┘     └─────────────┘     └─────────────┘
-```
-
-**Frontend (React)**
-- Single-page application
-- Handles user authentication UI
-- Communicates with API via REST
-
-**API Server (Express)**
-- RESTful endpoints for all operations
-- JWT-based authentication
-- Validates all input before database operations
-
-**Database (PostgreSQL)**
-- Stores user accounts and application data
-- Schema migrations managed with Knex
-
-### Key Design Decisions
-
-- **REST over GraphQL**: Simpler for MVP, team familiarity
-- **PostgreSQL over MongoDB**: Relational data model, ACID compliance needed
+Based on your answers, here's what to add to the spec:
 
 ---
 
-Copy the above into your spec's Architecture section, then modify as needed.
+[Copy-pasteable content formatted for the spec]
+
+---
+
+Copy the above into your spec, then modify as needed.
 ```
 
-### Step 5: Confirm and Continue
+### Step 5: Continue or Finish
 
 After presenting suggestions:
 
 ```
-Please edit the spec with these suggestions (modify as needed).
+Edit the spec with these suggestions (modify as needed).
 
-When ready:
-- Type "next" to continue to another weak area
-- Type "done" to finish this session
-- Or specify a section: /iterate requirements
+When ready, run /iterate again to continue, or focus on a specific area.
 ```
 
 ---
 
-## Question Banks by Section
+## Principles for Good Questions
 
-### Overview Questions
-1. In one sentence, what does this system do?
-2. Who specifically will use this? (role, not "users")
-3. What problem does this solve that isn't solved today?
-4. What's the simplest success scenario? (user does X, gets Y)
+Rather than following a script, Claude should:
 
-### Architecture Questions
-1. What are the main components/services?
-2. How do components communicate?
-3. Where does data live and how does it flow?
-4. What external services/APIs does this depend on?
-
-### Requirements Questions
-1. What must a user be able to do? (list 3-5 actions)
-2. What must the system do automatically? (without user action)
-3. What are the hard constraints? (tech, budget, timeline, compliance)
-4. What's explicitly out of scope?
-
-### Acceptance Criteria Questions
-1. How would you demo this to someone? (the steps)
-2. What would make you say "this is broken"?
-3. What's the minimum performance you'd accept?
-4. What security requirements are non-negotiable?
-
-### Open Questions Questions
-1. What technical decisions haven't been made yet?
-2. What are you unsure about in the requirements?
-3. What dependencies on external factors exist?
-4. What would you ask a domain expert if you had one?
+1. **Establish fundamentals first** - Who uses it, what problem it solves, before diving into technical details
+2. **Match depth to project seriousness** - A prototype doesn't need the same rigor as a production system
+3. **Uncover constraints early** - Technology limits, timeline, dependencies shape everything
+4. **Push for specificity** - "Users can log in" → "Users log in with email/password; errors shown within 2s"
+5. **Identify the critical path** - What must work for this to be useful at all?
 
 ---
 
-## Examples
+## Readiness Indicators
 
-### Example 1: Auto-detect mode
-```
-User: /iterate
+A spec is ready for `/work` when:
 
-Claude: Checking spec against readiness checklist...
+- [ ] The core problem and users are clear
+- [ ] You could explain the system to someone in 2 minutes
+- [ ] Key technical decisions are made (not deferred)
+- [ ] You know what "done" looks like (acceptance criteria)
+- [ ] Remaining questions won't block starting work
 
-Section Status:
-- Overview: Good
-- Architecture: Needs work (no component relationships)
-- Requirements: Good
-- Acceptance Criteria: Needs work (only 2 criteria)
-- Open Questions: Good
-
-Focusing on: Architecture
-
-## Architecture Questions
-
-1. You've listed Frontend and API as components. How do they communicate?
-   (REST, GraphQL, WebSocket, etc.)
-
-2. You mention a database but not which one. What type of data are you storing
-   and what database fits? (relational, document, key-value)
-
-3. Are there any background jobs or async processes?
-   (email sending, report generation, data sync)
-
-4. What handles authentication - the API directly or a separate service?
-```
-
-### Example 2: Focused mode
-```
-User: /iterate acceptance
-
-Claude: Focusing on Acceptance Criteria.
-
-Current criteria in spec:
-1. User can create an account
-2. User can log in
-
-Checklist requires: 5+ testable criteria covering core user journey.
-
-## Acceptance Criteria Questions
-
-1. After login, what's the first thing a user does?
-   (This is likely your core feature - needs criteria)
-
-2. What error scenarios must be handled visibly to the user?
-   (Failed login, validation errors, network issues)
-
-3. Is there any data the user creates/manages?
-   (Each CRUD operation typically needs a criterion)
-
-4. What would a user complain about if it was slow or broken?
-   (These are your critical path criteria)
-```
+The threshold depends on project seriousness:
+- **Prototype:** Problem and basic approach clear
+- **MVP:** Above + key decisions made, acceptance criteria exist
+- **Production:** Above + non-functional requirements, constraints documented
 
 ---
 
@@ -245,7 +147,7 @@ Checklist requires: 5+ testable criteria covering core user journey.
 - Generate suggestions before receiving answers
 
 **Claude MUST:**
-- Always check the spec against the checklist first
-- Present section status before diving into questions
+- Assess spec state before diving into questions
+- Match rigor to stated project seriousness
 - Format suggestions as copy-pasteable content
-- Wait for explicit signal to continue to next area
+- Report readiness status when spec has substance

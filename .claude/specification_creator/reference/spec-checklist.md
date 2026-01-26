@@ -1,117 +1,68 @@
-# Spec Readiness Checklist
+# Spec Readiness Guide
 
 Defines "complete enough" for a specification to move to task decomposition.
 
-## Required Sections
+## Core Questions
 
-Each section must meet its criteria before the spec is ready for `/work` decomposition.
+A spec is ready when you can answer these confidently:
 
-### 1. Overview
-| Criterion | Check |
-|-----------|-------|
-| Problem statement is specific (not generic) | |
-| Target users are identified | |
-| At least 2 concrete problems with solutions listed | |
-
-**Red flags:** Placeholder text like "[Brief description]", vague statements like "make it better"
-
-### 2. Architecture
-| Criterion | Check |
-|-----------|-------|
-| Components are named and described | |
-| Relationships between components are clear | |
-| At least 1 key design decision with rationale | |
-
-**Red flags:** No component diagram/description, decisions without rationale
-
-### 3. Requirements
-| Criterion | Check |
-|-----------|-------|
-| At least 3 functional requirements | |
-| Requirements are behaviors, not tasks | |
-| Non-functional requirements address: performance OR security OR scalability | |
-| Constraints list any hard boundaries (tech, timeline, dependencies) | |
-
-**Red flags:** Requirements that are really tasks ("Add login button"), no constraints section
-
-### 4. Acceptance Criteria
-| Criterion | Check |
-|-----------|-------|
-| At least 5 testable criteria | |
-| Each criterion is pass/fail verifiable | |
-| Criteria cover the core user journey | |
-| No criterion requires subjective judgment | |
-
-**Red flags:** Criteria like "works well", "is fast", "looks good" - these aren't testable
-
-### 5. Open Questions
-| Criterion | Check |
-|-----------|-------|
-| No questions that block core architecture | |
-| No questions that block the critical path | |
-| Remaining questions are deferrable to implementation | |
-
-**Red flags:** Questions like "What database should we use?" or "How will auth work?" still open
-
----
+| Question | Why It Matters |
+|----------|----------------|
+| What does this do and for whom? | Without this, you're building blind |
+| What are the main components/parts? | Needed to break into tasks |
+| What key decisions have been made? | Undecided architecture blocks work |
+| How will you know it works? | No acceptance criteria = no definition of done |
+| What's explicitly out of scope? | Prevents scope creep during implementation |
 
 ## Readiness Levels
 
 ### Not Ready
-- Any required section has placeholder text
-- Architecture section is empty or vague
-- Fewer than 3 acceptance criteria
-- Open questions block core functionality
+- Can't explain what it does in 2 minutes
+- Major technical decisions unmade ("what database?" still open)
+- No way to verify if it works
+- Scope is fuzzy ("make it good")
 
-### Minimally Ready
-- All sections have real content (no placeholders)
-- Architecture describes main components
-- At least 5 acceptance criteria exist
-- Open questions are implementation details only
+### Ready for Work
+- Problem and users are clear
+- Core architecture decided
+- Has testable acceptance criteria
+- Remaining questions are implementation details
 
 ### Well-Defined
-- All criteria in this checklist pass
-- Acceptance criteria map clearly to requirements
+- All of the above, plus:
 - Non-functional requirements have measurable targets
-- No ambiguity in scope boundaries
+- Constraints and dependencies documented
+- Acceptance criteria map to clear verification steps
 
----
+## Calibrating to Project Seriousness
 
-## Section-Specific Guidance
+Not every project needs the same rigor:
 
-### Writing Good Acceptance Criteria
+| Project Type | Minimum Bar |
+|--------------|-------------|
+| Quick prototype | Problem clear, basic approach outlined |
+| MVP / proof of concept | Above + key decisions made, basic acceptance criteria |
+| Production system | Full "Ready for Work" criteria |
+| Critical infrastructure | "Well-Defined" level |
 
-**Bad → Good:**
-- "User can log in" → "User can log in with email and password; invalid credentials show error message within 2 seconds"
-- "App is fast" → "Page load time < 3 seconds on 3G connection"
-- "Data is secure" → "Passwords are hashed with bcrypt; API requires authentication token"
+The `/iterate` command asks about project seriousness early and calibrates accordingly.
 
-**Granularity target:** Each criterion should map to 1-3 implementation tasks.
+## Red Flags
 
-### Writing Good Requirements
+Watch for these regardless of project type:
 
-**Format:** "[User/System] can/must [behavior] when [condition]"
+- Placeholder text still present (`[TBD]`, `[describe here]`)
+- Vague statements ("make it better", "should be fast")
+- Requirements that are really tasks ("add login button")
+- Decisions without rationale
+- Acceptance criteria requiring subjective judgment ("looks good")
 
-**Bad → Good:**
-- "Add authentication" → "Users must authenticate before accessing protected resources"
-- "Handle errors" → "System must display user-friendly error messages for all API failures"
+## Spec → Task Connection
 
-### Defining Non-Functional Requirements
+When the spec moves to `/work`, it decomposes into tasks. Keep this in mind:
 
-Always include a measurable target:
+- Each acceptance criterion typically becomes 1-3 tasks
+- Vague specs produce vague tasks (garbage in, garbage out)
+- Missing decisions become blocking questions during implementation
 
-| Category | Bad | Good |
-|----------|-----|------|
-| Performance | "Should be fast" | "API responses < 200ms p95" |
-| Security | "Must be secure" | "OWASP Top 10 vulnerabilities addressed" |
-| Scalability | "Should scale" | "Support 1000 concurrent users" |
-
----
-
-## Using This Checklist
-
-The `/iterate` command checks the spec against this list and identifies gaps. You can also:
-
-1. **Self-review:** Walk through before starting a Claude session
-2. **Focus review:** Ask Claude to deep-dive on a specific section
-3. **Final check:** Run before transitioning to `/work` decomposition
+If you want to preview how a spec might decompose, describe your acceptance criteria at a level where each one is a concrete, demonstrable behavior.

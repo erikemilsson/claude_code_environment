@@ -24,8 +24,9 @@ Versioned specification system. The active spec is the source of truth for the p
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│  1. Check spec against readiness checklist              │
-│  2. Identify focus area (yours or weakest)              │
+│  1. Read spec, assess current state                     │
+│  2. Empty? → Bootstrap mode (foundational questions)    │
+│     Has content? → Find weakest area                    │
 │  3. Ask up to 4 questions                               │
 │  4. You answer                                          │
 │  5. Claude suggests copy-pasteable content              │
@@ -38,15 +39,15 @@ Versioned specification system. The active spec is the source of truth for the p
 
 ## Spec Readiness
 
-Before moving to `/work` (task decomposition), specs must be "Minimally Ready":
+A spec is ready for `/work` when:
 
-| Section | Minimum Criteria |
-|---------|-----------------|
-| Overview | Problem statement, target users, 2+ problems/solutions |
-| Architecture | Components named, relationships clear, 1+ design decision |
-| Requirements | 3+ functional, 1+ non-functional, constraints listed |
-| Acceptance Criteria | 5+ testable criteria, pass/fail verifiable |
-| Open Questions | No blockers for core architecture/critical path |
+- The core problem and users are clear
+- You could explain the system in 2 minutes
+- Key technical decisions are made
+- You know what "done" looks like
+- Remaining questions won't block work
+
+Rigor scales with project seriousness - a prototype needs less than a production system. `/iterate` asks about this early and calibrates accordingly.
 
 See `reference/spec-checklist.md` for full criteria.
 

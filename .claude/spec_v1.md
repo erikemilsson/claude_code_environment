@@ -7,54 +7,13 @@ updated: YYYY-MM-DD
 
 # Project Specification
 
-## Overview
+<!--
+Start with what you know. Common sections include:
+- Overview (what it does, who it's for, what problems it solves)
+- Architecture (components, how they connect, key decisions)
+- Requirements (what it must do, constraints, what's out of scope)
+- Acceptance Criteria (how you'll know it works)
+- Open Questions (what's still undecided)
 
-[Brief description of what this project does and why it exists]
-
-**Users:** [Who will use this?]
-
-**Problems solved:**
-- [Problem 1] → [How this solves it]
-- [Problem 2] → [How this solves it]
-
-## Architecture
-
-### Components
-
-```
-[Describe the main components and their relationships]
-```
-
-### Key Design Decisions
-
-- [Decision 1]: [Rationale]
-- [Decision 2]: [Rationale]
-
-## Requirements
-
-### Functional
-
-- [What the system must do]
-- [User-facing behaviors]
-
-### Non-Functional
-
-- [Performance targets]
-- [Security requirements]
-- [Scalability needs]
-
-### Constraints
-
-- [Technology constraints]
-- [External dependencies]
-- [Timeline constraints]
-
-## Acceptance Criteria
-
-- [ ] [Testable criterion 1]
-- [ ] [Testable criterion 2]
-- [ ] [Testable criterion 3]
-
-## Open Questions
-
-- [Questions that need answers before implementation]
+But use whatever structure fits your project. Run /iterate to build this out.
+-->

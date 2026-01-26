@@ -19,6 +19,8 @@ When suggesting changes:
 - Provide copy-pasteable content
 - Let the user make the edit
 
+**Why Claude suggests but doesn't edit directly:** The spec is your anchor. If Claude edits it freely, it's easy to lose sight of what you originally wanted vs. what Claude decided to build. By requiring you to make edits, you stay in control of scope and intent.
+
 ## Spec Readiness
 
 Before a spec can move to task decomposition (`/work`), it must pass the readiness checklist.
@@ -81,6 +83,15 @@ Significant decisions made during spec creation should be documented:
 When suggesting spec additions involving technology/architecture decisions:
 - Note if a decision record would be valuable
 - Reference `.claude/support/reference/decision-guide.md` for when to create records
+
+## Where Decisions Go
+
+| What | Where | Example |
+|------|-------|---------|
+| **Outcome** (what was chosen + brief rationale) | In the spec | "PostgreSQL for storage (relational model, team familiarity)" |
+| **Process** (options compared, research, tradeoffs) | In `../support/decisions/` | Full comparison of Postgres vs. Mongo vs. DynamoDB |
+
+**Rule of thumb:** If you can explain it in one sentence, it stays in the spec. If you researched or compared options, create a decision record.
 
 ## Structure
 
