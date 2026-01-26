@@ -6,8 +6,6 @@ A ready-to-use project structure for Claude Code with built-in task management.
 
 ## Quick Start
 
-**Get started in 30 seconds:**
-
 ```bash
 # Copy base folder to your new project
 cp -r /path/to/claude_code_environment/base/ /path/to/your-project/
@@ -39,14 +37,9 @@ claude_code_environment/
 │   ├── project-management/ # Phases, decisions, handoffs
 │   └── advanced/          # Agents, planning workflows
 │
-├── examples/              # Working examples
-│   ├── development-project/  # Generic coding project
-│   └── life-project/         # Generic PM project
-│
-└── docs/                  # Documentation
-    ├── README.md          # Getting started
-    ├── workflow.md        # Usage workflow
-    └── extras-guide.md    # When to use extras
+└── examples/              # Working examples
+    ├── development-project/  # Generic coding project
+    └── life-project/         # Generic PM project
 ```
 
 ## Core Features
@@ -87,42 +80,58 @@ Track work with JSON task files:
 3. Run `/sync-tasks` after completing tasks
 4. Parent tasks auto-complete when subtasks finish
 
-## Workflow
+## Daily Workflow
 
-1. **Copy** `base/` to your project
-2. **Customize** CLAUDE.md and context/overview.md
-3. **Create tasks** in `.claude/tasks/`
-4. **Work** using commands to track progress
-5. **Add extras** from `extras/` as needed
+### Starting work
+1. Review `.claude/tasks/task-overview.md` for pending tasks
+2. Pick a task to work on
 
-See `docs/workflow.md` for detailed usage.
+### Working on a task
+1. Run `/complete-task {id}` to mark as In Progress
+2. Do the work
+3. Run `/complete-task {id}` again to mark as Finished
+4. Run `/sync-tasks` to update overview
+
+### Breaking down complex tasks
+For difficulty >= 7:
+1. Run `/breakdown {id}` - creates subtasks with difficulty <= 6
+2. Work on subtasks instead of parent
+3. Parent auto-completes when all subtasks finish
 
 ## Optional Extras
 
-Copy from `extras/` when you need:
+Copy from `extras/` only when needed. Start simple.
 
-| Folder | Use Case |
-|--------|----------|
-| `development/` | Source of truth, assumptions, LLM pitfalls |
-| `project-management/` | Phases, decisions, handoff guides |
-| `advanced/` | Agents, planning workflows |
+### development/
+For software projects:
+- **source-of-truth-template.md** - When multiple docs sources exist
+- **assumptions-template.md** - Track decisions made with incomplete info
+- **llm-pitfalls-template.md** - Domain-specific LLM mistakes to avoid
 
-See `docs/extras-guide.md` for details on when to use each.
+Copy to: `.claude/context/`
+
+### project-management/
+For tracking phases and decisions:
+- **phases-template.md** - Distinct project phases with inputs/outputs
+- **decisions-template.md** - Document rationale for choices
+- **handoff-guide-command.md** - Tasks split between Claude and human
+
+Copy to: `.claude/context/` or `.claude/commands/`
+
+### advanced/
+For complex projects needing agents or specification development. Most projects don't need this.
 
 ## Examples
 
 - **development-project/** - A Todo API project showing task breakdown
 - **life-project/** - A kitchen renovation showing project management
 
-## Documentation
+## Tips
 
-- `docs/README.md` - Getting started
-- `docs/workflow.md` - Daily usage workflow
-- `docs/extras-guide.md` - When to use extras
-
-## Archive
-
-Old templates and bootstrap system are in `.archive/` for reference. Use `base/` instead.
+- **Keep tasks focused** - One task = one deliverable
+- **Use notes** - Track what was done, issues encountered, follow-ups
+- **Sync frequently** - Run `/sync-tasks` after completing or breaking down tasks
+- **Don't over-engineer** - The base/ template is sufficient for most projects
 
 ---
 

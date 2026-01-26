@@ -11,8 +11,7 @@ This is a **template repository** for bootstrapping new Claude Code project envi
 1. **base/** - A minimal, ready-to-copy project structure
 2. **extras/** - Optional add-ons for specific use cases
 3. **examples/** - Working examples showing the structure in use
-4. **docs/** - Documentation for using this system
-5. **.claude/** - This repo's own environment (for maintaining this repo)
+4. **.claude/** - This repo's own environment (for maintaining this repo)
 
 ## Repository Structure
 
@@ -32,10 +31,8 @@ claude_code_environment/
 │   ├── development-project/
 │   └── life-project/
 │
-├── docs/                   # Documentation for this repo
-├── scripts/                # Utility scripts
 ├── .claude/                # THIS REPO's environment
-└── .archive/               # Old templates, bootstrap system
+└── .archive/               # Old templates, scripts, docs, tests
 ```
 
 ## Core Workflow
@@ -102,7 +99,7 @@ Key files in `.claude/reference/`:
 ## Navigation
 
 - **Understanding base**: See `base/CLAUDE.md`
-- **Understanding extras**: See `docs/extras-guide.md`
+- **Understanding extras**: See `README.md` (Optional Extras section)
 - **Repository tasks**: See `.claude/tasks/task-overview.md`
 - **Archived content**: See `.archive/README.md`
 
