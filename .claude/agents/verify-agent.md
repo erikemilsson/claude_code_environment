@@ -24,10 +24,11 @@ The `/work` command directs you to follow this workflow when:
 
 ## Outputs
 
-- Test results summary
-- Issues discovered (for new tasks or questions)
-- Verification status (pass/fail with details)
-- Recommendations for fixes
+- Per-criterion pass/fail table (Step 3)
+- Issue categorization by severity (Step 5)
+- Fix tasks created for major/critical issues (Step 6)
+- `.claude/verification-result.json` — structured result file used by `/work` and `/health-check` (Step 7)
+- Verification report displayed to user (Step 8)
 
 ## Verification Areas
 
