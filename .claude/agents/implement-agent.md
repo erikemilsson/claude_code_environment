@@ -105,7 +105,12 @@ Check parent auto-completion:
 - And all sibling subtasks are now "Finished"
 - Set the parent task status to "Finished"
 
-Regenerate dashboard.md from task JSON files (preserving the Notes & Ideas section between `<!-- USER SECTION -->` markers).
+Regenerate dashboard.md from task JSON files:
+- Preserve the Notes & Ideas section between `<!-- USER SECTION -->` markers
+- Update Project Context with current phase
+- Update overall completion percentage in Quick Status
+- Recalculate Critical Path from dependency chain of incomplete tasks
+- Add completed task to Recently Completed with date
 
 ## Implementation Guidelines
 

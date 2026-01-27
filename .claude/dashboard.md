@@ -2,6 +2,18 @@
 
 *Auto-generated after task changes. Last updated: (regenerated on sync)*
 
+## Project Context
+
+| Key | Value |
+|-----|-------|
+| **Project** | [Project name from spec] |
+| **Stage** | [Current phase] |
+| **Started** | [Date] |
+
+<!-- Add project-specific rows as needed (scope, funding, institution, etc.) -->
+
+---
+
 ## 🚨 Needs Your Attention
 
 Everything waiting on you, in one place.
@@ -48,11 +60,28 @@ Everything waiting on you, in one place.
 
 ## Quick Status
 
+**Overall: 0% complete** (0 of 0 tasks)
+
 | Total | Done | ❗ You | 🤖 Claude | 👥 Both | Blocked |
 |-------|------|--------|-----------|---------|---------|
 | 0     | 0    | 0      | 0         | 0       | 0       |
 
 *(Pending tasks by owner; Blocked = all owners)*
+
+---
+
+## 🛤️ Critical Path
+
+**Next steps to completion:**
+
+*No tasks defined yet*
+
+<!-- Auto-generated from dependency chain of incomplete tasks -->
+<!-- Format when tasks exist:
+1. ❗ **You**: [Task description] - *blocks step 2*
+2. 🤖 **Claude**: [Task description] - *blocks step 3*
+3. 👥 **Both**: [Task description]
+-->
 
 ---
 
@@ -78,7 +107,14 @@ Everything waiting on you, in one place.
 |-----------|---------|---------|
 | 0 tasks   | 0 tasks | 0 tasks |
 
-*No recent activity*
+**Recently Completed:**
+
+*No recent completions*
+
+<!-- Format when tasks complete:
+- ✅ task-005: Implement auth (2026-01-25)
+- ✅ task-003: Setup DB (2026-01-24)
+-->
 
 ---
 

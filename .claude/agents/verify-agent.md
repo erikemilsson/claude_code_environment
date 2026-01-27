@@ -121,7 +121,8 @@ For issues found that need fixing:
 1. Create new task files for each major/critical issue
 2. Set appropriate difficulty, owner, and dependencies
 3. **Regenerate dashboard.md** - Read all task-*.json files and update dashboard
-   (preserve Notes & Ideas section between `<!-- USER SECTION -->` markers)
+   - Preserve Notes & Ideas section between `<!-- USER SECTION -->` markers
+   - Update overall completion percentage, Critical Path, and Recently Completed
 
 ### Step 7: Report Results
 

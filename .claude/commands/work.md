@@ -195,8 +195,12 @@ Break the spec into granular tasks:
 8. **Map dependencies** - What must complete before what
 9. **Regenerate dashboard** - Read all task-*.json and milestone-*.json files and regenerate dashboard.md
    - Preserve the Notes & Ideas section between `<!-- USER SECTION -->` markers
-   - Calculate milestone progress (finished tasks / total tasks per milestone)
+   - Update **Project Context** with project name from spec and current phase
+   - Calculate **Overall completion** percentage for Quick Status
+   - Calculate milestone progress (finished tasks / total tasks per milestone) for Milestones section
    - Determine milestone status: ⏳ Pending → 🔄 In Progress → ✅ Complete (or ⚠️/🔴 if past target)
+   - Generate **Critical Path** from dependency chain of incomplete tasks (see below)
+   - List **Recently Completed** tasks with completion dates in Progress This Week
 
 **Spec snapshot process:**
 ```
@@ -325,6 +329,38 @@ Organize tasks into implementation stages (Foundation → Core → Polish → Va
 
 For the difficulty scale, see `.claude/support/reference/shared-definitions.md`.
 
+### Critical Path Generation
+
+The Critical Path shows the sequence of tasks blocking project completion:
+
+1. **Find unblocked incomplete tasks** - Tasks with no unfinished dependencies
+2. **Build dependency chains** - For each, trace what depends on it recursively
+3. **Identify longest chain** - This is the critical path
+4. **Format with owners** - Show who owns each step:
+   - `❗ **You**:` for human-owned tasks
+   - `🤖 **Claude**:` for Claude-owned tasks
+   - `👥 **Both**:` for collaborative tasks
+5. **Show blocking relationships** - Indicate what each step blocks
+
+**Edge cases:**
+| Scenario | Handling |
+|----------|----------|
+| No dependencies (all parallel) | Show all pending tasks as "can start now", no blocking chain |
+| Multiple equal-length paths | Pick the path with most human-owned tasks first (surfaces blockers) |
+| No incomplete tasks | Show "All tasks complete!" |
+| Single task remaining | Show just that task without "blocks" annotation |
+
+**Example output:**
+```markdown
+## 🛤️ Critical Path
+
+**Next steps to completion:**
+
+1. ❗ **You**: Review API design doc - *blocks step 2*
+2. 🤖 **Claude**: Implement API endpoints - *blocks step 3*
+3. 👥 **Both**: Integration testing
+```
+
 ---
 
 ## Output
@@ -391,7 +427,10 @@ Use `/work complete` for manual task completion outside of implement-agent's wor
    - If parent_task exists and all sibling subtasks are "Finished"
    - Set parent status to "Finished"
 6. **Regenerate dashboard** - Read all task-*.json and milestone-*.json files and update dashboard.md
-   (including milestone progress calculations)
+   - Update overall completion percentage and per-milestone progress
+   - Recalculate Critical Path with remaining incomplete tasks
+   - Add completed task to Recently Completed with completion_date
+   - Update milestone progress calculations
 7. **Auto-archive check** - If active task count > 100, archive old tasks
 8. **Lightweight health check** - Run quick validation (see Step 6 in main process)
    - Output: `Quick check: ✓` or `Quick check: ⚠️ N issues`
