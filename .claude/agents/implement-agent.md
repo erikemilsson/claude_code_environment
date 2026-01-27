@@ -183,9 +183,10 @@ If task grows larger than expected:
 ### Decisions Made During Implementation
 
 If you make a significant choice during implementation:
-1. Create a `decision-*.md` file in `.claude/support/decisions/` using the template
-2. Add the decision to the dashboard's All Decisions section
-3. **Rule:** Never reference a decision ID on the dashboard without a corresponding file
+1. Read `.claude/support/reference/decision-template.md` for the format and example
+2. Create a `decision-*.md` file in `.claude/support/decisions/` using that template
+3. Add the decision to the dashboard's All Decisions section
+4. **Rule:** Never reference a decision ID on the dashboard without a corresponding file
 
 ### Spec Misalignment Discovered
 

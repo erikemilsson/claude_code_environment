@@ -110,25 +110,11 @@ This keeps decision records focused while preserving detailed findings.
 
 ---
 
-## Index Management
+## Decision Tracking
 
-The `index.md` file provides a quick overview of all decisions.
+The **project dashboard** (`.claude/dashboard.md`) serves as the decision index. All decisions appear in the dashboard's "All Decisions" section, which is regenerated automatically after task and decision changes.
 
-### Index Table Format
-
-| ID | Title | Category | Status | Decided |
-|----|-------|----------|--------|---------|
-| DEC-001 | OAuth Library | technology | implemented | 2026-01-15 |
-| DEC-002 | Database Choice | architecture | approved | 2026-01-20 |
-
-### Pending Decisions
-
-Track decisions that need to be made:
-
-| Decision Needed | Priority | Blocking? | Notes |
-|----------------|----------|-----------|-------|
-| Hosting provider | High | Yes | Affects deployment |
-| Monitoring approach | Medium | No | Can defer |
+Pending decisions that need human input are surfaced in the dashboard's "Needs Your Attention" section.
 
 ---
 
@@ -136,14 +122,14 @@ Track decisions that need to be made:
 
 ### During Spec Creation
 
-The specification phase (via specification_creator) is where key decisions are made:
+The specification phase (via `/iterate`) is where key decisions are made:
 - Technology selections
 - Architectural approaches
 - Scope boundaries
 
 These should be documented in the spec and as decision records when significant.
 
-Reference: `.claude/specification_creator/CLAUDE.md`
+Reference: `.claude/commands/iterate.md`
 
 ### During Execution
 
@@ -155,7 +141,6 @@ The implement-agent references decisions when:
 
 `/health-check` validates:
 - Frontmatter completeness
-- Status consistency with index
 - Staleness (drafts/proposals too old)
 
 ---
@@ -198,5 +183,4 @@ When superseding a decision:
 ## Templates and References
 
 - **Template**: `.claude/support/reference/decision-template.md`
-- **Index**: `.claude/support/decisions/index.md`
 - **Archive**: `.claude/support/decisions/.archive/`
