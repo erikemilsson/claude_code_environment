@@ -8,7 +8,6 @@ Quick, read-only view of project state without starting any work.
 /status              # Full status overview
 /status --brief      # One-line summary only
 /status --tasks      # Focus on task status
-/status --timeline   # Focus on upcoming dates and milestones
 ```
 
 ## What It Does
@@ -28,11 +27,10 @@ Quick, read-only view of project state without starting any work.
 Read (but don't modify):
 - `.claude/dashboard.md` - Current status (primary data source)
 - `.claude/tasks/task-*.json` - Task data for phase detection
-- `.claude/tasks/milestone-*.json` - Milestone data
 - `.claude/support/questions.md` - Check for blocking questions
 - `.claude/spec_v{N}.md` - Check phase (Spec/Execute/Verify)
 
-**Important:** Use dashboard data for display. Only read task/milestone files for phase detection and data not in dashboard.
+**Important:** Use dashboard data for display. Only read task files for phase detection and data not in dashboard.
 
 ### Step 2: Determine Phase
 
@@ -42,8 +40,16 @@ Read (but don't modify):
 | Spec incomplete | Spec (in progress) |
 | Spec complete, no tasks | Ready for decomposition |
 | Tasks exist, not all finished | Execute |
-| All tasks finished | Ready for verification |
-| Verification passed | Complete |
+| All tasks finished, no valid verification result | Ready for verification |
+| All tasks finished, verification result exists and is valid | Complete |
+
+**Verification result check:**
+Read `.claude/verification-result.json` if it exists. A result is **valid** when:
+- `result` is `"pass"` or `"pass_with_issues"`
+- `spec_fingerprint` matches the current spec's fingerprint (spec hasn't changed since verification)
+- No tasks have been added or changed status since the `timestamp`
+
+If the file doesn't exist or the result is `"fail"` or invalidated, the phase is "Ready for verification."
 
 ### Step 3: Format Output
 
@@ -66,17 +72,6 @@ Display the appropriate output format based on mode.
 |-------|------|-------------|---------|--------------|
 | 18    | 12   | 1           | 0       | 2            |
 
-### Milestones
-| Status | Milestone | Target | Progress |
-|--------|-----------|--------|----------|
-| ✅ | M1: Foundation | Jan 20 | Complete |
-| 🔄 | M2: Core Features | Feb 1 | 6/8 tasks |
-| ⏳ | M3: Polish | Feb 10 | Not started |
-
-### Upcoming
-- Feb 1: M2 milestone due
-- Feb 5: Task 9 due (email scheduling)
-
 ### Attention Needed
 - Decision pending: Auth approach (decision-001)
 - Human task ready: Configure LDAP credentials (Task 7)
@@ -92,7 +87,7 @@ Display the appropriate output format based on mode.
 Single line for quick check:
 
 ```
-Execute phase: 12/18 tasks done | 1 in progress | 2 need human | M2 due Feb 1
+Execute phase: 12/18 tasks done | 1 in progress | 2 need human
 ```
 
 ### Tasks Mode (`/status --tasks`)
@@ -120,31 +115,6 @@ Focus on task breakdown:
 3. Task 7 "Add authentication" (needs human input)
 ```
 
-### Timeline Mode (`/status --timeline`)
-
-Focus on dates and milestones:
-
-```markdown
-## Timeline
-
-### This Week
-| Date | Item | Type | Status |
-|------|------|------|--------|
-| Jan 28 | Task 5: API keys | Due | ⚠️ Tomorrow |
-| Jan 29 | Today | | |
-| Feb 1 | M2: Core Features | Milestone | 🔄 75% |
-
-### Coming Up
-| Date | Item | Type |
-|------|------|------|
-| Feb 5 | Task 9: Email scheduling | Due |
-| Feb 10 | M3: Polish | Milestone |
-| Feb 15 | Task 12: E2E tests | Due |
-
-### At Risk
-- ⚠️ Task 5 due tomorrow, still in progress
-```
-
 ---
 
 ## Status Icons
@@ -165,7 +135,7 @@ Focus on dates and milestones:
 ```
 # Quick check before a meeting
 /status --brief
-→ Execute phase: 12/18 tasks done | 1 in progress | 2 need human | M2 due Feb 1
+→ Execute phase: 12/18 tasks done | 1 in progress | 2 need human
 
 # Full status report
 /status
@@ -174,10 +144,6 @@ Focus on dates and milestones:
 # See what tasks need attention
 /status --tasks
 → (task-focused output)
-
-# Check upcoming deadlines
-/status --timeline
-→ (date-focused output)
 ```
 
 ---

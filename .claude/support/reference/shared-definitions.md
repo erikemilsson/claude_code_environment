@@ -45,7 +45,7 @@ Only critical and high show emoji prefixes in the dashboard.
 
 ## Task JSON Structure
 
-See `task-schema.md` for complete field definitions including timeline fields (priority, due_date, milestone, external_dependency).
+See `task-schema.md` for complete field definitions including timeline fields (priority, due_date, external_dependency).
 
 ### Minimal Task
 ```json

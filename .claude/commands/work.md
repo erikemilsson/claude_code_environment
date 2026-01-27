@@ -70,7 +70,9 @@ echo -n "## Authentication\nContent here..." | sha256sum | cut -d' ' -f1
 
 **Note:** Tasks without `spec_fingerprint` are treated as legacy (no warning). Tasks without `section_fingerprint` fall back to full-spec comparison.
 
-**See also:** `/health-check` performs the same drift detection as a validation check. Keep algorithms in sync.
+**See also:**
+- `/health-check` performs the same drift detection as a validation check. Keep algorithms in sync.
+- `.claude/support/reference/workflow.md` § "Spec Change and Feature Addition Workflow" for the end-to-end process (user edits spec → detection → confirmation → task updates → implementation → verification).
 
 ### Granular Reconciliation UI
 
@@ -161,18 +163,61 @@ Check request against spec:
 
 **If a specific request was provided** (and passed spec check):
 1. Create a task for the request (or find existing matching task)
-2. Read `.claude/agents/implement-agent.md` and follow its workflow for that task
+2. Route to the "If Executing" section in Step 4 (read and follow implement-agent workflow)
 3. Continue to Step 5 (questions) and Step 6 (health check)
 
 **If no request provided** (auto-detect mode):
 
 | Condition | Action |
 |-----------|--------|
-| No spec exists | Stop - direct user to create spec via `specification_creator/` |
+| No spec exists, no tasks | Stop - direct user to create spec via `specification_creator/` |
+| No spec exists, tasks exist | **Stop and warn** - tasks without a spec cannot be verified. Present options (see below). |
 | Spec incomplete | Stop - prompt user to complete spec |
 | Spec complete, no tasks | **Decompose** - create tasks from spec |
-| Tasks pending | **Execute** - read & follow implement-agent workflow (see Step 4) |
-| All tasks finished | **Verify** - read & follow verify-agent workflow (see Step 4) |
+| Spec tasks pending | **Execute** - read & follow implement-agent workflow (see Step 4) |
+| All spec tasks finished, no valid verification result | **Verify** - read & follow verify-agent workflow (see Step 4) |
+| All spec tasks finished, valid verification result | **Complete** - report project complete, present final checkpoint |
+
+**Spec-less project handling:** If tasks exist but no spec file is found, do NOT proceed with execution. Instead:
+```
+Tasks exist but no specification found.
+
+Without a spec, the verify phase cannot validate acceptance criteria
+and the project cannot reach "Complete" status.
+
+Options:
+[S] Create a spec - Start specification_creator to document requirements
+[M] Mark all tasks out-of-spec - Proceed without verification gate
+[X] Stop - Don't proceed until this is resolved
+```
+This prevents the scenario where all tasks execute and "complete" without any verification being possible.
+
+**Important — spec tasks vs out-of-spec tasks:** Phase routing is based on **spec tasks only** (tasks without `out_of_spec: true`). Out-of-spec tasks (recommendations from verify-agent or user requests that bypassed the spec) are excluded from phase detection. This prevents the verify → execute → verify infinite loop.
+
+**Verification result check:** Read `.claude/verification-result.json`. A result is valid when `result` is `"pass"` or `"pass_with_issues"`, `spec_fingerprint` matches the current spec, and no tasks changed since `timestamp`. See verify-agent Step 7 for the file format.
+
+**Out-of-spec task handling:** After phase routing completes (or at phase boundaries), check for pending out-of-spec tasks and present them to the user:
+
+```
+Recommendations (not in spec):
+| ID | Task | Source | Action |
+|----|------|--------|--------|
+| 13 | Add unit tests for CI | verify-agent | [Accept] [Reject] [Defer] |
+| 14 | Document installation | verify-agent | [Accept] [Reject] [Defer] |
+
+Options:
+[A] Accept - Approve and execute this task
+[R] Reject - Remove this task
+[D] Defer - Keep for later, don't execute now
+[AA] Accept all
+```
+
+**Actions:**
+- **Accept**: Set `out_of_spec_approved: true` on the task. `/work` can now execute it.
+- **Reject**: Delete the task file.
+- **Defer**: Leave as-is. Task remains pending but is skipped during auto-detect.
+
+**Rule:** Never auto-execute an out-of-spec task. Always require explicit user approval first.
 
 ### Step 4: Execute Action
 
@@ -192,13 +237,17 @@ Break the spec into granular tasks:
    - `spec_section` - Originating section heading (e.g., "## Authentication")
    - `section_fingerprint` - Hash of specific section computed in step 5
    - `section_snapshot_ref` - Snapshot filename (e.g., "spec_v1_decomposed.md")
+   - **Important:** Create all task JSON files before regenerating the dashboard. Every task must have a `task-*.json` file — the dashboard is generated from these files, never the other way around.
 8. **Map dependencies** - What must complete before what
-9. **Regenerate dashboard** - Read all task-*.json and milestone-*.json files and regenerate dashboard.md
+9. **Regenerate dashboard** - Read all task-*.json files and regenerate dashboard.md
+   - **Follow the canonical template** in `.claude/support/reference/dashboard-patterns.md` — use exact section headings, emojis, and table formats defined there
+   - **Check section toggles** — if `dashboard_sections` config exists (in spec frontmatter or CLAUDE.md), respect `build`/`maintain`/`exclude`/`preserve` modes per section. See dashboard-patterns.md for details.
+   - **Atomicity rules:**
+     - Tasks: Only include tasks that have corresponding `task-*.json` files. Never add a task to the dashboard without creating its JSON file first.
+     - Decisions: Only include decisions that have corresponding `decision-*.md` files in `.claude/support/decisions/`. If a decision is significant enough for the dashboard, create the file first.
    - Preserve the Notes & Ideas section between `<!-- USER SECTION -->` markers
    - Update **Project Context** with project name from spec and current phase
    - Calculate **Overall completion** percentage for Quick Status
-   - Calculate milestone progress (finished tasks / total tasks per milestone) for Milestones section
-   - Determine milestone status: ⏳ Pending → 🔄 In Progress → ✅ Complete (or ⚠️/🔴 if past target)
    - Generate **Critical Path** from dependency chain of incomplete tasks (see below)
    - List **Recently Completed** tasks with completion dates in Progress This Week
 
@@ -216,52 +265,144 @@ Task creation guidelines:
 - Owner: claude/human/both
 - Include all spec provenance fields (fingerprint, version, section, section_fingerprint, section_snapshot_ref)
 
+**Spec status transitions during decomposition:**
+
+When decomposition begins, update the spec metadata `status` from `draft` to `active`:
+```yaml
+---
+version: 1
+status: active
+---
+```
+
+This signals that the spec is being implemented. The transition to `complete` happens in the "If Completing" section below.
+
 #### If Executing
 
-**CRITICAL:** You must read `.claude/agents/implement-agent.md` and follow its complete workflow. Do not implement directly.
+**You must use the implement-agent workflow. Do not implement directly.**
 
-The agent workflow handles: task selection, status updates, implementation, self-review, completion, and dashboard regeneration.
+Execute these steps in order:
 
-Context to have ready:
-- Current task context
-- Relevant spec sections (from `.claude/spec_v{N}.md`)
-- Any constraints or notes
+1. **Read the agent file now:** Use the Read tool to read `.claude/agents/implement-agent.md` in full. Do not skip this step or work from memory.
+2. **Follow every numbered step** in the agent's Workflow section (Steps 1 through 6). Each step produces a required artifact:
+   - Step 1: Task selected (logged)
+   - Step 1b: Validation checks passed
+   - Step 3: Task JSON updated to `"In Progress"` **before any implementation begins**
+   - Step 4: Implementation done
+   - Step 5: Self-review completed
+   - Step 6: Task JSON updated to `"Finished"`, dashboard regenerated
+3. **Context to provide:** Current task, relevant spec sections, constraints/notes
+
+**Why this matters:** Implementing directly skips the self-review, status tracking, and dashboard regeneration. The agent workflow exists to ensure consistent quality and observable state transitions.
 
 #### If Verifying
 
-**CRITICAL:** You must read `.claude/agents/verify-agent.md` and follow its complete workflow. Do not verify directly.
+**You must use the verify-agent workflow. Do not verify directly.**
 
-Pass to verify-agent:
-- List of completed work
-- Spec acceptance criteria
-- Test commands available
+Execute these steps in order:
+
+1. **Read the agent file now:** Use the Read tool to read `.claude/agents/verify-agent.md` in full. Do not skip this step or work from memory.
+2. **Follow every numbered step** in the agent's Workflow section (Steps 1 through 8). Required outputs:
+   - Step 3: Per-criterion pass/fail table (not just a summary)
+   - Step 5: Issue categorization (critical/major/minor counts)
+   - Step 7: `verification-result.json` written with all required fields
+   - Step 8: Verification report displayed to user
+3. **Context to provide:** List of completed work, spec acceptance criteria, test commands
+
+**Why this matters:** Skipping verification means the project completes without confirming the implementation matches the spec. The verification result file gates the Complete phase — without it, the project cannot finish.
+
+#### If Completing
+
+When all tasks are finished and a valid verification result exists:
+
+1. **Update spec status** to `complete`:
+   ```yaml
+   ---
+   version: 1
+   status: complete
+   updated: YYYY-MM-DD
+   ---
+   ```
+
+2. **Regenerate dashboard with completion summary:**
+   - Update Project Context stage to "Complete"
+   - Replace Critical Path with completion summary
+   - Show final stats (total tasks, completion date, verification result)
+
+   ```markdown
+   ## 🛤️ Critical Path
+
+   **Project Complete** ✅
+
+   - All tasks finished: [count] tasks
+   - Verification passed: [date from verification-result.json]
+   - Spec status: complete
+
+   To add new features, update the spec and run `/work` to decompose new tasks.
+   ```
+
+3. **Present final checkpoint to user:**
+   ```
+   Project complete! All [N] tasks finished and verification passed.
+
+   Summary:
+   - [verification summary from verification-result.json]
+   - Spec status updated to complete
+
+   To continue working on this project:
+   - Update the spec with new requirements
+   - Run /work to detect changes and create new tasks
+   ```
+
+4. **Stop** — do not route to any agent. The project is done.
 
 ### Step 5: Handle Questions
 
 Questions accumulate in `.claude/support/questions.md` during work.
 
-**Present questions when:**
-- Phase boundary reached
-- Quality gate failure (tests fail, spec violation)
-- Blocked on decision
+**Check for questions at these points:**
+- After completing a task (before selecting the next one)
+- At phase boundaries (Execute → Verify, Verify → Complete)
+- When a `[BLOCKING]` question is added
+- When quality gate fails (tests fail, spec violation)
 
-**Question format:**
-```markdown
-## Requirements
-- [Question about scope or features]
+**Process:**
 
-## Technical
-- [Question about implementation approach]
+1. **Read `.claude/support/questions.md`** — check for unresolved questions (items under Requirements, Technical, Scope, or Dependencies that aren't in the Answered table)
 
-## Scope
-- [Question about boundaries or priorities]
-```
+2. **If questions exist, present them:**
+   ```
+   Questions for you (from questions.md):
+
+   ## Requirements
+   - Should login require email verification?
+
+   ## Technical
+   - [BLOCKING] What caching solution to use?
+
+   Please answer, or [S] Skip for now.
+   ```
+
+3. **After user answers:**
+   - Move the question and answer to the "Answered Questions" table in `questions.md`
+   - If the answer affects the spec, note it: "Consider updating spec section [X]"
+   - If the answer affects a task, update the task notes
+   - Continue with the next action
+
+4. **If no questions or user skips:** Continue to Step 6.
+
+**Blocking questions:** Questions prefixed with `[BLOCKING]` halt work until answered. `/work` will not proceed to the next task or phase while blocking questions remain unresolved.
+
+**Dashboard integration:** Unresolved questions (especially blocking ones) appear in the dashboard's "Needs Your Attention" → "Reviews & Approvals" section during regeneration.
 
 ### Step 6: Lightweight Health Check
 
 Run quick validation checks after completing the main action:
 
 **Checks performed:**
+- **Workflow compliance** (new):
+  - If a task was just completed: Was it set to "In Progress" before "Finished"? (Check `updated_date` changed at least twice, or task notes reflect the workflow steps.)
+  - Is the dashboard freshly regenerated? (Dashboard timestamp should match current session.)
 - Single "In Progress" task rule (only one allowed)
 - Spec fingerprint comparison (current spec vs task fingerprints)
 - Section change count (if section fingerprints exist)
@@ -426,11 +567,10 @@ Use `/work complete` for manual task completion outside of implement-agent's wor
 5. **Check parent auto-completion:**
    - If parent_task exists and all sibling subtasks are "Finished"
    - Set parent status to "Finished"
-6. **Regenerate dashboard** - Read all task-*.json and milestone-*.json files and update dashboard.md
-   - Update overall completion percentage and per-milestone progress
+6. **Regenerate dashboard** - Read all task-*.json files and update dashboard.md following the canonical template in `.claude/support/reference/dashboard-patterns.md`
+   - Update overall completion percentage
    - Recalculate Critical Path with remaining incomplete tasks
    - Add completed task to Recently Completed with completion_date
-   - Update milestone progress calculations
 7. **Auto-archive check** - If active task count > 100, archive old tasks
 8. **Lightweight health check** - Run quick validation (see Step 6 in main process)
    - Output: `Quick check: ✓` or `Quick check: ⚠️ N issues`

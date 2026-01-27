@@ -56,6 +56,12 @@ Does it meet performance requirements?
 - Resource usage reasonable
 - Handles expected load
 
+## How This Workflow Is Invoked
+
+This file is read by `/work` during the Verify phase. **You are reading this file because `/work` directed you here.** Follow every step below in order — do not skip steps, write verification-result.json without performing actual verification, or declare pass without checking acceptance criteria.
+
+Each step produces a required output. The verification-result.json file (Step 7) must contain real per-criterion data from Step 3, not fabricated results.
+
 ## Workflow
 
 ### Step 1: Gather Verification Context
@@ -80,6 +86,8 @@ Document results:
 - Tests skipped
 
 ### Step 3: Validate Against Spec
+
+**Required artifact:** A per-criterion pass/fail table. Every acceptance criterion from the spec must appear in this table with an explicit PASS or FAIL status and a note explaining how it was verified. This table feeds into verification-result.json (Step 7) — the `criteria_passed` and `criteria_failed` counts must match this table.
 
 For each acceptance criterion:
 
@@ -120,13 +128,65 @@ For failures, categorize:
 For issues found that need fixing:
 1. Create new task files for each major/critical issue
 2. Set appropriate difficulty, owner, and dependencies
-3. **Regenerate dashboard.md** - Read all task-*.json files and update dashboard
+3. **Mark recommendation tasks as out-of-spec** — tasks created by verify-agent that go beyond the spec's acceptance criteria must include `"out_of_spec": true` and `"source": "verify-agent"` in the task JSON:
+   ```json
+   {
+     "out_of_spec": true,
+     "source": "verify-agent",
+     "status": "Pending"
+   }
+   ```
+   These tasks require explicit user approval before `/work` will execute them. See the out-of-spec consent flow in `work.md`.
+4. **Regenerate dashboard.md** - Read all task-*.json files and update dashboard
    - Preserve Notes & Ideas section between `<!-- USER SECTION -->` markers
    - Update overall completion percentage, Critical Path, and Recently Completed
+   - Show out-of-spec tasks with ⚠️ prefix in the task list
 
-### Step 7: Report Results
+### Step 7: Persist Verification Result
 
-Create verification report:
+Write the verification outcome to `.claude/verification-result.json` so other commands (`/status`, `/work`) can distinguish "ready for verification" from "verified/complete":
+
+```json
+{
+  "result": "pass",
+  "timestamp": "2026-01-27T14:30:00Z",
+  "spec_version": "spec_v1",
+  "spec_fingerprint": "sha256:abc123...",
+  "summary": "All acceptance criteria passed. 1 minor issue noted.",
+  "criteria_passed": 5,
+  "criteria_failed": 0,
+  "issues": {
+    "critical": 0,
+    "major": 0,
+    "minor": 1
+  },
+  "tasks_created": []
+}
+```
+
+**Field definitions:**
+
+| Field | Values | Description |
+|-------|--------|-------------|
+| `result` | `"pass"`, `"fail"`, `"pass_with_issues"` | Overall verification outcome |
+| `timestamp` | ISO 8601 | When verification completed |
+| `spec_version` | e.g., `"spec_v1"` | Which spec version was verified against |
+| `spec_fingerprint` | SHA-256 hash | Fingerprint of spec at verification time |
+| `summary` | Free text | Human-readable summary of findings |
+| `criteria_passed` | Number | Count of acceptance criteria that passed |
+| `criteria_failed` | Number | Count of acceptance criteria that failed |
+| `issues` | Object | Count of issues by severity |
+| `tasks_created` | Array of task IDs | Tasks created for issues found |
+
+**Rules:**
+- **Overwrite on each verification run** — only the latest result matters
+- **Result is invalidated** when spec fingerprint changes (spec was modified after verification)
+- **Result is invalidated** when new tasks are created or existing tasks change status
+- `/work` and `/status` check this file to determine phase (see below)
+
+### Step 8: Report Results
+
+Display the verification report to the user:
 
 ```markdown
 ## Verification Results
@@ -205,12 +265,14 @@ Verification passes when:
 - All acceptance criteria verified (pass or documented fail)
 - No critical issues remain
 - Major issues have tasks created
+- Verification result written to `.claude/verification-result.json` (Step 7)
 - Human approves release readiness
 
 Verification fails when:
 - Critical issues found
 - Core acceptance criteria fail
 - Human must review before proceeding
+- Verification result written with `"result": "fail"` (Step 7)
 
 ## Example Session
 
@@ -232,7 +294,8 @@ Following verify-agent workflow:
    - MINOR: OAuth error message unclear
 5. Creates task for session expiration fix
 6. Regenerates dashboard.md
-7. Reports: "Verification PASS with issues.
+7. Writes verification-result.json with result: "pass_with_issues"
+8. Reports: "Verification PASS with issues.
    1 major issue needs task. Ready for review."
 ```
 

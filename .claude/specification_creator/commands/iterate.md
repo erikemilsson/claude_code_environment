@@ -72,7 +72,28 @@ Enter distill mode. Extract buildable spec from a vision document.
    - Include `vision_source:` in frontmatter linking to the vision doc
    - Extract concrete requirements from vision's abstract concepts
    - Add "Deferred to Future Phases" section for items not in Phase 1
-   - Format as copy-pasteable content
+   - Format as copy-pasteable content for the user to add to the spec
+
+5. **Post-distill next steps:**
+   ```
+   Distillation complete. Here's what to do next:
+
+   1. Review the suggested content above
+   2. Copy it into your spec file (../spec_v{N}.md)
+   3. Edit to match your intent — the suggestions are a starting point
+   4. Run /iterate to refine specific sections
+   5. When the spec passes readiness checks, exit to the project root and run /work
+   ```
+
+**Output handling:** Distill generates suggested content for you to paste into the spec. It does not auto-create or edit spec files (respects `spec_editing: suggest_only`).
+
+**Re-running distill:** If the vision document is updated:
+- Run `/iterate distill` again
+- Claude reads the updated vision doc and generates new suggestions
+- You merge the new suggestions into the existing spec manually
+- No automatic replacement or versioning occurs — you stay in control
+
+**Multiple vision documents:** If `.claude/vision/` contains multiple files, Claude lists them and asks which to use. To combine multiple vision docs, run distill once per document and merge the suggestions.
 
 ---
 
@@ -181,6 +202,21 @@ The threshold depends on project seriousness:
 - **Prototype:** Problem and basic approach clear
 - **MVP:** Above + key decisions made, acceptance criteria exist
 - **Production:** Above + non-functional requirements, constraints documented
+
+---
+
+## When to Use Each Mode
+
+| Situation | Command | Why |
+|-----------|---------|-----|
+| Starting from scratch, no docs | `/iterate` | Bootstrap mode asks foundational questions |
+| Have a vision/design document | `/iterate distill` | Extracts buildable scope from abstract ideas |
+| Spec exists, want to improve | `/iterate` | Auto-detects weakest area |
+| Spec exists, specific gap known | `/iterate {topic}` | Focuses on that area |
+| Adding a new feature to existing spec | `/iterate {feature}` | Targets the new section |
+| Vision doc updated after initial distill | `/iterate distill` | Re-read vision and suggest updates |
+
+**Note on distill questions:** The four distillation questions are intentionally fixed (core value, essential features, Phase 1 exclusions, first user path). These cover the minimum information needed to convert abstract vision into buildable scope. The answers are what vary — Claude adapts its generated content based on your responses.
 
 ---
 

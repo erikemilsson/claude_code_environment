@@ -20,7 +20,7 @@ Run all checks and output a summary report. This helps new users ensure they've 
    - ⚠ Warn: Placeholders remain
 
 2. **version.json configuration**
-   - Check if `source_repo` still points to template
+   - Check if `template_repo` still points to original template
    - ✓ Pass: Updated to user's fork/repo
    - ⚠ Warn: Still points to template repo
 
@@ -93,14 +93,14 @@ Look for these patterns:
 
 ### version.json
 
-Check the `source_repo` field:
+Check the `template_repo` field:
 ```json
 {
-  "source_repo": "https://github.com/USER/REPO"
+  "template_repo": "https://github.com/USER/REPO"
 }
 ```
 
-Should NOT still contain the original template URL (check if it matches the URL in the template's own version.json, or contains placeholder text like "YOUR-USERNAME" or "TEMPLATE").
+Should point to the environment builder template repo (or your fork of it). Used by sync-check to compare against template updates. The project's own repo is determined from `git remote`.
 
 ### Spec File
 

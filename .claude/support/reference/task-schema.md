@@ -31,7 +31,6 @@
   "subtasks": [],
   "parent_task": null,
   "files_affected": [],
-  "milestone": null,
   "external_dependency": null,
   "notes": "",
   "spec_fingerprint": "sha256:a1b2c3d4...",
@@ -69,7 +68,6 @@
 | subtasks | Array | Task IDs (only when Broken Down) |
 | parent_task | String | Parent task ID if this is a subtask |
 | files_affected | Array | File paths this task will modify |
-| milestone | String | Milestone ID this task belongs to (e.g., "M1") |
 | external_dependency | Object | External blocker - see External Dependencies below |
 | notes | String | Context, warnings, or completion notes |
 | spec_fingerprint | String | SHA-256 hash of spec at task decomposition (drift detection) |
@@ -206,43 +204,6 @@ For tasks blocked by external factors (not other tasks):
 | vendor | Third-party service, API access, contracts |
 | approval | Internal stakeholder sign-off |
 | delivery | Physical items, hardware, materials |
-
-## Milestones
-
-Milestones are lightweight date markers for project phases:
-
-```json
-{
-  "id": "M1",
-  "title": "MVP Complete",
-  "type": "milestone",
-  "target_date": "2026-02-01",
-  "status": "Pending",
-  "description": "Core functionality complete and working"
-}
-```
-
-Save as `milestone-M1.json` in `.claude/tasks/`. Tasks reference via `"milestone": "M1"`.
-
-### Milestone Status Values
-
-| Status | Icon | Meaning | Auto-determined by |
-|--------|------|---------|-------------------|
-| Pending | ⏳ | Not started | No tasks finished |
-| In Progress | 🔄 | Work underway | Some tasks finished, not all |
-| Complete | ✅ | Done | All linked tasks finished |
-| At Risk | ⚠️ | May miss target | Past target date, not complete |
-| Overdue | 🔴 | Missed target | Significantly past target |
-
-Milestone status is calculated automatically based on:
-1. Count of tasks with `"milestone": "M1"` that are "Finished"
-2. Comparison of current date to `target_date`
-
-### Dashboard Integration
-
-Milestones appear in two dashboard sections:
-- **🎯 Milestones** - Dedicated section showing all milestones with progress
-- **⏰ Timeline** - Milestones shown in **bold** alongside task due dates
 
 ## Status Rules
 

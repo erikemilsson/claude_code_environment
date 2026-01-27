@@ -57,27 +57,15 @@ When breaking down tasks, IDs must not collide:
 
 ### 5. Dashboard Structure
 
-Validates that dashboard.md follows the canonical template structure:
+Validates that dashboard.md follows the canonical template defined in `.claude/support/reference/dashboard-patterns.md`.
 
-**Required sections (in order):**
-1. `# Dashboard` - Title
-2. `## Project Context` - Project metadata (name, stage, start date)
-3. `## 🚨 Needs Your Attention` - Consolidated attention section
-4. `## 🎯 Milestones` - Project phase progress and targets
-5. `## ⏰ Timeline` - Deadlines and milestones
-6. `## Quick Status` - Overall completion percentage and summary table
-7. `## 🛤️ Critical Path` - Next steps to completion with owners
-8. `## 🤖 Claude Status` - Claude tasks
-9. `## 📊 Progress This Week` - Recent activity with completion dates
-10. `## 📋 All Decisions` - Decision log
-11. `## 📝 All Tasks` - Full task table
-12. `## 💡 Notes & Ideas` - User section (preserved on sync)
-
-**Validation:**
-- Check each required section header exists
-- Verify sections appear in correct order
+**Read the Section Definitions table** from dashboard-patterns.md and validate:
+- Each required section header exists (exact heading text including emoji)
+- Sections appear in the correct order
 - Flag missing or out-of-order sections
 - Suggest regenerating dashboard.md
+
+**Single source of truth:** The canonical section headings and emojis are defined in `dashboard-patterns.md` only. Both this health check and `/work` dashboard regeneration reference that file. Do not hardcode section names here.
 
 ### 6. Status Rules
 
@@ -95,7 +83,29 @@ Validates that dashboard.md follows the canonical template structure:
 - Tasks with difficulty >= 7 should be `"Broken Down"` or have subtasks
 - Subtasks should have difficulty <= 6
 
-### 8. Questions and Workspace Staleness
+### 8. Workflow Compliance
+
+Detects tasks that may have bypassed the implement-agent or verify-agent workflows.
+
+**Implement-agent compliance checks:**
+- Tasks with status `"Finished"` should have non-empty `notes` (self-review artifact)
+- Tasks should not jump from `"Pending"` to `"Finished"` without evidence of `"In Progress"` transition (check if `updated_date` differs from `created_date`, or notes contain implementation details)
+
+**Verify-agent compliance checks:**
+- If all spec tasks are `"Finished"`, a `.claude/verification-result.json` file should exist
+- The verification result should have `criteria_passed + criteria_failed > 0` (real criteria were checked, not just a summary)
+- The `spec_fingerprint` in the result should match the current spec
+
+**Report format:**
+```
+[Warning] Workflow compliance issues
+  - 3 finished tasks have empty notes (possible skipped self-review)
+  - No verification-result.json found (all tasks finished but no verification run)
+```
+
+**Note:** These are warnings, not errors. Some tasks (especially trivial ones) may legitimately have brief notes. The intent is to surface patterns of workflow bypass, not block individual tasks.
+
+### 9. Questions and Workspace Staleness
 
 **Stale Questions:**
 - Questions in `.claude/support/questions.md` older than 14 days
@@ -107,11 +117,11 @@ Validates that dashboard.md follows the canonical template structure:
 - Warning: "N workspace files are over 30 days old"
 - Suggests graduating drafts to final locations or deleting scratch files
 
-### 9. Semantic Validation (for 20+ task projects)
+### 10. Semantic Validation (for 20+ task projects)
 
 These checks detect drift and staleness in large collaborative projects:
 
-### 10. Spec Fingerprint Validation (Granular)
+### 11. Spec Fingerprint Validation (Granular)
 
 Detects when the specification has changed since tasks were decomposed, with section-level granularity.
 
@@ -172,7 +182,7 @@ Summary:
 - Tasks without `section_fingerprint` field: fall back to full-spec comparison
 - Only warn for projects with 10+ tasks (avoid noise for small projects)
 
-### 11. Section Fingerprint Field Validation
+### 12. Section Fingerprint Field Validation
 
 For tasks created after this feature was implemented:
 
@@ -191,7 +201,7 @@ For tasks created after this feature was implemented:
 
 **Note:** This is informational only - tasks without section fingerprints work fine using full-spec comparison.
 
-### 12. Out-of-Spec Task Tracking
+### 13. Out-of-Spec Task Tracking
 
 Reports tasks that were created outside the spec:
 
@@ -226,10 +236,6 @@ Reports tasks that were created outside the spec:
 - Can happen after manual task deletion or archive errors
 - Critical for maintaining dependency graph integrity
 
-**Workflow Diagram Staleness** (if diagram exists)
-- `workflow-diagram.md` timestamp vs latest task modification
-- Warns if diagram is > 24 hours older than task changes
-- Suggests manually updating the diagram
 
 ## Task Auto-Fixes
 
@@ -243,7 +249,7 @@ Reports tasks that were created outside the spec:
 | All subtasks Finished but parent not | Set parent status to "Finished" |
 | Missing created_date | Add current date |
 | Multiple "In Progress" tasks | Ask which to keep, set others to "Pending" |
-| Stale workflow diagram | Prompt user to update diagram manually |
+| Nested `.claude/.claude/` directory | Flag as error, recommend deletion |
 | Orphan dependency reference | Remove invalid dependency ID from array |
 
 ## Semantic Auto-Fixes
@@ -438,7 +444,7 @@ Compares local `.claude/` files against the template repository, shows differenc
 
 ### Requirements
 
-- `.claude/version.json` - Contains `source_repo` and `template_version`
+- `.claude/version.json` - Contains `template_repo` and `template_version`
 - `.claude/sync-manifest.json` - Lists files in `sync` category
 - `gh` CLI installed and authenticated (or use GitHub MCP tools)
 
@@ -458,7 +464,7 @@ Read local configuration:
 // .claude/version.json
 {
   "template_version": "1.0.0",
-  "source_repo": "https://github.com/user/claude_code_environment"
+  "template_repo": "https://github.com/user/claude_code_environment"
 }
 
 // .claude/sync-manifest.json
@@ -471,7 +477,7 @@ Read local configuration:
 
 Fetch template from remote:
 ```bash
-git clone --depth 1 {source_repo} /tmp/template
+git clone --depth 1 {template_repo} /tmp/template
 ```
 
 #### Step 2: Compare and Report
@@ -834,6 +840,7 @@ Catch common issues immediately without the overhead of a full health check.
 
 | Check | What It Detects |
 |-------|-----------------|
+| Workflow compliance | Task jumped Pending→Finished without In Progress; empty notes on finished task |
 | Single "In Progress" rule | More than one task in progress |
 | Spec fingerprint comparison | Spec changed since decomposition (full spec level) |
 | Section change count | Number of sections that changed (if section fingerprints exist) |
@@ -865,7 +872,7 @@ Quick check: ⚠️ 2 issues
 | Aspect | Lightweight | Full (`/health-check`) |
 |--------|-------------|------------------------|
 | Execution time | < 1 second | Several seconds |
-| Checks | 5 critical checks | All validations |
+| Checks | 6 critical checks | All validations |
 | Auto-fix | No | Yes (prompts for fixes) |
 | Report | Single line + issues | Full report with sections |
 
@@ -885,7 +892,6 @@ Quick check: ⚠️ 2 issues
 
 **< 20 tasks:** Semantic validation (stale tasks, owner mismatch) skipped - only needed for larger projects
 
-**Workflow diagram missing:** If `.claude/support/workflow-diagram.md` doesn't exist, staleness check skipped
 
 **No decision records:** Reports "0 decisions - all checks pass" (healthy state for new projects)
 
@@ -898,7 +904,7 @@ Quick check: ⚠️ 2 issues
 - Start of a work session
 - After extensive task operations
 - When something feels "off"
-- Before major milestones or handoffs
+- Before major handoffs
 - Periodically (weekly recommended for tasks, monthly for CLAUDE.md)
 - **Periodically check for template updates** with `--sync-check`
 

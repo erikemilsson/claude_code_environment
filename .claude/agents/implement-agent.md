@@ -30,6 +30,12 @@ The `/work` command directs you to follow this workflow when:
 - Completion notes on task
 - Issues discovered (added to questions.md or new tasks)
 
+## How This Workflow Is Invoked
+
+This file is read by `/work` during the Execute phase. **You are reading this file because `/work` directed you here.** Follow every step below in order — do not skip steps or implement directly without going through this workflow.
+
+Each step produces an observable artifact (a file change, status update, or output). These artifacts allow health-check and /work to verify the workflow was followed.
+
 ## Workflow
 
 ### Step 1: Select Task
@@ -63,11 +69,13 @@ Before coding:
 
 ### Step 3: Set In Progress
 
+**Required artifact:** Update task JSON file to "In Progress" **before writing any implementation code.** This is the checkpoint that proves the workflow is being followed — a task that jumps directly from "Pending" to "Finished" without passing through "In Progress" indicates the workflow was bypassed.
+
 Update task status:
 ```json
 {
   "status": "In Progress",
-  "updated_date": "2026-01-26"
+  "updated_date": "YYYY-MM-DD"
 }
 ```
 
@@ -82,6 +90,8 @@ Do the work:
 - Don't add unrequested features
 
 ### Step 5: Self-Review
+
+**Required artifact:** Document the review in the task notes (even briefly). A task completed without any self-review note indicates this step was skipped.
 
 Before marking complete:
 - Review all changes made
@@ -105,8 +115,10 @@ Check parent auto-completion:
 - And all sibling subtasks are now "Finished"
 - Set the parent task status to "Finished"
 
-Regenerate dashboard.md from task JSON files:
+Regenerate dashboard.md from task JSON files, following the canonical template in `.claude/support/reference/dashboard-patterns.md`:
+- **Source of truth:** Only include tasks that have corresponding `task-*.json` files
 - Preserve the Notes & Ideas section between `<!-- USER SECTION -->` markers
+- Use exact section headings, emojis, and table formats from dashboard-patterns.md
 - Update Project Context with current phase
 - Update overall completion percentage in Quick Status
 - Recalculate Critical Path from dependency chain of incomplete tasks
@@ -167,6 +179,13 @@ If task grows larger than expected:
 1. Implement minimum viable version
 2. Create follow-up tasks for extras
 3. Note: "MVP complete. Additional work in tasks X, Y"
+
+### Decisions Made During Implementation
+
+If you make a significant choice during implementation:
+1. Create a `decision-*.md` file in `.claude/support/decisions/` using the template
+2. Add the decision to the dashboard's All Decisions section
+3. **Rule:** Never reference a decision ID on the dashboard without a corresponding file
 
 ### Spec Misalignment Discovered
 

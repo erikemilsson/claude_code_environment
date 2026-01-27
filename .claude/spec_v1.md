@@ -1,6 +1,6 @@
 ---
 version: 1
-status: active
+status: draft
 created: YYYY-MM-DD
 updated: YYYY-MM-DD
 ---

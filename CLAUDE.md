@@ -32,25 +32,9 @@ Instructions for Claude Code when working in this project.
 
 ## How This System Works
 
-**Your primary interface is the dashboard** (`.claude/dashboard.md`). It shows everything you need:
-- What needs your attention (decisions, reviews, blockers)
-- What Claude is working on
-- Timeline and upcoming deadlines
-- Progress and recent activity
+**Your primary interface is the dashboard** (`.claude/dashboard.md`). Claude tracks tasks in `.claude/tasks/`, implements according to spec, and surfaces decision points. You review and approve at phase boundaries.
 
-**What you do:**
-- Write code and documentation (outside `.claude/`)
-- Make decisions when Claude surfaces options
-- Review and approve at phase boundaries
-- Update the spec when requirements change
-
-**What Claude does:**
-- Tracks tasks and progress (in `.claude/tasks/`)
-- Implements according to spec
-- Surfaces decision points to you
-- Validates work against acceptance criteria
-
-**You shouldn't need to dig into `.claude/` internals** - the dashboard brings everything to you.
+For full details, see `.claude/support/reference/system-overview.md`.
 
 ## Specification
 
@@ -99,10 +83,10 @@ For details on phases, agent handoffs, and checkpoints, see `.claude/support/ref
 
 ## Task Rules
 
+**Important:** Always use the project's task system (`.claude/tasks/task-*.json` files) for all task management. Never use built-in TaskCreate/TaskUpdate/TaskList tools as a replacement — those are separate from this project's tracking.
+
 Tasks are tracked in `.claude/tasks/` as JSON files. The **Project Dashboard** at `.claude/dashboard.md` shows:
 - 🚨 **Needs Your Attention** - decisions pending, tasks ready for you, reviews needed
-- 🎯 **Milestones** - project phase progress and targets
-- ⏰ **Timeline** - upcoming deadlines and milestones
 - 🤖 **Claude Status** - what Claude is working on
 - 📊 **Progress This Week** - recent completions and activity
 - 📋 **All Decisions** - decision log with status
@@ -129,75 +113,11 @@ When facing significant choices, create a decision record rather than deciding i
 
 ## Workspace
 
-When you need to create temporary documents (research, analysis, drafts), use `.claude/support/workspace/`:
-
-- **scratch/** - Throwaway notes, quick analysis, temporary thinking
-- **research/** - Web search results, reference material, gathered context
-- **drafts/** - Work-in-progress documents before they move to their final location
-
-**Rules:**
-- Never create working documents in the project root or other locations
-- Use simple descriptive names (`api-comparison.md`, not `task-5-research.md`)
-- When a draft is ready to become permanent, discuss where it should go
-
-## Template Configuration Files
-
-Two files control template behavior:
-
-### sync-manifest.json
-
-Defines which files sync from template updates vs stay project-specific:
-
-| Category | Purpose | Examples |
-|----------|---------|----------|
-| `sync` | Updated from template | Commands, agents, reference docs |
-| `customize` | User-editable, template provides defaults | CLAUDE.md, README.md, questions.md |
-| `ignore` | Project-specific data, never synced | Tasks, dashboard, decision records, learnings |
-
-### settings.local.json
-
-Pre-approved permissions for consistent Claude Code behavior. Ensures the template works the same way for everyone using it. Contains tool permissions that would otherwise require per-session approval.
+Temporary documents go in `.claude/support/workspace/` (scratch, research, drafts). Never create working documents in the project root. See `.claude/support/reference/system-overview.md` for details.
 
 ## Project Structure
 
-```
-.claude/
-├── dashboard.md               # Project Dashboard (auto-generated)
-├── spec_v{N}.md               # Project specification (source of truth)
-├── vision/                    # Vision documents from ideation
-│   └── {project}-vision.md   # Design philosophy, future roadmap
-├── tasks/                     # Task data
-│   ├── task-*.json           # Individual task files
-│   └── milestone-*.json      # Milestone definitions
-├── commands/                  # /work and task commands
-├── agents/                    # Specialist agents
-│   ├── implement-agent.md    # Task execution
-│   └── verify-agent.md       # Validation against spec
-├── specification_creator/     # Start Claude Code here for spec sessions
-│   ├── CLAUDE.md             # Rules for spec-building mode
-│   └── README.md
-├── support/                   # Supporting documentation
-│   ├── reference/            # Schemas, guides, definitions
-│   │   ├── task-schema.md
-│   │   ├── shared-definitions.md
-│   │   ├── workflow.md
-│   │   ├── decision-template.md
-│   │   └── decision-guide.md
-│   ├── decisions/            # Decision documentation
-│   │   ├── decision-*.md     # Individual decision records
-│   │   └── .archive/         # Research documents
-│   ├── learnings/            # Project-specific patterns
-│   │   └── README.md
-│   ├── previous_specifications/  # Spec snapshots at decomposition (for drift detection)
-│   ├── workspace/            # Claude's working area (gitignored)
-│   │   ├── scratch/          # Temporary notes, quick analysis
-│   │   ├── research/         # Web search results, reference material
-│   │   └── drafts/           # WIP docs before final location
-│   └── questions.md          # Accumulated questions for human
-├── sync-manifest.json
-├── settings.local.json
-└── version.json
-```
+See `.claude/support/reference/system-overview.md` for the full directory tree and template configuration file documentation.
 
 ## Technology Stack
 

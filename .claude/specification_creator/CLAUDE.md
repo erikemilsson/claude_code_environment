@@ -110,6 +110,8 @@ Vision documents capture ideation, design philosophy, and future thinking. Commo
 | Have existing vision/design doc | `/iterate distill` |
 | Building out partial spec | `/iterate` or `/iterate {section}` |
 
+For detailed scenario walkthroughs (greenfield, new feature, refinement, corrections, post-build extensions, spec conflicts), see `README.md` § "Scenarios".
+
 ## Archive
 
 Store research, notes, and planning documents in `.archive/`.

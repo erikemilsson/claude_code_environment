@@ -66,22 +66,44 @@ To create or revise the spec, start a Claude Code session from `.claude/specific
 
 ### Verify Phase
 
-**Goal:** Confirm it works correctly
+**Goal:** Confirm the implementation matches the spec
+
+**When it triggers:** Automatically when `/work` detects all spec tasks are finished (auto-detect mode), or manually when the user runs `/work` after completing all tasks.
 
 **Activities:**
-- Run test suite
-- Validate acceptance criteria
-- Check non-functional requirements
-- Identify issues
-- Create report
+- Run existing test suite (if available)
+- Validate each spec acceptance criterion individually
+- Check code quality, security, and integration
+- Identify and categorize issues (critical/major/minor)
+- Create fix tasks for issues found (marked `out_of_spec: true`)
+- Write verification result to `.claude/verification-result.json`
+- Generate verification report for the user
+
+**Output:** A structured report showing:
+- Pass/fail status for each acceptance criterion
+- Issues found, categorized by severity
+- Tasks created for fixes (if any)
+- Overall result: `pass`, `fail`, or `pass_with_issues`
+
+**What happens after verification:**
+- **Pass:** `/work` transitions to Complete phase. Spec status updates to `complete`.
+- **Pass with issues:** Minor issues noted but no critical/major blockers. Same as pass — project completes, issues logged for future work.
+- **Fail:** Critical issues found. Fix tasks are created. `/work` routes back to Execute phase to address them. Once fixes are done, verification runs again.
+
+**Feedback loop:** Verification findings flow back into the Execute phase:
+1. verify-agent identifies issues
+2. Fix tasks are created (marked `out_of_spec: true`, requiring user approval)
+3. `/work` presents recommendations to user for Accept/Reject/Defer
+4. Accepted tasks are executed by implement-agent
+5. When all spec tasks are finished again, verification re-runs
 
 **Exit Criteria:**
-- Tests pass
-- Acceptance criteria validated
+- All acceptance criteria pass (or failures are documented and accepted)
 - No critical issues remain
+- Verification result persisted to `.claude/verification-result.json`
 - Human approved final state
 
-**Agent:** verify-agent
+**Agent:** verify-agent (see `.claude/agents/verify-agent.md` for detailed workflow)
 
 ---
 
@@ -109,6 +131,19 @@ By separating concerns:
 5. Issues found become new tasks, back to implement-agent
 
 This separation produces higher quality output than a single agent could achieve alone.
+
+### Enforcement
+
+The agent system is prompt-driven, not code-enforced. To prevent workflows from being bypassed:
+
+1. **Explicit Read instructions** — `/work` directs Claude to use the Read tool on the agent file, not just "follow the workflow." This makes the file read an observable action.
+2. **Required artifacts** — Each workflow step produces a checkable artifact:
+   - implement-agent: Task must pass through "In Progress" before "Finished"; notes must be non-empty
+   - verify-agent: `verification-result.json` must contain per-criterion data matching the spec
+3. **Compliance checks** — `/health-check` validates workflow compliance (empty notes, missing verification result, status jump from Pending→Finished)
+4. **Spec gate** — Tasks without a spec trigger a warning. Without a spec, the verify phase cannot run, preventing projects from "completing" without verification.
+
+**Limitation:** These are structural incentives, not hard gates. Claude can still bypass them. The enforcement works by making the correct path the obvious path and making bypasses detectable after the fact.
 
 ---
 
@@ -209,6 +244,7 @@ When completing work, agents return:
 
 **What /work does:**
 - Verify spec exists and has content
+- Update spec `status` from `draft` to `active`
 - Decompose spec into tasks (if no tasks exist)
 - Present checkpoint to human
 - Read and follow implement-agent workflow for first available task
@@ -229,17 +265,40 @@ When completing work, agents return:
 
 ### Verify → Complete
 
-**Trigger:** Verify agent reports verification passed
+**Trigger:** Verify agent reports verification passed and writes a valid result to `.claude/verification-result.json`
 
 **Handoff includes:**
 - Test results
 - Acceptance criteria validation
 - Issues found (if any)
 - Recommendations
+- Persisted verification result (`.claude/verification-result.json`)
 
 **What /work does:**
+- Check `.claude/verification-result.json` for a valid passing result
+- Update spec `status` from `active` to `complete`
+- Update dashboard with completion summary
 - Present final checkpoint to human
 - Project complete (or loop back if issues)
+
+**Verification result validity:** The result is valid when `result` is `"pass"` or `"pass_with_issues"`, `spec_fingerprint` matches the current spec, and no tasks changed since the verification `timestamp`. If the spec changes or new tasks appear, the result is automatically invalidated and `/work` re-routes to verification.
+
+---
+
+## Spec Status Transitions
+
+The spec metadata `status` field tracks the project lifecycle:
+
+| Status | Meaning | Trigger |
+|--------|---------|---------|
+| `draft` | Spec is being written | Initial creation |
+| `active` | Spec is being implemented | Decomposition begins (Spec → Execute) |
+| `complete` | All work done and verified | Verification passes (Verify → Complete) |
+
+**Rules:**
+- Only `/work` updates the spec status (not manual edits)
+- Transitioning back from `complete` to `active` happens automatically when the spec is modified and new tasks are created
+- The status is in the YAML frontmatter of `.claude/spec_v{N}.md`
 
 ---
 
@@ -356,6 +415,57 @@ If work isn't progressing:
 
 ---
 
+## Spec Change and Feature Addition Workflow
+
+When you need to add features or change requirements after initial decomposition, follow this workflow:
+
+### Steps
+
+1. **User edits the spec** — Update `.claude/spec_v{N}.md` directly (add sections, modify requirements, change acceptance criteria)
+2. **User runs `/work`** — Auto-detect mode picks up the change
+3. **`/work` detects drift** — Compares spec fingerprint against task fingerprints (see Step 1b in work.md)
+4. **`/work` shows what changed** — Granular section diffs showing added, modified, and removed content
+5. **User confirms** — Per-section options: apply suggestions, review individually, or skip
+6. **Tasks are created/updated** — Only for changed sections (unchanged tasks are preserved)
+7. **Implementation proceeds** — Execute phase runs on new/updated tasks
+8. **Verification confirms** — Verify phase runs against updated acceptance criteria
+
+### Key Principles
+
+- **Transparency first:** The user always sees what Claude thinks changed before any action is taken
+- **Incremental by default:** Only affected tasks are updated; completed work is preserved
+- **Full re-decomposition is rare:** Only needed for major rewrites or architecture changes (see table below)
+- **Spec stays as source of truth:** Tasks follow the spec, not the other way around
+
+### Adding a New Feature
+
+1. Add a new `##` section to the spec describing the feature
+2. Run `/work` — it detects the new section
+3. Confirm the new tasks to be created
+4. Existing tasks remain untouched
+
+### Modifying an Existing Feature
+
+1. Edit the relevant `##` section in the spec
+2. Run `/work` — it shows the diff and affected tasks
+3. Choose how to update each affected task
+4. Unaffected tasks remain untouched
+
+### Removing a Feature
+
+1. Delete the `##` section from the spec
+2. Run `/work` — it flags tasks tied to the removed section
+3. Choose to mark them out-of-spec or delete them
+
+### Versioning Conventions
+
+- Spec files follow `spec_v{N}.md` naming
+- Increment version number for major scope changes (new spec_v2.md)
+- Minor edits stay in the same version
+- Each decomposition saves a snapshot to `.claude/support/previous_specifications/`
+
+---
+
 ## Spec Drift and Reconciliation
 
 When the specification evolves after tasks are decomposed, granular reconciliation helps keep tasks aligned without starting over.
@@ -402,6 +512,33 @@ When the specification evolves after tasks are decomposed, granular reconciliati
 | Section deleted | Mark affected tasks out-of-spec or delete |
 | Major rewrite | Re-decompose from scratch |
 | Architecture change | Re-decompose from scratch |
+
+---
+
+## Out-of-Spec Task Handling
+
+Tasks can be marked `out_of_spec: true` in two ways:
+1. **User request** — `/work` spec check offers "Proceed anyway" for requests not in spec
+2. **Verify-agent recommendations** — verify-agent creates recommendation tasks for improvements beyond acceptance criteria
+
+### Key Rules
+
+- **Out-of-spec tasks are excluded from phase routing.** The auto-detect table in `/work` only considers spec tasks when determining phase (Execute vs Verify vs Complete). This prevents the verify → execute → verify infinite loop.
+- **Out-of-spec tasks require user approval before execution.** `/work` presents pending out-of-spec tasks at phase boundaries with Accept/Reject/Defer options.
+- **Accepted tasks** get `out_of_spec_approved: true` and can be executed by `/work`.
+- **The completion condition** is "all spec tasks finished + verification passed," regardless of out-of-spec task status.
+
+### Dashboard Display
+
+Out-of-spec tasks appear in the All Tasks table with a ⚠️ prefix:
+
+```
+| ID | Title | Status | Owner |
+|----|-------|--------|-------|
+| 13 | ⚠️ Add unit tests for CI | Pending | claude |
+```
+
+Unapproved out-of-spec tasks also appear in the "Needs Your Attention" section under "Reviews & Approvals" to prompt user action.
 
 ---
 

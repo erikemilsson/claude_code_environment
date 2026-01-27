@@ -22,3 +22,6 @@ __pycache__/
 
 # Claude workspace (temporary working documents)
 .claude/support/workspace/
+
+# Prevent nested .claude directories
+.claude/.claude/

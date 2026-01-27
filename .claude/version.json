@@ -1,8 +1,8 @@
 {
   "template_version": "1.5.0",
   "template_release_date": "2026-01-26",
-  "source_repo": "https://github.com/user/claude_code_environment",
+  "template_repo": "https://github.com/user/claude_code_environment",
   "project_version": "0.1.0",
   "project_initialized": "2026-01-26",
-  "notes": "Update source_repo to your fork. Update project_version and project_initialized for your project."
+  "notes": "template_repo points to the environment builder template (used for sync-check). Project's own repo is determined from git remote. Update template_repo if you forked the template."
 }

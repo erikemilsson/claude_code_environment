@@ -13,6 +13,7 @@
       ".claude/support/reference/decision-template.md",
       ".claude/support/reference/decision-guide.md",
       ".claude/support/reference/dashboard-patterns.md",
+      ".claude/support/reference/system-overview.md",
       ".claude/support/previous_specifications/README.md",
       ".claude/vision/README.md"
     ],
@@ -24,6 +25,7 @@
     "ignore": [
       ".claude/tasks/*.json",
       ".claude/dashboard.md",
+      ".claude/verification-result.json",
       ".claude/version.json",
       ".claude/sync-manifest.json",
       ".claude/support/decisions/decision-*.md",
@@ -33,5 +35,8 @@
       ".claude/vision/*.md"
     ]
   },
-  "notes": "Paths relative to template root. Use glob patterns."
+  "notes": "Paths relative to template root. Use glob patterns.",
+  "sync_notes": {
+    ".claude/commands/*.md": "iterate.md must NOT exist here — it belongs only in specification_creator/commands/. Its relative paths only resolve from that context."
+  }
 }

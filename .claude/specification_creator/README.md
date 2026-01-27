@@ -120,6 +120,74 @@ For the overall Spec → Execute → Verify workflow, see `.claude/support/refer
 - Changes that invalidate previous assumptions
 - User explicitly requests a new version
 
+## Scenarios
+
+### 1. Greenfield Project (no spec, have an idea or vision doc)
+
+**Path A — Have a vision doc:**
+1. Save it to `.claude/vision/`
+2. Start Claude Code from `specification_creator/`
+3. Run `/iterate distill` to extract Phase 1 scope
+4. Paste suggestions into `spec_v1.md`, edit to fit
+5. Run `/iterate` to fill remaining gaps
+6. When ready, exit to project root and run `/work`
+
+**Path B — Starting from scratch:**
+1. Start Claude Code from `specification_creator/`
+2. Run `/iterate` — bootstrap mode asks foundational questions
+3. Build up the spec iteratively
+4. When ready, exit to project root and run `/work`
+
+### 2. New Major Feature (project underway)
+
+1. Start Claude Code from `specification_creator/`
+2. Run `/iterate {feature}` to develop the new section
+3. Paste suggestions into the spec as a new `##` section
+4. Exit to project root, run `/work`
+5. `/work` detects the new section and creates tasks for it
+6. Existing tasks remain untouched
+
+### 3. Refinement of Existing Feature (adjusting requirements)
+
+1. Edit the spec section directly (update wording, change defaults, add constraints)
+2. Update the `updated` date in frontmatter
+3. Run `/work` — it detects section drift and shows what changed
+4. Confirm task updates for affected tasks
+5. Use `/iterate {section}` if you need help figuring out what to change
+
+### 4. Small Spec Correction (typo, wrong default, renamed field)
+
+**Lightweight path — no specification_creator needed:**
+1. Edit the spec file directly
+2. Update the `updated` date
+3. Run `/work` — drift detection may flag affected tasks
+4. If no tasks affected, no action needed
+
+### 5. Post-Build Feature Request (extending after initial build)
+
+Same as scenario 2, but note:
+- If the project is verified/complete, spec status will transition back from `complete` to `active`
+- `/work` handles this automatically when new tasks are created
+- Previous verification result is invalidated
+
+### 6. Spec Conflicts with Existing Implementation
+
+1. Identify the conflict (spec says X, code does Y)
+2. Decide: is the spec wrong, or the code?
+   - **Spec is wrong:** Edit the spec to match intended behavior, run `/work`
+   - **Code is wrong:** Run `/work` — existing tasks or new tasks will fix the code
+3. If unsure, run `/iterate {section}` to talk through the conflict
+
+### After Any Spec Change
+
+`/work` communicates:
+- What sections changed (diff view)
+- Which tasks are affected
+- Whether new tasks were created
+- What the user should do next (confirm updates, review tasks, or proceed)
+
+---
+
 ## Archive
 
 During spec creation, Claude may produce research notes or analysis. These go in `.archive/` with dated filenames:

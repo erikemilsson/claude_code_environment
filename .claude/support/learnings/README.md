@@ -47,7 +47,7 @@ Keep entries concise and actionable:
 
 ## Maintenance
 
-**When to review:** At project milestones, phase completions, or quarterly.
+**When to review:** At phase completions, or quarterly.
 
 **What to check:**
 - Remove learnings now captured in the spec (they've graduated)
