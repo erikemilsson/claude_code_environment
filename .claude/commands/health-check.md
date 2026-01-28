@@ -199,6 +199,68 @@ Reports tasks that were created outside the spec:
 
 **Note:** Out-of-spec tasks are valid but won't be verified against spec acceptance criteria.
 
+### 14. Drift Budget Enforcement
+
+Checks for accumulated drift that exceeds configured limits:
+
+**Check:**
+1. Read `.claude/drift-deferrals.json` (if exists)
+2. Read drift policy from spec frontmatter (defaults: `max_deferred_sections: 3`, `max_deferral_age_days: 14`)
+3. Count active deferrals
+4. Check for expired deferrals
+
+**Report format (budget exceeded):**
+```
+[ERROR] Drift Budget Exceeded (BLOCKS WORK)
+  - Active deferrals: 4 (max: 3)
+  - Sections needing reconciliation:
+    - ## Authentication (deferred 2026-01-10, 18 days ago — EXPIRED)
+    - ## API Endpoints (deferred 2026-01-20)
+    - ## Database (deferred 2026-01-22)
+    - ## Deployment (deferred 2026-01-25)
+
+  Must reconcile at least 2 sections before continuing.
+  Run /work to start reconciliation.
+```
+
+**Report format (within budget):**
+```
+[Checkmark] Drift budget OK (1 of 3 max deferrals)
+```
+
+### 15. Dashboard Staleness Check
+
+Validates that the dashboard is current with task state:
+
+**Check:**
+1. Compute current task state hash: `SHA-256(sorted list of task_id + ":" + status)`
+2. Read dashboard metadata block (if exists)
+3. Compare hashes
+
+**Report format (stale):**
+```
+[Warning] Dashboard is stale
+  - Dashboard task_hash: sha256:abc123...
+  - Current task_hash: sha256:def456...
+  - Dashboard generated: 2026-01-25 10:30 UTC
+  - Tasks modified since: 3
+
+  Dashboard may not reflect current project state.
+  Run /work or regenerate manually.
+```
+
+**Report format (current):**
+```
+[Checkmark] Dashboard is current (generated 2026-01-28 14:30 UTC)
+```
+
+**Report format (no metadata):**
+```
+[Warning] Dashboard missing metadata block
+  - Cannot verify dashboard freshness
+  - Suggest regenerating dashboard via /work
+```
+
 **Stale "In Progress" Tasks**
 - Tasks with status `"In Progress"` for > 7 days without activity
 - Indicates abandoned work or forgotten state updates
@@ -492,16 +554,19 @@ Catch common issues immediately without the overhead of a full health check.
 
 ### Checks Performed
 
-| Check | What It Detects |
-|-------|-----------------|
-| Workflow compliance | Task jumped Pending→Finished without In Progress; empty notes on finished task |
-| Single "In Progress" rule | More than one task in progress |
-| Spec fingerprint comparison | Spec changed since decomposition (full spec level) |
-| Section change count | Number of sections that changed (if section fingerprints exist) |
-| Orphan dependency detection | References to deleted/missing tasks |
-| Out-of-spec count | Number of tasks marked out-of-spec |
-| Per-task verification gaps | Finished tasks missing `task_verification` field or with `result != "pass"` |
-| Completion gate integrity | Project/spec marked complete but verification-result.json missing or invalid |
+| Check | What It Detects | Severity |
+|-------|-----------------|----------|
+| Verification debt | Finished tasks missing verification or with failed verification | **CRITICAL** |
+| Drift budget exceeded | More deferrals than allowed, or expired deferrals | **CRITICAL** |
+| Stale "Awaiting Verification" | Task stuck in Awaiting Verification for > 1 hour | **CRITICAL** |
+| Dashboard staleness | Dashboard task_hash doesn't match current state | **ERROR** |
+| Workflow compliance | Task jumped Pending→Finished without In Progress; empty notes | Warning |
+| Single "In Progress" rule | More than one task in progress | Warning |
+| Spec fingerprint comparison | Spec changed since decomposition (full spec level) | Warning |
+| Section change count | Number of sections that changed (if section fingerprints exist) | Warning |
+| Orphan dependency detection | References to deleted/missing tasks | Warning |
+| Out-of-spec count | Number of tasks marked out-of-spec | Info |
+| Completion gate integrity | Project/spec marked complete but verification-result.json missing | **CRITICAL** |
 
 ### Output Format
 
@@ -517,11 +582,20 @@ Quick check: ⚠️ 2 issues
   - 3 tasks marked out-of-spec
 ```
 
-**Critical issues (block completion):**
+**Critical issues (block work):**
 ```
 Quick check: ❌ CRITICAL
-  - 2 finished tasks missing per-task verification (tasks 16, 17)
+  - Verification debt: 2 tasks (tasks 16, 17)
+  - Drift budget exceeded: 4 deferrals (max 3)
+  - Task 5 stuck in "Awaiting Verification" (> 1 hour)
+  - Dashboard stale (task_hash mismatch)
+```
+
+**Blocking issues (block completion):**
+```
+Quick check: ❌ BLOCKS COMPLETION
   - Project shows "Complete" but verification-result.json missing
+  - Spec marked complete but 3 tasks have verification debt
 ```
 
 ### When Run Automatically
