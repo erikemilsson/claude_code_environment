@@ -45,15 +45,14 @@ The project specification lives at `.claude/spec_v{N}.md`.
 2. Explain the suggested change
 3. Let the user make the edit
 
-To create or revise specifications, start a Claude Code instance from `.claude/specification_creator/`.
+To create or revise specifications, run `/iterate`.
 
 ## Vision Documents
 
 If you have a vision/design document from ideation (e.g., Claude Desktop brainstorming):
 
 1. Save it to `.claude/vision/`
-2. Start Claude Code from `.claude/specification_creator/`
-3. Run `/iterate distill` to extract a buildable spec
+2. Run `/iterate distill` to extract a buildable spec
 
 Vision docs capture intent and philosophy; specs capture buildable scope. Both are preserved.
 
@@ -72,11 +71,13 @@ For details on phases, agent handoffs, and checkpoints, see `.claude/support/ref
 ### Primary
 - `/work` - Start or continue work (checks spec alignment, decomposes tasks, routes to agents)
 - `/work complete` - Complete current in-progress task (or `/work complete {id}`)
+- `/iterate` - Structured spec review (checks gaps, asks questions, suggests content)
 - `/status` - Quick read-only view of project state (no modifications)
 
 ### Task Management
 - `/breakdown {id}` - Split complex tasks into subtasks
 - `/health-check` - Validate tasks, decisions, and CLAUDE.md health
+- `/update-template` - Check for and apply template updates
 
 ### Setup
 - `/setup-check` - Validate template configuration (run after cloning)

@@ -32,7 +32,7 @@ Vision documents are inputs to specs, not replacements. The workflow:
 
 1. Capture vision (ideation, brainstorming, philosophy)
 2. Save to `.claude/vision/`
-3. Run `/iterate distill` from specification_creator
+3. Run `/iterate distill`
 4. Extract buildable Phase 1 spec from vision
 5. Vision doc remains as reference; spec references it in frontmatter
 

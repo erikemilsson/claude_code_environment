@@ -5,11 +5,10 @@
       ".claude/commands/*.md",
       ".claude/agents/*.md",
       ".claude/specification_creator/*.md",
-      ".claude/specification_creator/commands/*.md",
-      ".claude/specification_creator/reference/*.md",
       ".claude/support/reference/shared-definitions.md",
       ".claude/support/reference/task-schema.md",
       ".claude/support/reference/workflow.md",
+      ".claude/support/reference/spec-checklist.md",
       ".claude/support/reference/decision-template.md",
       ".claude/support/reference/decision-guide.md",
       ".claude/support/reference/dashboard-patterns.md",
@@ -35,8 +34,5 @@
       ".claude/vision/*.md"
     ]
   },
-  "notes": "Paths relative to template root. Use glob patterns.",
-  "sync_notes": {
-    ".claude/commands/*.md": "iterate.md must NOT exist here — it belongs only in specification_creator/commands/. Its relative paths only resolve from that context."
-  }
+  "notes": "Paths relative to template root. Use glob patterns."
 }

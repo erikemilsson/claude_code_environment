@@ -1,73 +1,15 @@
 # Specification Creator
 
-Versioned specification system. The active spec is the source of truth for the project.
+> **Note:** The `/iterate` command has moved to the project root. You no longer need to start a separate Claude Code session here.
 
-## Quick Start
+## How to Create Specifications
 
-1. Navigate to this folder: `cd .claude/specification_creator`
-2. Start Claude Code from here
-3. Run `/iterate` to begin structured spec review
+From your project root directory, run:
 
-## Commands
-
-| Command | Purpose |
-|---------|---------|
-| `/iterate` | Auto-detect weakest area, ask questions, suggest content |
-| `/iterate overview` | Focus on Overview section |
-| `/iterate architecture` | Focus on Architecture section |
-| `/iterate requirements` | Focus on Requirements section |
-| `/iterate acceptance` | Focus on Acceptance Criteria |
-| `/iterate questions` | Focus on Open Questions |
-| `/iterate {topic}` | Focus on custom topic |
-
-## How /iterate Works
-
-```
-┌─────────────────────────────────────────────────────────┐
-│  1. Read spec, assess current state                     │
-│  2. Empty? → Bootstrap mode (foundational questions)    │
-│     Has content? → Find weakest area                    │
-│  3. Ask up to 4 questions                               │
-│  4. You answer                                          │
-│  5. Claude suggests copy-pasteable content              │
-│  6. You edit the spec                                   │
-│  7. Repeat until ready                                  │
-└─────────────────────────────────────────────────────────┘
-```
-
-**Key rule:** Claude suggests, you edit. Claude never modifies the spec directly.
-
-## Spec Readiness
-
-A spec is ready for `/work` when:
-
-- The core problem and users are clear
-- You could explain the system in 2 minutes
-- Key technical decisions are made
-- You know what "done" looks like
-- Remaining questions won't block work
-
-Rigor scales with project seriousness - a prototype needs less than a production system. `/iterate` asks about this early and calibrates accordingly.
-
-See `reference/spec-checklist.md` for full criteria.
-
-## Structure
-
-```
-.claude/
-├── spec_v{N}.md                 # Active specification (source of truth)
-├── support/
-│   └── previous_specifications/ # Archived spec versions
-│       └── spec_v{N-1}.md
-└── specification_creator/       # Start Claude Code here for spec sessions
-    ├── CLAUDE.md                # Rules for spec-building mode
-    ├── README.md                # This file
-    ├── commands/
-    │   └── iterate.md           # /iterate command definition
-    ├── reference/
-    │   └── spec-checklist.md    # Readiness criteria
-    └── .archive/                # Research and planning docs
-        └── YYYY-MM-DD_topic.md
+```bash
+/iterate                    # Auto-detect what's needed and build the spec
+/iterate {topic}            # Focus on a specific area
+/iterate distill            # Extract buildable spec from a vision document
 ```
 
 ## Specification Format
@@ -81,141 +23,19 @@ updated: YYYY-MM-DD
 ---
 ```
 
-## Creating and Versioning Specs
+## What Lives Here
 
-For the overall Spec → Execute → Verify workflow, see `.claude/support/reference/workflow.md`. This section covers spec creation and versioning specifically.
+This directory is kept for backward compatibility. The active components have moved:
 
-### Starting a New Project
+| Was Here | Now At |
+|----------|--------|
+| `commands/iterate.md` | `.claude/commands/iterate.md` (project root commands) |
+| `reference/spec-checklist.md` | `.claude/support/reference/spec-checklist.md` |
 
-1. Copy Claude Code environment to your new project
-2. Navigate to `.claude/specification_creator/`
-3. Start a Claude Code instance from this folder
-4. Run `/iterate` to begin building `../spec_v1.md`
+The `.archive/` directory remains available for spec-session working documents.
 
-### Building the Specification
+## Full Documentation
 
-1. Run `/iterate` - Claude checks the spec and identifies gaps
-2. Answer Claude's questions (max 4 at a time)
-3. Review suggested content
-4. Edit the spec yourself
-5. Run `/iterate` again to continue
-6. Repeat until checklist passes
-
-### Updating (Minor Changes)
-
-1. Edit the active `../spec_v{N}.md` directly
-2. Update the `updated` date in frontmatter
-
-### Versioning (Major Changes)
-
-1. Copy `../spec_v{N}.md` to `../support/previous_specifications/`
-2. In the copied file: change `status: active` to `status: archived`
-3. Create new `../spec_v{N+1}.md` with `status: active`
-4. Set `created` and `updated` to today's date
-
-### When to Version
-
-- Architecture changes
-- Major feature additions/removals
-- Changes that invalidate previous assumptions
-- User explicitly requests a new version
-
-## Scenarios
-
-### 1. Greenfield Project (no spec, have an idea or vision doc)
-
-**Path A — Have a vision doc:**
-1. Save it to `.claude/vision/`
-2. Start Claude Code from `specification_creator/`
-3. Run `/iterate distill` to extract Phase 1 scope
-4. Paste suggestions into `spec_v1.md`, edit to fit
-5. Run `/iterate` to fill remaining gaps
-6. When ready, exit to project root and run `/work`
-
-**Path B — Starting from scratch:**
-1. Start Claude Code from `specification_creator/`
-2. Run `/iterate` — bootstrap mode asks foundational questions
-3. Build up the spec iteratively
-4. When ready, exit to project root and run `/work`
-
-### 2. New Major Feature (project underway)
-
-1. Start Claude Code from `specification_creator/`
-2. Run `/iterate {feature}` to develop the new section
-3. Paste suggestions into the spec as a new `##` section
-4. Exit to project root, run `/work`
-5. `/work` detects the new section and creates tasks for it
-6. Existing tasks remain untouched
-
-### 3. Refinement of Existing Feature (adjusting requirements)
-
-1. Edit the spec section directly (update wording, change defaults, add constraints)
-2. Update the `updated` date in frontmatter
-3. Run `/work` — it detects section drift and shows what changed
-4. Confirm task updates for affected tasks
-5. Use `/iterate {section}` if you need help figuring out what to change
-
-### 4. Small Spec Correction (typo, wrong default, renamed field)
-
-**Lightweight path — no specification_creator needed:**
-1. Edit the spec file directly
-2. Update the `updated` date
-3. Run `/work` — drift detection may flag affected tasks
-4. If no tasks affected, no action needed
-
-### 5. Post-Build Feature Request (extending after initial build)
-
-Same as scenario 2, but note:
-- If the project is verified/complete, spec status will transition back from `complete` to `active`
-- `/work` handles this automatically when new tasks are created
-- Previous verification result is invalidated
-
-### 6. Spec Conflicts with Existing Implementation
-
-1. Identify the conflict (spec says X, code does Y)
-2. Decide: is the spec wrong, or the code?
-   - **Spec is wrong:** Edit the spec to match intended behavior, run `/work`
-   - **Code is wrong:** Run `/work` — existing tasks or new tasks will fix the code
-3. If unsure, run `/iterate {section}` to talk through the conflict
-
-### After Any Spec Change
-
-`/work` communicates:
-- What sections changed (diff view)
-- Which tasks are affected
-- Whether new tasks were created
-- What the user should do next (confirm updates, review tasks, or proceed)
-
----
-
-## Archive
-
-During spec creation, Claude may produce research notes or analysis. These go in `.archive/` with dated filenames:
-
-```
-.archive/
-├── 2026-01-26_research-auth-options.md
-├── 2026-01-26_scope-questions.md
-└── 2026-01-27_architecture-notes.md
-```
-
-**Note:** This `.archive/` is for spec-session working documents. Formal decision records documenting technology/architecture choices go in `.claude/support/decisions/`.
-
----
-
-## For Claude Code Environment Builder
-
-Add these instructions to the root CLAUDE.md when building environments:
-
-```markdown
-## Specification
-
-The project specification lives at `.claude/spec_v{N}.md`.
-
-**Do not edit the specification directly.** If you identify improvements:
-1. Quote the relevant section
-2. Explain the suggested change
-3. Let the user make the edit
-
-To create or revise specifications, start a Claude Code instance from `.claude/specification_creator/`.
-```
+- **Iterate command**: `.claude/commands/iterate.md`
+- **Spec readiness**: `.claude/support/reference/spec-checklist.md`
+- **Workflow guide**: `.claude/support/reference/workflow.md`

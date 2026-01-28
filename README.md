@@ -12,7 +12,7 @@ rm -rf .git && git init
 
 # Customize for your project
 # 1. Edit CLAUDE.md - Delete the meta section (everything above the ---), then customize
-# 2. Create your spec: cd .claude/specification_creator && claude
+# 2. Create your spec: run /iterate in Claude Code
 # 3. Edit this README.md - Replace with your project documentation
 ```
 
@@ -27,16 +27,18 @@ rm -rf .git && git init
     │   └── task-*.json            # Individual task files
     ├── commands/                  # Slash commands
     │   ├── work.md                # Main entry point
+    │   ├── iterate.md             # Spec review and building
     │   ├── status.md              # Read-only status view
     │   ├── breakdown.md           # Task decomposition
     │   ├── health-check.md        # System health validation
+    │   ├── update-template.md     # Template sync
     │   └── setup-check.md         # Template configuration check
     ├── agents/                    # Specialist agents
     │   ├── implement-agent.md     # Builds the solution
     │   └── verify-agent.md        # Validates against spec
-    ├── specification_creator/     # Separate environment for spec building
-    │   ├── CLAUDE.md              # Rules for spec-building mode
-    │   └── README.md              # How to use
+    ├── specification_creator/     # Legacy redirect (use /iterate from project root)
+    │   ├── CLAUDE.md              # Redirect notice
+    │   └── README.md              # Redirect notice
     ├── support/                   # Supporting documentation
     │   ├── reference/             # Schemas, guides, definitions
     │   ├── decisions/             # Decision documentation
@@ -54,7 +56,7 @@ rm -rf .git && git init
 
 ## Workflow
 
-1. **Spec** - Create specification using the specification_creator (see below)
+1. **Spec** - Create specification using `/iterate` (see below)
 2. **Execute** - Implement (tasks decomposed from spec by /work)
 3. **Verify** - Validate against acceptance criteria
 
@@ -64,19 +66,20 @@ Use `/work` to start or continue work. Claude checks requests against the spec, 
 
 ## Creating Specifications
 
-Specifications are created in a separate Claude Code environment to keep spec-building focused:
+Specifications are created using the `/iterate` command from the project root:
 
 ```bash
-cd .claude/specification_creator
-claude   # Start Claude Code here
+/iterate                    # Auto-detect what's needed and build the spec
+/iterate {topic}            # Focus on a specific area
+/iterate distill            # Extract buildable spec from a vision document
 ```
 
-This gives you a dedicated session for defining requirements without implementation distractions. The specification_creator will:
+The iterate command will:
 - Guide you through requirement gathering
 - Create versioned specs at `.claude/spec_v{N}.md`
 - Archive old versions to `.claude/support/previous_specifications/`
 
-Once your spec is ready, return to the main project directory and run `/work` to begin execution.
+Once your spec is ready, run `/work` to begin execution.
 
 ## Commands
 
@@ -84,9 +87,11 @@ Once your spec is ready, return to the main project directory and run `/work` to
 |---------|-------------|
 | `/work` | Main entry point - checks spec, decomposes tasks, routes to agents |
 | `/work complete` | Complete current in-progress task (or `/work complete {id}`) |
+| `/iterate` | Structured spec review (checks gaps, asks questions, suggests content) |
 | `/status` | Quick read-only view of project state |
 | `/breakdown {id}` | Split complex tasks into subtasks |
 | `/health-check` | Validate system health |
+| `/update-template` | Check for and apply template updates |
 | `/setup-check` | Validate template configuration (run after cloning) |
 
 ## License

@@ -31,11 +31,11 @@ Run all checks and output a summary report. This helps new users ensure they've 
    - ⚠ Warn: Spec missing or contains placeholder text
 
 4. **Specification readiness** (gate for `/work`)
-   - Assess against readiness criteria from `specification_creator/reference/spec-checklist.md`
+   - Assess against readiness criteria from `.claude/support/reference/spec-checklist.md`
    - Check for red flags: `[TBD]`, vague statements, missing sections
    - ✓ Pass: Spec is ready for `/work`
    - ⚠ Warn: Spec needs more detail
-   - ✗ Fail: Major gaps - run `/iterate` in specification_creator
+   - ✗ Fail: Major gaps - run `/iterate`
 
 5. **README.md customization**
    - Check for template boilerplate
@@ -64,7 +64,7 @@ Run all checks and output a summary report. This helps new users ensure they've 
 ✓ Spec file exists
 ⚠ Spec readiness: needs more detail
   → Missing acceptance criteria
-  → Run /iterate in specification_creator
+  → Run /iterate
 ✓ README.md customized
 ✓ settings.local.json paths correct
 ✓ .gitignore configured
@@ -78,8 +78,7 @@ Run all checks and output a summary report. This helps new users ensure they've 
 
 ### Next Steps
 
-1. cd .claude/specification_creator && claude
-2. Run /iterate to improve spec readiness
+1. Run /iterate to improve spec readiness
 ```
 
 ## Check Details
@@ -100,7 +99,7 @@ Check the `template_repo` field:
 }
 ```
 
-Should point to the environment builder template repo (or your fork of it). Used by sync-check to compare against template updates. The project's own repo is determined from `git remote`.
+Should point to the environment builder template repo (or your fork of it). Used by `/update-template` to compare against template updates. The project's own repo is determined from `git remote`.
 
 ### Spec File
 
@@ -112,7 +111,7 @@ Should not contain placeholder patterns like:
 
 ### Spec Readiness
 
-Assess the spec against readiness criteria (see `specification_creator/reference/spec-checklist.md`):
+Assess the spec against readiness criteria (see `.claude/support/reference/spec-checklist.md`):
 
 **Must have for "Ready":**
 - Problem and users are clear
@@ -147,9 +146,9 @@ Verify the working directory in permission paths matches the actual project path
 
 `/setup-check` is the gate before `/work`. The workflow is:
 
-1. Create spec: `cd .claude/specification_creator && claude` → `/iterate`
+1. Create spec: Run `/iterate`
 2. Configure project: Fix CLAUDE.md, version.json, README.md
 3. Validate: `/setup-check` → all green
 4. Build: `/work`
 
-If `/setup-check` shows spec readiness warnings, return to specification_creator and run `/iterate` until the spec is ready.
+If `/setup-check` shows spec readiness warnings, run `/iterate` until the spec is ready.

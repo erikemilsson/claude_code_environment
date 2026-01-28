@@ -23,11 +23,39 @@ Structured spec review that identifies gaps, asks focused questions, and suggest
 
 ---
 
+## Rules
+
+**Spec editing policy:** `suggest_only` — Claude suggests changes, the user makes edits.
+
+**DO NOT edit the specification directly.** Only suggest changes for the user to make.
+
+When suggesting changes:
+- Quote the specific section
+- Explain what to change and why
+- Provide copy-pasteable content
+- Let the user make the edit
+
+**Why this mode exists:** The spec is your anchor. If Claude edits freely, it's easy to lose sight of what you originally wanted vs. what Claude decided to build. By requiring you to make edits, you stay in control of scope and intent.
+
+**Claude MUST NOT:**
+- Edit the spec file directly
+- Skip the question step and jump to suggestions
+- Ask more than 4 questions at once
+- Generate suggestions before receiving answers
+
+**Claude MUST:**
+- Assess spec state before diving into questions
+- Match rigor to stated project seriousness
+- Format suggestions as copy-pasteable content
+- Report readiness status when spec has substance
+
+---
+
 ## Process
 
 ### Step 1: Load Context
 
-Read `../spec_v{N}.md` and assess its current state.
+Read `.claude/spec_v{N}.md` and assess its current state.
 
 ### Step 2: Determine Mode
 
@@ -79,10 +107,10 @@ Enter distill mode. Extract buildable spec from a vision document.
    Distillation complete. Here's what to do next:
 
    1. Review the suggested content above
-   2. Copy it into your spec file (../spec_v{N}.md)
+   2. Copy it into your spec file (.claude/spec_v{N}.md)
    3. Edit to match your intent — the suggestions are a starting point
    4. Run /iterate to refine specific sections
-   5. When the spec passes readiness checks, exit to the project root and run /work
+   5. When the spec passes readiness checks, run /work
    ```
 
 **Output handling:** Distill generates suggested content for you to paste into the spec. It does not auto-create or edit spec files (respects `spec_editing: suggest_only`).
@@ -203,6 +231,8 @@ The threshold depends on project seriousness:
 - **MVP:** Above + key decisions made, acceptance criteria exist
 - **Production:** Above + non-functional requirements, constraints documented
 
+See `.claude/support/reference/spec-checklist.md` for full readiness criteria.
+
 ---
 
 ## When to Use Each Mode
@@ -220,16 +250,17 @@ The threshold depends on project seriousness:
 
 ---
 
-## Rules
+## Working with Vision Documents
 
-**Claude MUST NOT:**
-- Edit the spec file directly
-- Skip the question step and jump to suggestions
-- Ask more than 4 questions at once
-- Generate suggestions before receiving answers
+Vision documents capture ideation, design philosophy, and future thinking. Common sources:
+- Brainstorming sessions in Claude Desktop
+- Product thinking documents
+- Technical architecture explorations
 
-**Claude MUST:**
-- Assess spec state before diving into questions
-- Match rigor to stated project seriousness
-- Format suggestions as copy-pasteable content
-- Report readiness status when spec has substance
+**Distillation workflow:**
+1. Save vision doc to `.claude/vision/`
+2. Run `/iterate distill`
+3. Answer questions to extract Phase 1 scope
+4. Spec links to vision via `vision_source:` frontmatter
+
+**Once a spec exists, the spec is the single source of truth.** Vision docs become historical context only—useful for understanding original intent or planning future phases, but not consulted during implementation.

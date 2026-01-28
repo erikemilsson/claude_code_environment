@@ -69,14 +69,15 @@ Pre-approved permissions for consistent Claude Code behavior. Ensures the templa
 ├── agents/                    # Specialist agents
 │   ├── implement-agent.md    # Task execution
 │   └── verify-agent.md       # Validation against spec
-├── specification_creator/     # Start Claude Code here for spec sessions
-│   ├── CLAUDE.md             # Rules for spec-building mode
+├── specification_creator/     # Legacy redirect (use /iterate from project root)
+│   ├── CLAUDE.md             # Redirect notice
 │   └── README.md
 ├── support/                   # Supporting documentation
 │   ├── reference/            # Schemas, guides, definitions
 │   │   ├── task-schema.md
 │   │   ├── shared-definitions.md
 │   │   ├── workflow.md
+│   │   ├── spec-checklist.md
 │   │   ├── decision-template.md
 │   │   └── decision-guide.md
 │   ├── decisions/            # Decision documentation
