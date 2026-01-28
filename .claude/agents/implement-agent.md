@@ -103,44 +103,73 @@ Note: After this task is marked Finished, verify-agent will run per-task
 verification. Self-review here is your chance to catch issues before that
 happens. Verification failures send the task back to "In Progress."
 
-### Step 6: Document and Complete
+### Step 6: Document and Trigger Verification
 
-Update task:
+Implementation and verification are now a single atomic operation. A task only reaches "Finished" if verification passes.
+
+#### Step 6a: Mark Ready for Verification
+
+Update task with transitional status:
 ```json
 {
-  "status": "Finished",
+  "status": "Awaiting Verification",
   "completion_date": "2026-01-26",
+  "updated_date": "2026-01-26",
   "notes": "Implemented JWT middleware in auth.js. Added tests in auth.test.js."
 }
 ```
 
+**Why "Awaiting Verification":**
+- A task is not truly "Finished" until it passes verification
+- This intermediate status makes the verification requirement structurally visible
+- Tasks cannot remain in "Awaiting Verification" — they must proceed to verification immediately
+
 **IMPORTANT — Separation of concerns:**
 - Do NOT write `task_verification` field — that is verify-agent's exclusive responsibility
 - Do NOT write `verification-result.json` — that is verify-agent's exclusive responsibility
-- Your role ends at marking the task "Finished" with notes
-- The `/work` command will route to verify-agent for independent verification
 
-Check parent auto-completion:
-- If this task has a `parent_task` field
-- And all sibling subtasks are now "Finished"
-- Set the parent task status to "Finished"
+#### Step 6b: Trigger Per-Task Verification (MANDATORY)
 
-Regenerate dashboard.md from task JSON files, following the canonical template in `.claude/support/reference/dashboard-patterns.md`:
-- **Source of truth:** Only include tasks that have corresponding `task-*.json` files
-- Preserve the Notes & Ideas section between `<!-- USER SECTION -->` markers
-- Use exact section headings, emojis, and table formats from dashboard-patterns.md
-- Update Project Context with current phase
-- Update overall completion percentage in Quick Status
-- Recalculate Critical Path from dependency chain of incomplete tasks
-- Add completed task to Recently Completed with date
+Immediately after setting "Awaiting Verification", trigger verification:
+
+1. **Read the verify-agent file:** Use the Read tool to read `.claude/agents/verify-agent.md`
+2. **Follow per-task verification workflow:** Execute Steps T1-T8 from verify-agent's "Per-Task Verification Workflow" section
+3. **Handle the result:**
+
+| Result | What Happens |
+|--------|--------------|
+| **Pass** | verify-agent sets status to "Finished" with `task_verification.result = "pass"` |
+| **Fail** | verify-agent sets status to "In Progress" with `[VERIFICATION FAIL]` notes. Return to Step 4 to fix issues, then re-verify. |
+
+**This is now atomic:** implement → verify. The gap where tasks could be "Finished" without verification no longer exists.
+
+#### Step 6c: Post-Verification Cleanup
+
+After verification completes (pass or fail):
+
+**If verification passed:**
+- Check parent auto-completion:
+  - If this task has a `parent_task` field
+  - And all sibling subtasks are now "Finished"
+  - Set the parent task status to "Finished"
+
+**Always (pass or fail):**
+- Regenerate dashboard.md from task JSON files, following the canonical template in `.claude/support/reference/dashboard-patterns.md`:
+  - **Source of truth:** Only include tasks that have corresponding `task-*.json` files
+  - **User section backup:** Save existing user section before regenerating (see work.md)
+  - Preserve the Notes & Ideas section between `<!-- USER SECTION -->` markers
+  - Use exact section headings, emojis, and table formats from dashboard-patterns.md
+  - Update Project Context with current phase
+  - Update overall completion percentage in Quick Status
+  - Update Spec Alignment section with drift status
+  - Update Verification Debt in Needs Your Attention section
+  - Recalculate Critical Path from dependency chain of incomplete tasks
+  - Add completed task to Recently Completed with date
+  - Add dashboard metadata block and footer line
 
 **MANDATORY: Return control to `/work` after completing this step.**
 - Do NOT proceed to the next task
-- Do NOT add your own verification — verify-agent handles verification independently
-- `/work` will route to verify-agent for per-task verification
-- Only after verification passes will `/work` select the next task
-
-Violating this boundary (implementing + verifying in the same flow) defeats the purpose of independent verification.
+- `/work` will select the next task or route to phase-level verification if all tasks done
 
 ## Implementation Guidelines
 
@@ -222,30 +251,6 @@ Task is complete when:
 - Notes document what was done
 - Status set to "Finished"
 - Per-task verification passes (handled by verify-agent after this workflow)
-
-## Example Session
-
-```
-/work routes to implement-agent workflow:
-"Execute task 4: Add user validation"
-
-Following implement-agent workflow:
-1. Reads task 4 - Add email/password validation
-2. Checks spec - Email format, password 8+ chars
-3. Sets status "In Progress"
-4. Implements:
-   - Adds validation functions to auth.js
-   - Updates user model schema
-   - Adds unit tests
-5. Self-reviews changes
-6. Updates task:
-   - Status: "Finished"
-   - Notes: "Added validateEmail(), validatePassword() in auth.js.
-            Tests in auth.test.js cover edge cases."
-   - Checks if parent task should auto-complete
-7. Regenerates dashboard.md
-8. Reports: "Task 4 complete. 3 tasks remaining in phase."
-```
 
 ## Anti-Patterns
 

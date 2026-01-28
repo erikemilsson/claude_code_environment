@@ -61,7 +61,7 @@
 |-------|------|-------------|
 | id | String | Number for top-level ("1"), underscore for subtasks ("1_1") |
 | title | String | Brief description of what needs to be done |
-| status | String | Pending, In Progress, Blocked, Broken Down, Finished |
+| status | String | Pending, In Progress, Awaiting Verification, Blocked, Broken Down, Finished |
 | difficulty | Number | 1-10 scale (see shared-definitions.md) |
 
 ### Optional Fields
@@ -243,6 +243,18 @@ When per-task verification fails:
 - Dashboard is regenerated
 - Maximum 2 re-verification attempts per task; after that, escalate to human review by setting status to "Blocked"
 
+### Verification Debt
+
+Tasks that bypass verification create "verification debt":
+
+| Debt Condition | Description |
+|----------------|-------------|
+| Finished without `task_verification` | Task marked complete but never verified |
+| Finished with `task_verification.result == "fail"` | Verification failed, not re-verified |
+| Finished with `task_verification.result == "pass_with_issues"` and critical issues | Passed with issues that should block |
+
+**Debt is tracked in the dashboard** under "Needs Your Attention" and **blocks project completion**.
+
 ## External Dependencies
 
 For tasks blocked by external factors (not other tasks):
@@ -272,6 +284,40 @@ For tasks blocked by external factors (not other tasks):
 2. Never work directly on "Broken Down" tasks - work on subtasks
 3. "Broken Down" tasks auto-complete when all subtasks are "Finished"
 4. Document blockers when setting status to "Blocked"
+5. "Awaiting Verification" is a transitional status — tasks must proceed to verification immediately
+
+### Status Flow
+
+```
+Pending → In Progress → Awaiting Verification → [verify-agent] → Finished
+                    ↓                              ↓ (fail)
+                 Blocked                      In Progress (fix & retry)
+```
+
+**"Awaiting Verification"** is the transitional status between implementation completion and verification. Tasks in this status:
+- Have completed implementation but not yet been verified
+- Must proceed to verify-agent immediately (cannot remain in this status)
+- Are set automatically by implement-agent Step 6a
+
+### Verification Requirement for Finished Status
+
+**CRITICAL:** A task can only have `status: "Finished"` if it has a valid `task_verification` field with `result: "pass"` or `result: "pass_with_issues"`.
+
+| Status | Verification Requirement |
+|--------|-------------------------|
+| Pending | None |
+| In Progress | None |
+| Awaiting Verification | Must proceed to verification immediately |
+| Blocked | None |
+| Broken Down | None (subtasks are verified individually) |
+| **Finished** | **REQUIRED:** `task_verification.result` must be `"pass"` or `"pass_with_issues"` |
+
+**Enforcement:**
+- `/health-check` treats missing or failed verification on Finished tasks as an **ERROR** (not warning)
+- `/work` will not route to completion phase if any Finished task lacks valid verification
+- The "verification debt" metric tracks tasks that violate this rule
+
+**Why this matters:** Without structural enforcement, verification can be bypassed by marking tasks Finished directly. This rule makes the verification artifact mandatory, not just detected post-facto.
 
 ## Task Archiving
 

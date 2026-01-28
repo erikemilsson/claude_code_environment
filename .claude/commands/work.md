@@ -34,6 +34,34 @@ Read and analyze:
 - `.claude/dashboard.md` - Task status and progress
 - `.claude/support/questions.md` - Pending questions
 
+### Step 1a: Dashboard Freshness Check
+
+Before using dashboard data, verify it's current:
+
+1. **Compute current task state hash:**
+   ```
+   task_hash = SHA-256(sorted list of: task_id + ":" + status for each task-*.json)
+   ```
+
+2. **Read dashboard metadata** (if present):
+   ```markdown
+   <!-- DASHBOARD META
+   generated: 2026-01-28T14:30:00Z
+   task_hash: sha256:abc123...
+   -->
+   ```
+
+3. **Compare hashes:**
+   ```
+   If dashboard has no META block OR task_hash differs:
+   ├─ Log: "Dashboard stale — regenerating"
+   ├─ Backup user section to .claude/support/workspace/dashboard-notes-backup.md
+   ├─ Regenerate dashboard from task JSON files
+   └─ Continue with fresh dashboard
+   ```
+
+**Why this matters:** Dashboard can become stale if tasks are modified outside `/work`. This check ensures you always work from accurate data.
+
 ### Step 1b: Spec Drift Detection (Granular)
 
 After reading the spec, perform section-level drift detection:
@@ -70,62 +98,77 @@ echo -n "## Authentication\nContent here..." | sha256sum | cut -d' ' -f1
 
 **Note:** Tasks without `spec_fingerprint` are treated as legacy (no warning). Tasks without `section_fingerprint` fall back to full-spec comparison.
 
+### Drift Budget Enforcement
+
+To prevent drift from accumulating indefinitely, enforce a drift budget:
+
+**Configuration (in spec frontmatter):**
+```yaml
+---
+version: 1
+status: active
+drift_policy:
+  max_deferred_sections: 3      # Max sections that can be deferred
+  max_deferral_age_days: 14     # Max days a deferral can persist
+---
+```
+
+**Default values (if not configured):** `max_deferred_sections: 3`, `max_deferral_age_days: 14`
+
+**Tracking deferred reconciliations:**
+
+When user selects "Skip section" during reconciliation, record it:
+```json
+// In .claude/drift-deferrals.json
+{
+  "deferrals": [
+    {
+      "section": "## Authentication",
+      "deferred_date": "2026-01-20",
+      "affected_tasks": ["3", "4", "7"]
+    }
+  ]
+}
+```
+
+**Enforcement logic:**
+```
+On each /work run:
+1. Read drift-deferrals.json (if exists)
+2. Count active deferrals (not yet reconciled)
+3. Check for expired deferrals (older than max_deferral_age_days)
+
+IF active_deferrals > max_deferred_sections OR any deferral expired:
+  ├─ ERROR: Drift budget exceeded
+  │
+  │  You have deferred reconciliation for N sections (max: M).
+  │  [OR] Deferral for "## SectionName" has expired (deferred N days ago, max: M days).
+  │
+  │  Must reconcile at least 1 section before continuing.
+  │
+  │  [R] Reconcile now (REQUIRED)
+  │
+  └─ Block all other actions until reconciliation completes
+```
+
+**Clearing deferrals:** When a section is reconciled (user selects Apply or reviews individually and applies), remove it from `drift-deferrals.json`.
+
 **See also:**
 - `/health-check` performs the same drift detection as a validation check. Keep algorithms in sync.
 - `.claude/support/reference/workflow.md` § "Spec Change and Feature Addition Workflow" for the end-to-end process (user edits spec → detection → confirmation → task updates → implementation → verification).
 
 ### Granular Reconciliation UI
 
-When section-level drift is detected, present a targeted UI:
+When section-level drift is detected, present a targeted UI showing:
+- Section name and number of affected tasks
+- Diff of changed content
+- Table of affected tasks with suggested actions
 
-```
-## Spec Drift Detected
+**Options per section:** `[A]` Apply suggestions, `[R]` Review individually, `[S]` Skip section
 
-### Changed: ## Authentication (3 tasks affected)
+**Individual task review options:** `[A]` Apply, `[E]` Edit, `[S]` Skip, `[O]` Mark out-of-spec
 
-**Diff:**
-- User authentication with email and password
-+ User authentication with email, password, or OAuth (Google, GitHub)
-+ Session timeout: 30 minutes of inactivity
-
-**Affected Tasks:**
-| ID | Title | Suggested Action |
-|----|-------|------------------|
-| 3 | Implement login flow | Review: OAuth added |
-| 4 | Password validation | No change needed |
-| 7 | Session management | Review: Timeout added |
-
-[A] Apply suggestions  [R] Review individually  [S] Skip section
-
-### Changed: ## API Endpoints (1 task affected)
-...
-```
-
-**Options per section:**
-- **Apply suggestions** - Auto-update task descriptions with suggested changes
-- **Review individually** - Step through each affected task
-- **Skip section** - Acknowledge change, keep tasks as-is
-
-**Individual task review (when [R] selected):**
-```
-## Task 3: Implement login flow
-
-Current description: Create login endpoint with email/password
-
-Spec change: OAuth support (Google, GitHub) added
-
-Suggested update: Create login endpoint supporting email/password and OAuth
-
-[A] Apply  [E] Edit  [S] Skip  [O] Mark out-of-spec
-```
-
-**Edge cases:**
-| Scenario | Handling |
-|----------|----------|
-| New section added | Report: "New section '## NewFeature' - may need new tasks" |
-| Section deleted | Flag affected tasks, suggest mark as out-of-spec or delete |
-| Section renamed | Detected as delete + add; user manually reassigns tasks |
-| No snapshot file | Fall back to full-spec comparison (legacy behavior) |
+**Edge cases:** New section → suggest new tasks. Section deleted → flag tasks for out-of-spec or deletion. Section renamed → detected as delete + add. No snapshot → fall back to full-spec comparison.
 
 ### Step 2: Spec Check (if request provided)
 
@@ -208,44 +251,13 @@ Check request against spec:
    → Route to implement-agent for next pending task
 ```
 
-**Spec-less project handling:** If tasks exist but no spec file is found, do NOT proceed with execution. Instead:
-```
-Tasks exist but no specification found.
-
-Without a spec, the verify phase cannot validate acceptance criteria
-and the project cannot reach "Complete" status.
-
-Options:
-[S] Create a spec - Run /iterate to document requirements
-[M] Mark all tasks out-of-spec - Proceed without verification gate
-[X] Stop - Don't proceed until this is resolved
-```
-This prevents the scenario where all tasks execute and "complete" without any verification being possible.
+**Spec-less project handling:** If tasks exist but no spec file is found, do NOT proceed. Present options: `[S]` Create spec via `/iterate`, `[M]` Mark all tasks out-of-spec, `[X]` Stop. This prevents completing without verification.
 
 **Important — spec tasks vs out-of-spec tasks:** Phase routing is based on **spec tasks only** (tasks without `out_of_spec: true`). Out-of-spec tasks (recommendations from verify-agent or user requests that bypassed the spec) are excluded from phase detection. This prevents the verify → execute → verify infinite loop.
 
 **Phase-level verification result check:** Read `.claude/verification-result.json`. A result is valid when `result` is `"pass"` or `"pass_with_issues"`, `spec_fingerprint` matches the current spec, and no tasks changed since `timestamp`. See verify-agent Phase-Level Step 7 for the file format.
 
-**Out-of-spec task handling:** After phase routing completes (or at phase boundaries), check for pending out-of-spec tasks and present them to the user:
-
-```
-Recommendations (not in spec):
-| ID | Task | Source | Action |
-|----|------|--------|--------|
-| 13 | Add unit tests for CI | verify-agent | [Accept] [Reject] [Defer] |
-| 14 | Document installation | verify-agent | [Accept] [Reject] [Defer] |
-
-Options:
-[A] Accept - Approve and execute this task
-[R] Reject - Remove this task
-[D] Defer - Keep for later, don't execute now
-[AA] Accept all
-```
-
-**Actions:**
-- **Accept**: Set `out_of_spec_approved: true` on the task. `/work` can now execute it.
-- **Reject**: Delete the task file.
-- **Defer**: Leave as-is. Task remains pending but is skipped during auto-detect.
+**Out-of-spec task handling:** After phase routing completes (or at phase boundaries), check for pending out-of-spec tasks and present them with options: `[A]` Accept (sets `out_of_spec_approved: true`), `[R]` Reject (deletes task), `[D]` Defer (skips for now), `[AA]` Accept all.
 
 **Rule:** Never auto-execute an out-of-spec task. Always require explicit user approval first.
 
@@ -275,11 +287,53 @@ Break the spec into granular tasks:
    - **Atomicity rules:**
      - Tasks: Only include tasks that have corresponding `task-*.json` files. Never add a task to the dashboard without creating its JSON file first.
      - Decisions: Only include decisions that have corresponding `decision-*.md` files in `.claude/support/decisions/`. If a decision is significant enough for the dashboard, create the file first.
+   - **User section backup** (see below)
    - Preserve the Notes & Ideas section between `<!-- USER SECTION -->` markers
    - Update **Project Context** with project name from spec and current phase
    - Calculate **Overall completion** percentage for Quick Status
+   - Generate **Spec Alignment** section from drift status (see dashboard-patterns.md)
    - Generate **Critical Path** from dependency chain of incomplete tasks (see below)
    - List **Recently Completed** tasks with completion dates in Progress This Week
+   - **Add dashboard metadata** (see below)
+
+**User section backup process:**
+```
+1. Before regenerating, extract user section:
+   - Find content between <!-- USER SECTION --> and <!-- END USER SECTION --> markers
+   - Save to .claude/support/workspace/dashboard-notes-backup.md
+   - Include timestamp: "# Dashboard Notes Backup\n*Backed up: YYYY-MM-DD HH:MM*\n\n{content}"
+
+2. Regenerate dashboard from task JSON
+
+3. Restore user section:
+   - Insert saved content between markers
+   - If markers were missing in old dashboard, append backup content with warning comment
+
+4. Cleanup: Keep last 3 backups (dashboard-notes-backup.md, dashboard-notes-backup-1.md, dashboard-notes-backup-2.md)
+```
+
+**Dashboard metadata block:**
+
+Add at the very top of dashboard.md (after title):
+```markdown
+<!-- DASHBOARD META
+generated: 2026-01-28T14:30:00Z
+task_hash: sha256:abc123...
+task_count: 15
+verification_debt: 0
+drift_deferrals: 0
+-->
+```
+
+This enables staleness detection in Step 1a.
+
+**Footer line:**
+
+Add at the very bottom of dashboard.md:
+```markdown
+---
+*Dashboard generated: 2026-01-28 14:30 UTC | Tasks: 15 | [Spec aligned](# "0 drift deferrals, 0 verification debt")*
+```
 
 **Spec snapshot process:**
 ```
@@ -323,8 +377,6 @@ Execute these steps in order:
    - Step 6: Task JSON updated to `"Finished"`, dashboard regenerated
 3. **Context to provide:** Current task, relevant spec sections, constraints/notes
 
-**Why this matters:** Implementing directly skips the self-review, status tracking, and dashboard regeneration. The agent workflow exists to ensure consistent quality and observable state transitions.
-
 #### If Verifying (Per-Task)
 
 **You must use the verify-agent per-task workflow. Do not verify directly.**
@@ -348,11 +400,32 @@ Task Finished → verify-agent → FAIL → implement-agent fixes → verify-age
 ```
 This loop is mandatory. A task cannot be considered done until it passes verification.
 
-**Why this matters:** Per-task verification catches issues while the implementation is fresh, before subsequent tasks build on potentially flawed work.
-
 #### If Verifying (Phase-Level)
 
 **You must use the verify-agent phase-level workflow. Do not verify directly.**
+
+**MANDATORY: Reconciliation Gate**
+
+Before starting phase-level verification, ALL drift must be reconciled:
+
+```
+1. Check drift-deferrals.json
+2. IF any deferrals exist:
+   ├─ Cannot proceed to phase-level verification with unreconciled drift
+   │
+   │  Phase-level verification requires spec alignment.
+   │  You have N deferred section(s) that must be reconciled first.
+   │
+   │  Deferred sections:
+   │  - ## Authentication (deferred 2026-01-20, 3 tasks affected)
+   │  - ## API Endpoints (deferred 2026-01-25, 1 task affected)
+   │
+   │  [R] Reconcile all now (REQUIRED to proceed)
+   │
+   └─ Block phase-level verification until all deferrals cleared
+```
+
+**Why:** Verifying against a spec that doesn't match task definitions produces unreliable results. Reconciliation ensures tasks actually reflect what the spec says before verification runs.
 
 Execute these steps in order:
 
@@ -378,43 +451,15 @@ Check `.claude/verification-result.json`:
 - Fix tasks for bugs (spec requires it but implementation is broken) are regular tasks — they route to execute automatically.
 - Recommendation tasks (beyond spec) are `out_of_spec: true` — they require user approval at phase boundaries.
 
-**Why this matters:** Skipping phase-level verification means the project completes without confirming the full implementation matches the spec's acceptance criteria. The verification result file gates the Complete phase — without it, the project cannot finish.
-
 #### If Completing
 
 When all tasks are finished and verification conditions are met:
 
 **MANDATORY GATE — Check before proceeding:**
 
-1. **Verify per-task verification completeness:**
-   - Read every spec task JSON file
-   - For EACH "Finished" task, confirm `task_verification.result == "pass"`
-   - If ANY task lacks `task_verification` or has result != "pass":
-     ```
-     ERROR: Cannot complete project — verification incomplete
+1. **Verify per-task verification completeness:** Every "Finished" spec task must have `task_verification.result == "pass"`. If any task fails this check, route to verify-agent per-task mode.
 
-     Tasks missing verification:
-     - Task N: [title] — no task_verification field
-     - Task M: [title] — task_verification.result is "fail"
-
-     Route to: verify-agent per-task mode
-     ```
-   - Do NOT proceed until all tasks pass
-
-2. **Verify phase-level verification exists and is valid:**
-   - Check `.claude/verification-result.json` exists
-   - Check `result` is "pass" or "pass_with_issues"
-   - Check `spec_fingerprint` matches current spec
-   - Check no tasks have `updated_date` more recent than verification `timestamp`
-   - If any check fails:
-     ```
-     ERROR: Cannot complete project — phase-level verification required
-
-     Issue: [file missing / result is "fail" / spec changed / tasks modified after verification]
-
-     Route to: verify-agent phase-level mode
-     ```
-   - Do NOT proceed until phase-level verification passes
+2. **Verify phase-level verification exists and is valid:** `.claude/verification-result.json` must exist with `result` of "pass" or "pass_with_issues", matching `spec_fingerprint`, and no tasks modified after `timestamp`. If any check fails, route to verify-agent phase-level mode.
 
 **Once both gates pass:**
 
@@ -427,35 +472,9 @@ When all tasks are finished and verification conditions are met:
    ---
    ```
 
-2. **Regenerate dashboard with completion summary:**
-   - Update Project Context stage to "Complete"
-   - Replace Critical Path with completion summary
-   - Show final stats (total tasks, completion date, verification result)
+2. **Regenerate dashboard with completion summary:** Update Project Context to "Complete", replace Critical Path with final stats (task count, verification date, spec status).
 
-   ```markdown
-   ## 🛤️ Critical Path
-
-   **Project Complete** ✅
-
-   - All tasks finished: [count] tasks
-   - Verification passed: [date from verification-result.json]
-   - Spec status: complete
-
-   To add new features, update the spec and run `/work` to decompose new tasks.
-   ```
-
-3. **Present final checkpoint to user:**
-   ```
-   Project complete! All [N] tasks finished and verification passed.
-
-   Summary:
-   - [verification summary from verification-result.json]
-   - Spec status updated to complete
-
-   To continue working on this project:
-   - Update the spec with new requirements
-   - Run /work to detect changes and create new tasks
-   ```
+3. **Present final checkpoint:** Report completion with verification summary. Note how to continue (update spec, run `/work`).
 
 4. **Stop** — do not route to any agent. The project is done.
 
@@ -529,34 +548,9 @@ Quick check: ⚠️ 2 issues
 
 ## Spec Alignment Examples
 
-### Example 1: Aligned Request
-```
-User: /work "Add password validation"
-Spec says: "User authentication with email and password"
-
-→ Aligned. Create task, proceed to implement.
-```
-
-### Example 2: Minor Addition
-```
-User: /work "Fix the typo in the login error message"
-Spec: Doesn't mention error messages specifically
-
-→ Minor fix within existing scope. Proceed without spec change.
-```
-
-### Example 3: Significant Misalignment
-```
-User: /work "Add social login with Google"
-Spec says: "User authentication with email and password"
-
-→ Surface it:
-  "The spec defines email/password auth but doesn't mention social login.
-   This seems significant. Options:
-   1. Add to spec - I'd suggest: 'Support OAuth with Google as alternative login'
-   2. Proceed anyway (won't verify against spec)
-   3. Skip for now"
-```
+- **Aligned:** "Add password validation" when spec says "User authentication with email and password" → proceed
+- **Minor:** "Fix typo in login error" when spec doesn't mention errors → proceed (within scope)
+- **Misaligned:** "Add Google login" when spec says only email/password → surface options (add to spec, proceed anyway, skip)
 
 ---
 
@@ -578,32 +572,12 @@ For the difficulty scale, see `.claude/support/reference/shared-definitions.md`.
 The Critical Path shows the sequence of tasks blocking project completion:
 
 1. **Find unblocked incomplete tasks** - Tasks with no unfinished dependencies
-2. **Build dependency chains** - For each, trace what depends on it recursively
+2. **Build dependency chains** - Trace what depends on each recursively
 3. **Identify longest chain** - This is the critical path
-4. **Format with owners** - Show who owns each step:
-   - `❗ **You**:` for human-owned tasks
-   - `🤖 **Claude**:` for Claude-owned tasks
-   - `👥 **Both**:` for collaborative tasks
+4. **Format with owners** - `❗ **You**:` (human), `🤖 **Claude**:` (claude), `👥 **Both**:` (both)
 5. **Show blocking relationships** - Indicate what each step blocks
 
-**Edge cases:**
-| Scenario | Handling |
-|----------|----------|
-| No dependencies (all parallel) | Show all pending tasks as "can start now", no blocking chain |
-| Multiple equal-length paths | Pick the path with most human-owned tasks first (surfaces blockers) |
-| No incomplete tasks | Show "All tasks complete!" |
-| Single task remaining | Show just that task without "blocks" annotation |
-
-**Example output:**
-```markdown
-## 🛤️ Critical Path
-
-**Next steps to completion:**
-
-1. ❗ **You**: Review API design doc - *blocks step 2*
-2. 🤖 **Claude**: Implement API endpoints - *blocks step 3*
-3. 👥 **Both**: Integration testing
-```
+**Edge cases:** No dependencies → show all as "can start now". Multiple equal paths → prioritize human-owned (surfaces blockers). No incomplete → "All tasks complete!". Single task → no "blocks" annotation.
 
 ---
 

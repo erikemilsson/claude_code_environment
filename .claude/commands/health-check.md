@@ -91,11 +91,22 @@ Detects tasks that may have bypassed the implement-agent or verify-agent workflo
 - The verification result should have `criteria_passed + criteria_failed > 0` (real criteria were checked, not just a summary)
 - The `spec_fingerprint` in the result should match the current spec
 
-**Per-task verification compliance checks:**
-- Finished tasks should have a `task_verification` field with a non-empty `result`
+**Per-task verification compliance checks (ERRORS, not warnings):**
+- Finished tasks MUST have a `task_verification` field with `result` of `"pass"` or `"pass_with_issues"`
 - `task_verification.checks` should have all 4 keys (`files_exist`, `spec_alignment`, `code_quality`, `integration_ready`) with pass/fail values
-- If any finished task lacks `task_verification`, warn: "N finished tasks missing per-task verification"
+- If any finished task lacks `task_verification`: **ERROR** — "Verification debt: N finished tasks missing verification"
+- If any finished task has `task_verification.result == "fail"`: **ERROR** — "Verification debt: N finished tasks have failed verification"
 - If a task was sent back to "In Progress" by verification, notes should contain `[VERIFICATION FAIL]` prefix
+
+**Verification debt calculation:**
+```
+verification_debt = count of tasks where:
+  - status == "Finished" AND (
+    - task_verification does not exist, OR
+    - task_verification.result == "fail", OR
+    - task_verification.result not in ["pass", "pass_with_issues"]
+  )
+```
 
 **Completion gate compliance checks:**
 - If dashboard shows "Project Complete" or "100%" completion:
@@ -136,62 +147,19 @@ These checks detect drift and staleness in large collaborative projects:
 
 Detects when the specification has changed since tasks were decomposed, with section-level granularity.
 
-**See also:** `/work` Step 1b performs the same drift detection during normal workflow. Keep algorithms in sync.
+**Algorithm:** Uses the same drift detection as `/work` Step 1b. See that section for full implementation details (hash computation, section parsing, comparison logic).
 
-**Full spec check:**
-- Compute current spec SHA-256 hash
-- Compare against `spec_fingerprint` field in task files
-- If different, proceed to section-level analysis
-
-**Section-level check (when full spec differs):**
-- Load snapshot from `section_snapshot_ref` (if exists)
-- Parse both current spec and snapshot into sections
-- Compare `section_fingerprint` for each task against current section hash
-- Identify which specific sections changed
-- Group affected tasks by section
-
-**Report format:**
-```
-[Warning] Spec has changed since tasks were decomposed
-
-Per-section analysis:
-  ## Authentication - CHANGED (3 tasks affected)
-    - Task 3: Implement login flow
-    - Task 4: Password validation
-    - Task 7: Session management
-
-  ## API Endpoints - CHANGED (1 task affected)
-    - Task 12: Create REST endpoints
-
-  ## Database Schema - unchanged (2 tasks)
-  ## Deployment - unchanged (1 task)
-
-Summary:
-  Changed sections: 2
-  Affected tasks: 4
-  Unchanged tasks: 3
-```
-
-**New section detection:**
-```
-[Info] New section detected: ## OAuth Integration
-  This section was added after task decomposition.
-  Consider creating new tasks for this functionality.
-```
-
-**Deleted section detection:**
-```
-[Warning] Section removed: ## Legacy Support
-  2 tasks reference this deleted section:
-    - Task 15: Maintain backward compatibility
-    - Task 16: Legacy API wrapper
-  Consider marking these tasks as out-of-spec or deleting them.
-```
+**Report includes:**
+- Per-section change status (CHANGED/unchanged)
+- Affected tasks grouped by section
+- New sections detected (no tasks yet)
+- Deleted sections (orphaned tasks)
+- Summary counts
 
 **Behavior:**
-- Tasks without `spec_fingerprint` field: treated as legacy, no warning
-- Tasks without `section_fingerprint` field: fall back to full-spec comparison
-- Only warn for projects with 10+ tasks (avoid noise for small projects)
+- Tasks without `spec_fingerprint`: treated as legacy, no warning
+- Tasks without `section_fingerprint`: fall back to full-spec comparison
+- Only warn for projects with 10+ tasks
 
 ### 12. Section Fingerprint Field Validation
 
@@ -370,77 +338,37 @@ Run decision validation:
 
 ### Step 3: Report
 
+**Report sections:**
+- Task System - Schema & Integrity (checks passed/warnings/errors)
+- Task System - Verification Debt (ERROR if any debt exists)
+- Task System - Semantic Validation (stale tasks, owner mismatches, orphan deps)
+- Task System - Drift Detection (per-section changes, new/deleted sections, out-of-spec tasks)
+- Questions & Workspace (stale questions, old workspace files)
+- CLAUDE.md (line counts, flagged sections/code blocks)
+- Decision System (schema validation, staleness, completeness, anchors)
+- Summary (overall status: HEALTHY / NEEDS ATTENTION / CRITICAL ISSUES)
+
+**Verification Debt Report Format:**
 ```
-## Health Check Report
+### Task System - Verification Debt
 
-### Task System - Schema & Integrity
-[Checkmark] N checks passed
-[Warning] N warnings
-[Error] N errors
+[ERROR] Verification Debt: 3 tasks (BLOCKS COMPLETION)
+  - Task 5: "Login flow" — missing task_verification
+  - Task 8: "API endpoints" — task_verification.result is "fail"
+  - Task 12: "Database schema" — missing task_verification
 
-[List specific issues]
-
-### Task System - Semantic Validation
-[Checkmark] No stale tasks
-[Warning] 2 tasks "In Progress" for > 7 days
-  - Task 15: "Build dashboard" (12 days)
-  - Task 23: "API refactor" (8 days)
-[Warning] 1 potential owner mismatch
-  - Task 45: "Configure Power BI" owned by claude (suggests human)
-[Checkmark] No orphan dependencies
-[Warning] Workflow diagram stale (3 days behind task changes)
-
-### Task System - Drift Detection
-[Checkmark] Spec fingerprint matches (or no fingerprints tracked)
-[Warning] Spec changed since decomposition
-
-Per-section analysis:
-  ## Authentication - CHANGED (3 tasks affected)
-    - Task 3, Task 4, Task 7
-  ## API Endpoints - CHANGED (1 task affected)
-    - Task 12
-  ## Database Schema - unchanged
-  ## Deployment - unchanged
-
-[Info] 1 new section detected
-  - ## OAuth Integration (no tasks yet)
-[Warning] 1 section removed
-  - ## Legacy Support (2 orphaned tasks)
-
-[Warning] 3 tasks marked out-of-spec
-  - Task 15: "Add social login"
-  - Task 23: "Custom analytics"
-  - Task 31: "Premium features"
-
-### Questions & Workspace
-[Checkmark] No stale questions
-[Warning] 2 workspace files over 30 days old
-  - workspace/drafts/api-design.md (45 days)
-  - workspace/scratch/notes.md (32 days)
-
-### CLAUDE.md
-- Total lines: N [status]
-- Sections: N flagged
-- Code blocks: N flagged
-
-[List specific issues]
-
-### Decision System
-[Checkmark] N decision records found
-[Checkmark] Schema validation passed
-[Warning] N dashboard inconsistencies
-[Warning] N stale decisions
-[Warning] N incomplete decisions
-[Warning] N missing implementation anchors
-  - DEC-003: implemented but no anchors
-[Warning] N anchor files not found
-  - DEC-007: src/auth/oauth.ts not found
-
-[List specific issues]
-
-### Summary
-Overall status: [HEALTHY / NEEDS ATTENTION / ISSUES FOUND]
+⚠️ Project cannot complete until verification debt is 0.
+   Run /work to trigger verification for these tasks.
 ```
+
+**If no debt:**
+```
+### Task System - Verification Debt
+
+[Checkmark] No verification debt (all finished tasks verified)
+```
+
+Each section uses `[Checkmark]` for passes, `[Warning]` for issues, `[Error]` for blockers.
 
 ### Step 4: Offer Fixes
 
@@ -526,18 +454,7 @@ Validates that implemented decisions have traceable code anchors:
 
 ### Decision Report Format
 
-```
-### Decision System
-[Checkmark] N decision records found
-[Checkmark] Schema validation passed
-[Warning] 1 dashboard inconsistency
-  - DEC-003: missing from dashboard
-[Warning] 2 stale decisions
-  - DEC-001: draft for 45 days
-  - DEC-002: proposed for 21 days
-[Warning] 1 incomplete decision
-  - DEC-004: approved but missing Decision section
-```
+Reports: record count, schema validation, dashboard consistency, staleness (draft >30d, proposed >14d), completeness (approved/implemented need Decision section), and anchor validation.
 
 ### Decision Auto-Fixes
 

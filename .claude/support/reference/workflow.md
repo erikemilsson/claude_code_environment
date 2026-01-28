@@ -171,27 +171,7 @@ By separating concerns:
 9. verify-agent: test against spec acceptance criteria
 10. Issues found become new tasks, back to implement-agent
 
-Re-reading verify-agent.md after each task forces a mental frame shift. Instead of
-continuing in "build mode," Claude re-enters "validation mode," applying a different
-lens to the same code. This simple mechanism — re-reading a different agent file — is
-the primary quality lever.
-
 This separation produces higher quality output than a single agent could achieve alone.
-
-### Enforcement
-
-The agent system is prompt-driven, not code-enforced. To prevent workflows from being bypassed:
-
-1. **Explicit Read instructions** — `/work` directs Claude to use the Read tool on the agent file, not just "follow the workflow." This makes the file read an observable action.
-2. **Required artifacts** — Each workflow step produces a checkable artifact:
-   - implement-agent: Task must pass through "In Progress" before "Finished"; notes must be non-empty
-   - verify-agent (per-task): Each finished task must have a `task_verification` field with real check data
-   - verify-agent (phase-level): `verification-result.json` must contain per-criterion data matching the spec
-3. **Per-task verification artifacts** — Each finished task must have a `task_verification` field with real check data. Tasks without this field are flagged as "awaiting verification" by `/work` routing. `/health-check` validates that finished tasks have this field.
-4. **Compliance checks** — `/health-check` validates workflow compliance (empty notes, missing verification result, missing per-task verification, status jump from Pending→Finished)
-5. **Spec gate** — Tasks without a spec trigger a warning. Without a spec, the verify phase cannot run, preventing projects from "completing" without verification.
-
-**Limitation:** These are structural incentives, not hard gates. Claude can still bypass them. The enforcement works by making the correct path the obvious path and making bypasses detectable after the fact.
 
 ---
 
@@ -239,43 +219,11 @@ User → /work → Specialist Agent → /work → User
 
 ### /work → Specialist
 
-When invoking a specialist, /work provides:
-
-```markdown
-## Context
-- Current phase: [phase]
-- Spec summary: [key requirements]
-- Recent activity: [what happened]
-
-## Task
-[What the specialist should do]
-
-## Constraints
-- Questions to avoid: [already asked]
-- Scope limits: [if any]
-```
+Provides: current phase, spec summary, recent activity, task to do, constraints (already-asked questions, scope limits).
 
 ### Specialist → /work
 
-When completing work, agents return:
-
-```markdown
-## Completed
-- [What was accomplished]
-
-## Output
-- [Files created/modified]
-- [Status updates made]
-
-## Questions Generated
-- [New questions for human]
-
-## Recommendations
-- [Suggested next steps]
-
-## Issues
-- [Problems encountered]
-```
+Returns: what was completed, files modified, status updates, questions generated, recommendations, issues encountered.
 
 ---
 
@@ -389,51 +337,13 @@ When questions accumulate:
 
 ## Questions System
 
-Questions accumulate during work in `.claude/support/questions.md`:
+Questions accumulate in `.claude/support/questions.md` under categories: Requirements, Technical, Scope, Dependencies.
 
-```markdown
-## Requirements
-- Should login require email verification?
+**Blocking vs Non-Blocking:**
+- `[BLOCKING]` prefix → cannot proceed, triggers immediate checkpoint
+- Non-blocking → note assumption, present at next phase boundary
 
-## Technical
-- [BLOCKING] What caching solution to use?
-- Should we add rate limiting?
-
-## Scope
-- Is mobile support in v1?
-```
-
-**Categories:**
-- **Requirements:** What the system should do
-- **Technical:** How things should work
-- **Scope:** What's in/out
-- **Dependencies:** External systems/blockers
-
-### Blocking vs Non-Blocking
-
-**Blocking:** Cannot proceed without answer
-- Mark with `[BLOCKING]` prefix
-- Triggers immediate checkpoint
-
-**Non-Blocking:** Can proceed with assumption
-- Note assumption made
-- Present at next phase boundary
-
-### At Checkpoints
-
-/work presents accumulated questions:
-
-1. Group by category
-2. Prioritize blocking questions
-3. Present to human
-4. Wait for answers
-5. Clear answered questions
-6. Continue work
-
-**When presented:**
-- At phase boundaries
-- At quality gate failures
-- When explicitly blocking
+**At checkpoints:** Group by category, prioritize blocking, present to human, clear when answered.
 
 ---
 

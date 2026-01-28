@@ -363,27 +363,7 @@ Write the verification outcome to `.claude/verification-result.json` so other co
 
 ### Step 8: Report Results
 
-Display the verification report to the user:
-
-```markdown
-## Verification Results
-
-**Overall:** PASS with issues / FAIL
-
-### Acceptance Criteria
-- [x] User can log in (PASS)
-- [x] Invalid login shows error (PASS)
-- [ ] Session expires after 1h (FAIL)
-
-### Issues Found
-1. **CRITICAL:** None
-2. **MAJOR:** Session expiration not implemented
-3. **MINOR:** Login button alignment off
-
-### Recommendations
-- Create task for session expiration fix
-- UX review for login page
-```
+Display verification report: overall status, per-criterion pass/fail list, issues by severity (critical/major/minor), and recommendations.
 
 ## Separation of Concerns
 
@@ -454,31 +434,6 @@ Verification fails when:
 - Core acceptance criteria fail
 - Human must review before proceeding
 - Verification result written with `"result": "fail"` (Step 7)
-
-## Example Session
-
-```
-/work routes to verify-agent workflow:
-"Verify user authentication implementation"
-
-Following verify-agent workflow:
-1. Reads spec - 5 acceptance criteria
-2. Runs test suite - 12/14 tests pass
-3. Validates criteria:
-   - Login: PASS
-   - Logout: PASS
-   - OAuth: PASS
-   - Session expiry: FAIL
-   - Password reset: PASS
-4. Identifies issues:
-   - MAJOR: Session expiration missing
-   - MINOR: OAuth error message unclear
-5. Creates task for session expiration fix
-6. Regenerates dashboard.md
-7. Writes verification-result.json with result: "pass_with_issues"
-8. Reports: "Verification PASS with issues.
-   1 major issue needs task. Ready for review."
-```
 
 ## Anti-Patterns
 
