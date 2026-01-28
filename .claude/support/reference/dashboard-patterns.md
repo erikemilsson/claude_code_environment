@@ -86,6 +86,50 @@ When regenerating the dashboard:
 4. **Use the exact headings above** — no emoji substitution, no heading rewording
 5. **Separate sections with `---`** horizontal rules
 
+### Regeneration Checklist
+
+Every dashboard regeneration MUST complete these steps. All commands and agents that regenerate the dashboard reference this checklist to ensure consistency.
+
+1. **Read source data**
+   - All `task-*.json` files (tasks)
+   - All `decision-*.md` files in `.claude/support/decisions/` (decisions)
+   - `drift-deferrals.json` (if exists)
+   - `verification-result.json` (if exists)
+
+2. **Backup user section**
+   - Extract content between `<!-- USER SECTION -->` and `<!-- END USER SECTION -->`
+   - Save to `.claude/support/workspace/dashboard-notes-backup.md`
+   - Rotate old backups (keep last 3)
+
+3. **Generate dashboard**
+   - Use exact section headings from Section Definitions table above
+   - Check `dashboard_sections` config (spec frontmatter or CLAUDE.md)
+   - Respect `build`/`maintain`/`exclude`/`preserve` modes
+   - Enforce atomicity: only tasks with JSON files, only decisions with MD files
+
+4. **Compute and add metadata block** (after `# Dashboard` title)
+   ```
+   <!-- DASHBOARD META
+   generated: [ISO timestamp]
+   task_hash: sha256:[hash of sorted task_id:status pairs, sorted lexicographically by task_id]
+   task_count: [number]
+   verification_debt: [count of tasks needing verification]
+   drift_deferrals: [count from drift-deferrals.json]
+   -->
+   ```
+
+5. **Restore user section**
+   - Insert backed-up content between markers
+   - If markers missing, append with warning comment: `<!-- WARNING: USER SECTION markers were missing. Content restored below. -->`
+
+6. **Add footer line** (at very end)
+   ```
+   ---
+   *Dashboard generated: [timestamp] | Tasks: N | [status indicator]*
+   ```
+   - Healthy (0 drift deferrals AND 0 verification debt): `[Spec aligned](# "0 drift deferrals, 0 verification debt")`
+   - Issues (any drift deferrals OR any verification debt): `⚠️ N drift deferrals, M verification debt`
+
 ### Sub-Section Structure
 
 **Needs Your Attention** has four sub-sections:
@@ -147,6 +191,13 @@ When regenerating the dashboard:
 
 ✅ No verification debt
 ```
+
+**Verification debt definition:**
+- Tasks with `status: "Awaiting Verification"`, OR
+- Tasks with `status: "Finished"` that do NOT have a `task_verification` field (legacy tasks), OR
+- Tasks with `task_verification.result == "fail"`
+
+All three categories appear in the debt table. Out-of-spec tasks (`out_of_spec: true`) are excluded from verification debt count.
 
 **Spec Alignment:**
 ```markdown

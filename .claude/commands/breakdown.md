@@ -41,8 +41,8 @@ Split a complex task into smaller subtasks.
      "notes": "Broken down into 3 subtasks"
    }
    ```
-5. **Regenerate dashboard** - Read all task-*.json files and regenerate dashboard.md
-   (preserving the Notes & Ideas section between `<!-- USER SECTION -->` markers)
+5. **Regenerate dashboard** - Follow the Regeneration Checklist in `.claude/support/reference/dashboard-patterns.md`
+   - This ensures metadata block, footer, user section backup, and section toggles are handled consistently
 
 ## Example
 

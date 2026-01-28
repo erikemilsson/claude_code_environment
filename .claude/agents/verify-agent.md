@@ -205,7 +205,7 @@ The task now has both `status: "Finished"` AND `task_verification.result: "pass"
 - Append verification failure notes to the task `notes` field (prepend with `[VERIFICATION FAIL]`)
 - Clear `completion_date`
 - Update `updated_date`
-- Regenerate dashboard
+- Regenerate dashboard following the Regeneration Checklist in `.claude/support/reference/dashboard-patterns.md`
 
 **Re-verification limit:** Maximum 2 re-verification attempts per task. After 2 failures, set task status to "Blocked" with notes explaining the repeated failures and escalate to human review.
 
@@ -324,10 +324,10 @@ For issues found that need fixing:
    }
    ```
    Out-of-spec tasks require explicit user approval before `/work` will execute them. See the out-of-spec consent flow in `work.md`.
-4. **Regenerate dashboard.md** - Read all task-*.json files and update dashboard
-   - Preserve Notes & Ideas section between `<!-- USER SECTION -->` markers
-   - Update overall completion percentage, Critical Path, and Recently Completed
-   - Show out-of-spec tasks with ⚠️ prefix in the task list
+4. **Regenerate dashboard.md** - Follow the Regeneration Checklist in `.claude/support/reference/dashboard-patterns.md`
+   - Additional verify-agent requirements:
+     - Update Verification Debt in Needs Your Attention section
+     - Show out-of-spec tasks with ⚠️ prefix in All Tasks table
 
 ### Step 7: Persist Verification Result
 

@@ -648,10 +648,11 @@ Use `/work complete` for manual task completion outside of implement-agent's wor
 5. **Check parent auto-completion:**
    - If parent_task exists and all sibling subtasks are "Finished"
    - Set parent status to "Finished"
-6. **Regenerate dashboard** - Read all task-*.json files and update dashboard.md following the canonical template in `.claude/support/reference/dashboard-patterns.md`
-   - Update overall completion percentage
-   - Recalculate Critical Path with remaining incomplete tasks
-   - Add completed task to Recently Completed with completion_date
+6. **Regenerate dashboard** - Follow the Regeneration Checklist in `.claude/support/reference/dashboard-patterns.md`
+   - Additional completion requirements:
+     - Update overall completion percentage
+     - Recalculate Critical Path with remaining incomplete tasks
+     - Add completed task to Recently Completed with completion_date
 7. **Auto-archive check** - If active task count > 100, archive old tasks
 8. **Lightweight health check** - Run quick validation (see Step 6 in main process)
    - Output: `Quick check: ✓` or `Quick check: ⚠️ N issues`
