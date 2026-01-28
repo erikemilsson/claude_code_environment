@@ -99,6 +99,10 @@ Before marking complete:
 - Verify against task requirements
 - Run existing tests if available
 
+Note: After this task is marked Finished, verify-agent will run per-task
+verification. Self-review here is your chance to catch issues before that
+happens. Verification failures send the task back to "In Progress."
+
 ### Step 6: Document and Complete
 
 Update task:
@@ -123,6 +127,9 @@ Regenerate dashboard.md from task JSON files, following the canonical template i
 - Update overall completion percentage in Quick Status
 - Recalculate Critical Path from dependency chain of incomplete tasks
 - Add completed task to Recently Completed with date
+
+Note: Do NOT proceed to the next task. Return control to `/work`, which
+will route to per-task verification before selecting the next task.
 
 ## Implementation Guidelines
 
@@ -203,6 +210,7 @@ Task is complete when:
 - Tests pass (if applicable)
 - Notes document what was done
 - Status set to "Finished"
+- Per-task verification passes (handled by verify-agent after this workflow)
 
 ## Example Session
 

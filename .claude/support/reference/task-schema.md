@@ -37,7 +37,19 @@
   "spec_version": "spec_v1",
   "spec_section": "## Authentication",
   "section_fingerprint": "sha256:e5f6g7h8...",
-  "section_snapshot_ref": "spec_v1_decomposed.md"
+  "section_snapshot_ref": "spec_v1_decomposed.md",
+  "task_verification": {
+    "result": "pass",
+    "timestamp": "2026-01-28T15:30:00Z",
+    "checks": {
+      "files_exist": "pass",
+      "spec_alignment": "pass",
+      "code_quality": "pass",
+      "integration_ready": "pass"
+    },
+    "issues": [],
+    "notes": "All files created as specified."
+  }
 }
 ```
 
@@ -76,6 +88,7 @@
 | section_fingerprint | String | SHA-256 hash of the specific section content at decomposition |
 | section_snapshot_ref | String | Reference to snapshot file for generating diffs (e.g., "spec_v1_decomposed.md") |
 | out_of_spec | Boolean | Task not aligned with spec (user chose "proceed anyway") |
+| task_verification | Object | Per-task verification result recorded by verify-agent |
 
 ## Owner Values
 
@@ -181,6 +194,54 @@ Marks tasks that don't align with the spec but were created anyway:
 ```
 
 Set when user selects "proceed anyway" on spec misalignment. Dashboard shows ⚠️ prefix for these tasks. Health check reports them separately.
+
+## Task Verification Field
+
+Per-task verification result recorded by verify-agent after each task is marked Finished. This enables Tier 1 (per-task) verification in the two-tier verification system.
+
+```json
+{
+  "task_verification": {
+    "result": "pass",
+    "timestamp": "2026-01-28T15:30:00Z",
+    "checks": {
+      "files_exist": "pass",
+      "spec_alignment": "pass",
+      "code_quality": "pass",
+      "integration_ready": "pass"
+    },
+    "issues": [],
+    "notes": "All files created as specified."
+  }
+}
+```
+
+### Sub-fields
+
+| Sub-field | Type | Values | Description |
+|-----------|------|--------|-------------|
+| `result` | String | `"pass"`, `"fail"`, `"pass_with_issues"` | Overall per-task verification outcome |
+| `timestamp` | String | ISO 8601 | When verification completed |
+| `checks` | Object | Keys: `files_exist`, `spec_alignment`, `code_quality`, `integration_ready` | Per-check pass/fail |
+| `checks.*` | String | `"pass"` or `"fail"` | Individual check result |
+| `issues` | Array | Issue objects `{severity, description}` | Issues found during verification |
+| `notes` | String | Free text | Brief summary of verification |
+
+### State Detection
+
+A task "needs per-task verification" when:
+- It has status "Finished" AND does NOT have a `task_verification` field, OR
+- It has status "Finished" AND has `task_verification.result == "fail"` AND `updated_date` is more recent than `task_verification.timestamp` (meaning it was fixed and needs re-verification)
+
+### Failure Handling
+
+When per-task verification fails:
+- Task status is set back to "In Progress"
+- Verification failure notes are prepended with `[VERIFICATION FAIL]` in the task `notes` field
+- `completion_date` is cleared
+- `updated_date` is updated
+- Dashboard is regenerated
+- Maximum 2 re-verification attempts per task; after that, escalate to human review by setting status to "Blocked"
 
 ## External Dependencies
 

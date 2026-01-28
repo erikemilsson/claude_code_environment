@@ -9,21 +9,45 @@ Specialist for testing and validating implementations against the specification.
 - Identify issues for correction
 - Confirm readiness for completion
 
+## Verification Modes
+
+This agent operates in two modes, determined by `/work` routing:
+
+| Mode | Trigger | Scope | Artifact |
+|------|---------|-------|----------|
+| **Per-task** | A single task just finished | One task's changes | `task_verification` field in task JSON |
+| **Phase-level** | All spec tasks finished | Full implementation | `verification-result.json` |
+
+When `/work` invokes this agent, it specifies the mode. Follow the corresponding workflow below.
+
 ## When to Follow This Workflow
 
 The `/work` command directs you to follow this workflow when:
-- All execute-phase tasks are finished
-- Implementation is ready for validation
+- **Per-task mode:** A task was just marked Finished by implement-agent and needs per-task verification
+- **Phase-level mode:** All execute-phase tasks are finished with passing per-task verification, and the full implementation is ready for validation
 
 ## Inputs
 
-- Completed implementation (all tasks finished)
+**Per-task mode:**
+- The specific task JSON that was just completed
+- `.claude/spec_v{N}.md` — relevant spec section (from task's `spec_section` field)
+- List of files in the task's `files_affected`
+- Completion notes from implement-agent
+
+**Phase-level mode:**
+- Completed implementation (all tasks finished with passing per-task verification)
 - `.claude/spec_v{N}.md` - Specification with acceptance criteria
 - Test files and test commands
 - Quality standards/requirements
+- Per-task verification results from each task JSON
 
 ## Outputs
 
+**Per-task mode:**
+- `task_verification` field written to task JSON (Step T6)
+- Brief inline verification report (Step T8)
+
+**Phase-level mode:**
 - Per-criterion pass/fail table (Step 3)
 - Issue categorization by severity (Step 5)
 - Fix tasks created for major/critical issues (Step 6)
@@ -59,11 +83,146 @@ Does it meet performance requirements?
 
 ## How This Workflow Is Invoked
 
-This file is read by `/work` during the Verify phase. **You are reading this file because `/work` directed you here.** Follow every step below in order — do not skip steps, write verification-result.json without performing actual verification, or declare pass without checking acceptance criteria.
+This file is read by `/work` during verification. **You are reading this file because `/work` directed you here.**
+
+- **Per-task:** `/work` routes here after each task is marked Finished by implement-agent. Follow the "Per-Task Verification Workflow" section (Steps T1–T8).
+- **Phase-level:** `/work` routes here after all spec tasks are finished and all have passing per-task verification. Follow the "Phase-Level Verification Workflow" section (Steps 1–8).
+
+Do not skip steps, write results without performing actual verification, or declare pass without checking requirements. Each step produces a required output.
+
+## Per-Task Verification Workflow
+
+Follow this workflow when `/work` routes you here in **per-task** mode — a single task was just marked Finished and needs verification before the next task begins.
+
+### Step T1: Read Task and Spec Context
+
+1. Read the task JSON file in full
+2. Read the spec section referenced by `spec_section` field
+3. Read the task description and completion notes
+4. Note: You are verifying someone else's work. Approach with fresh eyes.
+
+### Step T2: Verify File Artifacts
+
+For each file in `files_affected`:
+1. Confirm the file exists
+2. Read the file content
+3. Check: Does the content match what the task description says should be there?
+
+**Fail conditions:**
+- File listed in `files_affected` does not exist
+- File exists but is empty or contains only boilerplate
+- File content does not address the task requirements
+
+### Step T3: Verify Spec Alignment
+
+Compare the implementation against both:
+- The task `description` field (specific requirements)
+- The spec section (broader context)
+
+**Check:**
+- Are all requirements from the task description addressed?
+- Does the implementation match the spec's intent for this area?
+- Are there contradictions between what was built and what was specified?
+
+### Step T4: Verify Code Quality and Patterns
+
+- Check for TODOs, FIXMEs, placeholders, or incomplete implementations
+- If earlier tasks established patterns (naming conventions, error handling style, file structure), verify this task follows them
+- Check for obvious bugs: missing error handling, unclosed resources, hardcoded values that should be configurable
+
+### Step T5: Verify Integration Boundaries
+
+- If the task has dependencies: are the outputs of those dependencies consumed correctly?
+- If other tasks depend on this one: does this task produce what they will need?
+- Check: imports, function signatures, table/column names, file paths that downstream code will reference
+
+### Step T6: Produce Verification Result
+
+Record the per-task verification outcome in the task JSON:
+
+**Pass example:**
+```json
+{
+  "task_verification": {
+    "result": "pass",
+    "timestamp": "2026-01-28T15:30:00Z",
+    "checks": {
+      "files_exist": "pass",
+      "spec_alignment": "pass",
+      "code_quality": "pass",
+      "integration_ready": "pass"
+    },
+    "notes": "All files created as specified.",
+    "issues": []
+  }
+}
+```
+
+**Fail example:**
+```json
+{
+  "task_verification": {
+    "result": "fail",
+    "timestamp": "2026-01-28T15:30:00Z",
+    "checks": {
+      "files_exist": "pass",
+      "spec_alignment": "fail",
+      "code_quality": "pass",
+      "integration_ready": "pass"
+    },
+    "notes": "Task description specifies upsert for 4 bronze tables but only 3 are implemented.",
+    "issues": [
+      {
+        "severity": "major",
+        "description": "Missing upsert for raw_game_designers table"
+      }
+    ]
+  }
+}
+```
+
+### Step T7: Route Result
+
+| Result | Action |
+|--------|--------|
+| `pass` | Task stays "Finished". Report result to `/work`. Proceed to next task. |
+| `fail` | Set task status back to "In Progress". Report issues to `/work`. implement-agent will fix and re-submit. |
+
+**When setting task back to "In Progress":**
+- Append verification failure notes to the task `notes` field (prepend with `[VERIFICATION FAIL]`)
+- Clear `completion_date`
+- Update `updated_date`
+- Regenerate dashboard
+
+**Re-verification limit:** Maximum 2 re-verification attempts per task. After 2 failures, set task status to "Blocked" with notes explaining the repeated failures and escalate to human review.
+
+### Step T8: Report to User
+
+Brief inline report:
+
+Pass:
+```
+Task 5 verification: PASS
+  Files: 1/1 exist
+  Spec alignment: matches task description
+  Code quality: no issues
+  Integration: outputs match downstream expectations
+```
+
+Fail:
+```
+Task 5 verification: FAIL
+  Spec alignment: missing raw_game_designers upsert (task requires 4 tables, only 3 implemented)
+  -> Task set back to "In Progress" for fixes
+```
+
+---
+
+## Phase-Level Verification Workflow
+
+Follow this workflow when `/work` routes you here in **phase-level** mode — all spec tasks are finished with passing per-task verification, and the full implementation needs validation against acceptance criteria.
 
 Each step produces a required output. The verification-result.json file (Step 7) must contain real per-criterion data from Step 3, not fabricated results.
-
-## Workflow
 
 ### Step 1: Gather Verification Context
 
@@ -72,6 +231,8 @@ Read and understand:
 - What was implemented (from task notes)
 - Test files and commands available
 - Performance targets (if any)
+- Per-task verification results from each task JSON (`task_verification` field) — use these as evidence for criteria that can be partially verified per-task
+- Focus phase-level verification on cross-task integration and end-to-end acceptance criteria
 
 ### Step 2: Run Existing Tests
 

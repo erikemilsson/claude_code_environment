@@ -69,6 +69,7 @@ Optional fields that track spec-to-task alignment:
 | `section_fingerprint` | String | SHA-256 hash of specific section at decomposition |
 | `section_snapshot_ref` | String | Reference to snapshot file for diffs |
 | `out_of_spec` | Boolean | Task not aligned with spec |
+| `task_verification` | Object | Per-task verification result from verify-agent (see task-schema.md) |
 
 These fields enable:
 - **Spec drift detection**: Warning when spec changes after tasks are created
@@ -76,6 +77,7 @@ These fields enable:
 - **Out-of-spec tracking**: Identifying tasks created outside spec scope
 - **Spec provenance**: Tracing which tasks came from which spec sections
 - **Diff generation**: Showing exactly what changed via snapshot comparison
+- **Per-task verification**: Recording verify-agent results for each completed task
 
 See `task-schema.md` for detailed field documentation.
 

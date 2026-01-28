@@ -170,13 +170,20 @@ Check request against spec:
 
 | Condition | Action |
 |-----------|--------|
-| No spec exists, no tasks | Stop - direct user to create spec via `specification_creator/` |
-| No spec exists, tasks exist | **Stop and warn** - tasks without a spec cannot be verified. Present options (see below). |
-| Spec incomplete | Stop - prompt user to complete spec |
-| Spec complete, no tasks | **Decompose** - create tasks from spec |
-| Spec tasks pending | **Execute** - read & follow implement-agent workflow (see Step 4) |
-| All spec tasks finished, no valid verification result | **Verify** - read & follow verify-agent workflow (see Step 4) |
-| All spec tasks finished, valid verification result | **Complete** - report project complete, present final checkpoint |
+| No spec exists, no tasks | Stop — direct user to create spec via `/iterate` |
+| No spec exists, tasks exist | **Stop and warn** — tasks without a spec cannot be verified. Present options (see below). |
+| Spec incomplete | Stop — prompt user to complete spec |
+| Spec complete, no tasks | **Decompose** — create tasks from spec |
+| Any spec task "Finished" without passing per-task verification | **Verify (per-task)** — read & follow verify-agent per-task workflow (see Step 4) |
+| Spec tasks pending (and none awaiting per-task verification) | **Execute** — read & follow implement-agent workflow (see Step 4) |
+| All spec tasks finished with passing per-task verification, no valid phase verification result | **Verify (phase-level)** — read & follow verify-agent phase-level workflow (see Step 4) |
+| All spec tasks finished, valid phase verification result | **Complete** — report project complete, present final checkpoint |
+
+**Priority order matters.** Per-task verification takes priority over executing the next task. This ensures verification is not deferred.
+
+**State detection logic:** A task "needs per-task verification" when:
+- It has status "Finished" AND does NOT have a `task_verification` field, OR
+- It has status "Finished" AND has `task_verification.result == "fail"` AND `updated_date` is more recent than `task_verification.timestamp` (meaning it was fixed and needs re-verification)
 
 **Spec-less project handling:** If tasks exist but no spec file is found, do NOT proceed with execution. Instead:
 ```
@@ -186,7 +193,7 @@ Without a spec, the verify phase cannot validate acceptance criteria
 and the project cannot reach "Complete" status.
 
 Options:
-[S] Create a spec - Start specification_creator to document requirements
+[S] Create a spec - Run /iterate to document requirements
 [M] Mark all tasks out-of-spec - Proceed without verification gate
 [X] Stop - Don't proceed until this is resolved
 ```
@@ -194,7 +201,7 @@ This prevents the scenario where all tasks execute and "complete" without any ve
 
 **Important — spec tasks vs out-of-spec tasks:** Phase routing is based on **spec tasks only** (tasks without `out_of_spec: true`). Out-of-spec tasks (recommendations from verify-agent or user requests that bypassed the spec) are excluded from phase detection. This prevents the verify → execute → verify infinite loop.
 
-**Verification result check:** Read `.claude/verification-result.json`. A result is valid when `result` is `"pass"` or `"pass_with_issues"`, `spec_fingerprint` matches the current spec, and no tasks changed since `timestamp`. See verify-agent Step 7 for the file format.
+**Phase-level verification result check:** Read `.claude/verification-result.json`. A result is valid when `result` is `"pass"` or `"pass_with_issues"`, `spec_fingerprint` matches the current spec, and no tasks changed since `timestamp`. See verify-agent Phase-Level Step 7 for the file format.
 
 **Out-of-spec task handling:** After phase routing completes (or at phase boundaries), check for pending out-of-spec tasks and present them to the user:
 
@@ -295,21 +302,38 @@ Execute these steps in order:
 
 **Why this matters:** Implementing directly skips the self-review, status tracking, and dashboard regeneration. The agent workflow exists to ensure consistent quality and observable state transitions.
 
-#### If Verifying
+#### If Verifying (Per-Task)
 
-**You must use the verify-agent workflow. Do not verify directly.**
+**You must use the verify-agent per-task workflow. Do not verify directly.**
+
+Execute these steps in order:
+
+1. **Read the agent file now:** Use the Read tool to read `.claude/agents/verify-agent.md` in full.
+2. **Identify the mode:** This is a **per-task** verification. Follow the "Per-Task Verification Workflow" section (Steps T1 through T8).
+3. **Context to provide:** The specific task JSON that needs verification, its spec section, and completion notes.
+
+**After per-task verification completes:**
+- If **pass**: Proceed to select next pending task (loop back to Execute routing)
+- If **fail**: Task is set back to "In Progress". Route to implement-agent to fix the issues.
+- Regenerate dashboard after any status change.
+
+**Why this matters:** Per-task verification catches issues while the implementation is fresh, before subsequent tasks build on potentially flawed work.
+
+#### If Verifying (Phase-Level)
+
+**You must use the verify-agent phase-level workflow. Do not verify directly.**
 
 Execute these steps in order:
 
 1. **Read the agent file now:** Use the Read tool to read `.claude/agents/verify-agent.md` in full. Do not skip this step or work from memory.
-2. **Follow every numbered step** in the agent's Workflow section (Steps 1 through 8). Required outputs:
+2. **Identify the mode:** This is a **phase-level** verification. Follow the "Phase-Level Verification Workflow" section (Steps 1 through 8). Required outputs:
    - Step 3: Per-criterion pass/fail table (not just a summary)
    - Step 5: Issue categorization (critical/major/minor counts)
    - Step 7: `verification-result.json` written with all required fields
    - Step 8: Verification report displayed to user
-3. **Context to provide:** List of completed work, spec acceptance criteria, test commands
+3. **Context to provide:** List of completed work with per-task verification results, spec acceptance criteria, test commands
 
-**Why this matters:** Skipping verification means the project completes without confirming the implementation matches the spec. The verification result file gates the Complete phase — without it, the project cannot finish.
+**Why this matters:** Skipping phase-level verification means the project completes without confirming the full implementation matches the spec's acceptance criteria. The verification result file gates the Complete phase — without it, the project cannot finish.
 
 #### If Completing
 

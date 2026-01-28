@@ -5,14 +5,19 @@ The Spec → Execute → Verify workflow for autonomous multi-phase projects.
 ## Overview
 
 ```
-┌──────────┐    ┌──────────┐    ┌──────────┐
-│   Spec   │ → │ Execute  │ → │  Verify  │
-│          │    │          │    │          │
-│ Define   │    │ Build    │    │ Validate │
-│ what     │    │ it       │    │ it works │
-└──────────┘    └──────────┘    └──────────┘
-     ↑                               │
-     └───── (if issues found) ──────┘
+┌──────────┐    ┌───────────────────────────────────────┐    ┌──────────┐
+│   Spec   │ -> │              Execute                   │ -> │  Verify  │
+│          │    │  ┌────────────┐   ┌────────────────┐  │    │ (phase)  │
+│ Define   │    │  │ Implement  │ -> │ Verify (task)  │  │    │          │
+│ what     │    │  │ task N     │   │ task N         │  │    │ Validate │
+│          │    │  └────────────┘   └────────────────┘  │    │ all ACs  │
+│          │    │       ^                │               │    │          │
+│          │    │       └── (if fail) ───┘               │    │          │
+│          │    │       v (if pass)                      │    │          │
+│          │    │  next task...                          │    │          │
+└──────────┘    └───────────────────────────────────────┘    └──────────┘
+     ^                                                            │
+     └──────────── (if issues found) ────────────────────────────┘
 ```
 
 **Core principle:** The spec is the living source of truth. All work should align with it, or the spec should be updated intentionally.
@@ -40,9 +45,9 @@ The Spec → Execute → Verify workflow for autonomous multi-phase projects.
 - Scope is clear
 - Human approved specification
 
-**Process:** Manual (human-guided via specification_creator)
+**Process:** Manual (human-guided via `/iterate`)
 
-To create or revise the spec, start a Claude Code session from `.claude/specification_creator/`. Claude will guide you through iterative Q&A but you edit the spec directly.
+To create or revise the spec, run `/iterate`. Claude will guide you through iterative Q&A but you edit the spec directly.
 
 ### Execute Phase
 
@@ -53,22 +58,45 @@ To create or revise the spec, start a Claude Code session from `.claude/specific
 - Work through tasks in dependency order
 - Write code and create files
 - Self-review changes
+- Per-task verification after each task completion
 - Document completion notes
 - Flag discovered issues
 
 **Exit Criteria:**
-- All tasks marked Finished
+- All tasks marked Finished AND passed per-task verification
 - No blocked tasks remain
 - Code follows project conventions
-- Ready for verification
+- Ready for phase-level verification
 
 **Agent:** implement-agent
 
 ### Verify Phase
 
-**Goal:** Confirm the implementation matches the spec
+Verification operates in two tiers:
 
-**When it triggers:** Automatically when `/work` detects all spec tasks are finished (auto-detect mode), or manually when the user runs `/work` after completing all tasks.
+#### Tier 1: Per-Task Verification (during Execute phase)
+
+**Goal:** Catch issues in each task immediately after completion
+
+**When it triggers:** After each task is marked Finished by implement-agent. `/work` routes to verify-agent in per-task mode before selecting the next task.
+
+**Activities:**
+- Verify file artifacts exist and match task description
+- Check spec alignment against task description and spec section
+- Validate code quality (no TODOs, follows patterns)
+- Check integration boundaries (dependencies consumed correctly, outputs match downstream expectations)
+
+**Output:** `task_verification` field written to task JSON with per-check pass/fail
+
+**What happens after per-task verification:**
+- **Pass:** Task stays Finished. `/work` proceeds to next pending task.
+- **Fail:** Task set back to "In Progress". implement-agent fixes, then re-verification. Maximum 2 re-verification attempts before escalation to human.
+
+#### Tier 2: Phase-Level Verification
+
+**Goal:** Confirm the full implementation matches the spec's acceptance criteria
+
+**When it triggers:** Automatically when `/work` detects all spec tasks are finished AND all have passing per-task verification (auto-detect mode), or manually when the user runs `/work` after completing all tasks.
 
 **Activities:**
 - Run existing test suite (if available)
@@ -78,6 +106,7 @@ To create or revise the spec, start a Claude Code session from `.claude/specific
 - Create fix tasks for issues found (marked `out_of_spec: true`)
 - Write verification result to `.claude/verification-result.json`
 - Generate verification report for the user
+- Reference per-task verification results as evidence for individual checks
 
 **Output:** A structured report showing:
 - Pass/fail status for each acceptance criterion
@@ -85,12 +114,12 @@ To create or revise the spec, start a Claude Code session from `.claude/specific
 - Tasks created for fixes (if any)
 - Overall result: `pass`, `fail`, or `pass_with_issues`
 
-**What happens after verification:**
+**What happens after phase-level verification:**
 - **Pass:** `/work` transitions to Complete phase. Spec status updates to `complete`.
 - **Pass with issues:** Minor issues noted but no critical/major blockers. Same as pass — project completes, issues logged for future work.
 - **Fail:** Critical issues found. Fix tasks are created. `/work` routes back to Execute phase to address them. Once fixes are done, verification runs again.
 
-**Feedback loop:** Verification findings flow back into the Execute phase:
+**Feedback loop:** Phase-level verification findings flow back into the Execute phase:
 1. verify-agent identifies issues
 2. Fix tasks are created (marked `out_of_spec: true`, requiring user approval)
 3. `/work` presents recommendations to user for Accept/Reject/Defer
@@ -124,11 +153,21 @@ By separating concerns:
 - Issues caught by verify-agent become new tasks for implement-agent
 
 **The workflow:**
-1. `/work` reads and follows implement-agent workflow for pending tasks
-2. implement-agent workflow: build, update status, regenerate dashboard
-3. When all tasks are done, `/work` reads and follows verify-agent workflow
-4. verify-agent tests against spec acceptance criteria
-5. Issues found become new tasks, back to implement-agent
+1. `/work` reads and follows implement-agent workflow for the next pending task
+2. implement-agent: build, self-review, update status to Finished, regenerate dashboard
+3. `/work` detects task needing per-task verification
+4. `/work` reads and follows verify-agent per-task workflow for that task
+5. verify-agent: verify files, spec alignment, quality, integration boundaries
+6. If verification passes: back to step 1 for next task
+7. If verification fails: task set back to "In Progress", back to step 1 (implement-agent fixes)
+8. When all tasks pass per-task verification, `/work` reads verify-agent phase-level workflow
+9. verify-agent: test against spec acceptance criteria
+10. Issues found become new tasks, back to implement-agent
+
+Re-reading verify-agent.md after each task forces a mental frame shift. Instead of
+continuing in "build mode," Claude re-enters "validation mode," applying a different
+lens to the same code. This simple mechanism — re-reading a different agent file — is
+the primary quality lever.
 
 This separation produces higher quality output than a single agent could achieve alone.
 
@@ -139,9 +178,11 @@ The agent system is prompt-driven, not code-enforced. To prevent workflows from 
 1. **Explicit Read instructions** — `/work` directs Claude to use the Read tool on the agent file, not just "follow the workflow." This makes the file read an observable action.
 2. **Required artifacts** — Each workflow step produces a checkable artifact:
    - implement-agent: Task must pass through "In Progress" before "Finished"; notes must be non-empty
-   - verify-agent: `verification-result.json` must contain per-criterion data matching the spec
-3. **Compliance checks** — `/health-check` validates workflow compliance (empty notes, missing verification result, status jump from Pending→Finished)
-4. **Spec gate** — Tasks without a spec trigger a warning. Without a spec, the verify phase cannot run, preventing projects from "completing" without verification.
+   - verify-agent (per-task): Each finished task must have a `task_verification` field with real check data
+   - verify-agent (phase-level): `verification-result.json` must contain per-criterion data matching the spec
+3. **Per-task verification artifacts** — Each finished task must have a `task_verification` field with real check data. Tasks without this field are flagged as "awaiting verification" by `/work` routing. `/health-check` validates that finished tasks have this field.
+4. **Compliance checks** — `/health-check` validates workflow compliance (empty notes, missing verification result, missing per-task verification, status jump from Pending→Finished)
+5. **Spec gate** — Tasks without a spec trigger a warning. Without a spec, the verify phase cannot run, preventing projects from "completing" without verification.
 
 **Limitation:** These are structural incentives, not hard gates. Claude can still bypass them. The enforcement works by making the correct path the obvious path and making bypasses detectable after the fact.
 
@@ -249,19 +290,19 @@ When completing work, agents return:
 - Present checkpoint to human
 - Read and follow implement-agent workflow for first available task
 
-### Execute → Verify
+### Execute → Verify (Phase-Level)
 
-**Trigger:** All execute tasks finished
+**Trigger:** All execute tasks finished AND all passed per-task verification
 
 **Handoff includes:**
-- List of completed tasks
+- List of completed tasks with per-task verification results
 - Files modified
 - Any discovered issues
-- Self-review notes
+- Self-review notes and verification notes
 
 **What /work does:**
 - Present checkpoint to human
-- Read and follow verify-agent workflow with implementation summary
+- Read and follow verify-agent phase-level workflow with implementation summary
 
 ### Verify → Complete
 
