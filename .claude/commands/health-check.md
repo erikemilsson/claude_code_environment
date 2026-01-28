@@ -85,7 +85,8 @@ Detects tasks that may have bypassed the implement-agent or verify-agent workflo
 
 **Implement-agent compliance checks:**
 - Tasks with status `"Finished"` should have non-empty `notes` (self-review artifact)
-- Tasks should not jump from `"Pending"` to `"Finished"` without evidence of `"In Progress"` transition (check if `updated_date` differs from `created_date`, or notes contain implementation details)
+- Tasks should not jump from `"Pending"` to `"Finished"` without passing through `"In Progress"` and `"Awaiting Verification"` (check if `updated_date` differs from `created_date`, or notes contain implementation details)
+- Tasks with status `"Awaiting Verification"` for > 1 hour indicate a stalled verification process (ERROR)
 
 **Verify-agent compliance checks:**
 - If all spec tasks are `"Finished"`, a `.claude/verification-result.json` file should exist

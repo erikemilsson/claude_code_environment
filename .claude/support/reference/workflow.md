@@ -63,7 +63,7 @@ To create or revise the spec, run `/iterate`. Claude will guide you through iter
 - Flag discovered issues
 
 **Exit Criteria:**
-- All tasks marked Finished AND passed per-task verification
+- All tasks have status "Finished" with passing per-task verification
 - No blocked tasks remain
 - Code follows project conventions
 - Ready for phase-level verification
@@ -78,7 +78,7 @@ Verification operates in two tiers:
 
 **Goal:** Catch issues in each task immediately after completion
 
-**When it triggers:** After each task is marked Finished by implement-agent. `/work` routes to verify-agent in per-task mode before selecting the next task.
+**When it triggers:** After implement-agent sets a task to "Awaiting Verification" status. Verification is triggered automatically as part of Step 6 in implement-agent, making implementation and verification atomic.
 
 **Activities:**
 - Verify file artifacts exist and match task description
@@ -89,7 +89,7 @@ Verification operates in two tiers:
 **Output:** `task_verification` field written to task JSON with per-check pass/fail
 
 **What happens after per-task verification:**
-- **Pass:** Task stays Finished. `/work` proceeds to next pending task.
+- **Pass:** Task status set to "Finished" (from "Awaiting Verification"). `/work` proceeds to next pending task.
 - **Fail:** Task set back to "In Progress". implement-agent fixes, then re-verification. Maximum 2 re-verification attempts before escalation to human.
 
 #### Tier 2: Phase-Level Verification
@@ -161,15 +161,14 @@ By separating concerns:
 
 **The workflow:**
 1. `/work` reads and follows implement-agent workflow for the next pending task
-2. implement-agent: build, self-review, update status to Finished, regenerate dashboard
-3. `/work` detects task needing per-task verification
-4. `/work` reads and follows verify-agent per-task workflow for that task
-5. verify-agent: verify files, spec alignment, quality, integration boundaries
-6. If verification passes: back to step 1 for next task
-7. If verification fails: task set back to "In Progress", back to step 1 (implement-agent fixes)
-8. When all tasks pass per-task verification, `/work` reads verify-agent phase-level workflow
-9. verify-agent: test against spec acceptance criteria
-10. Issues found become new tasks, back to implement-agent
+2. implement-agent: build, self-review, update status to "Awaiting Verification"
+3. implement-agent Step 6b: trigger verify-agent per-task workflow (atomic with step 2)
+4. verify-agent: verify files, spec alignment, quality, integration boundaries
+5. If verification passes: status → "Finished", regenerate dashboard, back to step 1 for next task
+6. If verification fails: status → "In Progress", back to step 1 (implement-agent fixes)
+7. When all tasks have "Finished" status with passing verification, `/work` reads verify-agent phase-level workflow
+8. verify-agent: test against spec acceptance criteria
+9. Issues found become new tasks, back to implement-agent
 
 This separation produces higher quality output than a single agent could achieve alone.
 

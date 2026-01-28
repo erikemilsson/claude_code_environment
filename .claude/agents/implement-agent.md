@@ -26,7 +26,7 @@ The `/work` command directs you to follow this workflow when:
 ## Outputs
 
 - Code changes and new files
-- Updated task status (Finished)
+- Updated task status ("Awaiting Verification" after implementation, then "Finished" after verification passes)
 - Completion notes on task
 - Issues discovered (added to questions.md or new tasks)
 
@@ -99,9 +99,10 @@ Before marking complete:
 - Verify against task requirements
 - Run existing tests if available
 
-Note: After this task is marked Finished, verify-agent will run per-task
-verification. Self-review here is your chance to catch issues before that
-happens. Verification failures send the task back to "In Progress."
+Note: After self-review, the task will be set to "Awaiting Verification" and
+verify-agent will run per-task verification (Step 6). Self-review is your
+chance to catch issues before verification. Verification failures send the
+task back to "In Progress."
 
 ### Step 6: Document and Trigger Verification
 
@@ -249,8 +250,8 @@ Task is complete when:
 - Code passes self-review
 - Tests pass (if applicable)
 - Notes document what was done
-- Status set to "Finished"
-- Per-task verification passes (handled by verify-agent after this workflow)
+- Status set to "Finished" (after passing verification)
+- Per-task verification passes (Step 6b triggers verify-agent as part of this workflow)
 
 ## Anti-Patterns
 

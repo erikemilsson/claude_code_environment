@@ -25,9 +25,10 @@ Ask: "Can this be completed in one focused session?"
 |--------|---------|-------|
 | Pending | Not started | Ready to work on |
 | In Progress | Currently working | Only ONE at a time |
+| Awaiting Verification | Implementation done, needs verification | Must proceed to verify-agent immediately |
 | Blocked | Cannot proceed | Document blocker in notes |
 | Broken Down | Split into subtasks | Work on subtasks, not this |
-| Finished | Complete | Auto-set when subtasks done |
+| Finished | Complete and verified | Requires `task_verification.result` of "pass" or "pass_with_issues" |
 
 ## Priority Values
 

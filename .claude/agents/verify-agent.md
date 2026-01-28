@@ -15,16 +15,16 @@ This agent operates in two modes, determined by `/work` routing:
 
 | Mode | Trigger | Scope | Artifact |
 |------|---------|-------|----------|
-| **Per-task** | A single task just finished | One task's changes | `task_verification` field in task JSON |
-| **Phase-level** | All spec tasks finished | Full implementation | `verification-result.json` |
+| **Per-task** | A single task is in "Awaiting Verification" status | One task's changes | `task_verification` field in task JSON, status → "Finished" |
+| **Phase-level** | All spec tasks finished with passing per-task verification | Full implementation | `verification-result.json` |
 
 When `/work` invokes this agent, it specifies the mode. Follow the corresponding workflow below.
 
 ## When to Follow This Workflow
 
 The `/work` command directs you to follow this workflow when:
-- **Per-task mode:** A task was just marked Finished by implement-agent and needs per-task verification
-- **Phase-level mode:** All execute-phase tasks are finished with passing per-task verification, and the full implementation is ready for validation
+- **Per-task mode:** A task has status "Awaiting Verification" and needs per-task verification before it can become "Finished"
+- **Phase-level mode:** All execute-phase tasks are "Finished" with passing per-task verification, and the full implementation is ready for validation
 
 ## Inputs
 
@@ -85,18 +85,18 @@ Does it meet performance requirements?
 
 This file is read by `/work` during verification. **You are reading this file because `/work` directed you here.**
 
-- **Per-task:** `/work` routes here after each task is marked Finished by implement-agent. Follow the "Per-Task Verification Workflow" section (Steps T1–T8).
+- **Per-task:** `/work` routes here when a task has status "Awaiting Verification". Follow the "Per-Task Verification Workflow" section (Steps T1–T8).
 - **Phase-level:** `/work` routes here after all spec tasks are finished and all have passing per-task verification. Follow the "Phase-Level Verification Workflow" section (Steps 1–8).
 
 Do not skip steps, write results without performing actual verification, or declare pass without checking requirements. Each step produces a required output.
 
 ## Per-Task Verification Workflow
 
-Follow this workflow when `/work` routes you here in **per-task** mode — a single task was just marked Finished and needs verification before the next task begins.
+Follow this workflow when `/work` routes you here in **per-task** mode — a single task was just marked "Awaiting Verification" and needs verification before the next task begins.
 
 ### Step T1: Read Task and Spec Context
 
-1. Read the task JSON file in full
+1. Read the task JSON file in full (status should be "Awaiting Verification")
 2. Read the spec section referenced by `spec_section` field
 3. Read the task description and completion notes
 4. **Independence principle:** You are verifying someone else's work. Approach with fresh eyes.
@@ -188,10 +188,20 @@ Record the per-task verification outcome in the task JSON:
 
 | Result | Action |
 |--------|--------|
-| `pass` | Task stays "Finished". Report result to `/work`. Proceed to next task. |
+| `pass` | Set task status to "Finished". Report result to `/work`. Proceed to next task. |
 | `fail` | Set task status back to "In Progress". Report issues to `/work`. implement-agent will fix and re-submit. |
 
-**When setting task back to "In Progress":**
+**When verification passes (status: "Awaiting Verification" → "Finished"):**
+```json
+{
+  "status": "Finished",
+  "updated_date": "YYYY-MM-DD"
+}
+```
+The task now has both `status: "Finished"` AND `task_verification.result: "pass"`, satisfying the verification requirement.
+
+**When setting task back to "In Progress" (fail):**
+- Set status to "In Progress"
 - Append verification failure notes to the task `notes` field (prepend with `[VERIFICATION FAIL]`)
 - Clear `completion_date`
 - Update `updated_date`

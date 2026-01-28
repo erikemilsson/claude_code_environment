@@ -56,6 +56,7 @@ dashboard_sections:
   project_context: build        # actively create/update
   needs_attention: build
   quick_status: build
+  spec_alignment: build         # drift status per section
   critical_path: build
   claude_status: build
   progress: build

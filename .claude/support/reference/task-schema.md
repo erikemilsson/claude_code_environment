@@ -197,7 +197,7 @@ Set when user selects "proceed anyway" on spec misalignment. Dashboard shows ⚠
 
 ## Task Verification Field
 
-Per-task verification result recorded by verify-agent after each task is marked Finished. This enables Tier 1 (per-task) verification in the two-tier verification system.
+Per-task verification result recorded by verify-agent when a task is in "Awaiting Verification" status. Upon passing, the task status transitions to "Finished". This enables Tier 1 (per-task) verification in the two-tier verification system.
 
 ```json
 {
@@ -230,8 +230,8 @@ Per-task verification result recorded by verify-agent after each task is marked 
 ### State Detection
 
 A task "needs per-task verification" when:
-- It has status "Finished" AND does NOT have a `task_verification` field, OR
-- It has status "Finished" AND has `task_verification.result != "pass"` (includes "fail" or any other non-pass value)
+- It has status "Awaiting Verification", OR
+- It has status "Finished" AND does NOT have a `task_verification` field (legacy edge case)
 
 ### Failure Handling
 

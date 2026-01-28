@@ -217,37 +217,39 @@ Check request against spec:
 | No spec exists, tasks exist | **Stop and warn** — tasks without a spec cannot be verified. Present options (see below). |
 | Spec incomplete | Stop — prompt user to complete spec |
 | Spec complete, no tasks | **Decompose** — create tasks from spec |
-| Any spec task "Finished" without passing per-task verification | **Verify (per-task)** — read & follow verify-agent per-task workflow (see Step 4) |
-| Spec tasks pending (and none awaiting per-task verification) | **Execute** — read & follow implement-agent workflow (see Step 4) |
-| All spec tasks finished with passing per-task verification, no valid phase verification result | **Verify (phase-level)** — read & follow verify-agent phase-level workflow (see Step 4) |
+| Any spec task in "Awaiting Verification" status | **Verify (per-task)** — read & follow verify-agent per-task workflow (see Step 4) |
+| Spec tasks pending (and none awaiting verification) | **Execute** — read & follow implement-agent workflow (see Step 4) |
+| All spec tasks "Finished" with passing per-task verification, no valid phase verification result | **Verify (phase-level)** — read & follow verify-agent phase-level workflow (see Step 4) |
 | Phase-level verification result is `"fail"` (in-spec fix tasks exist) | **Execute** — fix tasks need implementation before re-verification |
 | All spec tasks finished, valid phase verification result | **Complete** — report project complete, present final checkpoint |
 
 **Priority order matters.** Per-task verification takes priority over executing the next task. This ensures verification is not deferred.
 
-**CRITICAL: Verification enforcement.** Before routing to phase-level verification or completion, you MUST verify that EVERY "Finished" spec task has `task_verification.result == "pass"`. Tasks without `task_verification` or with `task_verification.result != "pass"` must complete per-task verification first. Never skip this check.
+**CRITICAL: Verification enforcement.** Before routing to phase-level verification or completion, you MUST verify that EVERY "Finished" spec task has `task_verification.result == "pass"`. Tasks in "Awaiting Verification" status must complete per-task verification first. Never skip this check.
 
 **State detection logic:** A task "needs per-task verification" when:
-- It has status "Finished" AND does NOT have a `task_verification` field, OR
-- It has status "Finished" AND has `task_verification.result != "pass"` (includes "fail" or any other non-pass value)
+- It has status "Awaiting Verification", OR
+- It has status "Finished" AND does NOT have a `task_verification` field (legacy edge case)
 
 **Explicit routing algorithm:**
 ```
 1. Get all spec tasks (exclude out_of_spec: true)
-2. finished_tasks = tasks where status == "Finished"
-3. unverified_tasks = finished_tasks where:
-   - task_verification does not exist, OR
-   - task_verification.result != "pass"
-4. IF unverified_tasks is not empty:
+2. awaiting_verification = tasks where status == "Awaiting Verification"
+3. IF awaiting_verification is not empty:
+   → Route to verify-agent (per-task) for first task in "Awaiting Verification"
+   → Do NOT proceed to phase-level or completion
+4. finished_tasks = tasks where status == "Finished"
+5. unverified_finished = finished_tasks where task_verification does not exist (legacy edge case)
+6. IF unverified_finished is not empty:
    → Route to verify-agent (per-task) for first unverified task
    → Do NOT proceed to phase-level or completion
-5. ELSE IF all spec tasks are "Finished" AND all have task_verification.result == "pass":
+7. ELSE IF all spec tasks are "Finished" AND all have task_verification.result == "pass":
    → Check verification-result.json
    → IF file missing → Route to verify-agent (phase-level)
    → IF result == "fail" → Route to implement-agent (fix tasks were created, need implementation)
    → IF spec_fingerprint mismatch OR tasks updated after timestamp → Route to verify-agent (re-verification needed)
    → IF result == "pass" or "pass_with_issues" → Route to completion
-6. ELSE:
+8. ELSE:
    → Route to implement-agent for next pending task
 ```
 
@@ -374,7 +376,9 @@ Execute these steps in order:
    - Step 3: Task JSON updated to `"In Progress"` **before any implementation begins**
    - Step 4: Implementation done
    - Step 5: Self-review completed
-   - Step 6: Task JSON updated to `"Finished"`, dashboard regenerated
+   - Step 6a: Task JSON updated to `"Awaiting Verification"`
+   - Step 6b: verify-agent runs per-task verification → status becomes `"Finished"` if pass
+   - Step 6c: Dashboard regenerated
 3. **Context to provide:** Current task, relevant spec sections, constraints/notes
 
 #### If Verifying (Per-Task)
