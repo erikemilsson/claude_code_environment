@@ -177,6 +177,7 @@ Check request against spec:
 | Any spec task "Finished" without passing per-task verification | **Verify (per-task)** — read & follow verify-agent per-task workflow (see Step 4) |
 | Spec tasks pending (and none awaiting per-task verification) | **Execute** — read & follow implement-agent workflow (see Step 4) |
 | All spec tasks finished with passing per-task verification, no valid phase verification result | **Verify (phase-level)** — read & follow verify-agent phase-level workflow (see Step 4) |
+| Phase-level verification result is `"fail"` (in-spec fix tasks exist) | **Execute** — fix tasks need implementation before re-verification |
 | All spec tasks finished, valid phase verification result | **Complete** — report project complete, present final checkpoint |
 
 **Priority order matters.** Per-task verification takes priority over executing the next task. This ensures verification is not deferred.
@@ -332,6 +333,20 @@ Execute these steps in order:
    - Step 7: `verification-result.json` written with all required fields
    - Step 8: Verification report displayed to user
 3. **Context to provide:** List of completed work with per-task verification results, spec acceptance criteria, test commands
+
+**After phase-level verification completes:**
+
+Check `.claude/verification-result.json`:
+
+| Result | Action |
+|--------|--------|
+| `pass` | Proceed to "If Completing" section |
+| `pass_with_issues` | Proceed to "If Completing" section. Present any out-of-spec recommendation tasks for user approval. |
+| `fail` | In-spec fix tasks were created. Loop back to Execute: route to implement-agent for fix tasks, then re-verify when all spec tasks are finished again. |
+
+**In-spec fix tasks vs out-of-spec recommendations:**
+- Fix tasks for bugs (spec requires it but implementation is broken) are regular tasks — they route to execute automatically.
+- Recommendation tasks (beyond spec) are `out_of_spec: true` — they require user approval at phase boundaries.
 
 **Why this matters:** Skipping phase-level verification means the project completes without confirming the full implementation matches the spec's acceptance criteria. The verification result file gates the Complete phase — without it, the project cannot finish.
 

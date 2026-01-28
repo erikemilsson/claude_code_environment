@@ -103,7 +103,7 @@ Verification operates in two tiers:
 - Validate each spec acceptance criterion individually
 - Check code quality, security, and integration
 - Identify and categorize issues (critical/major/minor)
-- Create fix tasks for issues found (marked `out_of_spec: true`)
+- Create fix tasks for issues found (in-spec bugs as regular tasks; recommendations as `out_of_spec: true`)
 - Write verification result to `.claude/verification-result.json`
 - Generate verification report for the user
 - Reference per-task verification results as evidence for individual checks
@@ -117,14 +117,21 @@ Verification operates in two tiers:
 **What happens after phase-level verification:**
 - **Pass:** `/work` transitions to Complete phase. Spec status updates to `complete`.
 - **Pass with issues:** Minor issues noted but no critical/major blockers. Same as pass — project completes, issues logged for future work.
-- **Fail:** Critical issues found. Fix tasks are created. `/work` routes back to Execute phase to address them. Once fixes are done, verification runs again.
+- **Fail:** Critical/major issues found where spec requirements aren't met. In-spec fix tasks are created (regular tasks, not out-of-spec). `/work` automatically routes them to implement-agent. Once fixes are done and all spec tasks pass per-task verification again, phase-level verification re-runs.
 
-**Feedback loop:** Phase-level verification findings flow back into the Execute phase:
-1. verify-agent identifies issues
-2. Fix tasks are created (marked `out_of_spec: true`, requiring user approval)
-3. `/work` presents recommendations to user for Accept/Reject/Defer
-4. Accepted tasks are executed by implement-agent
-5. When all spec tasks are finished again, verification re-runs
+**Feedback loop — bug fixes (in-spec):**
+1. verify-agent identifies issues where spec requirements aren't met
+2. Fix tasks are created as **regular tasks** (not out-of-spec)
+3. Verification result is set to `"fail"`
+4. `/work` routes fix tasks to implement-agent automatically
+5. When all spec tasks are finished again, phase-level verification re-runs
+
+**Feedback loop — recommendations (out-of-spec):**
+1. verify-agent identifies improvements beyond spec acceptance criteria
+2. Recommendation tasks are created with `out_of_spec: true`
+3. Verification result can still be `"pass_with_issues"` (spec criteria met)
+4. `/work` presents recommendations to user for Accept/Reject/Defer
+5. Accepted tasks are executed independently; they don't block project completion
 
 **Exit Criteria:**
 - All acceptance criteria pass (or failures are documented and accepted)

@@ -290,7 +290,19 @@ For failures, categorize:
 For issues found that need fixing:
 1. Create new task files for each major/critical issue
 2. Set appropriate difficulty, owner, and dependencies
-3. **Mark recommendation tasks as out-of-spec** — tasks created by verify-agent that go beyond the spec's acceptance criteria must include `"out_of_spec": true` and `"source": "verify-agent"` in the task JSON:
+3. **Distinguish two types of fix tasks:**
+   - **In-spec bug fixes** (implementation doesn't meet a spec requirement): Create as regular tasks WITHOUT `out_of_spec: true`. These route automatically to implement-agent via `/work`.
+   - **Recommendations** (improvements beyond spec acceptance criteria): Create WITH `out_of_spec: true` and `"source": "verify-agent"`. These require user approval.
+
+   In-spec bug fix example:
+   ```json
+   {
+     "source": "verify-agent",
+     "status": "Pending"
+   }
+   ```
+
+   Recommendation (out-of-spec) example:
    ```json
    {
      "out_of_spec": true,
@@ -298,7 +310,7 @@ For issues found that need fixing:
      "status": "Pending"
    }
    ```
-   These tasks require explicit user approval before `/work` will execute them. See the out-of-spec consent flow in `work.md`.
+   Out-of-spec tasks require explicit user approval before `/work` will execute them. See the out-of-spec consent flow in `work.md`.
 4. **Regenerate dashboard.md** - Read all task-*.json files and update dashboard
    - Preserve Notes & Ideas section between `<!-- USER SECTION -->` markers
    - Update overall completion percentage, Critical Path, and Recently Completed
@@ -369,6 +381,10 @@ Display the verification report to the user:
 - Create task for session expiration fix
 - UX review for login page
 ```
+
+## Separation of Concerns
+
+**Do NOT implement fixes.** Your role is to identify and document issues, not resolve them. Create fix tasks, set the verification result to "fail" (for in-spec issues) or "pass_with_issues" (for recommendation-only findings), and return control to `/work`. The implement-agent handles all code changes.
 
 ## Handling Ad-Hoc Tasks
 
@@ -464,12 +480,14 @@ Following verify-agent workflow:
 ## Anti-Patterns
 
 **Avoid:**
+- Fixing issues yourself instead of creating fix tasks
 - Skipping verification for "simple" changes
 - Assuming tests catch everything
 - Ignoring non-functional requirements
 - Marking pass when critical issues exist
 
 **Instead:**
+- Create fix tasks and report result: "fail" — implement-agent handles all fixes
 - Always verify against spec
 - Do manual checks too
 - Check performance/security
