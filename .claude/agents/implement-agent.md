@@ -114,6 +114,12 @@ Update task:
 }
 ```
 
+**IMPORTANT — Separation of concerns:**
+- Do NOT write `task_verification` field — that is verify-agent's exclusive responsibility
+- Do NOT write `verification-result.json` — that is verify-agent's exclusive responsibility
+- Your role ends at marking the task "Finished" with notes
+- The `/work` command will route to verify-agent for independent verification
+
 Check parent auto-completion:
 - If this task has a `parent_task` field
 - And all sibling subtasks are now "Finished"
@@ -128,8 +134,13 @@ Regenerate dashboard.md from task JSON files, following the canonical template i
 - Recalculate Critical Path from dependency chain of incomplete tasks
 - Add completed task to Recently Completed with date
 
-Note: Do NOT proceed to the next task. Return control to `/work`, which
-will route to per-task verification before selecting the next task.
+**MANDATORY: Return control to `/work` after completing this step.**
+- Do NOT proceed to the next task
+- Do NOT add your own verification — verify-agent handles verification independently
+- `/work` will route to verify-agent for per-task verification
+- Only after verification passes will `/work` select the next task
+
+Violating this boundary (implementing + verifying in the same flow) defeats the purpose of independent verification.
 
 ## Implementation Guidelines
 

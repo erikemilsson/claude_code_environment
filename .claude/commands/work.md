@@ -182,9 +182,31 @@ Check request against spec:
 
 **Priority order matters.** Per-task verification takes priority over executing the next task. This ensures verification is not deferred.
 
+**CRITICAL: Verification enforcement.** Before routing to phase-level verification or completion, you MUST verify that EVERY "Finished" spec task has `task_verification.result == "pass"`. Tasks without `task_verification` or with `task_verification.result != "pass"` must complete per-task verification first. Never skip this check.
+
 **State detection logic:** A task "needs per-task verification" when:
 - It has status "Finished" AND does NOT have a `task_verification` field, OR
-- It has status "Finished" AND has `task_verification.result == "fail"` AND `updated_date` is more recent than `task_verification.timestamp` (meaning it was fixed and needs re-verification)
+- It has status "Finished" AND has `task_verification.result != "pass"` (includes "fail" or any other non-pass value)
+
+**Explicit routing algorithm:**
+```
+1. Get all spec tasks (exclude out_of_spec: true)
+2. finished_tasks = tasks where status == "Finished"
+3. unverified_tasks = finished_tasks where:
+   - task_verification does not exist, OR
+   - task_verification.result != "pass"
+4. IF unverified_tasks is not empty:
+   → Route to verify-agent (per-task) for first unverified task
+   → Do NOT proceed to phase-level or completion
+5. ELSE IF all spec tasks are "Finished" AND all have task_verification.result == "pass":
+   → Check verification-result.json
+   → IF file missing → Route to verify-agent (phase-level)
+   → IF result == "fail" → Route to implement-agent (fix tasks were created, need implementation)
+   → IF spec_fingerprint mismatch OR tasks updated after timestamp → Route to verify-agent (re-verification needed)
+   → IF result == "pass" or "pass_with_issues" → Route to completion
+6. ELSE:
+   → Route to implement-agent for next pending task
+```
 
 **Spec-less project handling:** If tasks exist but no spec file is found, do NOT proceed with execution. Instead:
 ```
@@ -315,8 +337,16 @@ Execute these steps in order:
 
 **After per-task verification completes:**
 - If **pass**: Proceed to select next pending task (loop back to Execute routing)
-- If **fail**: Task is set back to "In Progress". Route to implement-agent to fix the issues.
+- If **fail**: Task is set back to "In Progress". Route to implement-agent to fix the issues. After fix, route back to verify-agent for re-verification. This loop continues until pass.
 - Regenerate dashboard after any status change.
+
+**Fail → Fix → Re-Verify Loop:**
+```
+Task Finished → verify-agent → FAIL → implement-agent fixes → verify-agent re-verifies → ...
+                           ↓
+                         PASS → next task
+```
+This loop is mandatory. A task cannot be considered done until it passes verification.
 
 **Why this matters:** Per-task verification catches issues while the implementation is fresh, before subsequent tasks build on potentially flawed work.
 
@@ -352,7 +382,41 @@ Check `.claude/verification-result.json`:
 
 #### If Completing
 
-When all tasks are finished and a valid verification result exists:
+When all tasks are finished and verification conditions are met:
+
+**MANDATORY GATE — Check before proceeding:**
+
+1. **Verify per-task verification completeness:**
+   - Read every spec task JSON file
+   - For EACH "Finished" task, confirm `task_verification.result == "pass"`
+   - If ANY task lacks `task_verification` or has result != "pass":
+     ```
+     ERROR: Cannot complete project — verification incomplete
+
+     Tasks missing verification:
+     - Task N: [title] — no task_verification field
+     - Task M: [title] — task_verification.result is "fail"
+
+     Route to: verify-agent per-task mode
+     ```
+   - Do NOT proceed until all tasks pass
+
+2. **Verify phase-level verification exists and is valid:**
+   - Check `.claude/verification-result.json` exists
+   - Check `result` is "pass" or "pass_with_issues"
+   - Check `spec_fingerprint` matches current spec
+   - Check no tasks have `updated_date` more recent than verification `timestamp`
+   - If any check fails:
+     ```
+     ERROR: Cannot complete project — phase-level verification required
+
+     Issue: [file missing / result is "fail" / spec changed / tasks modified after verification]
+
+     Route to: verify-agent phase-level mode
+     ```
+   - Do NOT proceed until phase-level verification passes
+
+**Once both gates pass:**
 
 1. **Update spec status** to `complete`:
    ```yaml

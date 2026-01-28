@@ -99,7 +99,10 @@ Follow this workflow when `/work` routes you here in **per-task** mode — a sin
 1. Read the task JSON file in full
 2. Read the spec section referenced by `spec_section` field
 3. Read the task description and completion notes
-4. Note: You are verifying someone else's work. Approach with fresh eyes.
+4. **Independence principle:** You are verifying someone else's work. Approach with fresh eyes.
+   - Do NOT assume the implementation is correct just because it exists
+   - Actually read and evaluate the files — don't rubber-stamp based on task notes
+   - If you have context suggesting you also implemented this task, be extra rigorous
 
 ### Step T2: Verify File Artifacts
 

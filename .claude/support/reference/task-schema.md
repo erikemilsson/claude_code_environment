@@ -231,7 +231,7 @@ Per-task verification result recorded by verify-agent after each task is marked 
 
 A task "needs per-task verification" when:
 - It has status "Finished" AND does NOT have a `task_verification` field, OR
-- It has status "Finished" AND has `task_verification.result == "fail"` AND `updated_date` is more recent than `task_verification.timestamp` (meaning it was fixed and needs re-verification)
+- It has status "Finished" AND has `task_verification.result != "pass"` (includes "fail" or any other non-pass value)
 
 ### Failure Handling
 

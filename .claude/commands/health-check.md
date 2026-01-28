@@ -97,6 +97,16 @@ Detects tasks that may have bypassed the implement-agent or verify-agent workflo
 - If any finished task lacks `task_verification`, warn: "N finished tasks missing per-task verification"
 - If a task was sent back to "In Progress" by verification, notes should contain `[VERIFICATION FAIL]` prefix
 
+**Completion gate compliance checks:**
+- If dashboard shows "Project Complete" or "100%" completion:
+  - `.claude/verification-result.json` MUST exist with `result` of "pass" or "pass_with_issues"
+  - ALL finished tasks MUST have `task_verification.result == "pass"`
+  - If either condition fails: ERROR — "Project marked complete without verification"
+- If spec frontmatter has `status: complete`:
+  - Same verification requirements apply
+  - If verification is missing: ERROR — "Spec marked complete without verification"
+- Check for status mismatch: spec says "active" but dashboard shows "Complete" (or vice versa)
+
 **Report format:**
 ```
 [Warning] Workflow compliance issues
@@ -572,7 +582,8 @@ Catch common issues immediately without the overhead of a full health check.
 | Section change count | Number of sections that changed (if section fingerprints exist) |
 | Orphan dependency detection | References to deleted/missing tasks |
 | Out-of-spec count | Number of tasks marked out-of-spec |
-| Per-task verification gaps | Finished tasks missing `task_verification` field |
+| Per-task verification gaps | Finished tasks missing `task_verification` field or with `result != "pass"` |
+| Completion gate integrity | Project/spec marked complete but verification-result.json missing or invalid |
 
 ### Output Format
 
@@ -586,6 +597,13 @@ Quick check: ✓
 Quick check: ⚠️ 2 issues
   - Spec changed: 2 sections modified (4 tasks affected)
   - 3 tasks marked out-of-spec
+```
+
+**Critical issues (block completion):**
+```
+Quick check: ❌ CRITICAL
+  - 2 finished tasks missing per-task verification (tasks 16, 17)
+  - Project shows "Complete" but verification-result.json missing
 ```
 
 ### When Run Automatically
