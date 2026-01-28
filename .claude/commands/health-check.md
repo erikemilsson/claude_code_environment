@@ -68,9 +68,10 @@ Validates that dashboard.md follows the canonical template defined in `.claude/s
 |--------|-------|
 | `Pending` | No special requirements |
 | `In Progress` | Only ONE task should have this status at a time |
+| `Awaiting Verification` | Transitional only — must proceed to verification immediately. **ERROR** if task has been in this status for > 1 hour |
 | `Blocked` | Should have `notes` explaining the blocker |
 | `Broken Down` | Must have non-empty `subtasks` array |
-| `Finished` | If has subtasks, all subtasks must also be `Finished` |
+| `Finished` | MUST have `task_verification.result` of "pass" or "pass_with_issues". If has subtasks, all subtasks must also be `Finished` |
 
 ### 7. Difficulty Range
 
