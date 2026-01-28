@@ -284,6 +284,8 @@ Validates that the dashboard is current with task state:
 |-------|----------|
 | Dashboard doesn't match JSON | Regenerate dashboard.md |
 | Dashboard structure invalid | Regenerate dashboard.md |
+| Dashboard stale (task_hash mismatch) | Regenerate dashboard.md with fresh metadata |
+| Dashboard missing metadata block | Regenerate dashboard.md with metadata |
 | Parent missing subtask in array | Add subtask ID to parent's subtasks array |
 | Subtask missing parent_task field | Add parent_task field |
 | "Broken Down" with empty subtasks | Change status to "Pending" |
@@ -292,6 +294,16 @@ Validates that the dashboard is current with task state:
 | Multiple "In Progress" tasks | Ask which to keep, set others to "Pending" |
 | Nested `.claude/.claude/` directory | Flag as error, recommend deletion |
 | Orphan dependency reference | Remove invalid dependency ID from array |
+
+## Verification & Drift Auto-Fixes
+
+| Issue | Auto-Fix |
+|-------|----------|
+| Verification debt (missing verification) | Route to /work to trigger verify-agent for affected tasks |
+| Verification debt (failed verification) | Route to /work to re-verify after fixes |
+| Stale "Awaiting Verification" (> 1 hour) | Trigger verify-agent immediately for task |
+| Drift budget exceeded | Present reconciliation UI (REQUIRED before continuing) |
+| Expired deferral | Force reconciliation for expired section |
 
 ## Semantic Auto-Fixes
 
@@ -364,11 +376,19 @@ Move to support/reference/:
 ```
 READ all .claude/tasks/task-*.json files
 READ .claude/dashboard.md
+READ .claude/spec_v{N}.md (current spec)
+READ .claude/drift-deferrals.json (if exists)
 READ CLAUDE.md
 READ all .claude/support/decisions/decision-*.md files
 ```
 
 ### Step 2: Run Checks
+
+Run critical checks (always, block if failed):
+- Verification debt (finished tasks missing verification)
+- Drift budget (deferrals exceeding limit or expired)
+- Stale "Awaiting Verification" (tasks stuck > 1 hour)
+- Dashboard staleness (task_hash mismatch)
 
 Run all checks:
 - Schema validation for each task file
@@ -403,7 +423,9 @@ Run decision validation:
 
 **Report sections:**
 - Task System - Schema & Integrity (checks passed/warnings/errors)
-- Task System - Verification Debt (ERROR if any debt exists)
+- Task System - Verification Debt (ERROR if any debt exists — blocks completion)
+- Task System - Drift Budget (ERROR if exceeded or expired — blocks work)
+- Task System - Dashboard Freshness (ERROR if stale — data unreliable)
 - Task System - Semantic Validation (stale tasks, owner mismatches, orphan deps)
 - Task System - Drift Detection (per-section changes, new/deleted sections, out-of-spec tasks)
 - Questions & Workspace (stale questions, old workspace files)
@@ -429,6 +451,52 @@ Run decision validation:
 ### Task System - Verification Debt
 
 [Checkmark] No verification debt (all finished tasks verified)
+```
+
+**Drift Budget Report Format:**
+```
+### Task System - Drift Budget
+
+[ERROR] Drift Budget Exceeded (BLOCKS WORK)
+  - Active deferrals: 4 (max: 3)
+  - Expired deferrals: 1
+
+  Sections needing reconciliation:
+  - ## Authentication (deferred 2026-01-10, 18 days — EXPIRED)
+  - ## API Endpoints (deferred 2026-01-20, 8 days)
+  - ## Database (deferred 2026-01-22, 6 days)
+  - ## Deployment (deferred 2026-01-25, 3 days)
+
+⚠️ Must reconcile at least 2 sections before continuing.
+   Run /work to start reconciliation.
+```
+
+**If within budget:**
+```
+### Task System - Drift Budget
+
+[Checkmark] Drift budget OK (1 of 3 max deferrals)
+```
+
+**Dashboard Freshness Report Format:**
+```
+### Task System - Dashboard Freshness
+
+[ERROR] Dashboard is stale
+  - Dashboard task_hash: sha256:abc123...
+  - Current task_hash:   sha256:def456...
+  - Dashboard generated: 2026-01-25 10:30 UTC
+  - Tasks modified since: 3
+
+⚠️ Dashboard may not reflect current project state.
+   Auto-fix: Regenerate dashboard
+```
+
+**If current:**
+```
+### Task System - Dashboard Freshness
+
+[Checkmark] Dashboard current (generated 2026-01-28 14:30 UTC, hash matches)
 ```
 
 Each section uses `[Checkmark]` for passes, `[Warning]` for issues, `[Error]` for blockers.
