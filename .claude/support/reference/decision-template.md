@@ -274,6 +274,8 @@ is ruled out — the effort and security risk aren't justified.
 7. Update status to `approved` or `implemented`
 8. Regenerate the dashboard to include the new decision
 
+**See also:** [Choice Classification Guide](choice-classification.md) for when decisions belong in the spec vs. implementation.
+
 ---
 
 ## Tips
@@ -283,6 +285,92 @@ is ruled out — the effort and security risk aren't justified.
 - **Comparison table**: Forces structured thinking; reveals non-obvious differences.
 - **Be honest about trade-offs**: Every choice has costs.
 - **Link related items**: Connect to tasks and other decisions.
+
+---
+
+## Optional: Weighted Scoring Matrix
+
+For high-stakes decisions, use weighted scoring to make evaluation explicit and communicable:
+
+```markdown
+## Weighted Scoring
+
+| Criteria | Weight | Option A | Option B | Option C |
+|----------|--------|----------|----------|----------|
+| [Criterion 1] | 30% | 4/5 | 3/5 | 5/5 |
+| [Criterion 2] | 25% | 5/5 | 4/5 | 3/5 |
+| [Criterion 3] | 25% | 3/5 | 5/5 | 4/5 |
+| [Criterion 4] | 20% | 4/5 | 3/5 | 4/5 |
+| **Weighted Total** | | **4.05** | **3.75** | **4.05** |
+```
+
+### Scoring Guidelines
+
+| Score | Meaning |
+|-------|---------|
+| **5/5** | Fully meets criterion, no concerns |
+| **4/5** | Mostly meets criterion, minor gaps |
+| **3/5** | Partially meets criterion, notable trade-offs |
+| **2/5** | Weakly meets criterion, significant concerns |
+| **1/5** | Does not meet criterion |
+
+### When to Use Weighted Scoring
+
+- Decisions affecting architecture or long-term direction
+- Multiple strong alternatives with different trade-off profiles
+- Need to communicate rationale to stakeholders
+- Want to make implicit preferences explicit
+
+### Calculating Weighted Totals
+
+For each option: `(Weight1 × Score1) + (Weight2 × Score2) + ...`
+
+Example for Option A above:
+- `(0.30 × 4) + (0.25 × 5) + (0.25 × 3) + (0.20 × 4) = 1.2 + 1.25 + 0.75 + 0.8 = 4.0`
+
+---
+
+## Optional: Fallback Plan
+
+For decisions with uncertainty or risk, document what happens if the primary choice doesn't work out:
+
+```markdown
+## Fallback Plan
+
+**Trigger condition:** [When would we reconsider this decision?]
+
+**Fallback approach:** [What's the alternative if the primary fails?]
+
+**Migration path:**
+1. [Step to transition from primary to fallback]
+2. [Data migration or refactoring needed]
+3. [Timeline estimate for migration]
+
+**Sunk cost if triggered:** [What work would be lost or need rework?]
+```
+
+### When to Include a Fallback Plan
+
+- Adopting new/unproven technology
+- Decisions that would be expensive to reverse
+- External dependencies (vendors, APIs, services)
+- Tight timelines where recovery matters
+
+### Example Fallback Plan
+
+```markdown
+## Fallback Plan
+
+**Trigger condition:** Auth.js has breaking changes that block our release, or performance issues emerge at scale (>10k concurrent users).
+
+**Fallback approach:** Migrate to Passport.js with custom session handling.
+
+**Migration path:**
+1. Auth.js abstracts providers — swap to Passport strategies (1-2 days per provider)
+2. Implement session store with Redis (existing infra supports this)
+3. Update middleware to use Passport's `req.user` pattern
+
+**Sunk cost if triggered:** ~1 week of Auth.js-specific configuration work. Core auth logic is provider-agnostic and transfers.
 
 ---
 

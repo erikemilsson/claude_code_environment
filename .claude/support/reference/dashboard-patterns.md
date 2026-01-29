@@ -404,3 +404,88 @@ Add to the Notes & Ideas section:
 ```
 
 **Why:** Without this view, it's easy to lose track of what's actually blocking progress vs. what's parallel work that can wait.
+
+---
+
+## Optional Visualizations
+
+*Added: 2026-01-29*
+
+**Context:** For complex projects, visual diagrams can communicate structure and progress more effectively than tables alone. These are optional additions that projects can adopt when the complexity warrants them.
+
+**Pattern:** Create separate visualization files in `.claude/support/visualizations/` and link from the dashboard or relevant documentation.
+
+### Recommended Visualizations
+
+| File | Purpose | When to Use |
+|------|---------|-------------|
+| `workflow.md` | Phase diagram showing project stages | Multi-phase projects with distinct stages |
+| `dependencies.md` | Choice dependency graph | Projects with many interconnected decisions |
+| `architecture.md` | System component diagram | Complex systems with multiple services |
+| `progress.md` | Status charts and timeline | Stakeholder communication, status reports |
+
+### Example Structure
+
+```
+.claude/support/visualizations/
+├── workflow.md          # Phase flow diagram
+├── dependencies.md      # Spec-level → Implementation-level choices
+├── architecture.md      # System component diagram
+└── progress.md          # Status pie chart, Gantt timeline
+```
+
+### Linking from Dashboard
+
+Add to the Notes & Ideas section:
+```markdown
+## 💡 Notes & Ideas
+
+**Project Visualizations:**
+- [Workflow Phases](support/visualizations/workflow.md)
+- [Decision Dependencies](support/visualizations/dependencies.md)
+- [System Architecture](support/visualizations/architecture.md)
+
+[Your notes here...]
+```
+
+### Visualization File Template
+
+```markdown
+# [Visualization Name]
+
+*Last updated: YYYY-MM-DD*
+
+## Overview
+
+[Brief description of what this visualization shows]
+
+## Diagram
+
+\`\`\`mermaid
+[mermaid diagram code]
+\`\`\`
+
+## Legend
+
+- **[Symbol/Color 1]**: [Meaning]
+- **[Symbol/Color 2]**: [Meaning]
+
+## Notes
+
+[Any context needed to interpret the diagram]
+```
+
+### When NOT to Use Visualizations
+
+- Simple projects with linear task lists
+- When the dashboard tables already communicate clearly
+- When no one will maintain them (stale diagrams are worse than none)
+
+### Maintenance
+
+Visualizations should be updated when:
+- System architecture changes significantly
+- New major decisions affect the dependency graph
+- Project enters a new phase
+
+See [Mermaid Patterns](mermaid-patterns.md) for reusable diagram templates.

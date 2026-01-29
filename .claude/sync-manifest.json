@@ -13,6 +13,8 @@
       ".claude/support/reference/decision-guide.md",
       ".claude/support/reference/dashboard-patterns.md",
       ".claude/support/reference/system-overview.md",
+      ".claude/support/reference/choice-classification.md",
+      ".claude/support/reference/mermaid-patterns.md",
       ".claude/support/previous_specifications/README.md",
       ".claude/vision/README.md"
     ],
