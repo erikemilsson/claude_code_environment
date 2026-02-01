@@ -19,7 +19,7 @@
       ".claude/vision/README.md"
     ],
     "customize": [
-      "CLAUDE.md",
+      ".claude/CLAUDE.md",
       "README.md",
       ".claude/support/questions.md"
     ],

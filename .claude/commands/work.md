@@ -285,7 +285,7 @@ Break the spec into granular tasks:
 8. **Map dependencies** - What must complete before what
 9. **Regenerate dashboard** - Read all task-*.json files and regenerate dashboard.md
    - **Follow the canonical template** in `.claude/support/reference/dashboard-patterns.md` — use exact section headings, emojis, and table formats defined there
-   - **Check section toggles** — if `dashboard_sections` config exists (in spec frontmatter or CLAUDE.md), respect `build`/`maintain`/`exclude`/`preserve` modes per section. See dashboard-patterns.md for details.
+   - **Check section toggles** — if `dashboard_sections` config exists (in spec frontmatter or `.claude/CLAUDE.md`), respect `build`/`maintain`/`exclude`/`preserve` modes per section. See dashboard-patterns.md for details.
    - **Atomicity rules:**
      - Tasks: Only include tasks that have corresponding `task-*.json` files. Never add a task to the dashboard without creating its JSON file first.
      - Decisions: Only include decisions that have corresponding `decision-*.md` files in `.claude/support/decisions/`. If a decision is significant enough for the dashboard, create the file first.

@@ -13,7 +13,7 @@ Run all checks and output a summary report. This helps new users ensure they've 
 
 ### Checks to Perform
 
-1. **CLAUDE.md customization**
+1. **`.claude/CLAUDE.md` customization**
    - Check for `[bracketed text]` placeholders
    - Look for template markers like "DELETE EVERYTHING ABOVE"
    - ✓ Pass: No placeholders found
@@ -59,7 +59,7 @@ Run all checks and output a summary report. This helps new users ensure they've 
 
 ### Results
 
-✓ CLAUDE.md customized
+✓ .claude/CLAUDE.md customized
 ✓ version.json configured
 ✓ Spec file exists
 ⚠ Spec readiness: needs more detail
@@ -83,7 +83,7 @@ Run all checks and output a summary report. This helps new users ensure they've 
 
 ## Check Details
 
-### CLAUDE.md Placeholders
+### `.claude/CLAUDE.md` Placeholders
 
 Look for these patterns:
 - `[bracketed text]` - unfilled placeholders
@@ -147,7 +147,7 @@ Verify the working directory in permission paths matches the actual project path
 `/setup-check` is the gate before `/work`. The workflow is:
 
 1. Create spec: Run `/iterate`
-2. Configure project: Fix CLAUDE.md, version.json, README.md
+2. Configure project: Fix `.claude/CLAUDE.md`, version.json, README.md
 3. Validate: `/setup-check` → all green
 4. Build: `/work`
 

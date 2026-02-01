@@ -48,10 +48,10 @@ Below the metadata block, include:
 
 ### Section Toggle Configuration
 
-Users can control which sections Claude builds by adding a `dashboard_sections` block to the spec frontmatter or to a `dashboard-config` section in CLAUDE.md:
+Users can control which sections Claude builds by adding a `dashboard_sections` block to the spec frontmatter or to a `dashboard-config` section in `.claude/CLAUDE.md`:
 
 ```yaml
-# In spec frontmatter or CLAUDE.md
+# In spec frontmatter or .claude/CLAUDE.md
 dashboard_sections:
   project_context: build        # actively create/update
   needs_attention: build
@@ -75,7 +75,7 @@ dashboard_sections:
 
 **Default:** If no configuration exists, all sections default to `build`.
 
-**Where to configure:** Add `dashboard_sections` to the YAML frontmatter in `spec_v{N}.md`, or add a `## Dashboard Configuration` section in CLAUDE.md with the toggles. The spec frontmatter takes precedence.
+**Where to configure:** Add `dashboard_sections` to the YAML frontmatter in `spec_v{N}.md`, or add a `## Dashboard Configuration` section in `.claude/CLAUDE.md` with the toggles. The spec frontmatter takes precedence.
 
 ### Regeneration Rules
 
@@ -103,7 +103,7 @@ Every dashboard regeneration MUST complete these steps. All commands and agents 
 
 3. **Generate dashboard**
    - Use exact section headings from Section Definitions table above
-   - Check `dashboard_sections` config (spec frontmatter or CLAUDE.md)
+   - Check `dashboard_sections` config (spec frontmatter or `.claude/CLAUDE.md`)
    - Respect `build`/`maintain`/`exclude`/`preserve` modes
    - Enforce atomicity: only tasks with JSON files, only decisions with MD files
 

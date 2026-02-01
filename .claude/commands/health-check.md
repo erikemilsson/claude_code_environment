@@ -1,6 +1,6 @@
 # Health Check
 
-Combined system health check for tasks, decisions, and CLAUDE.md.
+Combined system health check for tasks, decisions, and `.claude/CLAUDE.md`.
 
 ## Usage
 ```
@@ -10,7 +10,7 @@ Combined system health check for tasks, decisions, and CLAUDE.md.
 
 ## Purpose
 
-Over time, task systems drift from standards, decision records become stale, and CLAUDE.md files accumulate bloat. This command catches all these issues in one pass.
+Over time, task systems drift from standards, decision records become stale, and `.claude/CLAUDE.md` files accumulate bloat. This command catches all these issues in one pass.
 
 ---
 
@@ -327,7 +327,7 @@ Validates that the dashboard is current with task state:
 
 ---
 
-## Part 2: CLAUDE.md Audit
+## Part 2: .claude/CLAUDE.md Audit
 
 Detects bloat and offers guided cleanup.
 
@@ -356,7 +356,7 @@ Detects bloat and offers guided cleanup.
 
 ## What Belongs Inline
 
-Keep in CLAUDE.md:
+Keep in `.claude/CLAUDE.md`:
 - Project overview (2-3 sentences)
 - Critical commands (one-liners)
 - Key conventions (brief list)
@@ -379,7 +379,7 @@ READ all .claude/tasks/task-*.json files
 READ .claude/dashboard.md
 READ .claude/spec_v{N}.md (current spec)
 READ .claude/drift-deferrals.json (if exists)
-READ CLAUDE.md
+READ .claude/CLAUDE.md
 READ all .claude/support/decisions/decision-*.md files
 ```
 
@@ -409,7 +409,7 @@ Run questions and workspace staleness (always):
 - Questions older than 14 days in `.claude/support/questions.md`
 - Files older than 30 days in `.claude/support/workspace/`
 
-Run CLAUDE.md audit:
+Run `.claude/CLAUDE.md` audit:
 - Line counts
 - Section sizes
 - Code block lengths
@@ -430,7 +430,7 @@ Run decision validation:
 - Task System - Semantic Validation (stale tasks, owner mismatches, orphan deps)
 - Task System - Drift Detection (per-section changes, new/deleted sections, out-of-spec tasks)
 - Questions & Workspace (stale questions, old workspace files)
-- CLAUDE.md (line counts, flagged sections/code blocks)
+- `.claude/CLAUDE.md` (line counts, flagged sections/code blocks)
 - Decision System (schema validation, staleness, completeness, anchors)
 - Summary (overall status: HEALTHY / NEEDS ATTENTION / CRITICAL ISSUES)
 
@@ -688,7 +688,7 @@ Quick check: ❌ BLOCKS COMPLETION
 
 **Empty task list:** Reports "0 tasks - all checks pass" (healthy state for new projects)
 
-**Large CLAUDE.md (>120 lines):** Flags as error, suggests moving sections to reference/
+**Large `.claude/CLAUDE.md` (>120 lines):** Flags as error, suggests moving sections to reference/
 
 **Subtask ID collisions:** Detects `5_1` already exists before creating duplicate
 
@@ -706,7 +706,7 @@ Quick check: ❌ BLOCKS COMPLETION
 - After extensive task operations
 - When something feels "off"
 - Before major handoffs
-- Periodically (weekly recommended for tasks, monthly for CLAUDE.md)
+- Periodically (weekly recommended for tasks, monthly for `.claude/CLAUDE.md`)
 - **For template updates**, use `/update-template`
 
 ## Reference

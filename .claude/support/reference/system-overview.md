@@ -1,6 +1,6 @@
 # System Overview
 
-Reference documentation for the environment builder system. Moved here from CLAUDE.md to keep the main instructions file focused on project-specific configuration.
+Reference documentation for the environment builder system. Moved here from `.claude/CLAUDE.md` to keep the main instructions file focused on project-specific configuration.
 
 ## How This System Works
 
@@ -47,7 +47,7 @@ Defines which files sync from template updates vs stay project-specific:
 | Category | Purpose | Examples |
 |----------|---------|----------|
 | `sync` | Updated from template | Commands, agents, reference docs |
-| `customize` | User-editable, template provides defaults | CLAUDE.md, README.md, questions.md |
+| `customize` | User-editable, template provides defaults | `.claude/CLAUDE.md`, README.md, questions.md |
 | `ignore` | Project-specific data, never synced | Tasks, dashboard, decision records, learnings |
 
 ### settings.local.json
@@ -58,6 +58,7 @@ Pre-approved permissions for consistent Claude Code behavior. Ensures the templa
 
 ```
 .claude/
+├── CLAUDE.md                  # Instructions for Claude Code
 ├── dashboard.md               # Project Dashboard (auto-generated)
 ├── verification-result.json   # Latest verification outcome (written by verify-agent)
 ├── spec_v{N}.md               # Project specification (source of truth)

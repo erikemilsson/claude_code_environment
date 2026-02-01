@@ -11,7 +11,7 @@ cd my-project
 rm -rf .git && git init
 
 # Customize for your project
-# 1. Edit CLAUDE.md - Delete the meta section (everything above the ---), then customize
+# 1. Edit .claude/CLAUDE.md - Delete the meta section (everything above the ---), then customize
 # 2. Create your spec: run /iterate in Claude Code
 # 3. Edit this README.md - Replace with your project documentation
 ```
@@ -19,8 +19,8 @@ rm -rf .git && git init
 ## What's Included
 
 ```
-├── CLAUDE.md                      # Instructions for Claude Code
 └── .claude/
+    ├── CLAUDE.md                  # Instructions for Claude Code
     ├── spec_v{N}.md               # Source of truth: requirements
     ├── dashboard.md               # Project Dashboard (auto-generated)
     ├── tasks/                     # Task data
