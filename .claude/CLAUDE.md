@@ -30,7 +30,9 @@ Instructions for Claude Code when working in this project.
 
 [Brief description of what this project does]
 
-## How This System Works
+> **Scope note:** "The project" and "the system" refer to what's being built. The supporting workflow infrastructure in `.claude/` is "the environment."
+
+## How the Environment Works
 
 **Your primary interface is the dashboard** (`.claude/dashboard.md`). Claude tracks tasks in `.claude/tasks/`, implements according to spec, and surfaces decision points. You review and approve at phase boundaries.
 
@@ -66,7 +68,9 @@ This project uses a phased workflow: **Spec** (define requirements) → **Execut
 
 For details on phases, agent handoffs, and checkpoints, see `.claude/support/reference/workflow.md`.
 
-## Commands
+## Environment Commands
+
+Commands defined in `.claude/commands/` for this workflow. Not Claude Code built-ins (`/help`, `/clear`).
 
 ### Primary
 - `/work` - Start or continue work (checks spec alignment, decomposes tasks, routes to agents)
