@@ -250,6 +250,31 @@ See `.claude/support/reference/spec-checklist.md` for full readiness criteria.
 
 ---
 
+## Spec Versioning
+
+When changes are significant enough to warrant a new spec version (major scope changes, phase transitions, substantial rewrites), follow this process:
+
+### Before Creating New Version
+
+1. **Archive current spec**: Copy `.claude/spec_v{N}.md` to `.claude/support/previous_specifications/spec_v{N}.md`
+2. **Create new spec**: Write the new version as `.claude/spec_v{N+1}.md`
+3. **Update references**: Dashboard and tasks will reference the new version
+
+**When to create a new version:**
+- Major scope changes or pivots
+- Transitioning between project phases
+- Substantial rewrites that change multiple sections
+- User explicitly requests a new version
+
+**When NOT to create a new version:**
+- Minor clarifications or fixes
+- Adding details to existing sections
+- Typo corrections
+
+**Note:** Since spec editing is `suggest_only`, Claude suggests the new version content; the user creates and saves the files. When suggesting a new version, remind the user to archive the current spec first.
+
+---
+
 ## Working with Vision Documents
 
 Vision documents capture ideation, design philosophy, and future thinking. Common sources:

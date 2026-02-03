@@ -120,6 +120,18 @@ When facing significant choices, create a decision record rather than deciding i
 
 Temporary documents go in `.claude/support/workspace/` (scratch, research, drafts). Never create working documents in the project root. See `.claude/support/reference/system-overview.md` for details.
 
+## Archiving Rules
+
+Archived files have specific locations. Do not create new archive locations.
+
+| What | Archive Location | When |
+|------|------------------|------|
+| Spec versions | `.claude/support/previous_specifications/spec_v{N}.md` | Before creating v{N+1} |
+| Decomposed specs | `.claude/support/previous_specifications/spec_v{N}_decomposed.md` | After task decomposition |
+| Completed tasks | `.claude/tasks/archive/` | When task count exceeds 100 |
+
+See `.claude/support/reference/paths.md` for all canonical paths.
+
 ## Project Structure
 
 See `.claude/support/reference/system-overview.md` for the full directory tree and template configuration file documentation.
@@ -131,3 +143,27 @@ See `.claude/support/reference/system-overview.md` for the full directory tree a
 ## Conventions
 
 [Project-specific coding conventions, naming patterns, etc.]
+
+## Advanced Patterns
+
+Optional patterns for complex projects. These are disabled by default and enabled via configuration.
+
+### Stage Gates
+
+Approval checkpoints that block work on specific folders until criteria are met.
+
+- **Purpose:** Enforce "do X before Y" workflows (pilot→production, design review gates)
+- **Use cases:** Multi-phase projects, compliance gates, stakeholder approvals
+- **Enable:** Add `stage_gates` to spec frontmatter
+- **Command:** `/check-gates` - View gate status and unmet criteria
+- **Docs:** [extension-patterns.md#stage-gates](support/reference/extension-patterns.md#stage-gates)
+
+### Evaluation Choices
+
+Structured decision-making with weighted scoring matrices.
+
+- **Purpose:** Track technical/methodological decisions with explicit criteria and trade-offs
+- **Features:** Weighted scoring, pass/fail thresholds, guided workflow, dashboard integration
+- **Enable:** Use `technical_choice` or `methodological_choice` category in decision records
+- **Command:** `/evaluate-choice` - Create and score evaluations
+- **Docs:** [extension-patterns.md#evaluation-choices](support/reference/extension-patterns.md#evaluation-choices)

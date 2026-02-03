@@ -381,6 +381,8 @@ READ .claude/spec_v{N}.md (current spec)
 READ .claude/drift-deferrals.json (if exists)
 READ .claude/CLAUDE.md
 READ all .claude/support/decisions/decision-*.md files
+SCAN .claude/support/previous_specifications/ for archived specs
+SCAN for misplaced spec files in non-canonical locations
 ```
 
 ### Step 2: Run Checks
@@ -420,6 +422,11 @@ Run decision validation:
 - Staleness detection
 - Completeness verification
 
+Run archive validation:
+- Spec version continuity (v1 to v{N-1} all exist in canonical location)
+- Misplaced spec file detection (specs in wrong directories)
+- Optional: decomposed spec snapshot validation
+
 ### Step 3: Report
 
 **Report sections:**
@@ -432,6 +439,7 @@ Run decision validation:
 - Questions & Workspace (stale questions, old workspace files)
 - `.claude/CLAUDE.md` (line counts, flagged sections/code blocks)
 - Decision System (schema validation, staleness, completeness, anchors)
+- Archive Validation (spec version continuity, misplaced files)
 - Summary (overall status: HEALTHY / NEEDS ATTENTION / CRITICAL ISSUES)
 
 **Verification Debt Report Format:**
@@ -613,7 +621,111 @@ Reports: record count, schema validation, dashboard consistency, staleness (draf
 
 ---
 
-## Part 4: Lightweight Health Checks (Continuous)
+## Part 4: Archive Validation
+
+Validates spec archive consistency and detects misplaced archived files.
+
+### Validation Checks
+
+#### 1. Spec Version Continuity
+
+Ensures all previous spec versions are properly archived:
+
+**Algorithm:**
+1. Scan `.claude/` for current spec file matching `spec_v{N}.md` pattern
+2. Extract current version number N
+3. For each version from 1 to N-1:
+   - Check if `.claude/support/previous_specifications/spec_v{i}.md` exists
+   - If missing, report as error
+
+**Report format (issues found):**
+```
+Archive validation: ⚠️ Issues found
+  - Missing: .claude/support/previous_specifications/spec_v2.md
+  - Missing: .claude/support/previous_specifications/spec_v4.md
+```
+
+**Report format (all clear):**
+```
+Archive validation: ✓
+```
+
+#### 2. Misplaced Spec Files
+
+Detects spec files in non-canonical locations:
+
+**Locations to scan for misplaced files:**
+- `.claude/archive/` (incorrect legacy location)
+- `.claude/previous_specifications/` (missing `support/` prefix)
+- `.archive/` (root archive, not for specs)
+- `.claude/specs/` (incorrect plural form)
+- Project root (specs should never be here)
+
+**Detection:**
+- Find any files matching `spec_v*.md` pattern in above locations
+- Report each as "wrong location" with suggested correct path
+
+**Report format:**
+```
+Archive validation: ⚠️ Issues found
+  - Wrong location: .claude/archive/spec_v3.md (should be in support/previous_specifications/)
+  - Wrong location: .claude/previous_specifications/spec_v1.md (should be in support/previous_specifications/)
+```
+
+#### 3. Decomposed Spec Validation
+
+Optionally checks for decomposed spec snapshots:
+
+**Algorithm:**
+1. For each archived spec `spec_v{i}.md` in previous_specifications/
+2. If tasks exist that reference spec version i (via `spec_version` field)
+3. Check if `spec_v{i}_decomposed.md` exists in previous_specifications/
+4. Report missing decomposed files as warnings (not errors)
+
+**Report format:**
+```
+[Warning] Missing decomposed snapshots:
+  - spec_v2_decomposed.md (tasks 5-12 reference v2)
+```
+
+### Archive Report Format
+
+**All clear:**
+```
+### Archive Validation
+
+Archive validation: ✓
+  - Spec versions: v1-v4 all archived
+  - No misplaced files detected
+```
+
+**Issues found:**
+```
+### Archive Validation
+
+Archive validation: ⚠️ Issues found
+  - Missing: .claude/support/previous_specifications/spec_v2.md
+  - Wrong location: .claude/archive/spec_v3.md (should be in support/previous_specifications/)
+```
+
+### Archive Auto-Fixes
+
+| Issue | Auto-Fix |
+|-------|----------|
+| Spec in wrong location | Move file to `.claude/support/previous_specifications/` |
+| Missing archived spec | Cannot auto-fix (spec content unknown) — warn user |
+| Missing decomposed spec | Cannot auto-fix — informational only |
+
+### Non-Fixable Issues (Manual Required)
+
+| Issue | Why Manual |
+|-------|------------|
+| Missing archived spec | Original content may be lost; user needs to locate or recreate |
+| Spec content mismatch | Need to determine which version is authoritative |
+
+---
+
+## Part 5: Lightweight Health Checks (Continuous)
 
 A subset of checks designed to run automatically after `/work`, `/work complete`, and `/breakdown` commands.
 
