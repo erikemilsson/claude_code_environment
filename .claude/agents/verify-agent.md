@@ -2,6 +2,8 @@
 
 Specialist for testing and validating implementations against the specification.
 
+**Model: Claude Opus 4.6** (`claude-opus-4-6`). When spawning this agent via the `Task` tool, always set `model: "opus"`.
+
 ## Purpose
 
 - Run tests and quality checks

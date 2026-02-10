@@ -4,20 +4,22 @@ Single source of truth for task management definitions.
 
 ## Difficulty Scale (1-10)
 
+> **Calibrated for Claude Opus 4.6.** These difficulty ratings and breakdown thresholds assume Opus-level reasoning capability. Tasks rated 5-6 ("Substantial") are at the upper limit of what should be attempted without breakdown — Opus can handle the design decisions involved. Tasks at 7+ **must** be broken down regardless of model confidence.
+
 | Level | Category | Action | Examples |
 |-------|----------|--------|----------|
-| 1-2 | Routine | Just do it | Fix typo, add field, update config |
-| 3-4 | Standard | May take multiple steps | CRUD for entity, API endpoint, OAuth integration |
-| 5-6 | Substantial | Design decisions needed | New module, real-time features, RBAC |
-| 7-8 | Large scope | **MUST break down first** | Microservice migration, replace database |
-| 9-10 | Multi-phase | **MUST break down into phases** | Architecture redesign, security overhaul |
+| 1-2 | Routine | Just do it | Fix typo, add field, update config, simple CRUD, add validation rules |
+| 3-4 | Standard | May take multiple steps | OAuth integration, REST API with auth, DB schema + migrations, component library setup |
+| 5-6 | Substantial | Design decisions needed | Full auth system (JWT + sessions + RBAC), real-time WebSocket features, payment integration, new service with API + tests |
+| 7-8 | Large scope | **MUST break down first** | Microservice extraction from monolith, full DB migration (schema + data + rollback), multi-tenant architecture |
+| 9-10 | Multi-phase | **MUST break down into phases** | Platform migration (e.g., Rails → Next.js), architecture redesign, security overhaul across all services |
 
 ### When to Break Down
 
-Ask: "Can this be completed in one focused session?"
-- **Yes** → Difficulty 1-6, just do it
-- **No, too much scope** → Difficulty 7-8, break into chunks
-- **No, need discovery** → Difficulty 9-10, break into phases
+Ask: "Can Opus 4.6 complete this reliably in one focused session, with changes that are reviewable and verifiable as a unit?"
+- **Yes** → Difficulty 1-6, execute directly
+- **No, too many interacting parts** → Difficulty 7-8, break into chunks
+- **No, requires discovery or affects the whole system** → Difficulty 9-10, break into phases
 
 ## Status Values
 

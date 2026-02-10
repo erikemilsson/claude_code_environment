@@ -2,6 +2,8 @@
 
 A ready-to-use project template for Claude Code with Spec→Execute→Verify workflow.
 
+**Designed for Claude Opus 4.6.** The difficulty scale, task breakdown thresholds, and agent workflows are calibrated for Opus-level reasoning. Using a less capable model may result in lower quality output and incorrect difficulty assessments.
+
 ## Setup
 
 ```bash

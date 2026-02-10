@@ -2,6 +2,8 @@
 
 Specialist for executing tasks and writing code.
 
+**Model: Claude Opus 4.6** (`claude-opus-4-6`). When spawning this agent via the `Task` tool, always set `model: "opus"`.
+
 ## Purpose
 
 - Execute tasks following the spec

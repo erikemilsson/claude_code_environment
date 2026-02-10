@@ -26,6 +26,10 @@ Instructions for working on the claude_code_environment repository itself:
 
 Instructions for Claude Code when working in this project.
 
+## Model Requirement
+
+This environment is designed for **Claude Opus 4.6** (`claude-opus-4-6`). The difficulty scale, task breakdown thresholds, and agent workflows are calibrated for Opus-level reasoning. All agents (implement-agent, verify-agent) must run on Opus 4.6.
+
 ## Project Overview
 
 [Brief description of what this project does]

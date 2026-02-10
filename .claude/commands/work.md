@@ -527,13 +527,13 @@ Before spawning agents, update every task in the batch:
 
 **3. Spawn parallel agents:**
 
-Use Claude Code's `Task` tool to spawn one agent per task. Each agent receives:
+Use Claude Code's `Task` tool to spawn one agent per task. **Always set `model: "opus"`** to ensure agents run on Claude Opus 4.6. Each agent receives:
 - The task JSON to execute
 - Instructions to read `.claude/agents/implement-agent.md`
 - Instructions to follow Steps 2, 4, 5, 6a, and 6b (understand, implement, self-review, mark awaiting verification, trigger per-task verification)
 - **Explicit instruction: "DO NOT regenerate dashboard. DO NOT select next task. DO NOT check parent auto-completion. Return results when verification completes."**
 
-All agents run concurrently via parallel `Task` tool calls.
+All agents run concurrently via parallel `Task` tool calls with `model: "opus"`.
 
 **4. Collect results:**
 
