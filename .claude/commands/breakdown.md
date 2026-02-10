@@ -54,6 +54,41 @@ Split a complex task into smaller subtasks.
 - Task 5_2: "Create login/logout flows" (difficulty 4)
 - Task 5_3: "Add session management" (difficulty 5)
 
+## Creating Parallel-Friendly Subtasks
+
+When breaking down tasks, consider whether subtasks can run concurrently. `/work` automatically dispatches parallel-eligible tasks, but you can maximize parallelism by designing subtasks well:
+
+**Guidelines:**
+- **Minimize file overlaps** between subtasks — tasks sharing `files_affected` cannot run in parallel
+- **Use the `N_Ma` convention** for parallel-intent subtasks (e.g., `5_1a`, `5_1b`) — these signal to `/work` that they were designed for concurrent execution
+- **Set `files_affected` explicitly** on each subtask — this enables the file conflict detection that makes parallel dispatch safe. Tasks with empty `files_affected` are excluded from parallel batches unless `parallel_safe: true`
+- **Mark research tasks `parallel_safe: true`** — analysis/research tasks with no file side effects can run in parallel even without `files_affected`
+
+**Example — Parallel breakdown with file assignments:**
+
+```
+Task 5: "Build auth system" (difficulty 8) → Broken Down
+
+  Task 5_1a: "Setup OAuth providers"
+    files_affected: ["src/auth/oauth.ts", "src/config/oauth.json"]
+    difficulty: 5
+
+  Task 5_1b: "Create session management"
+    files_affected: ["src/auth/session.ts", "src/db/sessions.sql"]
+    difficulty: 5
+
+  Task 5_1c: "Research auth best practices"
+    files_affected: []
+    parallel_safe: true
+    difficulty: 3
+
+  Task 5_2: "Create login/logout flows" (depends on 5_1a, 5_1b)
+    files_affected: ["src/routes/auth.ts", "src/views/login.html"]
+    difficulty: 4
+```
+
+In this example, tasks 5_1a, 5_1b, and 5_1c can all run in parallel (no file overlaps, 5_1c is `parallel_safe`). Task 5_2 runs after them (has dependencies).
+
 ## Rules
 - Keep subtask difficulty <= 6
 - Subtasks should be independently completable

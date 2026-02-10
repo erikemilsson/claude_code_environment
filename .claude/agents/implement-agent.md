@@ -79,7 +79,7 @@ Update task status:
 }
 ```
 
-Only one task "In Progress" at a time.
+In sequential mode: one task "In Progress" at a time. In parallel mode (dispatched by `/work`): multiple tasks allowed — `/work` manages eligibility and file conflict checks.
 
 ### Step 4: Implement
 
@@ -147,6 +147,14 @@ Immediately after setting "Awaiting Verification", trigger verification:
 #### Step 6c: Post-Verification Cleanup
 
 After verification completes (pass or fail):
+
+**Parallel Mode Detection:** If your Task instructions include "DO NOT regenerate dashboard", you are running as a parallel agent dispatched by `/work`. In parallel mode:
+- Do NOT regenerate dashboard (coordinator handles it)
+- Do NOT check parent auto-completion (coordinator handles it)
+- Do NOT select next task
+- Return your results immediately to the coordinator
+
+**If running in sequential mode (normal):**
 
 **If verification passed:**
 - Check parent auto-completion:
@@ -256,7 +264,7 @@ Task is complete when:
 ## Anti-Patterns
 
 **Avoid:**
-- Working on multiple tasks at once
+- Working on multiple tasks at once (UNLESS dispatched in parallel by `/work`)
 - Skipping the self-review step
 - Making changes outside task scope
 - Leaving tasks "In Progress" for long periods
@@ -264,7 +272,7 @@ Task is complete when:
 - Proceeding when you notice spec misalignment
 
 **Instead:**
-- One task at a time
+- One task at a time (or parallel batch managed by `/work`)
 - Always self-review before completing
 - Create new tasks for discovered work
 - Complete or block tasks promptly

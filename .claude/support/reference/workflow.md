@@ -5,19 +5,33 @@ The Spec → Execute → Verify workflow for autonomous multi-phase projects.
 ## Overview
 
 ```
-┌──────────┐    ┌───────────────────────────────────────┐    ┌──────────┐
-│   Spec   │ -> │              Execute                   │ -> │  Verify  │
-│          │    │  ┌────────────┐   ┌────────────────┐  │    │ (phase)  │
-│ Define   │    │  │ Implement  │ -> │ Verify (task)  │  │    │          │
-│ what     │    │  │ task N     │   │ task N         │  │    │ Validate │
-│          │    │  └────────────┘   └────────────────┘  │    │ all ACs  │
-│          │    │       ^                │               │    │          │
-│          │    │       └── (if fail) ───┘               │    │          │
-│          │    │       v (if pass)                      │    │          │
-│          │    │  next task...                          │    │          │
-└──────────┘    └───────────────────────────────────────┘    └──────────┘
-     ^                                                            │
-     └──────────── (if issues found) ────────────────────────────┘
+┌──────────┐    ┌──────────────────────────────────────────────────┐    ┌──────────┐
+│   Spec   │ -> │                    Execute                        │ -> │  Verify  │
+│          │    │                                                    │    │ (phase)  │
+│ Define   │    │  ┌─ Parallel batch (when eligible) ─────────────┐ │    │          │
+│ what     │    │  │ ┌──────────┐  ┌──────────┐  ┌──────────┐    │ │    │ Validate │
+│          │    │  │ │impl → vfy│  │impl → vfy│  │impl → vfy│    │ │    │ all ACs  │
+│          │    │  │ │ task A   │  │ task B   │  │ task C   │    │ │    │          │
+│          │    │  │ └──────────┘  └──────────┘  └──────────┘    │ │    │          │
+│          │    │  └──────────────────────────────────────────────┘ │    │          │
+│          │    │       v (collect results, single dashboard regen)  │    │          │
+│          │    │  next batch or sequential task...                  │    │          │
+└──────────┘    └──────────────────────────────────────────────────┘    └──────────┘
+     ^                                                                        │
+     └──────────── (if issues found) ────────────────────────────────────────┘
+```
+
+Each parallel lane runs the full implement → verify cycle independently. The `/work` coordinator manages batching, result collection, and a single dashboard regeneration. When tasks are not parallel-eligible, execution falls back to the sequential one-at-a-time model shown below:
+
+```
+  ┌────────────┐   ┌────────────────┐
+  │ Implement  │ -> │ Verify (task)  │
+  │ task N     │   │ task N         │
+  └────────────┘   └────────────────┘
+       ^                │
+       └── (if fail) ───┘
+       v (if pass)
+  next task...
 ```
 
 **Core principle:** The spec is the living source of truth. All work should align with it, or the spec should be updated intentionally.
@@ -171,6 +185,64 @@ By separating concerns:
 9. Issues found become new tasks, back to implement-agent
 
 This separation produces higher quality output than a single agent could achieve alone.
+
+---
+
+## Parallel Execution
+
+By default, `/work` dispatches multiple tasks concurrently when they are independent. Each parallel task still runs the full atomic implement → verify cycle. The coordinator manages batching, result collection, and a single dashboard regeneration.
+
+### Eligibility Criteria
+
+A task is eligible for parallel dispatch when ALL conditions are met:
+
+| Condition | Rationale |
+|-----------|-----------|
+| Status is "Pending" | Only unstarted tasks can be batched |
+| Owner is not "human" | Human tasks require manual action |
+| All dependencies are "Finished" | No unresolved blockers |
+| No stage gate blocks the task | Gate criteria must be met |
+| No undecided evaluation choice blocks it | Decision dependencies resolved |
+| Difficulty < 7 | Complex tasks need breakdown first |
+| `files_affected` don't overlap with other batch tasks | Prevents file conflicts |
+
+Tasks with empty `files_affected` and no `parallel_safe: true` are excluded from parallel batches (unknown file impact). Set `parallel_safe: true` on research/analysis tasks that have no file side effects.
+
+### How It Works
+
+1. **Gather candidates** — `/work` collects all eligible tasks
+2. **Build conflict-free batch** — Pairwise check of `files_affected`; add tasks to batch only if no file overlaps with any existing batch member
+3. **Cap batch size** — Limit to `max_parallel_tasks` (default: 3, configurable in spec frontmatter)
+4. **Dispatch** — If batch size >= 2, set all to "In Progress" and spawn parallel agents via Claude Code's `Task` tool. Each agent reads `implement-agent.md` and runs Steps 2/4/5/6a/6b independently
+5. **Collect results** — Wait for all agents to complete
+6. **Post-parallel cleanup** — Check parent auto-completion, single dashboard regeneration, lightweight health check
+
+### Constraints
+
+- **Verification is still per-task** — Each agent runs its own implement → verify cycle
+- **Dashboard regeneration is coordinator-only** — Parallel agents do NOT regenerate the dashboard; the `/work` coordinator does it once after all agents finish
+- **Parent auto-completion is deferred** — The coordinator checks parent completion after collecting all results, preventing races when siblings finish simultaneously
+- **Phase-level verification remains sequential** — Runs once when ALL tasks are done
+
+### Configuration
+
+In spec frontmatter (optional — defaults apply if absent):
+
+```yaml
+parallel_execution:
+  max_parallel_tasks: 3    # default: 3
+  enabled: true            # default: true
+```
+
+Set `enabled: false` to force sequential execution for the entire project.
+
+### Fallback to Sequential
+
+Parallel execution falls back to sequential (one task at a time) when:
+- Only one eligible task exists
+- All eligible tasks have file conflicts with each other
+- `parallel_execution.enabled` is `false`
+- A single task is specified via `/work {task-id}`
 
 ---
 

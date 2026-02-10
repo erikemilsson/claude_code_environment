@@ -202,6 +202,124 @@ Check request against spec:
 - Small improvements within existing scope
 - Documentation
 
+### Step 2b: Stage Gate Check
+
+If the spec has `stage_gates` configured, check whether any gate blocks the intended work:
+
+```
+1. Read stage_gates from spec frontmatter
+2. IF no stage_gates configured:
+   → Skip to Step 3
+
+3. Identify target files/folders:
+   - For specific task: read files_affected from task
+   - For ad-hoc request: determine likely affected paths
+   - For auto-detect: skip gate check (gates are checked when routing to implement-agent)
+
+4. For each gate, check if target intersects with 'blocks' list:
+   - IF target is in 'allows' list → gate does not apply (bypass)
+   - IF target is in 'blocks' list → check gate status
+
+5. Check gate status by parsing criteria_file:
+   - Count [x] (checked) and [ ] (unchecked) checkboxes
+   - PASSED: all checkboxes checked
+   - BLOCKED: any checkbox unchecked
+
+6. IF any applicable gate is BLOCKED:
+   ├─ Do NOT proceed to implement-agent
+   │
+   │  🚫 Stage Gate Blocked: {gate_name}
+   │
+   │  This gate blocks work on: {blocked_paths}
+   │
+   │  Unmet criteria:
+   │  - [ ] {criterion 1}
+   │  - [ ] {criterion 2}
+   │
+   │  To proceed:
+   │  1. Complete the criteria in {criteria_file}
+   │  2. Run /check-gates to verify
+   │  3. Run /work again
+   │
+   └─ Return control to user
+
+7. IF all applicable gates are PASSED (or no gates apply):
+   → Log: "Gate check: ✓" (or "No gates configured")
+   → Proceed to Step 3
+```
+
+**Key rules:**
+
+- **Reading files is never blocked** - Gates only apply to creation/modification
+- **'allows' overrides 'blocks'** - Files in `allows` folders bypass gate checks even if a parent folder is in `blocks`
+- **Multiple gates can apply** - A file can be blocked by multiple gates; all must pass
+- **Auto-detect mode defers check** - When no specific task/request, gates are checked when selecting a task in implement-agent
+
+**Example gate configuration:**
+```yaml
+stage_gates:
+  - id: pilot-approval
+    name: Pilot Approval Gate
+    criteria_file: .claude/gates/pilot-criteria.md
+    blocks:
+      - src/production/
+      - deploy/
+    allows:
+      - src/production/config/  # Can modify config even during pilot
+```
+
+**See also:** `/check-gates` command for checking gate status independently.
+
+### Step 2c: Parallelism Eligibility Assessment
+
+After stage gate checks, assess whether multiple tasks can be dispatched in parallel.
+
+**1. Read configuration:**
+```
+Read parallel_execution from spec frontmatter:
+├─ enabled: true (default)
+├─ max_parallel_tasks: 3 (default)
+└─ If not present, use defaults
+```
+
+If `enabled: false`, skip to Step 3 (sequential mode).
+
+**2. Gather eligible tasks:**
+```
+eligible = tasks where ALL of:
+  - status == "Pending"
+  - owner != "human"
+  - all dependencies have status "Finished"
+  - no stage gate blocks the task's files_affected
+  - no undecided evaluation choice blocks the task
+  - difficulty < 7
+```
+
+**3. Build conflict-free batch:**
+```
+batch = []
+For each eligible task (sorted by priority, then ID):
+  conflicts = false
+  For each task already in batch:
+    IF files_affected overlap (any shared paths):
+      conflicts = true
+      break
+  IF task has empty files_affected AND parallel_safe != true:
+    skip (unknown file impact — not safe for parallel)
+  ELSE IF NOT conflicts AND len(batch) < max_parallel_tasks:
+    add task to batch
+```
+
+**4. Determine dispatch mode:**
+```
+IF len(batch) >= 2:
+  → parallel_mode = true
+  → Log: "Parallel dispatch: {batch_size} tasks eligible"
+ELSE:
+  → parallel_mode = false
+  → Fall back to sequential execution in Step 3
+```
+
 ### Step 3: Determine Action
 
 **If a specific request was provided** (and passed spec check):
@@ -218,7 +336,8 @@ Check request against spec:
 | Spec incomplete | Stop — prompt user to complete spec |
 | Spec complete, no tasks | **Decompose** — create tasks from spec |
 | Any spec task in "Awaiting Verification" status | **Verify (per-task)** — read & follow verify-agent per-task workflow (see Step 4) |
-| Spec tasks pending (and none awaiting verification) | **Execute** — read & follow implement-agent workflow (see Step 4) |
+| Spec tasks pending (and none awaiting verification), parallel batch >= 2 | **Execute (Parallel)** — dispatch parallel batch (see Step 4 "If Executing (Parallel)") |
+| Spec tasks pending (and none awaiting verification), no parallel batch | **Execute** — read & follow implement-agent workflow (see Step 4) |
 | All spec tasks "Finished" with passing per-task verification, no valid phase verification result | **Verify (phase-level)** — read & follow verify-agent phase-level workflow (see Step 4) |
 | Phase-level verification result is `"fail"` (in-spec fix tasks exist) | **Execute** — fix tasks need implementation before re-verification |
 | All spec tasks finished, valid phase verification result | **Complete** — report project complete, present final checkpoint |
@@ -249,8 +368,10 @@ Check request against spec:
    → IF result == "fail" → Route to implement-agent (fix tasks were created, need implementation)
    → IF spec_fingerprint mismatch OR tasks updated after timestamp → Route to verify-agent (re-verification needed)
    → IF result == "pass" or "pass_with_issues" → Route to completion
-8. ELSE:
-   → Route to implement-agent for next pending task
+8. ELSE IF parallel_mode (from Step 2c):
+   → Route to parallel execution (see "If Executing (Parallel)")
+9. ELSE:
+   → Route to implement-agent for next pending task (sequential)
 ```
 
 **Spec-less project handling:** If tasks exist but no spec file is found, do NOT proceed. Present options: `[S]` Create spec via `/iterate`, `[M]` Mark all tasks out-of-spec, `[X]` Stop. This prevents completing without verification.
@@ -380,6 +501,74 @@ Execute these steps in order:
    - Step 6b: verify-agent runs per-task verification → status becomes `"Finished"` if pass
    - Step 6c: Dashboard regenerated
 3. **Context to provide:** Current task, relevant spec sections, constraints/notes
+
+#### If Executing (Parallel)
+
+When Step 2c produces a parallel batch of >= 2 tasks, execute them concurrently:
+
+**1. Log the parallel dispatch:**
+```
+Dispatching N tasks in parallel:
+  - Task {id}: "{title}" → files: [{files_affected}]
+  - Task {id}: "{title}" → files: [{files_affected}]
+  ...
+  File conflicts: none (verified in Step 2c)
+```
+
+**2. Set ALL batch tasks to "In Progress":**
+
+Before spawning agents, update every task in the batch:
+```json
+{
+  "status": "In Progress",
+  "updated_date": "YYYY-MM-DD"
+}
+```
+
+**3. Spawn parallel agents:**
+
+Use Claude Code's `Task` tool to spawn one agent per task. Each agent receives:
+- The task JSON to execute
+- Instructions to read `.claude/agents/implement-agent.md`
+- Instructions to follow Steps 2, 4, 5, 6a, and 6b (understand, implement, self-review, mark awaiting verification, trigger per-task verification)
+- **Explicit instruction: "DO NOT regenerate dashboard. DO NOT select next task. DO NOT check parent auto-completion. Return results when verification completes."**
+
+All agents run concurrently via parallel `Task` tool calls.
+
+**4. Collect results:**
+
+Wait for all agents to return. Each agent reports:
+- Task ID and final status ("Finished" if verification passed, "In Progress" if failed)
+- Verification result (pass/fail)
+- Files modified
+- Issues encountered
+
+**5. Post-parallel cleanup:**
+
+After all agents complete:
+
+```
+1. Check parent auto-completion:
+   For each finished task with a parent_task:
+     IF all sibling subtasks are "Finished":
+       Set parent status to "Finished"
+
+2. Single dashboard regeneration:
+   Regenerate dashboard.md following the Regeneration Checklist
+   in .claude/support/reference/dashboard-patterns.md
+
+3. Lightweight health check (Step 6)
+
+4. Loop back to Step 2c:
+   Reassess remaining tasks for next parallel batch or phase transition
+```
+
+**6. Handling mixed results:**
+
+When some tasks pass and others fail verification:
+- Passed tasks remain "Finished" — they are done
+- Failed tasks are set back to "In Progress" by verify-agent within their thread
+- On the next loop iteration, failed tasks are re-eligible for dispatch (potentially in a new parallel batch)
 
 #### If Verifying (Per-Task)
 
@@ -529,7 +718,7 @@ Run quick validation checks after completing the main action:
 - **Workflow compliance** (new):
   - If a task was just completed: Was it set to "In Progress" before "Finished"? (Check `updated_date` changed at least twice, or task notes reflect the workflow steps.)
   - Is the dashboard freshly regenerated? (Dashboard timestamp should match current session.)
-- Single "In Progress" task rule (only one allowed)
+- Parallel eligibility rule (multiple "In Progress" only when files don't overlap, deps satisfied, within max limit)
 - Spec fingerprint comparison (current spec vs task fingerprints)
 - Section change count (if section fingerprints exist)
 - Orphan dependency detection (references to non-existent tasks)

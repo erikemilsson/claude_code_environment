@@ -24,7 +24,7 @@ Ask: "Can this be completed in one focused session?"
 | Status | Meaning | Rules |
 |--------|---------|-------|
 | Pending | Not started | Ready to work on |
-| In Progress | Currently working | Only ONE at a time |
+| In Progress | Currently working | Multiple allowed when parallel-eligible (see below) |
 | Awaiting Verification | Implementation done, needs verification | Must proceed to verify-agent immediately |
 | Blocked | Cannot proceed | Document blocker in notes |
 | Broken Down | Split into subtasks | Work on subtasks, not this |
@@ -145,14 +145,23 @@ Note: `# Project Spec` (H1) is not a section - only H2 (`##`) headings define se
 
 **ALWAYS:**
 1. Break down tasks with difficulty >= 7 before starting
-2. Only one task "In Progress" at a time
-3. Dashboard regenerates automatically after task changes
-4. Parent tasks auto-complete when all subtasks finish
+2. Dashboard regenerates automatically after task changes
+3. Parent tasks auto-complete when all subtasks finish
+
+**Parallel Execution Rules:**
+Multiple "In Progress" tasks are allowed when ALL of these conditions are met:
+- All dependencies for each task are "Finished"
+- `files_affected` arrays do not overlap between any tasks in the batch
+- No stage gate blocks any task in the batch
+- Batch size does not exceed `max_parallel_tasks` (default: 3)
+- Each task has difficulty < 7
+
+When conditions are not met, fall back to sequential execution (one "In Progress" at a time).
 
 **NEVER:**
 - Work on "Broken Down" tasks directly (work on subtasks instead)
 - Skip status updates
-- Work on multiple tasks simultaneously
+- Dispatch parallel tasks without checking file conflicts
 
 ## Owner Field
 
@@ -176,4 +185,4 @@ Tasks have an `owner` field that determines responsibility and dashboard placeme
 | `N_M` | Sequential subtask | `1_1`, `1_2` (must do in order) |
 | `N_Ma` | Parallel subtask | `1_1a`, `1_1b` (can do simultaneously) |
 
-Use underscores for sequential dependencies, letters for parallel work within a sequence.
+Use underscores for sequential dependencies, letters for parallel work within a sequence. Tasks using the `N_Ma` convention are natural candidates for parallel dispatch — they were designed to run concurrently. `/work` checks these alongside all other eligible tasks when building parallel batches.

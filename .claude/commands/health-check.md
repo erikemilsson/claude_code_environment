@@ -67,7 +67,7 @@ Validates that dashboard.md follows the canonical template defined in `.claude/s
 | Status | Rules |
 |--------|-------|
 | `Pending` | No special requirements |
-| `In Progress` | Only ONE task should have this status at a time |
+| `In Progress` | Multiple allowed only when parallel-eligible: `files_affected` don't overlap, all deps satisfied, within `max_parallel_tasks` limit. **ERROR** if parallel conditions violated (overlapping files, unsatisfied deps). |
 | `Awaiting Verification` | Transitional only — must proceed to verification immediately. **ERROR** if task has been in this status for > 1 hour |
 | `Blocked` | Should have `notes` explaining the blocker |
 | `Broken Down` | Must have non-empty `subtasks` array |
@@ -266,6 +266,7 @@ Validates that the dashboard is current with task state:
 - Tasks with status `"In Progress"` for > 7 days without activity
 - Indicates abandoned work or forgotten state updates
 - Uses `updated_date` field if present, otherwise `created_date`
+- For parallel batches: check if the batch was dispatched but never completed (all tasks in batch are stale together)
 
 **Owner-Capability Mismatch**
 - Claude-owned tasks that require human-only capabilities:
@@ -292,7 +293,7 @@ Validates that the dashboard is current with task state:
 | "Broken Down" with empty subtasks | Change status to "Pending" |
 | All subtasks Finished but parent not | Set parent status to "Finished" |
 | Missing created_date | Add current date |
-| Multiple "In Progress" tasks | Ask which to keep, set others to "Pending" |
+| Multiple "In Progress" tasks (parallel-ineligible) | Check parallelism eligibility first — if files overlap or deps unsatisfied, ask which to keep, set others to "Pending". If all parallel conditions are met, no fix needed. |
 | Nested `.claude/.claude/` directory | Flag as error, recommend deletion |
 | Orphan dependency reference | Remove invalid dependency ID from array |
 
@@ -742,7 +743,7 @@ Catch common issues immediately without the overhead of a full health check.
 | Stale "Awaiting Verification" | Task stuck in Awaiting Verification for > 1 hour | **CRITICAL** |
 | Dashboard staleness | Dashboard task_hash doesn't match current state | **ERROR** |
 | Workflow compliance | Task jumped Pending→Finished without In Progress; empty notes | Warning |
-| Single "In Progress" rule | More than one task in progress | Warning |
+| Parallel eligibility rule | Multiple "In Progress" with overlapping files or unsatisfied deps | Warning |
 | Spec fingerprint comparison | Spec changed since decomposition (full spec level) | Warning |
 | Section change count | Number of sections that changed (if section fingerprints exist) | Warning |
 | Orphan dependency detection | References to deleted/missing tasks | Warning |

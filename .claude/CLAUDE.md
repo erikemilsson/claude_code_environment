@@ -66,7 +66,9 @@ This project uses a phased workflow: **Spec** (define requirements) → **Execut
 
 **Core principle:** The spec is the living source of truth. All work aligns with it, or the spec is updated intentionally.
 
-For details on phases, agent handoffs, and checkpoints, see `.claude/support/reference/workflow.md`.
+**Parallel execution** is the default: when `/work` finds multiple pending tasks with no mutual dependencies or file conflicts, it dispatches them concurrently. Each task still runs the full implement → verify cycle. Configure via `parallel_execution` in spec frontmatter.
+
+For details on phases, agent handoffs, parallel execution, and checkpoints, see `.claude/support/reference/workflow.md`.
 
 ## Environment Commands
 
@@ -100,7 +102,7 @@ Tasks are tracked in `.claude/tasks/` as JSON files. The **Project Dashboard** a
 
 **Key rules:**
 - Break down tasks with difficulty >= 7 before starting
-- Only one task "In Progress" at a time
+- Multiple tasks "In Progress" allowed when parallel-eligible (no file conflicts, deps satisfied)
 - Dashboard regenerates automatically after task changes
 
 See `.claude/support/reference/shared-definitions.md` for difficulty scale, status values, and owner definitions.

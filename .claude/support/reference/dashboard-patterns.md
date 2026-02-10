@@ -43,6 +43,7 @@ Below the metadata block, include:
 | 7 | `## 🤖 Claude Status` | 🤖 | In Progress / Ready to Start / Blocked for Claude tasks |
 | 8 | `## 📊 Progress This Week` | 📊 | Completed/Started/Created counts, recently completed list |
 | 9 | `## 📋 All Decisions` | 📋 | Decision log table |
+| 9a | `## 🔬 Evaluation Choices` | 🔬 | Technical/methodological choices with weighted scoring (optional, appears when relevant decisions exist) |
 | 10 | `## 📝 All Tasks` | 📝 | Full task table with summary line |
 | 11 | `## 💡 Notes & Ideas` | 💡 | User-preserved section between `<!-- USER SECTION -->` markers |
 
@@ -61,6 +62,7 @@ dashboard_sections:
   claude_status: build
   progress: build
   all_decisions: maintain       # preserve existing, minor updates only
+  evaluation_choices: build     # appears when technical_choice/methodological_choice decisions exist
   all_tasks: build
   notes: preserve               # always preserved (never overwritten)
 ```
@@ -139,9 +141,9 @@ Every dashboard regeneration MUST complete these steps. All commands and agents 
 - `### Reviews & Approvals` — table: Item, Type, Context
 
 **Claude Status** has three sub-sections:
-- `### In Progress` — current task
-- `### Ready to Start` — next available Claude tasks
-- `### Blocked` — Claude tasks blocked by dependencies or decisions
+- `### In Progress` — current task(s); when a parallel batch is active, shows all tasks in the batch with a batch indicator
+- `### Ready to Start` — next available Claude tasks (optionally shows parallelism eligibility)
+- `### Blocked` — Claude tasks blocked by dependencies, decisions, or file conflicts with in-progress tasks
 
 ### Table Formats
 
@@ -225,19 +227,123 @@ All three categories appear in the debt table. Out-of-spec tasks (`out_of_spec: 
 |----|-------|----------|--------|---------|
 ```
 
+**Evaluation Choices (optional section):**
+
+This section appears when decisions with `category: technical_choice` or `category: methodological_choice` exist. It provides a focused view of structured evaluations.
+
+```markdown
+## 🔬 Evaluation Choices
+
+**Quick Stats:** 2/3 technical choices evaluated, 1/1 methodological choices evaluated
+
+| ID | Choice | Category | Status | Score | Threshold | Result |
+|----|--------|----------|--------|-------|-----------|--------|
+| TC-001 | State Management | technical | ✅ Selected | 4.45 | 3.5 | Pass |
+| TC-002 | API Framework | technical | 🔄 Evaluating | — | 3.5 | — |
+| MC-001 | Auth Strategy | methodological | ✅ Selected | 4.20 | 3.0 | Pass |
+
+### Blocking Evaluations
+
+*No blocking evaluations*
+```
+
+**Quick Stats calculation:**
+- Count decisions by category (`technical_choice`, `methodological_choice`)
+- "Evaluated" = status is `selected` or `implemented`
+- Format: `X/Y technical choices evaluated, X/Y methodological choices evaluated`
+
+**Status icons:**
+| Icon | Status | Meaning |
+|------|--------|---------|
+| ✅ | Selected/Implemented | Decision made |
+| 🔄 | Evaluating/Scored | In progress |
+| ⏳ | Draft | Not started |
+
+**Result column:**
+- `Pass` = weighted_score >= threshold
+- `Fail` = weighted_score < threshold (should reconsider)
+- `—` = not yet scored
+
+**Blocking Evaluations sub-section:**
+
+Show evaluations that block other work (e.g., technology choices that must be made before implementation can proceed):
+
+```markdown
+### Blocking Evaluations
+
+| ID | Choice | Blocks | Status |
+|----|--------|--------|--------|
+| TC-002 | API Framework | Tasks 5, 6, 7 | 🔄 Evaluating |
+
+*These choices must be completed before blocked work can proceed.*
+```
+
+If no blocking evaluations: `*No blocking evaluations*`
+
+**When to include this section:**
+- Include if any decision has `category: technical_choice` or `category: methodological_choice`
+- Exclude if no such decisions exist (don't show empty section)
+- Can be explicitly excluded via `dashboard_sections.evaluation_choices: exclude`
+
+**Empty state:**
+If the section is included but all evaluations are complete:
+```markdown
+## 🔬 Evaluation Choices
+
+✅ All evaluations complete (3 technical, 1 methodological)
+```
+
 ### Empty State Placeholders
 
 When a section has no data, use italic placeholder text:
 - `*No pending decisions*`
 - `*No human tasks ready*`
 - `*Nothing to review*`
-- `*No tasks in progress*`
+- `*No tasks in progress*` (already plural-compatible)
 - `*No Claude tasks ready*`
 - `*No Claude tasks blocked*`
 - `*No recent completions*`
 - `*No decisions yet*`
+- `*No evaluation choices*`
+- `*No blocking evaluations*`
 - `*No tasks yet*`
 - `*No tasks defined yet*`
+
+### Parallel Batch Display
+
+When a parallel batch is active, the "In Progress" sub-section shows all tasks in the batch:
+
+**Parallel mode (multiple tasks in progress):**
+```markdown
+### In Progress
+
+**Parallel batch (3 tasks):**
+
+| Task | Title | Files | Status |
+|------|-------|-------|--------|
+| 3 | Setup database schema | `src/db/schema.sql` | 🔄 Implementing |
+| 4 | Create API routes | `src/api/routes.ts` | 🔄 Implementing |
+| 5 | Add auth middleware | `src/middleware/auth.ts` | ✅ Verified |
+```
+
+**Sequential mode (single task, default format):**
+```markdown
+### In Progress
+
+🔄 **Task 3**: Setup database schema
+```
+
+**Ready to Start with parallelism info (optional):**
+```markdown
+### Ready to Start
+
+| Task | Title | Parallel-Eligible? |
+|------|-------|--------------------|
+| 6 | Add logging | ✅ No file conflicts |
+| 7 | Write tests for auth | ⚠️ Conflicts with task 5 (`src/middleware/auth.ts`) |
+```
+
+The parallel-eligibility column is informational only — shown when there are tasks in the Ready state and parallel execution is enabled.
 
 ---
 

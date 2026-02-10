@@ -94,6 +94,8 @@ Do not skip steps, write results without performing actual verification, or decl
 
 Follow this workflow when `/work` routes you here in **per-task** mode — a single task was just marked "Awaiting Verification" and needs verification before the next task begins.
 
+**Parallel mode note:** In parallel mode, this workflow operates identically to sequential. Each parallel agent runs its own implement → verify cycle independently. The only difference is post-verification cleanup (Step T7) — see notes there.
+
 ### Step T1: Read Task and Spec Context
 
 1. Read the task JSON file in full (status should be "Awaiting Verification")
@@ -190,6 +192,8 @@ Record the per-task verification outcome in the task JSON:
 |--------|--------|
 | `pass` | Set task status to "Finished". Report result to `/work`. Proceed to next task. |
 | `fail` | Set task status back to "In Progress". Report issues to `/work`. implement-agent will fix and re-submit. |
+
+**In parallel mode:** Do not regenerate dashboard or select next task after routing. The `/work` coordinator handles dashboard regeneration and next-task selection after all parallel agents complete.
 
 **When verification passes (status: "Awaiting Verification" → "Finished"):**
 ```json

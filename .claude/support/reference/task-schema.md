@@ -88,6 +88,7 @@
 | section_fingerprint | String | SHA-256 hash of the specific section content at decomposition |
 | section_snapshot_ref | String | Reference to snapshot file for generating diffs (e.g., "spec_v1_decomposed.md") |
 | out_of_spec | Boolean | Task not aligned with spec (user chose "proceed anyway") |
+| parallel_safe | Boolean | When true, task is eligible for parallel execution even with empty `files_affected`. Use for research/analysis tasks with no file side effects. |
 | task_verification | Object | Per-task verification result recorded by verify-agent |
 
 ## Owner Values
