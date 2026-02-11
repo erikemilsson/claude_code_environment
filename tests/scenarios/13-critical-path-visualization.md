@@ -21,7 +21,7 @@ The user wants to glance at the critical path one-liner and immediately understa
 
 - **Path:** dashboard.md → Progress section (critical path one-liner); work.md → Critical Path Generation
 
-### Current format (from dashboard.md format hints)
+### Current format (from work.md § Section Format Reference)
 
 The critical path is now a one-liner within the Progress section:
 

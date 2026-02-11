@@ -143,19 +143,43 @@ Decisions appear in the dashboard:
 
 ## Domain-Specific Sub-Dashboards
 
-For projects with complex domain areas (workshop management, inventory, experiment logs), create separate markdown files in `.claude/support/` for domain-specific tracking, then link from the main dashboard's Notes section.
+For projects with complex domain areas (workshop management, inventory, experiment logs), create separate markdown files in `.claude/support/` for domain-specific tracking.
+
+**Enabling:** Check `Sub-Dashboards` in the **Sections** checklist at the top of `dashboard.md`. When enabled, a `## 📑 Sub-Dashboards` section appears in the dashboard as a link collection pointing to your domain-specific tracking files.
+
+**When to use:**
+- The main dashboard's Tasks/Progress sections don't capture domain-specific tracking needs
+- You need separate tables, checklists, or formats for a specific domain area
+- Examples: materials procurement tracker, experiment log, vendor contact sheet
+
+**Convention:**
+- Place sub-dashboard files in `.claude/support/` (e.g., `support/materials-tracking.md`)
+- Each file is self-contained — it doesn't need to follow dashboard format
+- The main dashboard links to them; it doesn't embed their content
 
 ---
 
 ## Optional Visualizations
 
-For complex projects, create Mermaid diagram files in `.claude/support/visualizations/` and link from the dashboard's Notes section. Useful for workflow phases, decision dependency graphs, system architecture, and progress timelines. Only add visualizations when dashboard tables aren't sufficient — stale diagrams are worse than none.
+For complex projects, create Mermaid diagram files in `.claude/support/visualizations/` and link from the dashboard.
+
+**Enabling:** Check `Visualizations` in the **Sections** checklist at the top of `dashboard.md`. When enabled, a `## 📈 Visualizations` section appears in the dashboard as a link collection pointing to your diagram files.
+
+**When to use:**
+- Only when dashboard tables aren't sufficient to convey relationships or flow
+- Stale diagrams are worse than none — only create what you'll maintain
+- Useful for: workflow phases, decision dependency graphs, system architecture, progress timelines
+
+**Convention:**
+- Place diagram files in `.claude/support/visualizations/` (e.g., `support/visualizations/phase-flow.mmd`)
+- Use Mermaid (`.mmd`) format for portability
+- Keep diagrams focused — one concept per file
 
 ---
 
 ## Related Files
 
 - [decisions.md](decisions.md) — Decision record format and selection mechanism
-- [dashboard.md](../../dashboard.md) — Dashboard template with format specifications (HTML comments) and populated example
+- [dashboard.md](../../dashboard.md) — Dashboard template with section toggle checklist and populated example
 - [shared-definitions.md](shared-definitions.md) — Vocabulary (Phase, Decision, Inflection Point, Human Task)
 - [workflow.md](workflow.md) — Core workflow documentation

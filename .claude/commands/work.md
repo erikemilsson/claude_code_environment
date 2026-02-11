@@ -548,8 +548,8 @@ Break the spec into granular tasks:
    - **Important:** Create all task JSON files before regenerating the dashboard. Every task must have a `task-*.json` file — the dashboard is generated from these files, never the other way around.
 8. **Map dependencies** - What must complete before what
 9. **Regenerate dashboard** - Read all task-*.json files and regenerate dashboard.md
-   - **Follow the Dashboard Regeneration Procedure** below — use exact section headings, emojis, and format hints from dashboard.md
-   - **Check section toggles** — if `dashboard_sections` config exists (in spec frontmatter or `.claude/CLAUDE.md`), respect `build`/`maintain`/`exclude`/`preserve` modes per section.
+   - **Follow the Dashboard Regeneration Procedure** below — use exact section headings, emojis, and the Section Format Reference for all formatting rules
+   - **Check section toggles** — read the dashboard checklist (between `<!-- SECTION TOGGLES -->` markers) and respect `build`/`exclude` modes per section. Falls back to spec frontmatter `dashboard_sections` if no checklist exists.
    - **Atomicity rules:**
      - Tasks: Only include tasks that have corresponding `task-*.json` files. Never add a task to the dashboard without creating its JSON file first.
      - Decisions: Only include decisions that have corresponding `decision-*.md` files in `.claude/support/decisions/`. If a decision is significant enough for the dashboard, create the file first.
@@ -607,25 +607,28 @@ Every dashboard regeneration MUST follow this procedure. All commands and agents
 
 **Section Toggle Configuration:**
 
-Users can control which sections Claude builds via `dashboard_sections` in spec frontmatter or `.claude/CLAUDE.md`:
+The primary source for section toggles is the **dashboard.md section toggle checklist** — a visible, editable checklist near the top of the dashboard between `<!-- SECTION TOGGLES -->` and `<!-- END SECTION TOGGLES -->` markers.
 
-```yaml
-dashboard_sections:
-  action_required: build        # actively create/update
-  progress: build
-  tasks: build
-  decisions: maintain           # preserve existing, minor updates only
-  notes: preserve               # always preserved (never overwritten)
-```
+**Reading logic:**
+1. Parse the checklist between the markers
+2. `- [x] Section Name` → `build` mode (actively generate)
+3. `- [ ] Section Name` → `exclude` mode (skip during regeneration)
+4. Notes section: always `preserve` regardless of checkbox state (enforced)
+5. Fallback: if no checklist exists, check spec frontmatter `dashboard_sections` or `.claude/CLAUDE.md`
+
+**During regeneration:**
+- Preserve the toggle checklist between its markers (never overwrite user's checkbox state)
+- Only generate sections that are checked (`[x]`)
+- The Notes section is always preserved regardless of toggle state
 
 | Mode | Behavior |
 |------|----------|
-| `build` | Actively generate from source data on every regeneration (default) |
-| `maintain` | Keep existing content, only update if data changes significantly |
-| `exclude` | Skip this section entirely during regeneration |
+| `build` | Actively generate from source data on every regeneration (default, `[x]`) |
+| `maintain` | Keep existing content, only update if data changes significantly (via spec frontmatter override only) |
+| `exclude` | Skip this section entirely during regeneration (`[ ]`) |
 | `preserve` | Never modify (Notes always uses this) |
 
-Default: all sections `build` if no configuration exists. Configure in spec frontmatter (takes precedence) or `.claude/CLAUDE.md`.
+The checkbox UI maps to `build`/`exclude`. Users who need `maintain` mode can set it via spec frontmatter `dashboard_sections` override, which takes precedence over the checklist for that section.
 
 **Regeneration Steps:**
 
@@ -634,6 +637,7 @@ Default: all sections `build` if no configuration exists. Configure in spec fron
    - All `decision-*.md` files in `.claude/support/decisions/` (decisions)
    - `drift-deferrals.json` (if exists)
    - `verification-result.json` (if exists)
+   - `.claude/support/questions.md` (scan for blocking questions)
 
 2. **Backup user section**
    - Extract content between `<!-- USER SECTION -->` and `<!-- END USER SECTION -->`
@@ -641,10 +645,12 @@ Default: all sections `build` if no configuration exists. Configure in spec fron
    - Rotate old backups (keep last 3)
 
 3. **Generate dashboard**
-   - Follow the structure and format documented in dashboard.md (HTML comments specify rules per section)
+   - Follow the Section Format Reference below for all formatting rules
    - Use exact section headings: `# Dashboard`, `## 🚨 Action Required`, `## 📊 Progress`, `## 📋 Tasks`, `## 📋 Decisions`, `## 💡 Notes`
+   - Optional section headings (when enabled, placed between Decisions and Notes): `## 📈 Visualizations`, `## 📑 Sub-Dashboards`
    - **Timeline sub-section** in Progress: render when any task has `due_date` or `external_dependency.expected_date`
-   - Check `dashboard_sections` config and respect modes
+   - Read section toggles from dashboard checklist (between `<!-- SECTION TOGGLES -->` markers) and respect modes
+   - Preserve the section toggle checklist between its markers during regeneration
    - Enforce atomicity: only tasks with JSON files, only decisions with MD files
    - On first regeneration: replace the template example with actual project data
 
@@ -673,12 +679,58 @@ Default: all sections `build` if no configuration exists. Configure in spec fron
 
 **Section Format Reference:**
 
-Follow the structure and format shown in `.claude/dashboard.md`. The template contains:
-- Populated example for every section with realistic data
-- HTML comments documenting format rules, column structures, and display conditions per section
-- The Action Item Contract and Review Item Derivation rules
+All dashboard formatting rules are documented here. This is the single authoritative source — do not add format comments to the regenerated dashboard.
 
-Generate content matching the template's structure. Preserve HTML format comments in the regenerated dashboard (they guide future regenerations). The rendered dashboard contains only content — no format instructions are visible to the user.
+**Action Item Contract:**
+Every item in "Action Required" must be:
+1. Actionable — the user can see what to do without guessing
+2. Linked — if the action involves a file, include a relative path link
+3. Completable — include a checkbox, command, or clear completion signal
+4. Contextual — if feedback is needed, provide a feedback area or link
+
+**Review Item Derivation:**
+Review items are derived, not stored. During regeneration:
+1. Scan for unresolved items — out_of_spec without approval, draft/proposed decisions, blocking questions from `questions.md`
+2. Populate Reviews sub-section from current data
+3. Never carry forward stale entries — resolved items disappear on next regeneration
+4. No dangling references — every item must link to a concrete file
+5. Blocking questions: scan `questions.md` for `[BLOCKING]` entries, render each as a review item linking to [questions.md](support/questions.md)
+
+**Section Display Rules:**
+- Action Required sub-sections: only render when they have content (omit empty categories entirely)
+- Action Required sub-section order: Verification Debt, Decisions, Your Tasks, Reviews
+- Reviews sub-section format: `- [ ] **Item title** — what to do → [link to file](path)`
+- Reviews appear for: out_of_spec tasks without approval, draft/proposed decisions, blocking questions from `questions.md` (each linked to the file)
+- Timeline sub-section in Progress: only render when tasks have `due_date` or `external_dependency.expected_date`
+- Timeline has its own toggle in the section checklist (independent of Progress)
+- Phase table in Progress: always show ALL phases (including blocked/future)
+- Critical path owners: ❗ (human), 🤖 (Claude), 👥 (both)
+- Critical path >5 steps: show first 3 + "... N more → Done"
+- "This week" line: omit when all counts are zero
+- Tasks grouped by phase with per-phase progress lines
+- Decisions: decided → show selected option name; pending → link to doc in Selected column
+- Out-of-spec tasks: prefix title with ⚠️
+- Footer: healthy = spec aligned tooltip; issues = ⚠️ with counts
+- Visualizations section: link collection to `.claude/support/visualizations/` files (when enabled)
+- Sub-Dashboards section: link collection to domain-specific tracking files (when enabled)
+
+**Per-Section Format:**
+
+| Section | Columns / Format |
+|---------|-----------------|
+| Action Required → Verification Debt | `Task \| Title \| Issue` |
+| Action Required → Decisions | `Decision \| Question \| Doc` |
+| Action Required → Your Tasks | `Task \| What To Do \| Where` |
+| Action Required → Reviews | `- [ ] **Item title** — what to do → [link](path)` — derived, not stored |
+| Progress → Phase table | `Phase \| Done \| Total \| Status` — status: Complete, Active, Blocked (reason) |
+| Progress → Timeline | `Date \| Item \| Status \| Notes` — sorted chronologically, overdue: strikethrough date + ⚠️ OVERDUE prefix, external deps with contact info, human tasks marked with ❗ |
+| Tasks → Per phase | `ID \| Title \| Status \| Diff \| Owner \| Deps` — grouped by phase headers |
+| Decisions | `ID \| Decision \| Status \| Selected` |
+| Visualizations | Bulleted link list to `.mmd` or diagram files |
+| Sub-Dashboards | Bulleted link list to domain-specific `.md` files |
+
+**Domain Agnosticism:**
+This format works for any project type — software, research, procurement, renovation, event planning. Use language appropriate to the project domain. No code-specific assumptions are built in.
 
 **Spec snapshot process:**
 ```

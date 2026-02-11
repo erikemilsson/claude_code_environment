@@ -17,7 +17,7 @@ No fixture files or project setup needed. The state description in each scenario
 
 - After significant changes to `/work`, `/iterate`, or `/health-check`
 - After modifying the decision system (decisions.md, extension-patterns.md)
-- After changing dashboard format hints or regeneration procedure
+- After changing dashboard structure, section toggles, or regeneration procedure
 - When adding new state-based features that interact with decisions or phases
 
 ## Scenarios
@@ -79,6 +79,24 @@ Tests grounded in patterns observed across real projects. All previous scenarios
 - Scale is a real concern — projects reach 380+ tasks (21)
 - External dependencies are common and need explicit handling (20)
 - Parallel execution needs file-level conflict detection (24)
+
+### Workflow Lifecycle (25-28)
+
+Tests for core lifecycle operations that were previously uncovered: task breakdown, manual completion, verification rework, and dependency resolution.
+
+| # | Name | Tests | Key Commands/Files |
+|---|------|-------|-------------------|
+| 25 | Breakdown Command | `/breakdown` splits high-difficulty tasks, inherits provenance, updates parent | breakdown.md, implement-agent.md Step 1b |
+| 26 | Work Complete Flow | `/work complete` validates, completes, auto-completes parents, regenerates dashboard | work.md § Task Completion |
+| 27 | Verification Failure and Rework | Fail → fix → re-verify loop, 2-attempt limit, phase-level fix tasks | verify-agent.md Steps T6-T7, implement-agent.md |
+| 28 | Task Dependency Chains | Linear chains, multi-blocker convergence, circular detection, critical path | work.md Step 2c, Step 3 |
+
+**Key behaviors surfaced by 25-28:**
+- `/breakdown` is the only path for difficulty >= 7 tasks — implement-agent rejects them
+- `/work complete` is the primary human action signal — parent auto-completion depends on it
+- Verification failure is not terminal — the rework loop has a 2-attempt limit before human escalation
+- Dependency resolution must use AND logic (all deps satisfied), not OR
+- Circular dependencies must be detected and reported, not cause infinite loops
 
 ## Example Project
 

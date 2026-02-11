@@ -25,19 +25,19 @@ The same dashboard sections are generated at every phase. Some sub-sections are 
 
 ### Expected behavior
 
-The consolidated structure handles null-state naturally: Action Required omits empty sub-sections, and the header provides orientation without a separate "Project Context" section. Remaining sections can be configured via `dashboard_sections` toggle.
+The consolidated structure handles null-state naturally: Action Required omits empty sub-sections, and the header provides orientation without a separate "Project Context" section. Remaining sections can be configured via the **Sections** checklist at the top of dashboard.md (or `dashboard_sections` in spec frontmatter as fallback).
 
 ### Pass criteria
 
-- [ ] `dashboard_sections` config exists in spec frontmatter or CLAUDE.md
-- [ ] Sections can be set to `exclude` to remove them entirely
+- [ ] Sections checklist exists at the top of dashboard.md (between `<!-- SECTION TOGGLES -->` markers)
+- [ ] Unchecking a section (`[ ]`) excludes it from regeneration
 - [ ] At project start, Action Required sub-sections are omitted when empty (no "✅ None" placeholders)
 - [ ] Excluded sections leave no trace (not even a heading)
 
 ### Fail indicators
 
 - No way to exclude sections
-- Excluding a section requires editing a reference file (should be config)
+- Excluding a section requires editing spec frontmatter or reference files (should be a checkbox in dashboard.md)
 - Empty Action Required sub-sections rendered with placeholder text
 
 ---
@@ -110,35 +110,45 @@ Spec Drift sub-section within Action Required becomes **critical** at this phase
 
 ## Trace 12D: Section toggle awareness
 
-- **Path:** work.md § Dashboard Regeneration Procedure → Section Toggle Configuration
+- **Path:** dashboard.md → Sections checklist; work.md § Dashboard Regeneration Procedure → Section Toggle Configuration
 
 ### Current toggle system
 
-Users configure in spec frontmatter or CLAUDE.md:
-```yaml
-dashboard_sections:
-  action_required: build
-  progress: exclude          # User doesn't care about phase table
-  tasks: build
-  decisions: exclude         # Small project, few decisions
-  notes: preserve
+Users check/uncheck items in the **Sections** checklist at the top of dashboard.md:
+```markdown
+<!-- SECTION TOGGLES -->
+**Sections:**
+- [x] Action Required
+- [x] Progress
+- [x] Tasks
+- [ ] Decisions          # Small project, few decisions
+- [x] Notes
+- [x] Timeline
+- [ ] Visualizations
+- [ ] Sub-Dashboards
+<!-- END SECTION TOGGLES -->
 ```
+
+Checked (`[x]`) → `build` mode. Unchecked (`[ ]`) → `exclude` mode. Notes always `preserve` regardless. Spec frontmatter `dashboard_sections` can override with `maintain` mode if needed.
 
 ### What's handled vs what's missing
 
 The consolidated structure already handles the primary null-state problem: Action Required omits empty sub-sections (Verification Debt, Decisions, Your Tasks, Reviews, Spec Drift only appear when populated). This eliminates the noise that previously required toggles.
 
-The remaining toggle use case is for **entire sections** that a project doesn't need (e.g., Decisions for a project with no decision records, Progress for a simple project).
+The remaining toggle use case is for **entire sections** that a project doesn't need (e.g., Decisions for a project with no decision records, Progress for a simple project). Optional sections (Visualizations, Sub-Dashboards) default to unchecked.
 
 ### Pass criteria
 
-- [ ] Current toggle system works as documented (build/maintain/exclude/preserve)
-- [ ] Toggling a section to `exclude` removes it entirely from rendered dashboard
-- [ ] User can configure toggles in spec frontmatter or CLAUDE.md (not reference files)
-- [ ] Toggle is per-project (in spec frontmatter or CLAUDE.md)
+- [ ] Sections checklist exists at the top of dashboard.md between `<!-- SECTION TOGGLES -->` markers
+- [ ] Unchecking a section removes it entirely from regenerated dashboard
+- [ ] Checking a section causes it to be generated from source data
+- [ ] Toggle is directly in dashboard.md (user doesn't need to find a config file)
+- [ ] Regeneration preserves the checklist between its markers (never overwrites user's checkbox state)
+- [ ] Optional sections (Visualizations, Sub-Dashboards) default to unchecked
 
 ### Fail indicators
 
 - Toggle config is ignored during regeneration
 - `exclude` still renders the section heading with "(excluded)" note
-- Toggle requires editing a reference file instead of project config
+- Regeneration overwrites the user's checklist state
+- Toggle requires editing spec frontmatter or CLAUDE.md instead of the dashboard itself

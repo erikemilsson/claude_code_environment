@@ -61,7 +61,7 @@ Empty sub-sections within Action Required are omitted entirely (no "✅ None" pl
 
 ## Trace 08B: Section redundancy audit
 
-- **Path:** dashboard.md → all section definitions
+- **Path:** work.md § Section Format Reference → section definitions
 
 ### Redundancy between sections at project start
 

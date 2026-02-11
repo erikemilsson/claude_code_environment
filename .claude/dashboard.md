@@ -8,38 +8,17 @@ verification_debt: 1
 drift_deferrals: 0
 -->
 
-<!-- FORMAT GUIDE — kept in every regenerated dashboard (invisible to users, guides Claude)
-
-  **Action Item Contract:**
-  Every item in "Action Required" must be:
-  1. Actionable — the user can see what to do without guessing
-  2. Linked — if the action involves a file, include a relative path link
-  3. Completable — include a checkbox, command, or clear completion signal
-  4. Contextual — if feedback is needed, provide a feedback area or link
-
-  **Review Item Derivation:**
-  Review items are derived, not stored. During regeneration:
-  1. Scan for unresolved items — out_of_spec without approval, draft/proposed decisions, blocking questions
-  2. Populate Reviews sub-section from current data
-  3. Never carry forward stale entries — resolved items disappear on next regeneration
-  4. No dangling references — every item must link to a concrete file
-
-  **Section Display Rules:**
-  - Action Required sub-sections: only render when they have content (omit empty categories entirely)
-  - Timeline sub-section in Progress: only render when tasks have due_date or external_dependency.expected_date
-  - Phase table in Progress: always show ALL phases (including blocked/future)
-  - Critical path owners: ❗ (human), 🤖 (Claude), 👥 (both)
-  - Critical path >5 steps: show first 3 + "... N more → Done"
-  - "This week" line: omit when all counts are zero
-  - Tasks grouped by phase with per-phase progress lines
-  - Decisions: decided → show selected option name; pending → link to doc in Selected column
-  - Out-of-spec tasks: prefix title with ⚠️
-  - Footer: healthy = spec aligned tooltip; issues = ⚠️ with counts
-
-  **Domain Agnosticism:**
-  This format works for any project type — software, research, procurement, renovation, event planning.
-  Use language appropriate to the project domain. No code-specific assumptions are built in.
--->
+<!-- SECTION TOGGLES -->
+**Sections:**
+- [x] Action Required
+- [x] Progress
+- [x] Tasks
+- [x] Decisions
+- [x] Notes
+- [x] Timeline
+- [ ] Visualizations
+- [ ] Sub-Dashboards
+<!-- END SECTION TOGGLES -->
 
 > **This is a format example** using a fictional renovation project. It will be replaced with your actual project data when you run `/work`.
 
@@ -51,15 +30,6 @@ drift_deferrals: 0
 
 ## 🚨 Action Required
 
-<!-- ACTION REQUIRED: Only show sub-sections that have content. Omit empty categories entirely.
-     Sub-sections in order: Verification Debt, Decisions, Your Tasks, Reviews.
-     Reviews format (not shown in this example — no review items exist):
-       ### Reviews
-       - [ ] **Item title** — what to do → [link to file](path)
-     Reviews appear for: out_of_spec tasks without approval, draft/proposed decisions, blocking questions. -->
-
-<!-- VERIFICATION DEBT: Show when any task is "Awaiting Verification", "Finished" without task_verification,
-     or task_verification.result == "fail". Exclude out-of-spec tasks. -->
 ### Verification Debt
 
 ⛔ **Verification debt: 1 task** — must resolve before completion
@@ -70,7 +40,6 @@ drift_deferrals: 0
 
 *Run `/work` to trigger verification.*
 
-<!-- DECISIONS: Show when any decision-*.md has no checked box in "Select an Option". -->
 ### Decisions
 
 | Decision | Question | Doc |
@@ -79,19 +48,19 @@ drift_deferrals: 0
 
 *Open the doc, review options, check your selection, then run `/work`.*
 
-<!-- YOUR TASKS: Show when human-owned tasks have status "Pending" and all deps satisfied.
-     Every row must say what to DO and link to where. -->
 ### Your Tasks
 
 | Task | What To Do | Where |
 |------|------------|-------|
 | 8 | Obtain building permit from city hall | [permit-application.pdf](../permits/permit-application.pdf) |
 
+### Reviews
+
+- [ ] **Plumbing code compliance?** — blocking question needs answer before Phase 3 → [questions.md](support/questions.md)
+
 ---
 
 ## 📊 Progress
-
-<!-- PROGRESS: Phase table always shows ALL phases. Status values: Complete, Active, Blocked (reason). -->
 
 | Phase | Done | Total | Status |
 |-------|------|-------|--------|
@@ -99,9 +68,6 @@ drift_deferrals: 0
 | 2 — Construction | 2 | 5 | Active |
 | 3 — Finishing | 0 | 3 | Blocked (DEC-002) |
 
-<!-- TIMELINE: Only show when tasks have due_date or external_dependency.expected_date.
-     Sorted chronologically. Overdue: strikethrough date + ⚠️ OVERDUE prefix.
-     External dependencies shown with contact info. Human tasks marked with ❗. -->
 ### Timeline
 
 | Date | Item | Status | Notes |
@@ -118,10 +84,6 @@ drift_deferrals: 0
 ---
 
 ## 📋 Tasks
-
-<!-- TASKS: Group by phase. Per-phase progress line with blocking reason if applicable.
-     Columns: ID | Title | Status | Diff | Owner | Deps
-     Out-of-spec tasks: prefix title with ⚠️. Summary after all phases. -->
 
 ### Phase 1: Planning
 
@@ -162,12 +124,23 @@ drift_deferrals: 0
 
 ## 📋 Decisions
 
-<!-- DECISIONS TABLE: Decided → show selected option name. Pending → link to decision doc. -->
-
 | ID | Decision | Status | Selected |
 |----|----------|--------|----------|
 | DEC-001 | Contractor selection | Decided | BuildRight Construction |
 | DEC-002 | Main hall flooring | Pending | [Review options](support/decisions/decision-002-flooring.md) |
+
+---
+
+## 📈 Visualizations
+
+- [Phase workflow](support/visualizations/renovation-phases.mmd)
+- [Decision dependencies](support/visualizations/decision-graph.mmd)
+
+---
+
+## 📑 Sub-Dashboards
+
+- [Materials & Procurement](support/materials-tracking.md)
 
 ---
 
@@ -176,6 +149,8 @@ drift_deferrals: 0
 <!-- USER SECTION -->
 
 [Your notes here — ideas, questions, reminders]
+
+**Resources:** [Questions & Answers](support/questions.md) · [Decisions](support/decisions/)
 
 <!-- END USER SECTION -->
 

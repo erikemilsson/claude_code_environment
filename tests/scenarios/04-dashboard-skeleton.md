@@ -13,7 +13,7 @@ Same as Scenario 02:
 
 ## Trace: Dashboard regeneration
 
-- **Path:** dashboard.md → section structure and format hints; work.md § Dashboard Regeneration Procedure
+- **Path:** dashboard.md → section structure; work.md § Dashboard Regeneration Procedure → Section Format Reference
 - Source: all task-*.json files + all decision-*.md files
 
 ### Expected sections (exact headings from dashboard.md)

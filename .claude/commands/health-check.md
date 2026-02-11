@@ -66,7 +66,8 @@ Checks:
 - Each heading exists (exact text including emoji)
 - Sections in correct order
 - Flag missing or out-of-order
-- Sections with `exclude` in dashboard_sections config are allowed to be missing
+- Sections with unchecked toggles (`[ ]`) in the dashboard's section toggle checklist (between `<!-- SECTION TOGGLES -->` and `<!-- END SECTION TOGGLES -->` markers) are allowed to be missing. Falls back to `dashboard_sections` config if no checklist exists.
+- Optional sections (`## 📈 Visualizations`, `## 📑 Sub-Dashboards`) may appear between Decisions and Notes when their toggles are checked — do not flag these as unexpected
 
 ### 6. Status Rules
 

@@ -28,6 +28,8 @@ This environment is domain-agnostic. It works for software development, research
 
 **This is pragmatic, not rigid.** The dashboard is the primary communication hub during active development. Post-completion activities (testing, deployment) may involve more direct interaction. Claude should surface information through the dashboard when it makes sense, not force everything through it artificially.
 
+The dashboard has a **Sections** checklist at the top — check or uncheck items to control which sections Claude generates during `/work`. Optional sections like Visualizations and Sub-Dashboards default to unchecked.
+
 **Note:** The dashboard ships as a populated format example (a fictional renovation project). On first `/work` run after spec decomposition, it is replaced with your actual project data. The example exists so Claude can see exactly what format to produce.
 
 For full details, see `.claude/support/reference/workflow.md` § "System Overview".
