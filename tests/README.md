@@ -49,10 +49,10 @@ Tests the dashboard as a communication hub across project lifecycle stages. Focu
 | 14 | Dashboard Communication Loop | Complete attention → action → resolution loop doesn't break | All dashboard-related files |
 
 **Design gaps surfaced by 08-14:**
-- Inline feedback areas in "Tasks Ready for You" are lost on dashboard regeneration (11B, 14B)
+- Inline feedback areas in "Your Tasks" are lost on dashboard regeneration (11B, 14B)
 - No designated place for user constraints/notes in decision docs (11B)
 - Section toggle system is static — no phase-aware defaults (12D)
-- Critical Path text format doesn't convey parallel branches (13A)
+- Critical path one-liner doesn't convey parallel branches (13A)
 - Decision resolution doesn't explicitly update frontmatter status (14C)
 - `questions.md` not linked from dashboard (11C)
 

@@ -14,7 +14,7 @@ The user runs Claude Code CLI in one pane and has `dashboard.md` open in the oth
 
 ```
 1. Claude works → updates task JSON → regenerates dashboard
-2. Dashboard shows item in "Needs Your Attention"
+2. Dashboard shows item in "Action Required"
 3. User reads dashboard, sees item
 4. User follows link, performs action (edits file, writes feedback, checks checkbox)
 5. User runs /work (or /work complete)
@@ -29,17 +29,17 @@ The user runs Claude Code CLI in one pane and has `dashboard.md` open in the oth
 
 ### Expected sequence
 
-1. **Before:** Dashboard shows Task 7 under "Claude Status → In Progress"
+1. **Before:** Dashboard shows Task 7 under "Claude → In Progress"
 2. **After verification:** Dashboard updates:
    - Task 7 → "In Progress" (failed verification, needs fixes)
-   - New fix task 7a appears under "Claude Status → Ready to Start"
+   - New fix task 7a appears under "Claude → Ready to Start"
    - Verification Debt section shows Task 7
 3. **After fix:** Claude implements fix → re-verifies → passes
 4. **After pass:** Dashboard updates:
    - Task 7 → "Finished" (verification passed)
    - Fix task 7a → "Finished"
    - Verification Debt cleared
-   - Task 7 appears in "Recently Completed"
+   - Task 7 appears in Progress "this week" activity
 
 ### Pass criteria
 
@@ -72,14 +72,14 @@ Then BEFORE the user runs `/work complete`, something triggers a dashboard regen
 
 ### Risk
 
-The "Tasks Ready for You" section is rebuilt from source data. The inline feedback area is part of that section. On regeneration, the feedback is overwritten with a fresh empty template.
+The "Your Tasks" section is rebuilt from source data. The inline feedback area is part of that section. On regeneration, the feedback is overwritten with a fresh empty template.
 
 ### Expected behavior (current spec)
 
 dashboard.md states:
-- "Needs Your Attention" sub-sections are rebuilt from source data
-- Only the Notes & Ideas section (between `<!-- USER SECTION -->` markers) is preserved
-- Inline feedback areas in "Tasks Ready for You" are NOT in the user section
+- Action Required sub-sections are rebuilt from source data
+- Only the Notes section (between `<!-- USER SECTION -->` markers) is preserved
+- Inline feedback areas in "Your Tasks" are NOT in the user section
 
 **This means feedback IS lost on regeneration.** This is a design gap.
 
@@ -127,7 +127,7 @@ Then runs `/work`.
 3. Updates decision status to "approved" (or keeps "proposed" and marks as selected?)
 4. Checks if inflection_point → routes accordingly
 5. Unblocks dependent tasks
-6. Regenerates dashboard → DEC-002 moves from "Decisions Pending" to "All Decisions" with selected option shown
+6. Regenerates dashboard → DEC-002 moves from Action Required → Decisions sub-section to the Decisions section with selected option shown
 
 ### Gap analysis
 
@@ -145,7 +145,7 @@ Then runs `/work`.
 
 - [ ] Checking a box in the decision doc is sufficient to unblock dependent tasks
 - [ ] Next `/work` run detects the change and acts on it
-- [ ] Dashboard reflects the resolution (selected option shown in All Decisions)
+- [ ] Dashboard reflects the resolution (selected option shown in Decisions)
 - [ ] If decision is inflection point, `/work` pauses and directs to `/iterate`
 - [ ] Decision frontmatter status is updated to reflect the resolution
 

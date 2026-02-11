@@ -1,10 +1,10 @@
 # Scenario 13: Critical Path Visualization
 
-Verify that the Critical Path section communicates the dependency chain effectively for complex projects. Tests whether the current text format is sufficient or whether a mermaid diagram would better serve the user's need to quickly grasp the project shape.
+Verify that the critical path one-liner in the Progress section communicates the dependency chain effectively for complex projects. Tests whether the current one-liner format is sufficient or whether a mermaid diagram would better serve the user's need to quickly grasp the project shape.
 
 ## Context
 
-The user wants to glance at the Critical Path and immediately understand: what's the sequence, who owns each step, what's blocking what. For simple projects (3-4 steps), a numbered list works. For complex projects with parallel branches and decision gates, a visual representation communicates faster.
+The user wants to glance at the critical path one-liner and immediately understand: what's the sequence, who owns each step, what's blocking what. For simple projects (3-4 steps), the one-liner works well. For complex projects with parallel branches and decision gates, a supplementary mermaid diagram may communicate faster.
 
 ## State
 
@@ -19,54 +19,43 @@ The user wants to glance at the Critical Path and immediately understand: what's
 
 ## Trace 13A: Current text format (numbered list)
 
-- **Path:** dashboard.md → Critical Path format hints; work.md → Critical Path Generation
+- **Path:** dashboard.md → Progress section (critical path one-liner); work.md → Critical Path Generation
 
 ### Current format (from dashboard.md format hints)
 
+The critical path is now a one-liner within the Progress section:
+
 ```markdown
-## 🛤️ Critical Path
-
-**Next steps to completion:**
-
-1. 🤖 **Claude**: Finish data cleaning (task 4) — *blocks step 2*
-2. 🤖 **Claude**: Finish API integration (task 5) — *blocks step 3*
-3. ❗ **You**: Resolve DEC-001 (Analysis Method) — *inflection point, blocks step 4*
-4. 🤖 **Claude**: Run statistical analysis (task 8) — *blocks step 5*
-5. 🤖 **Claude**: Calculate effect sizes (task 9) — *blocks step 6*
-6. ❗ **You**: Review Phase 2 results — *phase checkpoint, blocks step 7*
-7. 🤖 **Claude**: Generate publication charts (task 10) — *blocks step 8*
-8. 👥 **Both**: Final report compilation (task 12) — *blocks completion*
-
-*8 steps remaining on critical path*
+**Critical path:** ❗ Resolve DEC-001 → 🤖 Phase 2 tasks → ❗ Review → 🤖 Phase 3 → Done
 ```
 
 ### Strengths
 
-- Clear owner indicators (❗/🤖/👥)
-- Sequential steps are easy to follow
-- Blocking relationships shown
+- Glanceable — entire critical path in one line
+- Owner indicators (❗/🤖/👥) show who owns each step
+- Collapses sequential Claude tasks into phase-level summaries
+- User actions stand out because they're fewer
 
 ### Limitations for complex projects
 
-- Doesn't show parallel branches (tasks 4 and 5 could run in parallel but appear sequential)
+- One-liner can't show parallel branches
 - Doesn't visually distinguish decision gates from implementation steps
-- Doesn't show which steps are already done vs upcoming
-- Long list (8+ steps) requires reading carefully — not glanceable
-- Can't show convergence points (where parallel paths meet)
+- No status indication (which steps are done vs upcoming)
+- Very complex projects may need more detail than one line allows
 
 ### Pass criteria
 
-- [ ] Owner indicators are present on every step
-- [ ] Blocking relationships are stated
+- [ ] Owner indicators are present on every step in the one-liner
+- [ ] Arrow notation shows the sequence
 - [ ] User can determine "what do I need to do" vs "what is Claude doing" at a glance
-- [ ] The format works for projects with <= 5 critical path steps
+- [ ] The one-liner format works for projects with <= 6 critical path steps
 
 ### Fail indicators
 
 - Steps listed without owner indicators
-- No blocking relationships shown (just a flat list)
-- Parallel paths shown as sequential (misleading about what can happen concurrently)
-- User can't quickly find their own action items in a long list
+- One-liner is so long it wraps multiple times (defeating the purpose)
+- User can't quickly find their own action items in the line
+- Critical path is a numbered list instead of a one-liner (old format)
 
 ---
 
@@ -161,41 +150,41 @@ flowchart LR
 
 ---
 
-## Trace 13C: Hybrid approach (summary + diagram)
+## Trace 13C: Hybrid approach (one-liner + optional diagram)
 
-### Proposed structure
+### Current structure
+
+The critical path one-liner lives inside the Progress section:
 
 ```markdown
-## 🛤️ Critical Path
+## 📊 Progress
 
-**You:** Resolve DEC-001 (Analysis Method) → *inflection point, blocks Phase 2*
-**Claude:** 2 tasks in progress, 5 tasks ready after your action
-**Next milestone:** Phase 2 start (after DEC-001 + Phase 1 completion)
+| Phase | Done | Total | Status |
+...
 
-<details>
-<summary>Dependency diagram</summary>
+**Critical path:** ❗ Resolve DEC-001 → 🤖 Phase 2 tasks → ❗ Review → 🤖 Phase 3 → Done
 
-[mermaid diagram here]
-
-</details>
+*This week: 3 tasks completed*
 ```
+
+For complex projects, a mermaid diagram can supplement this in `.claude/support/visualizations/` linked from the Notes section.
 
 ### Advantages
 
-- Summary line gives the instant answer: "What's blocking me?"
-- User action item is the FIRST thing shown (not buried in step 7 of 12)
-- Diagram available on demand (expandable) for those who want detail
-- Works in editors that support HTML `<details>` tags
+- One-liner gives the instant answer: "What's the sequence?"
+- User action items (❗) stand out visually
+- Diagram available on demand for complex projects (separate file, not inline)
+- No section overhead — it's one line within Progress
 
 ### Pass criteria
 
-- [ ] Critical Path has a 1-3 line summary that answers "what's blocking completion?"
-- [ ] User action items appear before Claude action items
-- [ ] Detailed dependency chain is available but doesn't dominate the section
-- [ ] Format works in standard markdown editors
+- [ ] Critical path one-liner answers "what's blocking completion?" in one line
+- [ ] User action items (❗) appear visibly in the line
+- [ ] For complex projects, a mermaid diagram is available as a linked visualization
+- [ ] One-liner format works in all markdown editors
 
 ### Fail indicators
 
-- Summary is just "8 steps remaining" without saying what the next user action is
-- User action buried after 5 Claude steps
-- Detail section is always expanded (defeats the purpose of being collapsible)
+- One-liner is just "8 steps remaining" without saying what the next user action is
+- User action buried among many Claude steps
+- Critical path takes more than 2 lines (should be a one-liner)

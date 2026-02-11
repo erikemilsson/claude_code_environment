@@ -18,7 +18,7 @@ The user wants to minimize file browsing. Feedback should flow through the dashb
 
 ## Trace 11A: Task feedback flow
 
-- **Path:** dashboard.md → Tasks Ready for You format
+- **Path:** dashboard.md → Your Tasks format
 
 ### Scenario
 
@@ -27,7 +27,7 @@ Task 11 needs user feedback on the auth design. The dashboard should make it cle
 ### Expected in dashboard
 
 ```markdown
-### Tasks Ready for You
+### Your Tasks
 
 | ID | Task | Action | Link |
 |----|------|--------|------|
@@ -50,9 +50,9 @@ Task 11 needs user feedback on the auth design. The dashboard should make it cle
 ### Gap analysis
 
 **Where does the feedback actually persist?**
-- The inline feedback area in dashboard.md is between `<!-- USER SECTION -->` markers — but it's NOT in the user section. It's in the "Tasks Ready for You" sub-section.
-- When dashboard regenerates, the "Tasks Ready for You" table is rebuilt from source data. Feedback written there is LOST on regeneration.
-- The user section (`## 💡 Notes & Ideas`) is preserved, but task feedback isn't written there.
+- The inline feedback area in dashboard.md is between `<!-- USER SECTION -->` markers — but it's NOT in the user section. It's in the "Your Tasks" sub-section.
+- When dashboard regenerates, the "Your Tasks" table is rebuilt from source data. Feedback written there is LOST on regeneration.
+- The Notes section (`## 💡 Notes`) is preserved, but task feedback isn't written there.
 
 **Current persistence model:**
 - Dashboard inline feedback → transient (lost on regen)
@@ -79,7 +79,7 @@ Task 11 needs user feedback on the auth design. The dashboard should make it cle
 
 ## Trace 11B: Decision feedback flow
 
-- **Path:** dashboard.md → Decisions Pending; decisions.md → Decision Record Format
+- **Path:** dashboard.md → Action Required → Decisions; decisions.md → Decision Record Format
 
 ### Scenario
 
@@ -141,7 +141,7 @@ Later, they need to compile this into a report or reference it for a follow-up p
 
 | Feedback type | Storage location | Structured? | Discoverable? |
 |---------------|-----------------|-------------|---------------|
-| Decision rationale | `decision-*.md` files | Yes (template) | Yes (All Decisions table) |
+| Decision rationale | `decision-*.md` files | Yes (template) | Yes (Decisions section) |
 | Task implementation feedback | Task JSON `notes` field | Partially | Requires reading JSON |
 | Questions & answers | `questions.md` | Yes (table) | Yes (but file not linked from dashboard) |
 | Constraints | No designated location | No | No |
@@ -175,7 +175,7 @@ Later, they need to compile this into a report or reference it for a follow-up p
 
 ## Trace 11D: Out-of-spec recommendation feedback
 
-- **Path:** work.md → Step 3 out-of-spec task handling; dashboard.md → Reviews & Approvals
+- **Path:** work.md → Step 3 out-of-spec task handling; dashboard.md → Reviews sub-section
 
 ### Scenario
 
@@ -184,7 +184,7 @@ Task 15 finished, verify-agent created 2 out-of-spec recommendations. The user n
 ### Expected in dashboard
 
 ```markdown
-### Reviews & Approvals
+### Reviews
 
 - [ ] **Add input validation** — verify-agent recommends adding validation to API endpoints (beyond spec) → [task-16.json](../tasks/task-16.json) — Accept / Reject / Defer
 - [ ] **Add rate limiting** — verify-agent recommends rate limiting for public endpoints → [task-17.json](../tasks/task-17.json) — Accept / Reject / Defer
