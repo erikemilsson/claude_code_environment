@@ -386,7 +386,7 @@ If acceptance criteria lack tests:
 ### Spec Ambiguity
 
 If unsure what correct behavior is:
-1. Add question to questions.md
+1. Add question to questions.md with today's date prefix: `- [YYYY-MM-DD] Question text`
 2. Note ambiguity in report
 3. Flag for human clarification
 

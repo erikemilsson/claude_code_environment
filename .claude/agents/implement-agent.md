@@ -200,7 +200,7 @@ For larger tasks, update notes with progress:
 If you cannot proceed:
 1. Set status to "Blocked"
 2. Document blocker in notes
-3. Add question to questions.md
+3. Add question to questions.md with today's date prefix: `- [YYYY-MM-DD] Question text`
 4. Report back to /work
 
 ### Non-Blocking Issues

@@ -913,10 +913,10 @@ Questions accumulate in `.claude/support/questions.md` during work.
    Questions for you (from questions.md):
 
    ## Requirements
-   - Should login require email verification?
+   - [2026-01-15] Should login require email verification?
 
    ## Technical
-   - [BLOCKING] What caching solution to use?
+   - [2026-01-20] [BLOCKING] What caching solution to use?
 
    Please answer, or [S] Skip for now.
    ```

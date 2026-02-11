@@ -12,11 +12,11 @@ Questions that need human input. Reviewed at phase boundaries.
 
 **When reviewed:** At phase boundaries, when explicitly prompted, or when blocking questions prevent progress.
 
-**Marking urgency:** Prefix blocking questions with `[BLOCKING]` to indicate they prevent phase completion.
+**Format:** Each question is prefixed with its date: `- [2026-01-15] Question text`. Add `[BLOCKING]` after the date for blocking questions: `- [2026-01-15] [BLOCKING] Question text`.
 
 **Answering:** Move answered questions to the "Answered Questions" table below with the date. Keep for reference.
 
-**Staleness:** Questions older than 14 days trigger a warning in `/health-check`.
+**Staleness:** Questions older than 14 days trigger a warning in `/health-check`. The date prefix enables this check.
 
 ---
 
