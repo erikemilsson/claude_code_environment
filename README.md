@@ -2,58 +2,47 @@
 
 A ready-to-use project template for Claude Code with Spec→Execute→Verify workflow.
 
-**Designed for Claude Opus 4.6.** The difficulty scale, task breakdown thresholds, and agent workflows are calibrated for Opus-level reasoning. Using a less capable model may result in lower quality output and incorrect difficulty assessments.
+**Designed for Claude Opus 4.6.** The difficulty scale, task breakdown thresholds, and agent workflows are calibrated for Opus-level reasoning.
 
-## Setup
+## Using This Template
 
 ```bash
-# Clone this template
+# Clone and start a new project
 git clone https://github.com/your-username/claude_code_environment.git my-project
 cd my-project
 rm -rf .git && git init
 
-# Customize for your project
-# 1. Edit .claude/CLAUDE.md - Delete the meta section (everything above the ---), then customize
-# 2. Create your spec: run /iterate in Claude Code
-# 3. Edit this README.md - Replace with your project documentation
+# Customize
+# 1. Edit .claude/CLAUDE.md — delete everything above the --- separator
+# 2. Delete this README.md, tests/, and root CLAUDE.md (template maintenance files)
+# 3. Run /iterate in Claude Code to create your spec
 ```
 
-## What's Included
+**What ships to your project:** The `.claude/` directory. Everything at root level (this README, tests/, CLAUDE.md) is template maintenance infrastructure — delete it when starting a new project.
+
+## Repository Structure
 
 ```
-└── .claude/
+├── README.md                      # This file (template docs, delete in projects)
+├── CLAUDE.md                      # Template maintenance context for Claude Code
+├── tests/                         # Conceptual test scenarios for template commands
+│   ├── README.md
+│   └── scenarios/
+│       ├── 01-decision-discovery.md
+│       ├── 02-decision-blocking.md
+│       ├── 03-inflection-point-handoff.md
+│       ├── 04-dashboard-skeleton.md
+│       ├── 05-phase-transition.md
+│       ├── 06-late-decision-antipattern.md
+│       └── 07-session-resumption.md
+└── .claude/                       # ← This is what ships to new projects
     ├── CLAUDE.md                  # Instructions for Claude Code
     ├── spec_v{N}.md               # Source of truth: requirements
     ├── dashboard.md               # Project Dashboard (auto-generated)
     ├── tasks/                     # Task data
-    │   └── task-*.json            # Individual task files
-    ├── commands/                  # Slash commands
-    │   ├── work.md                # Main entry point
-    │   ├── iterate.md             # Spec review and building
-    │   ├── status.md              # Read-only status view
-    │   ├── breakdown.md           # Task decomposition
-    │   ├── health-check.md        # System health validation
-    │   ├── update-template.md     # Template sync
-    │   └── setup-check.md         # Template configuration check
-    ├── agents/                    # Specialist agents
-    │   ├── implement-agent.md     # Builds the solution
-    │   └── verify-agent.md        # Validates against spec
-    ├── specification_creator/     # Legacy redirect (use /iterate from project root)
-    │   ├── CLAUDE.md              # Redirect notice
-    │   └── README.md              # Redirect notice
-    ├── support/                   # Supporting documentation
-    │   ├── reference/             # Schemas, guides, definitions
-    │   ├── decisions/             # Decision documentation
-    │   │   ├── index.md           # Decision summary
-    │   │   ├── decision-*.md      # Individual records
-    │   │   └── .archive/          # Research documents
-    │   ├── learnings/             # Project-specific patterns
-    │   ├── previous_specifications/  # Archived spec versions
-    │   ├── workspace/             # Claude's working area (gitignored)
-    │   └── questions.md           # Questions for human
-    ├── sync-manifest.json
-    ├── settings.local.json
-    └── version.json
+    ├── commands/                  # Slash commands (/work, /iterate, etc.)
+    ├── agents/                    # Specialist agents (implement, verify)
+    └── support/                   # Reference docs, decisions, workspace
 ```
 
 ## Workflow
@@ -114,8 +103,6 @@ flowchart TD
     class DONE done
 ```
 
-**Core principle:** The spec is the living source of truth. All work aligns with it, or the spec is updated intentionally.
-
 ### Core Concepts
 
 | Concept | What It Is | Example | Resolved By |
@@ -125,32 +112,11 @@ flowchart TD
 | **Human Task** | Action only the user can do. `/work` skips it. | "Configure the API keys" | User completes it and marks done |
 | **Inflection Point** | A decision that changes *what* gets built. | "Monolith or microservices?" | After selection, `/work` pauses and suggests `/iterate` to revisit spec |
 
-You *identify* structure during brainstorming (Claude Desktop), *configure* it during spec building (`/iterate`), and *resolve* it during execution (`/work`). All concepts surface in the dashboard and are handled inline — no separate commands to learn.
-
-For details: [terminology](.claude/support/reference/shared-definitions.md) | [phases & decisions](.claude/support/reference/extension-patterns.md) | [dashboard format](.claude/support/reference/dashboard-patterns.md)
-
-## Creating Specifications
-
-Specifications are created using the `/iterate` command from the project root:
-
-```bash
-/iterate                    # Auto-detect what's needed and build the spec
-/iterate {topic}            # Focus on a specific area
-/iterate distill            # Extract buildable spec from a vision document
-```
-
-The iterate command will:
-- Guide you through requirement gathering
-- Create versioned specs at `.claude/spec_v{N}.md`
-- Archive old versions to `.claude/support/previous_specifications/`
-
-Once your spec is ready, run `/work` to begin execution.
-
-## Commands
+### Commands
 
 | Command | Description |
 |---------|-------------|
-| `/work` | Main entry point - checks spec, decomposes tasks, routes to agents |
+| `/work` | Main entry point — checks spec, decomposes tasks, routes to agents |
 | `/work complete` | Complete current in-progress task (or `/work complete {id}`) |
 | `/iterate` | Structured spec review (checks gaps, asks questions, suggests content) |
 | `/status` | Quick read-only view of project state |
@@ -158,6 +124,14 @@ Once your spec is ready, run `/work` to begin execution.
 | `/health-check` | Validate system health |
 | `/update-template` | Check for and apply template updates |
 | `/setup-check` | Validate template configuration (run after cloning) |
+
+## Maintaining This Template
+
+See `.claude/CLAUDE.md` (section above the --- separator) for Claude-specific maintenance instructions.
+
+### Testing
+
+Conceptual test scenarios in `tests/scenarios/` verify that command definitions handle decisions, phases, and session resilience correctly. Run them after significant changes to `/work`, `/iterate`, or `/health-check`. See `tests/README.md` for details.
 
 ## License
 
