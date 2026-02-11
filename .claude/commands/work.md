@@ -336,14 +336,23 @@ Check whether phases or unresolved decisions block any intended work:
    ├─ Read each referenced decision record
    ├─ Check if decision has a checked box in "## Select an Option"
    │
-   │  IF any decision is unresolved:
+   │  IF any decision is unresolved (no checked box):
    │    📋 Decision {id} ({title}) blocks {N} task(s).
    │    Open the decision doc to review options and check your selection:
    │    → [decision doc link]
    │    Then run `/work` again.
    │
-   │  IF decision was previously pending and is now resolved:
+   │  IF decision has a checked box AND frontmatter status is NOT "approved"/"implemented":
+   │    → AUTO-UPDATE FRONTMATTER:
+   │      1. Extract selected option name from the checked line (text after `[x] `)
+   │      2. Update frontmatter fields:
+   │         - status: approved
+   │         - decided: [today's date, YYYY-MM-DD]
+   │      3. Log: "Decision {id} resolved → status updated to 'approved' (selected: {option_name})"
    │    → Run post-decision check (see Step 2b-post below)
+   │
+   │  IF decision has a checked box AND frontmatter status is already "approved"/"implemented":
+   │    → Already processed. Run post-decision check if dependent tasks are still blocked.
 
 5. LATE DECISION CHECK (reverse cross-reference):
    For each decision-*.md file, read `related.tasks` array:
@@ -441,15 +450,28 @@ eligible = tasks where ALL of:
 **3. Build conflict-free batch:**
 ```
 batch = []
+held_back = []  # tracks tasks skipped due to file conflicts
+
 For each eligible task (sorted by priority, then ID):
   conflicts = false
+  conflict_with = null
+  conflict_files = []
   For each task already in batch:
-    IF files_affected overlap (any shared paths):
+    overlap = intersection of files_affected
+    IF overlap is non-empty:
       conflicts = true
+      conflict_with = batch_task.id
+      conflict_files = overlap
       break
   IF task has empty files_affected AND parallel_safe != true:
     skip (unknown file impact — not safe for parallel)
-  ELSE IF NOT conflicts AND len(batch) < max_parallel_tasks:
+  ELSE IF conflicts:
+    held_back.append({
+      task_id: task.id,
+      blocked_by: conflict_with,
+      conflict_files: conflict_files
+    })
+  ELSE IF len(batch) < max_parallel_tasks:
     add task to batch
 ```
 
@@ -458,6 +480,8 @@ For each eligible task (sorted by priority, then ID):
 IF len(batch) >= 2:
   → parallel_mode = true
   → Log: "Parallel dispatch: {batch_size} tasks eligible"
+  → IF held_back is non-empty:
+      Log for each: "Task {id} held back — file conflict with Task {conflict_with} on: {conflict_files}"
 ELSE:
   → parallel_mode = false
   → Fall back to sequential execution in Step 3
@@ -616,7 +640,29 @@ The primary source for section toggles is the **dashboard.md section toggle chec
 4. Notes section: always `preserve` regardless of checkbox state (enforced)
 5. Fallback: if no checklist exists, check spec frontmatter `dashboard_sections` or `.claude/CLAUDE.md`
 
-**During regeneration:**
+**First regeneration (replacing template example):**
+
+On the initial dashboard generation (when replacing the example with real project data), compute toggle defaults from project state instead of using static defaults:
+
+```
+Action Required  → [x] always (core section)
+Progress         → [x] always (core section)
+Tasks            → [x] always (core section)
+Decisions        → [x] if any decision-*.md files exist, [ ] otherwise
+Notes            → [x] always (preserve mode)
+Timeline         → [x] if any task has due_date or external_dependency.expected_date, [ ] otherwise
+Visualizations   → [x] if any files exist in .claude/support/visualizations/, [ ] otherwise
+Sub-Dashboards   → [x] if any sub-dashboard files are referenced in spec, [ ] otherwise
+```
+
+**On phase transitions:**
+
+When `/work` detects a phase transition (all Phase N tasks "Finished", Phase N+1 becoming active), check whether toggle suggestions are warranted:
+- If Phase N+1 introduces decision dependencies and Decisions is unchecked → suggest: "Phase {N+1} has pending decisions. Consider enabling the Decisions section in the dashboard."
+- If Phase N+1 tasks have due dates and Timeline is unchecked → suggest: "Phase {N+1} has deadlines. Consider enabling the Timeline section."
+- Suggestions are logged, never auto-toggled. The user's checkbox state is always authoritative.
+
+**During regeneration (all subsequent):**
 - Preserve the toggle checklist between its markers (never overwrite user's checkbox state)
 - Only generate sections that are checked (`[x]`)
 - The Notes section is always preserved regardless of toggle state
@@ -643,6 +689,11 @@ The checkbox UI maps to `build`/`exclude`. Users who need `maintain` mode can se
    - Extract content between `<!-- USER SECTION -->` and `<!-- END USER SECTION -->`
    - Save to `.claude/support/workspace/dashboard-notes-backup.md`
    - Rotate old backups (keep last 3)
+
+2b. **Backup inline feedback**
+   - Scan dashboard for `<!-- FEEDBACK:{id} -->` / `<!-- END FEEDBACK:{id} -->` marker pairs
+   - For each pair, extract the content between the markers, keyed by task ID
+   - Store in memory alongside the user section backup (used in Step 5b)
 
 3. **Generate dashboard**
    - Follow the Section Format Reference below for all formatting rules
@@ -705,9 +756,11 @@ Review items are derived, not stored. During regeneration:
 - Timeline has its own toggle in the section checklist (independent of Progress)
 - Phase table in Progress: always show ALL phases (including blocked/future)
 - Critical path owners: ❗ (human), 🤖 (Claude), 👥 (both)
-- Critical path >5 steps: show first 3 + "... N more → Done"
+- Critical path parallel branches: `[step A | step B]` notation for fork/join points; max 3 branches per group
+- Critical path >5 steps (after collapsing parallel branches): show first 3 + "... N more → Done"
 - "This week" line: omit when all counts are zero
 - Tasks grouped by phase with per-phase progress lines
+- Tasks with `conflict_note`: show status as `Pending (held: conflict with Task {id})` during parallel dispatch
 - Decisions: decided → show selected option name; pending → link to doc in Selected column
 - Out-of-spec tasks: prefix title with ⚠️
 - Footer: healthy = spec aligned tooltip; issues = ⚠️ with counts
@@ -788,10 +841,14 @@ Dispatching N tasks in parallel:
   - Task {id}: "{title}" → files: [{files_affected}]
   - Task {id}: "{title}" → files: [{files_affected}]
   ...
-  File conflicts: none (verified in Step 2c)
+  File conflicts: none between batch members (verified in Step 2c)
+
+Held back (file conflicts):
+  - Task {id}: "{title}" — conflict with Task {conflict_with} on [{conflict_files}]
+  (Or: "None" if held_back is empty)
 ```
 
-**2. Set ALL batch tasks to "In Progress":**
+**2. Set ALL batch tasks to "In Progress" and annotate held-back tasks:**
 
 Before spawning agents, update every task in the batch:
 ```json
@@ -800,6 +857,15 @@ Before spawning agents, update every task in the batch:
   "updated_date": "YYYY-MM-DD"
 }
 ```
+
+For each held-back task, add a temporary `conflict_note` to the task JSON:
+```json
+{
+  "conflict_note": "Held: file conflict with Task {id} on {files}. Auto-clears when conflict resolves."
+}
+```
+
+This note is surfaced in the dashboard Tasks section (appended to the task's Status column as a tooltip or parenthetical) and removed when the task is dispatched.
 
 **3. Spawn parallel agents:**
 
@@ -811,26 +877,45 @@ Use Claude Code's `Task` tool to spawn one agent per task. **Always set `model: 
 
 All agents run concurrently via parallel `Task` tool calls with `model: "opus"`.
 
-**4. Collect results:**
+**4. Collect results with incremental re-dispatch:**
 
-Wait for all agents to return. Each agent reports:
-- Task ID and final status ("Finished" if verification passed, "In Progress" if failed)
-- Verification result (pass/fail)
-- Files modified
-- Issues encountered
+Use `run_in_background: true` for each agent's `Task` call, then poll for completion:
+
+```
+active_agents = {task_id: agent_id for each spawned agent}
+
+WHILE active_agents is non-empty:
+  Check each agent for completion (read output file or use TaskOutput with block: false)
+
+  For each completed agent:
+    1. Record result (task ID, status, verification result, files modified, issues)
+    2. Remove from active_agents
+    3. Check parent auto-completion for finished tasks
+    4. INCREMENTAL RE-DISPATCH:
+       - Re-run Step 2c eligibility assessment with current state
+         (completed tasks are now "Finished", their files are released)
+       - Any previously held-back tasks whose conflicts are now resolved
+         become eligible
+       - If new eligible tasks found AND len(active_agents) < max_parallel_tasks:
+         Spawn new agents for newly-eligible tasks
+         Add to active_agents
+       - Clear conflict_note from newly-dispatched tasks
+
+  Brief pause before next poll iteration (avoid busy-waiting)
+```
+
+This enables **incremental re-dispatch**: when Task A completes and releases its files, Task C (which was held back due to conflict with A) can start immediately — even while Tasks B and D are still running.
 
 **5. Post-parallel cleanup:**
 
-After all agents complete:
+After all agents complete (active_agents is empty):
 
 ```
-1. Check parent auto-completion:
-   For each finished task with a parent_task:
-     IF all sibling subtasks are "Finished":
-       Set parent status to "Finished"
+1. Final parent auto-completion check
 
 2. Single dashboard regeneration:
    Regenerate dashboard.md per the Dashboard Regeneration Procedure in Step 4
+   - Remove all conflict_note fields from task JSONs (cleanup)
 
 3. Lightweight health check (Step 6)
 
@@ -1037,17 +1122,29 @@ For the difficulty scale, see `.claude/support/reference/shared-definitions.md`.
 
 ### Critical Path Generation
 
-The critical path is rendered as a single line in the **Progress** section: owner-tagged steps joined by `→`.
+The critical path is rendered as a single line in the **Progress** section: owner-tagged steps joined by `→`, with parallel branches shown in `[ | ]` notation.
 
-1. **Find unblocked incomplete tasks** - Tasks with no unfinished dependencies
-2. **Build dependency chains** - Trace what depends on each recursively
-3. **Identify longest chain** - This is the critical path
-4. **Format as one-liner** - `❗ Resolve DEC-001 → 🤖 Build API layer → 🤖 Phase verification → Done *(N steps)*`
+1. **Find unblocked incomplete tasks** — tasks with no unfinished dependencies
+2. **Build dependency graph** — trace all dependency relationships (forward and reverse)
+3. **Identify longest chain** — this is the critical path (determines project duration)
+4. **Detect parallel branches** — find fork/join points where multiple paths diverge from a common predecessor and reconverge at a common successor
+   - A **fork** is a node with 2+ incomplete successors
+   - A **join** is a node where 2+ paths converge
+   - Only show parallelism when the branches are on or adjacent to the critical path
+5. **Format as one-liner:**
+   - Sequential: `❗ Resolve DEC-001 → 🤖 Build API → Done`
+   - Parallel branches: `❗ Resolve DEC-001 → [🤖 Task A | 🤖 Task B] → 🤖 Merge step → Done`
    - Owners: `❗` (human), `🤖` (Claude), `👥` (both)
-   - For complex paths (>5 steps), show first 3 + "... N more → Done"
-5. **Prioritize human-owned steps** - Surfaces blockers the user can act on
+   - Step count includes all steps across branches: `*(N steps)*`
+   - For complex paths (>5 steps after collapsing parallel branches), show first 3 + "... N more → Done"
+6. **Prioritize human-owned steps** — surfaces blockers the user can act on
 
-**Edge cases:** No dependencies → "All tasks can start now". No incomplete → "All tasks complete!". Single task → just that task → Done.
+**Parallel branch rules:**
+- Max 3 branches in a single `[ | ]` group (more than 3 → collapse to `[🤖 3 parallel tasks]`)
+- Nested parallelism: don't nest `[ ]` — flatten to separate groups with `→` between them
+- If parallel branches have different owners, show each: `[❗ Review | 🤖 Build]`
+
+**Edge cases:** No dependencies → "All tasks can start now". No incomplete → "All tasks complete!". Single task → just that task → Done. No parallelism detected → pure sequential format (no brackets).
 
 ---
 

@@ -87,6 +87,18 @@ Mark your selection by checking one box:
 
 *Check one box above, then fill in the Decision section below.*
 
+## Your Notes & Constraints
+
+*Add any constraints, preferences, or context that should inform this decision. This section is yours — Claude reads it but never overwrites it.*
+
+**Constraints:**
+- [e.g., "Must integrate with existing Redis cluster"]
+
+**Questions:**
+- [e.g., "What's the expected data volume in year 2?"]
+
+*You can also add decision questions to [questions.md](../questions.md).*
+
 ## Decision
 
 **Selected:** [Option name]
@@ -138,8 +150,10 @@ Mark your selection by checking one box:
 4. Add options to comparison table
 5. Fill in Option Details
 6. Once decided, complete Decision, Trade-offs, Impact
-7. Update status to `approved` or `implemented`
+7. Check your selection in "## Select an Option" — `/work` auto-updates status to `approved` and sets the `decided` date
 8. Regenerate the dashboard to include the new decision
+
+**"Your Notes & Constraints" section:** This section in the template is user-owned. Claude reads it when processing the decision but never overwrites it. Use it to record constraints, preferences, or questions that should inform the choice. Content here persists across decision doc updates and dashboard regenerations.
 
 ---
 
