@@ -48,7 +48,7 @@ This environment is designed for **Claude Opus 4.6** (`claude-opus-4-6`). The di
 
 **This is pragmatic, not rigid.** The dashboard is the primary communication hub during active development. Post-completion activities (testing, deployment) may involve more direct interaction. Claude should surface information through the dashboard when it makes sense, not force everything through it artificially.
 
-For full details, see `.claude/support/reference/system-overview.md`.
+For full details, see `.claude/support/reference/workflow.md` § "System Overview".
 
 ## Specification
 
@@ -130,13 +130,13 @@ Major decisions are documented in `.claude/support/decisions/`.
 - **Dashboard tracks all decisions** - Status, pending items, and timeline in one place
 - **Records:** `decision-*.md` - full analysis with comparison tables
 - **Research:** `.archive/` - background research documents
-- **Template:** `.claude/support/reference/decision-template.md`
+- **Reference:** `.claude/support/reference/decisions.md`
 
 When facing significant choices, create a decision record rather than deciding inline.
 
 ## Workspace
 
-Temporary documents go in `.claude/support/workspace/` (scratch, research, drafts). Never create working documents in the project root. See `.claude/support/reference/system-overview.md` for details.
+Temporary documents go in `.claude/support/workspace/` (scratch, research, drafts). Never create working documents in the project root. See `.claude/support/reference/workflow.md` § "Workspace" for details.
 
 ## Archiving Rules
 
@@ -152,7 +152,7 @@ See `.claude/support/reference/paths.md` for all canonical paths.
 
 ## Project Structure
 
-See `.claude/support/reference/system-overview.md` for the full directory tree and template configuration file documentation.
+See `.claude/support/reference/workflow.md` § "Project Structure" for the full directory tree and template configuration file documentation.
 
 ## Technology Stack
 
@@ -164,7 +164,7 @@ See `.claude/support/reference/system-overview.md` for the full directory tree a
 
 ## Glossary
 
-`.claude/support/reference/glossary.md` is the single source of truth for environment terminology. Definitions are already present in context within the files you read during normal workflow — only reference the glossary when explicitly working with concept definitions or aligning reference files.
+`.claude/support/reference/shared-definitions.md` contains the glossary — canonical definitions for all environment terminology. Definitions are already present in context within the files you read during normal workflow — only reference the glossary section when explicitly working with concept definitions or aligning reference files.
 
 ## Project Structure Patterns
 

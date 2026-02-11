@@ -201,3 +201,66 @@ Tasks have an `owner` field that determines responsibility and dashboard placeme
 | `N_Ma` | Parallel subtask | `1_1a`, `1_1b` (can do simultaneously) |
 
 Use underscores for sequential dependencies, letters for parallel work within a sequence. Tasks using the `N_Ma` convention are natural candidates for parallel dispatch — they were designed to run concurrently. `/work` checks these alongside all other eligible tasks when building parallel batches.
+
+---
+
+## Glossary
+
+Canonical definitions for terms used across the environment. Terms already defined in the tables above are not repeated.
+
+### Workflow Phases
+
+| Term | Definition |
+|------|------------|
+| **Spec** | The project specification at `.claude/spec_v{N}.md`. Single source of truth for what gets built. Frontmatter status: `draft`, `active`, or `complete`. |
+| **Spec Phase** | First workflow phase. Define what needs to be built via `/iterate`. Exit: all blocking questions answered, acceptance criteria testable, human approved. |
+| **Execute Phase** | Second workflow phase. Spec decomposed into tasks, worked in dependency order by implement-agent. Each task goes through per-task verification. Exit: all tasks Finished. |
+| **Verify Phase** | Third workflow phase. Two tiers: **Tier 1** (per-task, runs during Execute after each implementation) and **Tier 2** (phase-level, runs once when all tasks Finished, validates full implementation against spec). |
+| **Implementation Stage** | Organizational groupings within Execute: Foundation (setup), Core Features (main functionality), Polish (edge cases), Validation (testing). Not workflow phases. |
+
+### Task Concepts
+
+| Term | Definition |
+|------|------------|
+| **Subtask** | Child task from breakdown. ID `N_M` = sequential (do in order), `N_Ma` = parallel (do simultaneously). Parent auto-completes when all subtasks finish. |
+| **Out-of-Spec Task** | Task not aligned with spec, created when user proceeds despite misalignment or verify-agent suggests improvements beyond acceptance criteria. Marked `out_of_spec: true`. Excluded from phase routing and completion conditions. |
+| **Parallel-Safe Task** | Task with `parallel_safe: true`, eligible for parallel execution even with empty `files_affected`. Used for research/analysis with no file side effects. |
+
+### Decision Concepts
+
+| Term | Definition |
+|------|------------|
+| **Pick-and-Go Decision** | Default decision type. After resolution, blocked tasks simply unblock and `/work` continues. Any decision without `inflection_point: true`. |
+| **Comparison Matrix** | Core of a decision record. Criteria-vs-options table forcing structured evaluation. Common criteria: Performance, Complexity, Cost, Ecosystem, Fit, Risk. |
+| **Weighted Scoring** | Optional addition for high-stakes decisions. Each criterion gets a percentage weight, options scored 1–5. Makes evaluation explicit. |
+| **Implementation Anchor** | Reference linking a decision to code. Added at `implemented` status. Fields: `file`, `line` (optional), `description`. Validated by `/health-check`. |
+| **Spec-Level Choice** | Choice defining requirements or user-visible behavior (the "what"). Changes require spec revision. |
+| **Implementation-Level Choice** | Choice defining tools or technical details (the "how"). Changes don't require spec revision. |
+
+### Spec Drift
+
+| Term | Definition |
+|------|------------|
+| **Spec Drift** | When spec changes after tasks were decomposed from it. Detected by comparing current spec hash against task fingerprints. |
+| **Drift Deferral** | When user selects "Skip section" during reconciliation. Recorded in `.claude/drift-deferrals.json` with timestamp. |
+| **Drift Budget** | Limit on unreconciled drift. Configured via `drift_policy` in spec frontmatter: `max_deferred_sections` (default: 3), `max_deferral_age_days` (default: 14). Enforced by `/work` and `/health-check`. |
+| **Reconciliation** | Updating tasks to match a changed spec. Options per section: apply suggestions, review individually, skip (creates deferral), mark out-of-spec. |
+
+### Verification
+
+| Term | Definition |
+|------|------------|
+| **Per-Task Verification (Tier 1)** | Runs after each task implementation. Checks: files exist, spec alignment, code quality, integration readiness. Pass → Finished. Fail → back to In Progress (max 2 retries). |
+| **Phase-Level Verification (Tier 2)** | Runs once when all tasks Finished. Validates full implementation against spec acceptance criteria. Result: `pass`, `fail`, or `pass_with_issues`. Written to `.claude/verification-result.json`. |
+| **Verification Debt** | Tasks that bypassed or failed verification: status "Awaiting Verification", "Finished" without `task_verification`, or `task_verification.result` is "fail". Blocks project completion. |
+
+### Agents & Infrastructure
+
+| Term | Definition |
+|------|------------|
+| **Implement-Agent** | Builder agent. Executes tasks, writes code, self-reviews, marks "Awaiting Verification". Defined in `.claude/agents/implement-agent.md`. |
+| **Verify-Agent** | Validator agent. Tests against spec, finds issues, handles both Tier 1 and Tier 2 verification. Defined in `.claude/agents/verify-agent.md`. |
+| **Dashboard** | Project dashboard at `.claude/dashboard.md`. Primary communication channel during build phase. Regenerated after task changes. |
+| **Dashboard Freshness** | Whether dashboard reflects current state. Detected by comparing `task_hash` (SHA-256 of sorted task_id:status pairs) against current computed hash. |
+| **Workspace** | Temporary documents at `.claude/support/workspace/`. Subdirs: scratch, research, drafts. May be deleted between sessions. |
+| **Vision Document** | Ideation document in `.claude/vision/`. Captures intent and philosophy. Run `/iterate distill` to extract a buildable spec. |

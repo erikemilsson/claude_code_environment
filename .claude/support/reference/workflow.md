@@ -608,3 +608,95 @@ Unapproved out-of-spec tasks also appear in the "Needs Your Attention" section u
 - Create tasks for discovered work
 - Don't derail current task
 - Flag blocking issues immediately
+
+---
+
+## System Overview
+
+Reference documentation for the environment builder system.
+
+### Roles
+
+**What you do:**
+- Review the dashboard for your next action
+- Click through to linked files when needed (review a document, configure something, test a feature)
+- Signal completion back through the dashboard (checkboxes, feedback sections)
+- Update the spec when requirements change
+- Make decisions when Claude surfaces options
+
+**What Claude does:**
+- Tracks tasks and progress (in `.claude/tasks/`)
+- Implements according to spec
+- Surfaces everything user-facing through the dashboard — action items with links, not buried in internal files
+- Validates work against acceptance criteria
+- Regenerates the dashboard after every significant change
+
+### Workspace
+
+When you need to create temporary documents (research, analysis, drafts), use `.claude/support/workspace/`:
+
+- **scratch/** - Throwaway notes, quick analysis, temporary thinking
+- **research/** - Web search results, reference material, gathered context
+- **drafts/** - Work-in-progress documents before they move to their final location
+
+**Rules:**
+- Never create working documents in the project root or other locations
+- Use simple descriptive names (`api-comparison.md`, not `task-5-research.md`)
+- When a draft is ready to become permanent, discuss where it should go
+
+### Template Configuration Files
+
+Two files control template behavior:
+
+**sync-manifest.json** — Defines which files sync from template updates vs stay project-specific:
+
+| Category | Purpose | Examples |
+|----------|---------|----------|
+| `sync` | Updated from template | Commands, agents, reference docs |
+| `customize` | User-editable, template provides defaults | `.claude/CLAUDE.md`, README.md, questions.md |
+| `ignore` | Project-specific data, never synced | Tasks, dashboard, decision records, learnings |
+
+**settings.local.json** — Pre-approved permissions for consistent Claude Code behavior. Ensures the template works the same way for everyone using it.
+
+### Project Structure
+
+```
+.claude/
+├── CLAUDE.md                  # Instructions for Claude Code
+├── dashboard.md               # Project Dashboard (auto-generated)
+├── verification-result.json   # Latest verification outcome (written by verify-agent)
+├── spec_v{N}.md               # Project specification (source of truth)
+├── vision/                    # Vision documents from ideation
+│   └── {project}-vision.md   # Design philosophy, future roadmap
+├── tasks/                     # Task data
+│   └── task-*.json           # Individual task files
+├── commands/                  # /work and task commands
+├── agents/                    # Specialist agents
+│   ├── implement-agent.md    # Task execution
+│   └── verify-agent.md       # Validation against spec
+├── support/                   # Supporting documentation
+│   ├── reference/            # Schemas, guides, definitions (see README.md for index)
+│   │   ├── shared-definitions.md
+│   │   ├── task-schema.md
+│   │   ├── workflow.md
+│   │   ├── dashboard-patterns.md
+│   │   ├── paths.md
+│   │   ├── decisions.md
+│   │   ├── spec-checklist.md
+│   │   ├── extension-patterns.md
+│   │   └── desktop-project-prompt.md
+│   ├── decisions/            # Decision documentation
+│   │   ├── decision-*.md     # Individual decision records
+│   │   └── .archive/         # Research documents
+│   ├── learnings/            # Project-specific patterns
+│   │   └── README.md
+│   ├── previous_specifications/  # Spec snapshots at decomposition (for drift detection)
+│   ├── workspace/            # Claude's working area (gitignored)
+│   │   ├── scratch/          # Temporary notes, quick analysis
+│   │   ├── research/         # Web search results, reference material
+│   │   └── drafts/           # WIP docs before final location
+│   └── questions.md          # Accumulated questions for human
+├── sync-manifest.json
+├── settings.local.json
+└── version.json
+```

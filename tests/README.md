@@ -16,7 +16,7 @@ No fixture files or project setup needed. The state description in each scenario
 ## When to Run
 
 - After significant changes to `/work`, `/iterate`, or `/health-check`
-- After modifying the decision system (decision-template.md, extension-patterns.md)
+- After modifying the decision system (decisions.md, extension-patterns.md)
 - After changing dashboard patterns that affect how blocking/phases are displayed
 - When adding new state-based features that interact with decisions or phases
 

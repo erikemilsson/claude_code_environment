@@ -907,6 +907,5 @@ Quick check: ❌ BLOCKS COMPLETION
 Task schema: `.claude/support/reference/task-schema.md`
 Difficulty guide: `.claude/support/reference/shared-definitions.md`
 Workflow guide: `.claude/support/reference/workflow.md`
-Decision template: `.claude/support/reference/decision-template.md`
-Decision guide: `.claude/support/reference/decision-guide.md`
+Decisions reference: `.claude/support/reference/decisions.md`
 Template sync: `/update-template`

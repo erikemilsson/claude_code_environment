@@ -87,7 +87,7 @@ Decision records live in `.claude/support/decisions/decision-*.md`. They contain
 - **Optional weighted scoring** — for high-stakes decisions
 - **Checkbox selection** — user marks their choice directly in the doc
 
-See [decision-template.md](decision-template.md) for the full format.
+See [decisions.md](decisions.md) for the full format.
 
 ### Pick-and-Go vs Inflection Point
 
@@ -145,7 +145,7 @@ Decisions appear in the dashboard:
 
 ## Related Files
 
-- [decision-template.md](decision-template.md) — Decision record format and selection mechanism
+- [decisions.md](decisions.md) — Decision record format and selection mechanism
 - [dashboard-patterns.md](dashboard-patterns.md) — Dashboard section templates including phase grouping and decision format
 - [shared-definitions.md](shared-definitions.md) — Vocabulary (Phase, Decision, Inflection Point, Human Task)
 - [workflow.md](workflow.md) — Core workflow documentation

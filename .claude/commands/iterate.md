@@ -195,7 +195,7 @@ Focusing on: [weakest area]
 For each implicit decision found:
 1. Flag it in the readiness check (contributes to `Key decisions documented: ✗`)
 2. In Step 3, ask questions that surface whether it's an inflection point or pick-and-go
-3. In Step 4, suggest creating a decision record (see `support/reference/decision-template.md`) rather than filling in the choice inline — decisions need to be trackable so `/work` can gate dependent tasks
+3. In Step 4, suggest creating a decision record (see `support/reference/decisions.md`) rather than filling in the choice inline — decisions need to be trackable so `/work` can gate dependent tasks
 
 ### Step 3: Ask Questions (max 4)
 

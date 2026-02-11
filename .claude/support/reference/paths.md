@@ -19,7 +19,6 @@
 | Reference docs | `.claude/support/reference/` |
 | Commands | `.claude/commands/` |
 | Agents | `.claude/agents/` |
-| Stage gates | `.claude/gates/` |
 
 ## Notes
 
