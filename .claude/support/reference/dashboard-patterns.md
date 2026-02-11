@@ -149,9 +149,9 @@ The dashboard is how Claude communicates with the user during the build phase. E
 
 **Needs Your Attention** has four sub-sections:
 - `### Verification Debt` — ERROR banner if any debt exists (see format below)
-- `### Decisions Pending` — table: ID, Decision, Category, Priority, Blocking?
-- `### Tasks Ready for You` — table: ID, Task, Type, Due
-- `### Reviews & Approvals` — table: Item, Type, Context
+- `### Decisions Pending` — table: ID, Decision, Question, Options Doc (see example below)
+- `### Tasks Ready for You` — table: ID, Task, Action, Link (see example below)
+- `### Reviews & Approvals` — checklist with links and instructions (see example below)
 
 **Claude Status** has three sub-sections:
 - `### In Progress` — current task(s); when a parallel batch is active, shows all tasks in the batch with a batch indicator
@@ -352,6 +352,26 @@ When a parallel batch is active, the "In Progress" sub-section shows all tasks i
 ```
 
 The parallel-eligibility column is informational only — shown when there are tasks in the Ready state and parallel execution is enabled.
+
+**Blocked (with blocking reasons):**
+```markdown
+### Blocked
+
+| Task | Title | Blocked By |
+|------|-------|------------|
+| 4 | Run analysis | DEC-001 (Analysis Method) |
+| 5 | Calculate effect sizes | DEC-001 (Analysis Method) |
+| 7 | Publication charts | DEC-002 + Phase 2 |
+```
+
+The "Blocked By" column shows the specific blocker: decision IDs (with short title), phase dependencies, task dependencies, or file conflicts with in-progress tasks. Multiple blockers are joined with `+`.
+
+**Empty state:**
+```markdown
+### Blocked
+
+*No Claude tasks blocked*
+```
 
 ---
 

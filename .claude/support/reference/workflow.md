@@ -201,8 +201,8 @@ A task is eligible for parallel dispatch when ALL conditions are met:
 | Status is "Pending" | Only unstarted tasks can be batched |
 | Owner is not "human" | Human tasks require manual action |
 | All dependencies are "Finished" | No unresolved blockers |
-| No stage gate blocks the task | Gate criteria must be met |
-| No undecided evaluation choice blocks it | Decision dependencies resolved |
+| Task belongs to current active phase | Phase N+1 blocked until Phase N complete |
+| All decision dependencies are resolved | Pending decisions block dependent tasks |
 | Difficulty < 7 | Complex tasks need breakdown first |
 | `files_affected` don't overlap with other batch tasks | Prevents file conflicts |
 
