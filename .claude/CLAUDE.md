@@ -52,12 +52,14 @@ For full details, see `.claude/support/reference/system-overview.md`.
 
 ## Specification
 
-The project specification lives at `.claude/spec_v{N}.md`.
+The project specification lives at `.claude/spec_v{N}.md` (exactly one file; `/work` discovers N by globbing).
 
-**Do not edit the specification directly.** If you identify improvements:
+**Do not author spec content directly.** If you identify improvements:
 1. Quote the relevant section
 2. Explain the suggested change
 3. Let the user make the edit
+
+**You CAN perform spec infrastructure operations** — archiving, copying during version transitions, updating frontmatter version numbers and dates. The boundary is authorship (deciding what to build) vs infrastructure (managing files). See `iterate.md` § "Suggest-Only Boundary" for details.
 
 To create or revise specifications, run `/iterate`.
 
@@ -159,6 +161,10 @@ See `.claude/support/reference/system-overview.md` for the full directory tree a
 ## Conventions
 
 [Project-specific coding conventions, naming patterns, etc.]
+
+## Glossary
+
+`.claude/support/reference/glossary.md` is the single source of truth for environment terminology. Definitions are already present in context within the files you read during normal workflow — only reference the glossary when explicitly working with concept definitions or aligning reference files.
 
 ## Project Structure Patterns
 

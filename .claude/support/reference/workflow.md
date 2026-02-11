@@ -488,9 +488,13 @@ When you need to add features or change requirements after initial decomposition
 
 ### Versioning Conventions
 
-- Spec files follow `spec_v{N}.md` naming
-- Increment version number for major scope changes (new spec_v2.md)
-- Minor edits stay in the same version
+- **Single-spec invariant**: Exactly one `spec_v{N}.md` exists in `.claude/` at any time
+- **Version discovery**: `/work` globs for `spec_v*.md` and uses the highest N
+- **Direct edits are safe**: The decomposed snapshot preserves the pre-edit state; drift detection handles reconciliation
+- **Version bumps** are for major transitions (phase completion, inflection points, major pivots) — not for routine edits
+- **Substantial change detection**: `/work` evaluates change magnitude and suggests a version bump when edits are large enough
+- **Version Transition Procedure**: Archive → Copy → Bump frontmatter → Remove old (see `iterate.md` § "Version Transition Procedure")
+- **Task migration**: Finished tasks keep old provenance; pending/in-progress tasks are migrated (see `work.md` § "Task Migration on Version Transition")
 - Each decomposition saves a snapshot to `.claude/support/previous_specifications/`
 
 ---

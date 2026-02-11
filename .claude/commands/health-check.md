@@ -540,6 +540,8 @@ Each `decision-*.md` file must have valid frontmatter:
 - `decided` - Date when decision was finalized
 - `related.tasks` - Array of task IDs
 - `related.decisions` - Array of decision IDs
+- `spec_revised` - Boolean, set to `true` after `/iterate` processes an inflection point and user updates spec
+- `spec_revised_date` - Date when spec was revised for this decision
 
 #### 2. Dashboard Consistency
 
@@ -593,9 +595,59 @@ Validates that implemented decisions have traceable code anchors:
 - Mark decision for review
 - Suggest reverting status to `approved` if no valid anchors remain
 
+#### 6. Decision-Task Cross-Reference (Late Decision Detection)
+
+Detects the anti-pattern where a decision record is created *after* related work has already started or completed — meaning tasks were executed without the decision gating them.
+
+**Algorithm:**
+```
+For each decision-*.md file:
+  1. Read related.tasks array (list of task IDs this decision affects)
+  2. For each referenced task ID:
+     a. Read the task JSON
+     b. Check if task has decision's ID in its decision_dependencies array
+     c. IF NOT:
+        │  This is a cross-reference mismatch.
+        │  The decision claims to affect this task, but the task
+        │  was created without knowing about the decision.
+        │
+        │  Check task status:
+        │  ├─ "Finished"     → ERROR: work completed without decision
+        │  ├─ "In Progress"  → ERROR: work ongoing without decision
+        │  ├─ "Pending"      → WARNING: can still be fixed
+        │  └─ Other          → WARNING: review needed
+```
+
+**Report format (issues found):**
+```
+[ERROR] Late decision detected — work proceeded without decision gating
+
+  DEC-001 (Analysis Method) references tasks [4, 5, 6]
+  But these tasks have no decision_dependencies for DEC-001:
+
+  - Task 4 "Run statistical analysis" — status: Finished ❌
+    Work completed before this decision existed. May need rework.
+  - Task 5 "Calculate effect sizes" — status: In Progress ⚠️
+    Currently being built without decision resolution.
+  - Task 6 "Generate summary statistics" — status: Pending ✓
+    Can be fixed by adding decision_dependencies.
+
+  Recommendations:
+  1. Add decision_dependencies: ["DEC-001"] to tasks 4, 5, 6
+  2. Review task 4 — implementation may not match the eventual decision
+  3. Pause task 5 until DEC-001 is resolved
+```
+
+**Report format (no issues):**
+```
+[Checkmark] Decision-task cross-references consistent
+```
+
+**Why this matters:** This catches the exact failure mode where decisions are created as afterthoughts rather than during spec review. Without this check, work proceeds on unresolved assumptions and must be rebuilt when the decision resolves.
+
 ### Decision Report Format
 
-Reports: record count, schema validation, dashboard consistency, staleness (draft >30d, proposed >14d), completeness (approved/implemented need Decision section), and anchor validation.
+Reports: record count, schema validation, dashboard consistency, staleness (draft >30d, proposed >14d), completeness (approved/implemented need Decision section), anchor validation, and cross-reference consistency.
 
 ### Decision Auto-Fixes
 
@@ -608,6 +660,9 @@ Reports: record count, schema validation, dashboard consistency, staleness (draf
 | Stale proposed (> 14 days) | Ask user: approve, reject, or extend |
 | Implemented without anchors | Ask user: add anchors, or revert to approved |
 | Anchor file not found | Ask user: update path, remove anchor, or mark for review |
+| Late decision — task missing dependency (Pending) | Add decision ID to task's `decision_dependencies` array |
+| Late decision — task missing dependency (In Progress) | Add dependency, set task back to "Pending" (blocked), notify user |
+| Late decision — task missing dependency (Finished) | Add dependency, add note: "Review after {DEC-ID} resolved — may need rework" |
 
 ### Non-Fixable Issues (Manual Required)
 
@@ -628,7 +683,29 @@ Validates spec archive consistency and detects misplaced archived files.
 
 ### Validation Checks
 
-#### 1. Spec Version Continuity
+#### 1. Single-Spec Invariant
+
+There must be exactly one `spec_v{N}.md` file in `.claude/`. Multiple spec files indicate a failed or incomplete version transition.
+
+**Algorithm:**
+1. Glob for `.claude/spec_v*.md`
+2. Count matches
+
+```
+IF count == 0:
+  → Info: "No spec file found" (valid for new projects)
+IF count == 1:
+  → ✓ Single-spec invariant holds
+IF count > 1:
+  → ERROR: "Multiple spec files found: spec_v1.md, spec_v2.md"
+  │
+  │  This usually means a version transition was interrupted.
+  │  The highest version (v{N}) is treated as current.
+  │
+  │  Auto-fix: Archive lower versions to previous_specifications/
+```
+
+#### 2. Spec Version Continuity
 
 Ensures all previous spec versions are properly archived:
 
@@ -651,7 +728,7 @@ Archive validation: ⚠️ Issues found
 Archive validation: ✓
 ```
 
-#### 2. Misplaced Spec Files
+#### 3. Misplaced Spec Files
 
 Detects spec files in non-canonical locations:
 
@@ -673,7 +750,7 @@ Archive validation: ⚠️ Issues found
   - Wrong location: .claude/previous_specifications/spec_v1.md (should be in support/previous_specifications/)
 ```
 
-#### 3. Decomposed Spec Validation
+#### 4. Decomposed Spec Validation
 
 Optionally checks for decomposed spec snapshots:
 
@@ -713,6 +790,7 @@ Archive validation: ⚠️ Issues found
 
 | Issue | Auto-Fix |
 |-------|----------|
+| Multiple spec files in `.claude/` | Archive lower versions to `previous_specifications/`, keep highest as current |
 | Spec in wrong location | Move file to `.claude/support/previous_specifications/` |
 | Missing archived spec | Cannot auto-fix (spec content unknown) — warn user |
 | Missing decomposed spec | Cannot auto-fix — informational only |
@@ -749,6 +827,8 @@ Catch common issues immediately without the overhead of a full health check.
 | Orphan dependency detection | References to deleted/missing tasks | Warning |
 | Out-of-spec count | Number of tasks marked out-of-spec | Info |
 | Completion gate integrity | Project/spec marked complete but verification-result.json missing | **CRITICAL** |
+| Late decision cross-reference | Decision's `related.tasks` references tasks missing `decision_dependencies` | **ERROR** |
+| Single-spec invariant | Multiple `spec_v*.md` files in `.claude/` | **ERROR** |
 
 ### Output Format
 

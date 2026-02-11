@@ -30,6 +30,8 @@ related:
   decisions: []
 implementation_anchors: []
 inflection_point: false
+spec_revised:
+spec_revised_date:
 blocks: []
 ---
 

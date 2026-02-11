@@ -25,20 +25,22 @@ Structured spec review that identifies gaps, asks focused questions, and suggest
 
 ## Rules
 
-**Spec editing policy:** `suggest_only` — Claude suggests changes, the user makes edits.
+**Spec editing policy:** `suggest_only` — Claude suggests content, the user decides what goes in.
 
-**DO NOT edit the specification directly.** Only suggest changes for the user to make.
+**DO NOT author spec content directly.** Only suggest changes for the user to make. This means Claude does not write requirements, acceptance criteria, scope definitions, or architecture decisions into the spec.
 
-When suggesting changes:
+Claude **CAN** perform spec infrastructure operations: archiving, copying during version transitions, updating frontmatter metadata (version number, dates, status). See "Suggest-Only Boundary" in the Spec Versioning section below for the full distinction.
+
+When suggesting content changes:
 - Quote the specific section
 - Explain what to change and why
 - Provide copy-pasteable content
 - Let the user make the edit
 
-**Why this mode exists:** The spec is your anchor. If Claude edits freely, it's easy to lose sight of what you originally wanted vs. what Claude decided to build. By requiring you to make edits, you stay in control of scope and intent.
+**Why this mode exists:** The spec is your anchor. If Claude authors content freely, it's easy to lose sight of what you originally wanted vs. what Claude decided to build. By requiring you to make content edits, you stay in control of scope and intent.
 
 **Claude MUST NOT:**
-- Edit the spec file directly
+- Author spec content (requirements, criteria, scope) directly
 - Skip the question step and jump to suggestions
 - Ask more than 4 questions at once
 - Generate suggestions before receiving answers
@@ -55,7 +57,7 @@ When suggesting changes:
 
 ### Step 1: Load Context
 
-Read `.claude/spec_v{N}.md` and assess its current state.
+Determine the current spec version using the same version discovery as `/work`: glob for `.claude/spec_v*.md`, use the highest N. Read `.claude/spec_v{N}.md` and assess its current state.
 
 ### Step 2: Determine Mode
 
@@ -184,6 +186,17 @@ Overall: Ready for /work | Needs more detail | Major gaps
 Focusing on: [weakest area]
 ```
 
+**Implicit decision detection:** When assessing "Key decisions documented," don't just count existing decision records — scan the spec for language that implies unresolved choices. Look for:
+- Vague method references ("appropriate methods," "a suitable library," "the chosen approach")
+- Unnamed technology choices ("a database," "a charting library," "an auth provider")
+- Conditional language ("depending on the analysis method," "if we use X")
+- Alternatives mentioned without resolution ("could use X or Y")
+
+For each implicit decision found:
+1. Flag it in the readiness check (contributes to `Key decisions documented: ✗`)
+2. In Step 3, ask questions that surface whether it's an inflection point or pick-and-go
+3. In Step 4, suggest creating a decision record (see `support/reference/decision-template.md`) rather than filling in the choice inline — decisions need to be trackable so `/work` can gate dependent tasks
+
 ### Step 3: Ask Questions (max 4)
 
 Generate focused questions for the target area. Questions should:
@@ -272,26 +285,73 @@ See `.claude/support/reference/spec-checklist.md` for full readiness criteria.
 
 ## Spec Versioning
 
-When changes are significant enough to warrant a new spec version (major scope changes, phase transitions, substantial rewrites), follow this process:
+### Core Invariant: One Spec File at a Time
 
-### Before Creating New Version
+There must always be exactly **one** `spec_v{N}.md` file in `.claude/`. Not two during a transition, not zero. One. This is enforced by `/health-check` and validated by `/work` on every run.
 
-1. **Archive current spec**: Copy `.claude/spec_v{N}.md` to `.claude/support/previous_specifications/spec_v{N}.md`
-2. **Create new spec**: Write the new version as `.claude/spec_v{N+1}.md`
-3. **Update references**: Dashboard and tasks will reference the new version
+### Direct Edits Are Always Safe
 
-**When to create a new version:**
-- Major scope changes or pivots
-- Transitioning between project phases
-- Substantial rewrites that change multiple sections
-- User explicitly requests a new version
+You can edit the spec file directly at any time. The system handles this gracefully:
 
-**When NOT to create a new version:**
-- Minor clarifications or fixes
-- Adding details to existing sections
-- Typo corrections
+- **The decomposed snapshot** (`spec_v{N}_decomposed.md` in `previous_specifications/`) preserves the state when tasks were created
+- **Drift detection** in `/work` compares the current spec against the snapshot and shows exactly what changed
+- **No data loss is possible** — the "before" state is always available for comparison
 
-**Note:** Since spec editing is `suggest_only`, Claude suggests the new version content; the user creates and saves the files. When suggesting a new version, remind the user to archive the current spec first.
+You never need to version before editing. If your edits turn out to be substantial enough for a new version, `/work` will suggest it (see "Substantial Change Detection" in `work.md`).
+
+### Suggest-Only Boundary: Content vs Infrastructure
+
+The `suggest_only` policy applies to **spec content authorship** — Claude does not decide what to build.
+
+**Claude CAN perform structural file operations:**
+- Copy a spec to the archive (preserving content the user wrote)
+- Create a new version file as a copy of the current one
+- Update the frontmatter version number and dates
+- Delete the old version file after archiving
+
+**Claude CANNOT:**
+- Write new spec sections or requirements
+- Modify acceptance criteria, scope, or architecture decisions
+- Remove sections the user wrote
+
+This is the distinction between **infrastructure** (moving files, updating metadata) and **authorship** (deciding what gets built). The user controls what the spec says; Claude manages the filing system.
+
+### Version Transition Procedure
+
+When a version bump is warranted, Claude executes this 5-step procedure:
+
+```
+1. CONFIRM: "Suggest creating spec v{N+1}. Reason: {reason}. Proceed? [Y/N]"
+   → User must approve — this is a checkpoint, not automatic
+
+2. ARCHIVE: Copy .claude/spec_v{N}.md → .claude/support/previous_specifications/spec_v{N}.md
+
+3. CREATE: Copy .claude/spec_v{N}.md → .claude/spec_v{N+1}.md
+   → Bump frontmatter: version: {N+1}, status: draft, updated: {today}
+   → New version starts in "draft" because new content needs review
+
+4. REMOVE: Delete .claude/spec_v{N}.md
+   → Single-spec invariant maintained
+
+5. REPORT:
+   "spec_v{N} archived → previous_specifications/spec_v{N}.md
+    spec_v{N+1} is now the active spec (status: draft).
+    Edit it with your changes, then run /iterate to review or /work to continue."
+```
+
+**After the transition:** The user edits `spec_v{N+1}.md` with their changes (or uses `/iterate` to refine). When they run `/work`, task migration handles the transition (see "Task Migration on Version Transition" in `work.md`).
+
+### When to Create a New Version
+
+| Trigger | Version bump? | Why |
+|---------|:---:|-----|
+| Phase transition (Phase N complete → N+1) | **Yes** | New work scope, clean baseline |
+| Inflection point resolved, major scope change | **Yes** | What gets built changed fundamentally |
+| User explicitly requests it | **Yes** | User authority |
+| `/work` detects substantial changes (see work.md) | **Suggested** | System offers the choice; user decides |
+| Adding detail to existing sections | No | Same scope, more precision |
+| Minor clarifications, typos | No | Not substantive |
+| Adding a new feature section | Maybe | Claude asks user if scope expansion warrants it |
 
 ---
 
@@ -322,7 +382,7 @@ When `/iterate` runs, it automatically checks for recently resolved inflection p
 2. Find decisions where:
    - inflection_point: true in frontmatter
    - status is "approved" or "implemented"
-   - decided date is recent (within last 7 days or since last /iterate run)
+   - spec_revised is NOT true (spec hasn't been updated for this decision yet)
 3. IF any found:
    │
    │  Inflection point resolved: {decision_title}
@@ -337,7 +397,16 @@ When `/iterate` runs, it automatically checks for recently resolved inflection p
    │
    │  Suggested adjustments:
    │  [Copy-pasteable content reflecting the decision outcome]
+
+4. After presenting spec suggestions, also suggest updating the decision record:
+   │
+   │  Also update the decision record frontmatter:
+   │  Add `spec_revised: true` and `spec_revised_date: YYYY-MM-DD`
+   │
+   │  This tells `/work` that the spec now reflects this decision.
 ```
+
+**Why `spec_revised` instead of time-based detection:** The previous approach used `decided date is recent (within last 7 days)` which breaks across long session gaps and has no durable record of when `/iterate` last ran. The `spec_revised` field is a state-based signal — both `/work` and `/iterate` check it, and it persists until the user explicitly marks the spec as updated. This makes inflection point handling reliable across any number of sessions.
 
 This auto-detection means the user doesn't need to remember which decisions were inflection points or manually trigger a review. Running `/iterate` after `/work` suggests it is sufficient.
 
@@ -345,15 +414,17 @@ This auto-detection means the user doesn't need to remember which decisions were
 
 ## Spec Versioning at Phase Transitions
 
-When Phase 1 completes and Phase 2 begins, the spec may need additional detail for Phase 2 work. `/iterate` should suggest a spec revision if:
+When Phase 1 completes and Phase 2 begins, Claude executes the Version Transition Procedure (above) to create `spec_v{N+1}.md`. Phase transitions always warrant a new version — they represent a clean baseline for new work.
+
+**After the version transition**, `/iterate` should suggest a spec revision if:
 
 - Phase 2 sections are vague or placeholder-level
 - Decisions resolved during Phase 1 affect Phase 2 scope
 - Phase 1 learnings suggest Phase 2 adjustments
 
 **Process:**
-1. `/work` detects Phase 1 completion → suggests running `/iterate`
-2. `/iterate` reads the spec, focuses on Phase 2 sections
+1. `/work` detects Phase 1 completion → executes Version Transition Procedure → suggests running `/iterate`
+2. `/iterate` reads the new spec version, focuses on Phase 2 sections
 3. Asks targeted questions about Phase 2 scope (now informed by Phase 1 results)
-4. Suggests spec updates, potentially as a new spec version if changes are substantial
-5. User edits spec, then runs `/work` to continue into Phase 2
+4. Suggests spec content for the user to add to `spec_v{N+1}.md`
+5. User edits spec, then runs `/work` to decompose Phase 2 and continue

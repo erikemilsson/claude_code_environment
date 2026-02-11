@@ -29,6 +29,15 @@ For workflow concepts (phases, agent synergy, checkpoints), see `.claude/support
 
 ### Step 1: Gather Context
 
+**Version discovery:** Determine the current spec version:
+```
+1. Glob for .claude/spec_v*.md
+2. Parse version numbers from filenames
+3. Use the highest N as the current spec
+4. If zero matches → no spec exists
+5. If multiple matches → use highest, flag anomaly (should be exactly one)
+```
+
 Read and analyze:
 - `.claude/spec_v{N}.md` - The specification (source of truth)
 - `.claude/dashboard.md` - Task status and progress
@@ -97,6 +106,98 @@ echo -n "## Authentication\nContent here..." | sha256sum | cut -d' ' -f1
 ```
 
 **Note:** Tasks without `spec_fingerprint` are treated as legacy (no warning). Tasks without `section_fingerprint` fall back to full-spec comparison.
+
+### Step 1c: Spec State Summary
+
+After drift detection completes, always output a brief status line so the user knows where things stand:
+
+```
+If no tasks exist:
+  "Spec: v{N} (draft) — no tasks yet"
+
+If tasks exist and spec is aligned:
+  "Spec: v{N} (active) — aligned with tasks ✓"
+  "Tasks: {total} total ({finished} finished, {in_progress} in progress, {pending} pending)"
+
+If tasks exist and spec has changed:
+  "Spec: v{N} (active) — {M} sections changed since decomposition"
+  "Tasks: {total} total ({finished} finished, {in_progress} in progress, {pending} pending)"
+
+If version transition detected (tasks reference older spec version):
+  "Spec: v{N} (draft) — new version, tasks reference v{N-1}"
+  "Tasks: {total} total — migration needed (see below)"
+```
+
+This runs AFTER drift detection (Step 1b) so it can accurately report section changes.
+
+### Substantial Change Detection
+
+Before showing the reconciliation UI, evaluate the magnitude of changes and respond accordingly.
+
+**Heuristic — changes are "substantial" when ANY of:**
+- More than 50% of sections have changed fingerprints
+- New sections were added (scope expansion)
+- Sections were deleted (scope reduction)
+- Spec has been `active` for > 7 days AND > 3 sections changed
+
+**If changes are NOT substantial:**
+
+Proceed directly to the Granular Reconciliation UI (below). Small edits are absorbed into the current version via normal drift reconciliation.
+
+**If changes ARE substantial:**
+
+Present a version bump suggestion before reconciliation:
+
+```
+Spec has changed significantly since tasks were created:
+  - {X} of {Y} sections modified
+  - {A} new sections added / {B} sections deleted
+  - Estimated {P}% of content changed
+
+This may warrant a new spec version.
+
+[V] Create spec v{N+1} (archives current version, then reconcile)
+[C] Continue as v{N} (reconcile changes in place)
+```
+
+- **If user picks [V]:** Execute the Version Transition Procedure (see `iterate.md` § "Version Transition Procedure"), then run Task Migration (below), then proceed to reconciliation against the new version.
+- **If user picks [C]:** Proceed directly to the Granular Reconciliation UI. Changes are absorbed into the current version.
+
+Either choice preserves the user's edits. The version bump is about organizational clarity, not data safety.
+
+### Task Migration on Version Transition
+
+When `/work` detects that existing tasks reference an older spec version (tasks have `spec_version: "spec_v{M}"` but current spec is `spec_v{N}` where N > M), perform task migration:
+
+```
+For each task:
+  IF status == "Finished":
+    → Leave provenance unchanged (historical record)
+    → These tasks were verified against the old spec — that's correct
+
+  IF status == "Pending" or "In Progress":
+    → Check if task's spec_section heading still exists in new spec
+    │
+    ├─ Section exists, content matches:
+    │  → Update task: spec_version, spec_fingerprint, section_fingerprint
+    │  → Task continues normally
+    │
+    ├─ Section exists, content changed:
+    │  → Update spec_version reference
+    │  → Flag for reconciliation (handled by Granular Reconciliation UI)
+    │
+    └─ Section does not exist in new spec:
+       → Present to user:
+       │
+       │  Task {id} "{title}" references section "{spec_section}"
+       │  which no longer exists in spec v{N}.
+       │
+       │  [D] Delete task
+       │  [O] Keep as out-of-spec
+       │  [R] Reassign to different section
+```
+
+**After migration:** Update the decomposed snapshot reference. Create `spec_v{N}_decomposed.md` if decomposition runs, or update `section_snapshot_ref` on migrated tasks to point to the new spec version's snapshot.
 
 ### Drift Budget Enforcement
 
@@ -223,7 +324,12 @@ Check whether phases or unresolved decisions block any intended work:
    │    → Skip this task, work on active-phase tasks instead
    │
    │  IF no tasks remain in active phase and all are "Finished":
-   │    Log: "Phase {active_phase} complete — Phase {next_phase} tasks are now eligible"
+   │    IF tasks exist in a higher phase (next_phase exists):
+   │      Log: "Phase {active_phase} complete — Phase {next_phase} tasks are now eligible"
+   │      → Execute Version Transition Procedure (see iterate.md § "Version Transition Procedure")
+   │      → Suggest running /iterate to flesh out Phase {next_phase} sections
+   │    ELSE (single-phase project or final phase):
+   │      → Fall through to Step 3 routing (phase-level verification → completion)
 
 4. DECISION CHECK:
    For target task(s), check `decision_dependencies`:
@@ -239,13 +345,43 @@ Check whether phases or unresolved decisions block any intended work:
    │  IF decision was previously pending and is now resolved:
    │    → Run post-decision check (see Step 2b-post below)
 
-5. IF phase and decision checks pass:
+5. LATE DECISION CHECK (reverse cross-reference):
+   For each decision-*.md file, read `related.tasks` array:
+   ├─ For each referenced task ID:
+   │  ├─ Read task JSON
+   │  ├─ Check if decision ID is in task's `decision_dependencies`
+   │  │
+   │  │  IF NOT (task doesn't know about this decision):
+   │  │    Check task status:
+   │  │    ├─ "Finished" or "In Progress":
+   │  │    │    ⚠️ Decision {id} ({title}) was created after task {task_id} began.
+   │  │    │
+   │  │    │    Status:
+   │  │    │    - Task {id}: "{status}" — {impact description}
+   │  │    │
+   │  │    │    Options:
+   │  │    │    [1] Add {DEC-ID} as dependency + pause/flag affected tasks
+   │  │    │    [2] Proceed as-is (risk: rework if decision contradicts implementation)
+   │  │    │    [3] Review affected task(s) before deciding
+   │  │    │
+   │  │    │    IF user picks [1]:
+   │  │    │      - Add decision ID to task's decision_dependencies
+   │  │    │      - "In Progress" tasks → set to "Pending" (now blocked)
+   │  │    │      - "Finished" tasks → add note: "Review after {DEC-ID} resolved — may need rework"
+   │  │    │      - Regenerate dashboard
+   │  │    │
+   │  │    └─ "Pending":
+   │  │         Silently fixable — add decision_dependencies and continue
+   │  │
+   │  └─ IF YES: task already tracks this decision → no issue
+
+6. IF phase, decision, and late decision checks pass:
    → Proceed to Step 2c
 ```
 
 ### Step 2b-post: Post-Decision Check
 
-When `/work` detects a previously-pending decision is now resolved:
+When `/work` detects a resolved decision (status `approved` or `implemented`) that has dependent tasks:
 
 ```
 1. Read the decision record
@@ -256,16 +392,26 @@ IF inflection_point: false (or absent):
   → Log: "Decision {id} resolved → {N} tasks unblocked"
 
 IF inflection_point: true:
-  → Pause execution
+  → Check `spec_revised` field in frontmatter
   │
-  │  ⚠️ Decision {id} ({title}) was an inflection point.
-  │  The outcome may change what needs to be built.
+  │  IF spec_revised: true
+  │    → Spec already updated for this decision. Unblock dependent tasks.
+  │    → Log: "Decision {id} (inflection point) resolved and spec revised → {N} tasks unblocked"
+  │    → Continue to Step 2c
   │
-  │  Run `/iterate` to review affected spec sections,
-  │  then `/work` to continue.
-  │
-  └─ Do NOT proceed. Wait for user to run `/iterate`.
+  │  IF spec_revised is false OR absent:
+  │    → Pause execution
+  │    │
+  │    │  ⚠️ Decision {id} ({title}) was an inflection point.
+  │    │  The outcome may change what needs to be built.
+  │    │
+  │    │  Run `/iterate` to review affected spec sections,
+  │    │  then `/work` to continue.
+  │    │
+  │    └─ Do NOT proceed. Wait for user to run `/iterate`.
 ```
+
+**Session resilience:** The `spec_revised` field is the durable checkpoint. Across session boundaries, `/work` re-reads the decision record and checks this field — no conversation state needed. The decision stays blocking until the spec has been explicitly revised.
 
 ### Step 2c: Parallelism Eligibility Assessment
 
