@@ -8,6 +8,9 @@
 # Checkpoint system (local state snapshots)
 .claude/checkpoints/
 
+# Tests (project-specific, not part of template)
+tests/
+
 # Python cache
 __pycache__/
 **/__pycache__/
