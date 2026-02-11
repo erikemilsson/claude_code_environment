@@ -29,6 +29,8 @@ related:
   tasks: []
   decisions: []
 implementation_anchors: []
+inflection_point: false
+blocks: []
 ---
 
 # [Title]
@@ -76,6 +78,15 @@ Include enough context for someone unfamiliar to understand.]
 - [Drawback 2]
 
 **Research Notes:** [Links, experiments, spike findings]
+
+## Select an Option
+
+Mark your selection by checking one box:
+
+- [ ] Option A: [Name]
+- [ ] Option B: [Name]
+
+*Check one box above, then fill in the Decision section below.*
 
 ## Decision
 
@@ -129,6 +140,8 @@ implementation_anchors:
   - file: "src/middleware/auth.ts"
     line: 23
     description: "Token validation middleware"
+inflection_point: false
+blocks: [task-005]
 ---
 
 # OAuth Library Selection
@@ -196,6 +209,12 @@ architecture and long-term maintenance burden.
 - Significant development effort
 - Must handle token refresh, CSRF, state management manually
 - Security risk from implementation bugs
+
+## Select an Option
+
+- [ ] Passport.js
+- [x] Auth.js (NextAuth)
+- [ ] Custom Implementation
 
 ## Decision
 

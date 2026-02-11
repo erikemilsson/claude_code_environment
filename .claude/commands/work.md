@@ -202,77 +202,74 @@ Check request against spec:
 - Small improvements within existing scope
 - Documentation
 
-### Step 2b: Stage Gate Check
+### Step 2b: Phase and Decision Check
 
-If the spec has `stage_gates` configured, check whether any gate blocks the intended work:
+Check whether phases or unresolved decisions block any intended work:
 
 ```
-1. Read stage_gates from spec frontmatter
-2. IF no stage_gates configured:
-   → Skip to Step 3
+1. Read all decision-*.md files from .claude/support/decisions/
+2. Read all task-*.json files
 
-3. Identify target files/folders:
-   - For specific task: read files_affected from task
-   - For ad-hoc request: determine likely affected paths
-   - For auto-detect: skip gate check (gates are checked when routing to implement-agent)
+3. PHASE CHECK:
+   Determine current active phase:
+   ├─ Group tasks by `phase` field
+   ├─ Find lowest phase number where any task is not "Finished"
+   ├─ This is the active phase
+   │
+   │  For target task(s):
+   │  IF task.phase > active_phase:
+   │    "Task {id} is in Phase {task.phase}, but Phase {active_phase} is still in progress.
+   │     {N} tasks remaining in Phase {active_phase}."
+   │    → Skip this task, work on active-phase tasks instead
+   │
+   │  IF no tasks remain in active phase and all are "Finished":
+   │    Log: "Phase {active_phase} complete — Phase {next_phase} tasks are now eligible"
 
-4. For each gate, check if target intersects with 'blocks' list:
-   - IF target is in 'allows' list → gate does not apply (bypass)
-   - IF target is in 'blocks' list → check gate status
+4. DECISION CHECK:
+   For target task(s), check `decision_dependencies`:
+   ├─ Read each referenced decision record
+   ├─ Check if decision has a checked box in "## Select an Option"
+   │
+   │  IF any decision is unresolved:
+   │    📋 Decision {id} ({title}) blocks {N} task(s).
+   │    Open the decision doc to review options and check your selection:
+   │    → [decision doc link]
+   │    Then run `/work` again.
+   │
+   │  IF decision was previously pending and is now resolved:
+   │    → Run post-decision check (see Step 2b-post below)
 
-5. Check gate status by parsing criteria_file:
-   - Count [x] (checked) and [ ] (unchecked) checkboxes
-   - PASSED: all checkboxes checked
-   - BLOCKED: any checkbox unchecked
-
-6. IF any applicable gate is BLOCKED:
-   ├─ Do NOT proceed to implement-agent
-   │
-   │  🚫 Stage Gate Blocked: {gate_name}
-   │
-   │  This gate blocks work on: {blocked_paths}
-   │
-   │  Unmet criteria:
-   │  - [ ] {criterion 1}
-   │  - [ ] {criterion 2}
-   │
-   │  To proceed:
-   │  1. Complete the criteria in {criteria_file}
-   │  2. Run /check-gates to verify
-   │  3. Run /work again
-   │
-   └─ Return control to user
-
-7. IF all applicable gates are PASSED (or no gates apply):
-   → Log: "Gate check: ✓" (or "No gates configured")
-   → Proceed to Step 3
+5. IF phase and decision checks pass:
+   → Proceed to Step 2c
 ```
 
-**Key rules:**
+### Step 2b-post: Post-Decision Check
 
-- **Reading files is never blocked** - Gates only apply to creation/modification
-- **'allows' overrides 'blocks'** - Files in `allows` folders bypass gate checks even if a parent folder is in `blocks`
-- **Multiple gates can apply** - A file can be blocked by multiple gates; all must pass
-- **Auto-detect mode defers check** - When no specific task/request, gates are checked when selecting a task in implement-agent
+When `/work` detects a previously-pending decision is now resolved:
 
-**Example gate configuration:**
-```yaml
-stage_gates:
-  - id: pilot-approval
-    name: Pilot Approval Gate
-    criteria_file: .claude/gates/pilot-criteria.md
-    blocks:
-      - src/production/
-      - deploy/
-    allows:
-      - src/production/config/  # Can modify config even during pilot
 ```
+1. Read the decision record
+2. Check `inflection_point` field in frontmatter
 
-**See also:** `/check-gates` command for checking gate status independently.
+IF inflection_point: false (or absent):
+  → Pick-and-go: unblock dependent tasks, continue to Step 2c
+  → Log: "Decision {id} resolved → {N} tasks unblocked"
+
+IF inflection_point: true:
+  → Pause execution
+  │
+  │  ⚠️ Decision {id} ({title}) was an inflection point.
+  │  The outcome may change what needs to be built.
+  │
+  │  Run `/iterate` to review affected spec sections,
+  │  then `/work` to continue.
+  │
+  └─ Do NOT proceed. Wait for user to run `/iterate`.
+```
 
 ### Step 2c: Parallelism Eligibility Assessment
 
-After stage gate checks, assess whether multiple tasks can be dispatched in parallel.
+After phase and decision checks, assess whether multiple tasks can be dispatched in parallel.
 
 **1. Read configuration:**
 ```
@@ -290,8 +287,8 @@ eligible = tasks where ALL of:
   - status == "Pending"
   - owner != "human"
   - all dependencies have status "Finished"
-  - no stage gate blocks the task's files_affected
-  - no undecided evaluation choice blocks the task
+  - task.phase <= active_phase (no phase dependency blocks the task)
+  - all decision_dependencies are resolved
   - difficulty < 7
 ```
 
@@ -412,8 +409,10 @@ Break the spec into granular tasks:
      - Decisions: Only include decisions that have corresponding `decision-*.md` files in `.claude/support/decisions/`. If a decision is significant enough for the dashboard, create the file first.
    - **User section backup** (see below)
    - Preserve the Notes & Ideas section between `<!-- USER SECTION -->` markers
-   - Update **Project Context** with project name from spec and current phase
-   - Calculate **Overall completion** percentage for Quick Status
+   - Update **Project Context** with project name from spec and current phase (e.g., "Phase 1: Data Pipeline (9/10 tasks)")
+   - Calculate **Overall completion** percentage and **phase breakdown table** for Quick Status
+   - Group tasks by phase in **All Tasks** section with per-phase progress lines
+   - Show **All Decisions** with `ID | Decision | Status | Selected` format (selected option name for decided, link for pending)
    - Generate **Spec Alignment** section from drift status (see dashboard-patterns.md)
    - Generate **Critical Path** from dependency chain of incomplete tasks (see below)
    - List **Recently Completed** tasks with completion dates in Progress This Week
@@ -471,6 +470,8 @@ Task creation guidelines:
 - Explicit dependencies
 - Owner: claude/human/both
 - Include all spec provenance fields (fingerprint, version, section, section_fingerprint, section_snapshot_ref)
+- **Phase field:** Assign `phase` based on spec section structure (e.g., tasks from "## Phase 1: Data Pipeline" get `"phase": "1"`)
+- **Decision dependencies:** If a task depends on an unresolved decision, add the decision ID to `decision_dependencies` array. Note whether the decision is an inflection point in task notes.
 
 **Spec status transitions during decomposition:**
 

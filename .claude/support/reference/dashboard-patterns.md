@@ -35,16 +35,15 @@ Below the metadata block, include:
 | # | Heading | Emoji | Purpose |
 |---|---------|-------|---------|
 | 1 | `# Dashboard` | — | Title (followed by metadata block and header line) |
-| 2 | `## Project Context` | — | Project metadata table (name, stage, start date) |
-| 3 | `## 🚨 Needs Your Attention` | 🚨 | Consolidated attention: decisions pending, human tasks, reviews, **verification debt** |
+| 2 | `## Project Context` | — | Project metadata table (name, phase with progress, start date) |
+| 3 | `## 🚨 Needs Your Attention` | 🚨 | **Primary communication hub** — everything Claude needs from you, with links to files and ways to respond. Decisions pending, human tasks, reviews, verification debt |
 | 4 | `## Quick Status` | — | Overall completion %, summary counts by owner |
 | 5 | `## 📐 Spec Alignment` | 📐 | Drift status per section, reconciliation debt (NEW) |
 | 6 | `## 🛤️ Critical Path` | 🛤️ | Dependency chain to completion with owner indicators |
 | 7 | `## 🤖 Claude Status` | 🤖 | In Progress / Ready to Start / Blocked for Claude tasks |
 | 8 | `## 📊 Progress This Week` | 📊 | Completed/Started/Created counts, recently completed list |
-| 9 | `## 📋 All Decisions` | 📋 | Decision log table |
-| 9a | `## 🔬 Evaluation Choices` | 🔬 | Technical/methodological choices with weighted scoring (optional, appears when relevant decisions exist) |
-| 10 | `## 📝 All Tasks` | 📝 | Full task table with summary line |
+| 9 | `## 📋 All Decisions` | 📋 | Decision log table (Selected column shows chosen option for decided, link for pending) |
+| 10 | `## 📝 All Tasks` | 📝 | Full task table grouped by phase with per-phase summary lines |
 | 11 | `## 💡 Notes & Ideas` | 💡 | User-preserved section between `<!-- USER SECTION -->` markers |
 
 ### Section Toggle Configuration
@@ -62,7 +61,6 @@ dashboard_sections:
   claude_status: build
   progress: build
   all_decisions: maintain       # preserve existing, minor updates only
-  evaluation_choices: build     # appears when technical_choice/methodological_choice decisions exist
   all_tasks: build
   notes: preserve               # always preserved (never overwritten)
 ```
@@ -132,6 +130,21 @@ Every dashboard regeneration MUST complete these steps. All commands and agents 
    - Healthy (0 drift deferrals AND 0 verification debt): `[Spec aligned](# "0 drift deferrals, 0 verification debt")`
    - Issues (any drift deferrals OR any verification debt): `⚠️ N drift deferrals, M verification debt`
 
+### Design Principle: Dashboard as Communication Hub
+
+The dashboard is how Claude communicates with the user during the build phase. Every user-facing action item must be surfaced here — not buried in internal files. The principle is pragmatic: if the user needs to do something, the dashboard tells them what, links to where, and provides a way to signal back.
+
+**Action item contract:**
+- Every item in "Needs Your Attention" must be **actionable** — the user can see what to do without guessing
+- If the action involves reading or editing a file, include a **link** to that file
+- If the action requires confirmation, include a **checkbox** or clear instruction for how to signal completion
+- If the action requires feedback, include a **feedback area** or link to where feedback goes
+
+**What this means for regeneration:**
+- When Claude creates a human task, the dashboard entry must include enough context to act on it
+- When Claude needs a decision, the dashboard links to the decision record and states the question
+- When Claude needs a file reviewed, the dashboard links to the file and says what to look for
+
 ### Sub-Section Structure
 
 **Needs Your Attention** has four sub-sections:
@@ -152,7 +165,7 @@ Every dashboard regeneration MUST complete these steps. All commands and agents 
 | Key | Value |
 |-----|-------|
 | **Project** | [name] |
-| **Stage** | [phase] |
+| **Phase** | Phase 1: [Name] (X/Y tasks) |
 | **Started** | [date] |
 ```
 
@@ -160,17 +173,78 @@ Every dashboard regeneration MUST complete these steps. All commands and agents 
 ```
 **Overall: N% complete** (X of Y tasks)
 
+| Phase | Done | Total | Status |
+|-------|------|-------|--------|
+| 1. [Name] | X | Y | 🔄 In progress |
+| 2. [Name] | 0 | Z | ⏳ Waiting on Phase 1 |
+
 | Total | Done | ❗ You | 🤖 Claude | 👥 Both | Blocked |
 |-------|------|--------|-----------|---------|---------|
 ```
 
-**All Tasks:**
-```
-| ID | Title | Status | Diff | Owner | Due | Deps |
-|----|-------|--------|------|-------|-----|------|
+**All Tasks (grouped by phase):**
+```markdown
+### Phase 1: [Name]
+
+| ID | Title | Status | Diff | Owner | Deps |
+|----|-------|--------|------|-------|------|
+
+*Phase 1: X/Y complete (N%)*
+
+### Phase 2: [Name]
+
+| ID | Title | Status | Diff | Owner | Deps |
+|----|-------|--------|------|-------|------|
+
+*Phase 2: X/Y complete (N%) — waiting on Phase 1*
 ```
 - Out-of-spec tasks: prefix title with ⚠️
+- Deps column can show `Phase 1` and `D-002` as dependency types
 - Summary line: `*Summary: X/Y complete (N%)*`
+
+**Tasks Ready for You (action item format):**
+
+Human tasks and action items should include enough context to act on directly from the dashboard. Link to files when the action involves reading or editing, and provide a way to signal completion.
+
+```markdown
+### Tasks Ready for You
+
+| ID | Task | Action | Link |
+|----|------|--------|------|
+| 7 | Configure API keys | Add keys to `.env` and check off | [.env.example](../../.env.example) |
+| 11 | Review auth design | Read doc, leave feedback below | [auth-design.md](../decisions/decision-002.md) |
+
+**Task 11 — Feedback:**
+<!-- Write your feedback here, then run /work complete 11 -->
+
+```
+
+**Decisions Pending (with links):**
+```markdown
+### Decisions Pending
+
+| ID | Decision | Question | Options Doc |
+|----|----------|----------|-------------|
+| D-001 | Auth strategy | OAuth vs JWT vs sessions? | [decision-001.md](../decisions/decision-001.md) |
+
+*Open the decision doc, review options, and check your selection.*
+```
+
+**Reviews & Approvals (with links and checkboxes):**
+```markdown
+### Reviews & Approvals
+
+- [ ] **Review API endpoints** — Claude implemented the REST API. Check it matches your expectations → [src/api/routes.ts](../../src/api/routes.ts)
+- [ ] **Approve phase transition** — All execute tasks done. Ready for verification? → Run `/work`
+- [ ] **Phase transition** — Phase 1 complete. Review before Phase 2 begins? → Run `/work`
+```
+
+**Rules for action items:**
+- Always include a link when the action involves a specific file
+- Always say what the user should *do* (not just what the status is)
+- If feedback is needed, provide a feedback area or tell the user where to write it
+- If confirmation is needed, use a checkbox or say which command to run
+- Keep descriptions short — the linked file has the details
 
 **Verification Debt (when debt > 0):**
 ```markdown
@@ -223,75 +297,11 @@ All three categories appear in the debt table. Out-of-spec tasks (`out_of_spec: 
 
 **All Decisions:**
 ```
-| ID | Title | Category | Status | Decided |
-|----|-------|----------|--------|---------|
+| ID | Decision | Status | Selected |
+|----|----------|--------|----------|
 ```
-
-**Evaluation Choices (optional section):**
-
-This section appears when decisions with `category: technical_choice` or `category: methodological_choice` exist. It provides a focused view of structured evaluations.
-
-```markdown
-## 🔬 Evaluation Choices
-
-**Quick Stats:** 2/3 technical choices evaluated, 1/1 methodological choices evaluated
-
-| ID | Choice | Category | Status | Score | Threshold | Result |
-|----|--------|----------|--------|-------|-----------|--------|
-| TC-001 | State Management | technical | ✅ Selected | 4.45 | 3.5 | Pass |
-| TC-002 | API Framework | technical | 🔄 Evaluating | — | 3.5 | — |
-| MC-001 | Auth Strategy | methodological | ✅ Selected | 4.20 | 3.0 | Pass |
-
-### Blocking Evaluations
-
-*No blocking evaluations*
-```
-
-**Quick Stats calculation:**
-- Count decisions by category (`technical_choice`, `methodological_choice`)
-- "Evaluated" = status is `selected` or `implemented`
-- Format: `X/Y technical choices evaluated, X/Y methodological choices evaluated`
-
-**Status icons:**
-| Icon | Status | Meaning |
-|------|--------|---------|
-| ✅ | Selected/Implemented | Decision made |
-| 🔄 | Evaluating/Scored | In progress |
-| ⏳ | Draft | Not started |
-
-**Result column:**
-- `Pass` = weighted_score >= threshold
-- `Fail` = weighted_score < threshold (should reconsider)
-- `—` = not yet scored
-
-**Blocking Evaluations sub-section:**
-
-Show evaluations that block other work (e.g., technology choices that must be made before implementation can proceed):
-
-```markdown
-### Blocking Evaluations
-
-| ID | Choice | Blocks | Status |
-|----|--------|--------|--------|
-| TC-002 | API Framework | Tasks 5, 6, 7 | 🔄 Evaluating |
-
-*These choices must be completed before blocked work can proceed.*
-```
-
-If no blocking evaluations: `*No blocking evaluations*`
-
-**When to include this section:**
-- Include if any decision has `category: technical_choice` or `category: methodological_choice`
-- Exclude if no such decisions exist (don't show empty section)
-- Can be explicitly excluded via `dashboard_sections.evaluation_choices: exclude`
-
-**Empty state:**
-If the section is included but all evaluations are complete:
-```markdown
-## 🔬 Evaluation Choices
-
-✅ All evaluations complete (3 technical, 1 methodological)
-```
+- Decided entries: show selected option name (e.g., "PostgreSQL")
+- Pending entries: link to the decision doc (e.g., `[decision-002.md](../decisions/decision-002.md)`)
 
 ### Empty State Placeholders
 
@@ -304,8 +314,6 @@ When a section has no data, use italic placeholder text:
 - `*No Claude tasks blocked*`
 - `*No recent completions*`
 - `*No decisions yet*`
-- `*No evaluation choices*`
-- `*No blocking evaluations*`
 - `*No tasks yet*`
 - `*No tasks defined yet*`
 

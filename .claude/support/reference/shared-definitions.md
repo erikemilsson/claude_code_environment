@@ -2,6 +2,17 @@
 
 Single source of truth for task management definitions.
 
+## Vocabulary
+
+Canonical terminology used across the system.
+
+| Term | Definition |
+|------|------------|
+| **Phase** | A logical stage of the project (e.g., Data Pipeline, Visualization). Phase N+1 can't begin until all Phase N tasks are complete. Implicit from spec structure; tasks get a `phase` field; dashboard groups by phase. |
+| **Decision** | A choice with multiple viable options, tracked as a decision record (`.claude/support/decisions/decision-*.md`). Has comparison matrix, option details, optional weighted scoring, and a checkbox for the user to mark their selection. Dependent tasks are blocked until resolved. |
+| **Inflection Point** | A decision where the outcome changes what gets built, not just how. After an inflection point is resolved, `/work` pauses and suggests running `/iterate` to revisit the spec before dependent work continues. Contrast with "pick-and-go" decisions where tasks simply unblock. Flagged with `inflection_point: true` in decision frontmatter. |
+| **Human Task** | A task only the user can do — external actions like configuring secrets, setting up accounts, or providing credentials. Tracked with `owner: human` in task JSON. Decisions have their own mechanism (checkbox in decision doc) and are not human tasks. |
+
 ## Difficulty Scale (1-10)
 
 > **Calibrated for Claude Opus 4.6.** These difficulty ratings and breakdown thresholds assume Opus-level reasoning capability. Tasks rated 5-6 ("Substantial") are at the upper limit of what should be attempted without breakdown — Opus can handle the design decisions involved. Tasks at 7+ **must** be broken down regardless of model confidence.
@@ -71,6 +82,8 @@ Optional fields that track spec-to-task alignment:
 | `spec_section` | String | Originating section heading |
 | `section_fingerprint` | String | SHA-256 hash of specific section at decomposition |
 | `section_snapshot_ref` | String | Reference to snapshot file for diffs |
+| `phase` | String | Phase this task belongs to (e.g., "1" or "Data Pipeline") |
+| `decision_dependencies` | Array | Decision IDs that block this task (e.g., ["DEC-002"]) |
 | `out_of_spec` | Boolean | Task not aligned with spec |
 | `task_verification` | Object | Per-task verification result from verify-agent (see task-schema.md) |
 
@@ -154,7 +167,7 @@ Note: `# Project Spec` (H1) is not a section - only H2 (`##`) headings define se
 Multiple "In Progress" tasks are allowed when ALL of these conditions are met:
 - All dependencies for each task are "Finished"
 - `files_affected` arrays do not overlap between any tasks in the batch
-- No stage gate blocks any task in the batch
+- All tasks in the batch belong to the current active phase (no phase dependency blocks any task)
 - Batch size does not exceed `max_parallel_tasks` (default: 3)
 - Each task has difficulty < 7
 
@@ -175,7 +188,7 @@ Tasks have an `owner` field that determines responsibility and dashboard placeme
 | `human` | ❗ | Your Actions | Requires human action |
 | `both` | 👥 | Both sections | Collaborative work |
 
-**Human tasks** - Configure secrets, make decisions, external actions, review/approve
+**Human tasks** - Configure secrets, external actions, review/approve
 **Claude tasks** - Write code, implement features, tests, docs, research
 **Both tasks** - Human provides direction, Claude implements (appears in BOTH dashboard sections with 👥)
 

@@ -96,9 +96,22 @@ Enter distill mode. Extract buildable spec from a vision document.
    4. Who's the first user and what's their critical path?
    ```
 
-4. **Generate spec content:**
+4. **Carry structure through from vision doc:**
+
+   When reading the vision document, recognize and preserve these structures:
+
+   - **Phases:** If the vision describes natural boundaries ("build the pipeline first, then the dashboard"), structure the spec with phase sections (e.g., `## Phase 1: Data Pipeline`, `## Phase 2: Visualization`). Phases become the grouping mechanism for tasks during decomposition.
+   - **Key Decisions:** If the vision identifies choices with multiple options, create placeholder sections in the spec noting work is blocked until the decision is resolved. For each decision, note:
+     - What options are being considered
+     - What depends on this decision
+     - Whether it's an **inflection point** (outcome changes what gets built) — if so, don't add premature detail for dependent work
+   - **Human Dependencies:** If the vision identifies things only the user can do (set up accounts, configure hosting, get API keys), flag these as human tasks in the spec.
+
+5. **Generate spec content:**
    - Include `vision_source:` in frontmatter linking to the vision doc
    - Extract concrete requirements from vision's abstract concepts
+   - Structure spec sections by phase when phases were identified
+   - Add decision placeholders where unresolved choices block work
    - Add "Deferred to Future Phases" section for items not in Phase 1
    - Format as copy-pasteable content for the user to add to the spec
 
@@ -156,8 +169,15 @@ Current state:
 - Users identified: ✓ / ✗
 - Core components described: ✓ / ✗
 - Key decisions documented: ✓ / ✗
+  - Resolved decisions: N (no blocker)
+  - Pending decisions not blocking Phase 1: N (noted, not urgent)
+  - Pending decisions blocking Phase 1: N ⚠️ (must resolve before /work)
+  - Unresolved inflection points: N 🔴 (spec sections may be premature)
 - Acceptance criteria defined: ✓ / ✗
 - Blocking questions resolved: ✓ / ✗
+- Phase boundaries clear: ✓ / ✗ / N/A
+  - Phase dependencies make sense: ✓ / ✗
+  - No Phase 2 content mixed into Phase 1: ✓ / ✗
 
 Overall: Ready for /work | Needs more detail | Major gaps
 
@@ -289,3 +309,51 @@ Vision documents capture ideation, design philosophy, and future thinking. Commo
 4. Spec links to vision via `vision_source:` frontmatter
 
 **Once a spec exists, the spec is the single source of truth.** Vision docs become historical context only—useful for understanding original intent or planning future phases, but not consulted during implementation.
+
+---
+
+## Post-Inflection-Point Re-Entry
+
+When `/iterate` runs, it automatically checks for recently resolved inflection point decisions. No special subcommand is needed — `/iterate` just notices.
+
+**Detection logic:**
+```
+1. Read all decision-*.md files in .claude/support/decisions/
+2. Find decisions where:
+   - inflection_point: true in frontmatter
+   - status is "approved" or "implemented"
+   - decided date is recent (within last 7 days or since last /iterate run)
+3. IF any found:
+   │
+   │  Inflection point resolved: {decision_title}
+   │  Selected: {chosen_option}
+   │
+   │  This decision changes what gets built. Let me review
+   │  the spec sections affected by this choice.
+   │
+   │  Affected sections:
+   │  - {section 1} — {how it's affected}
+   │  - {section 2} — {how it's affected}
+   │
+   │  Suggested adjustments:
+   │  [Copy-pasteable content reflecting the decision outcome]
+```
+
+This auto-detection means the user doesn't need to remember which decisions were inflection points or manually trigger a review. Running `/iterate` after `/work` suggests it is sufficient.
+
+---
+
+## Spec Versioning at Phase Transitions
+
+When Phase 1 completes and Phase 2 begins, the spec may need additional detail for Phase 2 work. `/iterate` should suggest a spec revision if:
+
+- Phase 2 sections are vague or placeholder-level
+- Decisions resolved during Phase 1 affect Phase 2 scope
+- Phase 1 learnings suggest Phase 2 adjustments
+
+**Process:**
+1. `/work` detects Phase 1 completion → suggests running `/iterate`
+2. `/iterate` reads the spec, focuses on Phase 2 sections
+3. Asks targeted questions about Phase 2 scope (now informed by Phase 1 results)
+4. Suggests spec updates, potentially as a new spec version if changes are substantial
+5. User edits spec, then runs `/work` to continue into Phase 2

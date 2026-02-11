@@ -4,24 +4,30 @@ Reference documentation for the environment builder system. Moved here from `.cl
 
 ## How This System Works
 
-**Your primary interface is the dashboard** (`.claude/dashboard.md`). It shows everything you need:
-- What needs your attention (decisions, reviews, blockers)
-- What Claude is working on
-- Progress and recent activity
+### Design Principle: Dashboard as Communication Hub
 
-**What you do:**
-- Write code and documentation (outside `.claude/`)
-- Make decisions when Claude surfaces options
-- Review and approve at phase boundaries
+During the build phase, **the dashboard is how Claude communicates with you**. It's not just a status display — it's the place where Claude tells you what it needs and where you tell Claude what you've decided.
+
+**The contract:**
+- If Claude needs your input, it shows up in the dashboard — with a link to the relevant file, a description of what to do, and a way to signal back (checkbox, feedback area)
+- You should always be able to open the dashboard and know your next action
+- You don't need to browse `.claude/` internals to understand what's happening
+
+**This is pragmatic, not rigid.** The dashboard is the primary channel during active development (Spec → Execute → Verify). Post-completion activities or exploration may involve more direct interaction. The goal is clarity about what needs your attention, not preventing you from looking at files.
+
+### What you do
+- Review the dashboard for your next action
+- Click through to linked files when needed (review a document, configure something, test a feature)
+- Signal completion back through the dashboard (checkboxes, feedback sections)
 - Update the spec when requirements change
+- Make decisions when Claude surfaces options
 
-**What Claude does:**
+### What Claude does
 - Tracks tasks and progress (in `.claude/tasks/`)
 - Implements according to spec
-- Surfaces decision points to you
+- Surfaces everything user-facing through the dashboard — action items with links, not buried in internal files
 - Validates work against acceptance criteria
-
-**You shouldn't need to dig into `.claude/` internals** - the dashboard brings everything to you.
+- Regenerates the dashboard after every significant change
 
 ## Workspace
 

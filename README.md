@@ -58,13 +58,76 @@ rm -rf .git && git init
 
 ## Workflow
 
-1. **Spec** - Create specification using `/iterate` (see below)
-2. **Execute** - Implement (tasks decomposed from spec by /work)
-3. **Verify** - Validate against acceptance criteria
+```mermaid
+flowchart TD
+    subgraph DESKTOP["Claude Desktop — Ideation"]
+        D1(["Brainstorm concept"])
+        D2[/"Vision Document"/]
+        D1 --> D2
+    end
 
-Use `/work` to start or continue work. Claude checks requests against the spec, decomposes tasks, and routes to the appropriate agent.
+    D2 -->|"Save to .claude/vision/"| S1
+
+    subgraph SPEC["Claude Code — /iterate"]
+        S1(["/iterate distill"])
+        S2["Build spec: questions, content, structure"]
+        S3{"Ready?"}
+        S4[/"Spec v1"/]
+
+        S1 --> S2 --> S3
+        S3 -->|"Gaps remain"| S2
+        S3 -->|"Ready"| S4
+    end
+
+    S4 --> W1
+
+    subgraph EXEC["Claude Code — /work"]
+        W1(["/work"])
+        W2["Decompose spec into tasks by phase"]
+        W3{"Task eligible?"}
+        W4["implement-agent builds"]
+        W5["verify-agent validates"]
+        W6{"More tasks?"}
+
+        W1 --> W2 --> W3
+        W3 -->|"Decision unresolved"| W3B["User selects in decision doc"]
+        W3B --> W3
+        W3 -->|"Clear"| W4 --> W5 --> W6
+        W6 -->|"Yes"| W3
+        W6 -->|"Phase complete"| PHASE
+    end
+
+    PHASE{"All phase tasks done?"}
+    PHASE -->|"Next phase"| W1
+    PHASE -->|"Last phase"| DONE(["Project Complete"])
+
+    classDef desktop fill:#e8d5f5,stroke:#7c3aed,stroke-width:2px,color:#1a1a1a
+    classDef spec fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#1a1a1a
+    classDef exec fill:#d1fae5,stroke:#059669,stroke-width:2px,color:#1a1a1a
+    classDef phase fill:#fef3c7,stroke:#d97706,stroke-width:3px,color:#1a1a1a
+    classDef done fill:#bbf7d0,stroke:#16a34a,stroke-width:2px,color:#1a1a1a
+
+    class DESKTOP desktop
+    class SPEC spec
+    class EXEC exec
+    class PHASE phase
+    class DONE done
+```
 
 **Core principle:** The spec is the living source of truth. All work aligns with it, or the spec is updated intentionally.
+
+### Core Concepts
+
+| Concept | What It Is | Example | Resolved By |
+|---------|-----------|---------|-------------|
+| **Phase** | Sequential project stage. Phase N+1 blocked until Phase N complete. | "Build pilot first, then production" | All phase tasks finish, next phase unlocks |
+| **Decision** | Choice with multiple viable options. Blocks dependent tasks. | "Postgres or SQLite?" | User checks selection in decision doc |
+| **Human Task** | Action only the user can do. `/work` skips it. | "Configure the API keys" | User completes it and marks done |
+| **Inflection Point** | A decision that changes *what* gets built. | "Monolith or microservices?" | After selection, `/work` pauses and suggests `/iterate` to revisit spec |
+
+You *identify* structure during brainstorming (Claude Desktop), *configure* it during spec building (`/iterate`), and *resolve* it during execution (`/work`). All concepts surface in the dashboard and are handled inline — no separate commands to learn.
+
+For details: [terminology](.claude/support/reference/shared-definitions.md) | [phases & decisions](.claude/support/reference/extension-patterns.md) | [dashboard format](.claude/support/reference/dashboard-patterns.md)
 
 ## Creating Specifications
 
