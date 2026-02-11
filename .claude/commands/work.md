@@ -598,7 +598,7 @@ This enables staleness detection in Step 1a.
 Add at the very bottom of dashboard.md:
 ```markdown
 ---
-*Dashboard generated: 2026-01-28 14:30 UTC | Tasks: 15 | [Spec aligned](# "0 drift deferrals, 0 verification debt")*
+*2026-01-28 14:30 UTC · 15 tasks · [Spec aligned](# "0 drift deferrals, 0 verification debt")*
 ```
 
 #### Dashboard Regeneration Procedure

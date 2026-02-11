@@ -45,14 +45,18 @@ drift_deferrals: 0
 
 **Community Center Renovation** · Execute · Started 2026-01-15
 
-**42% complete** — 12 tasks · 2 decisions
+**50% complete** — 12 tasks · 2 decisions
 
 ---
 
 ## 🚨 Action Required
 
 <!-- ACTION REQUIRED: Only show sub-sections that have content. Omit empty categories entirely.
-     Sub-sections in order: Verification Debt, Decisions, Your Tasks, Reviews -->
+     Sub-sections in order: Verification Debt, Decisions, Your Tasks, Reviews.
+     Reviews format (not shown in this example — no review items exist):
+       ### Reviews
+       - [ ] **Item title** — what to do → [link to file](path)
+     Reviews appear for: out_of_spec tasks without approval, draft/proposed decisions, blocking questions. -->
 
 <!-- VERIFICATION DEBT: Show when any task is "Awaiting Verification", "Finished" without task_verification,
      or task_verification.result == "fail". Exclude out-of-spec tasks. -->
@@ -82,7 +86,6 @@ drift_deferrals: 0
 | Task | What To Do | Where |
 |------|------------|-------|
 | 8 | Obtain building permit from city hall | [permit-application.pdf](../permits/permit-application.pdf) |
-| 10 | Schedule electrical inspection with city inspector | [inspector-contacts.md](support/workspace/inspector-contacts.md) |
 
 ---
 
@@ -153,7 +156,7 @@ drift_deferrals: 0
 
 *Phase 3: 0/3 complete (0%) — blocked by DEC-002*
 
-*5/12 tasks complete (42%)*
+*6/12 tasks complete (50%)*
 
 ---
 
