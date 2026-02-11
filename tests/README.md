@@ -56,6 +56,30 @@ Tests the dashboard as a communication hub across project lifecycle stages. Focu
 - Decision resolution doesn't explicitly update frontmatter status (14C)
 - `questions.md` not linked from dashboard (11C)
 
+### Real-World Adaptation (15-24)
+
+Tests grounded in patterns observed across real projects. All previous scenarios use a single hypothetical "data analysis pipeline"; these scenarios test how the template adapts to diverse project types, existing infrastructure, and scale.
+
+| # | Name | Tests | Key Commands/Files |
+|---|------|-------|-------------------|
+| 15 | Tech Stack Discovery | `/iterate` detects project tech from existing files | iterate.md Step 1 |
+| 16 | Existing Test Suite | verify-agent discovers and uses existing pytest setup | verify-agent.md |
+| 17 | Migration from Custom .claude/ | Template applied to project with incompatible existing `.claude/` dir | setup-check |
+| 18 | Non-Software Project | Template works for spec-only / docs-only projects | implement-agent.md, verify-agent.md |
+| 19 | Nested Project Structure | Agents find code in subdirectories, run builds from correct location | implement-agent.md, verify-agent.md |
+| 20 | External Service Dependencies | Task decomposition surfaces API keys / DB setup as prerequisites | work.md Step 3 |
+| 21 | Large Task History | Performance and archival at 100+ tasks | work.md, health-check.md |
+| 22 | CI/CD-Aware Verification | verify-agent mirrors CI checks, doesn't duplicate them | verify-agent.md |
+| 23 | Staged Approval Gates | User-defined gates block entire project stages until manual approval | work.md |
+| 24 | Parallel File Conflict Detection | `/work` parallel dispatch holds back tasks that touch same files | work.md Step 4 |
+
+**Key themes surfaced by 15-24:**
+- Most adopters have existing projects, not greenfield — migration (17) is the common path
+- verify-agent must adapt to project type: code (16), docs (18), nested (19), CI-backed (22)
+- Scale is a real concern — projects reach 380+ tasks (21)
+- External dependencies are common and need explicit handling (20)
+- Parallel execution needs file-level conflict detection (24)
+
 ## Example Project
 
 All scenarios use a "data analysis pipeline" with:
