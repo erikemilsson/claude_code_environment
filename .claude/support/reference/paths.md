@@ -12,6 +12,7 @@
 | Tasks | `.claude/tasks/` |
 | Archived tasks | `.claude/tasks/archive/` |
 | Decisions | `.claude/support/decisions/` |
+| Decision research archive | `.claude/support/decisions/.archive/` |
 | Workspace/scratch | `.claude/support/workspace/` |
 | Dashboard | `.claude/dashboard.md` |
 | Questions | `.claude/support/questions.md` |
