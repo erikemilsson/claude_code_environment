@@ -1,29 +1,5 @@
 # CLAUDE.md
 
-> **Template Repository**: This file serves dual purposes.
-> - Working on this repo? See "Maintaining This Template" below.
-> - Using as template? Delete everything above the separator line.
-
-## Maintaining This Template
-
-Instructions for working on the claude_code_environment repository itself:
-
-- **Purpose**: Template for bootstrapping Claude Code projects
-- **Keep minimal**: Resist adding project-specific content
-- **Test changes**: Copy to temp directory and verify workflow works
-- **Placeholders**: Use `[bracketed text]` for user-customizable sections
-
-### What NOT to do
-
-- Don't fill in template placeholders with real content
-- Don't add files that aren't essential to the template
-- Don't add project-specific conventions
-
----
-<!-- DELETE EVERYTHING ABOVE THIS LINE WHEN USING AS TEMPLATE -->
-
-# CLAUDE.md
-
 Instructions for Claude Code when working in this project.
 
 ## Model Requirement

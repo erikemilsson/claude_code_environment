@@ -16,8 +16,10 @@ The `.claude/` directory contains the environment that ships to new projects. Th
 - **Edit command definitions** (`.claude/commands/*.md`) to improve workflow logic
 - **Edit agent definitions** (`.claude/agents/*.md`) to improve implementation/verification
 - **Edit reference docs** (`.claude/support/reference/*.md`) to improve patterns and schemas
-- **Edit `.claude/CLAUDE.md`** to improve project instructions (keep the separator structure)
+- **Edit `.claude/CLAUDE.md`** to improve project instructions
+- **Edit `.claude/README.md`** to improve the user-facing environment guide
 - **Run conceptual tests** (`tests/scenarios/`) after significant command changes
+- **Use `[bracketed text]` for user-customizable placeholder sections**
 
 ## Testing
 
