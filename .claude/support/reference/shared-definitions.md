@@ -129,13 +129,13 @@ Tasks have an `owner` field that determines responsibility and dashboard placeme
 
 | Value | Emoji | Dashboard Location | When to Use |
 |-------|-------|-------------------|-------------|
-| `claude` | 🤖 | Claude section | Autonomous work (default when omitted) |
+| `claude` | 🤖 | Tasks section | Autonomous work (default when omitted) |
 | `human` | ❗ | Action Required → Your Tasks | Requires human action |
-| `both` | 👥 | Both sections | Collaborative work |
+| `both` | 👥 | Action Required + Tasks | Collaborative work |
 
 **Human tasks** - Configure secrets, external actions (phone calls, site visits), review/approve
 **Claude tasks** - Execute tasks, create deliverables, research, analysis, documentation
-**Both tasks** - Human provides direction or external input, Claude produces deliverables (appears in BOTH dashboard sections with 👥)
+**Both tasks** - Human provides direction or external input, Claude produces deliverables (appears in Action Required with 👥)
 
 ## Task ID Conventions
 

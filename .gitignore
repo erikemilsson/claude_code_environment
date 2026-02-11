@@ -5,9 +5,6 @@
 .DS_Store
 **/.DS_Store
 
-# Checkpoint system (local state snapshots)
-.claude/checkpoints/
-
 # Tests are tracked — they're template maintenance files, not project files
 
 # Python cache
@@ -17,9 +14,6 @@ __pycache__/
 
 # Local settings
 .claude/settings.local.json
-
-# Claude workspace (temporary working documents)
-.claude/support/workspace/
 
 # Prevent nested .claude directories
 .claude/.claude/

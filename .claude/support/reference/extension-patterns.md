@@ -137,7 +137,7 @@ Decisions appear in the dashboard:
 
 - **Decisions section:** `ID | Decision | Status | Selected` — decided entries show selected option name, pending entries link to doc
 - **Action Required → Decisions:** Pending decisions that block tasks appear here with links
-- **Blocked tasks:** Show decision IDs in their dependency column (in Claude section and Tasks section)
+- **Blocked tasks:** Show decision IDs in their dependency column (in Tasks section)
 
 ---
 
@@ -156,6 +156,6 @@ For complex projects, create Mermaid diagram files in `.claude/support/visualiza
 ## Related Files
 
 - [decisions.md](decisions.md) — Decision record format and selection mechanism
-- [dashboard.md](../../dashboard.md) — Dashboard template with inline format hints
+- [dashboard.md](../../dashboard.md) — Dashboard template with format specifications (HTML comments) and populated example
 - [shared-definitions.md](shared-definitions.md) — Vocabulary (Phase, Decision, Inflection Point, Human Task)
 - [workflow.md](workflow.md) — Core workflow documentation

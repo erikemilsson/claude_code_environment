@@ -57,11 +57,10 @@ Validate dashboard.md section structure:
 **Required sections (exact headings, in this order):**
 1. `# Dashboard`
 2. `## 🚨 Action Required`
-3. `## 🤖 Claude`
-4. `## 📊 Progress`
-5. `## 📋 Tasks`
-6. `## 📋 Decisions`
-7. `## 💡 Notes`
+3. `## 📊 Progress`
+4. `## 📋 Tasks`
+5. `## 📋 Decisions`
+6. `## 💡 Notes`
 
 Checks:
 - Each heading exists (exact text including emoji)

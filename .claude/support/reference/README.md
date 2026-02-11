@@ -19,3 +19,10 @@ Documentation that Claude reads during workflow execution and on-demand guidance
 | `spec-checklist.md` | Spec readiness criteria, red flags, core questions |
 | `extension-patterns.md` | Phases and decisions patterns for complex projects |
 | `desktop-project-prompt.md` | Instructions for Claude Desktop ideation sessions |
+
+## Related READMEs (in sibling directories)
+
+| File | Purpose |
+|------|---------|
+| `../learnings/README.md` | Categories, format, and maintenance guidelines for project-specific learnings |
+| `../workspace/README.md` | Directory rules, file placement guide, and graduation process for temporary files |

@@ -28,8 +28,7 @@ The user sees `dashboard.md` in their editor. The first screenful determines whe
 **Current section order (from dashboard.md):**
 1. `# Dashboard` + metadata block + header lines (project name, stage, completion %)
 2. `## 🚨 Action Required` — decisions, human tasks, reviews (only populated sub-sections shown)
-3. `## 🤖 Claude` — working on / up next / blocked
-4. `## 📊 Progress` — phase table, critical path one-liner, this week activity
+3. `## 📊 Progress` — phase table, critical path one-liner, this week activity
 
 ### Expected (current spec)
 
@@ -37,8 +36,7 @@ The user sees `dashboard.md` in their editor. The first screenful determines whe
 - Action Required:
   - Decisions: DEC-001 with link to decision doc
   - Your Tasks: Task 5 "Configure API keys" with link to `.env.example`
-  - (Verification Debt, Reviews, Spec Drift sub-sections omitted — nothing to show)
-- Claude: "Ready to Start" with Phase 1 task list
+  - (Verification Debt, Reviews sub-sections omitted — nothing to show)
 
 ### Observation: null-state noise handled by omission
 
@@ -69,10 +67,10 @@ Empty sub-sections within Action Required are omitted entirely (no "✅ None" pl
 
 | Information | Where it appears | Redundant? |
 |-------------|------------------|------------|
-| DEC-001 blocks Phase 2 | Action Required → Decisions, Claude → Blocked, Tasks Phase 2 summary | 3 places (budget: max 2) |
+| DEC-001 blocks Phase 2 | Action Required → Decisions, Tasks Phase 2 summary | 2 places (within budget) |
 | Phase 2 is blocked | Progress phase table, Tasks phase summary | 2 places (within budget) |
 | Human task exists | Action Required → Your Tasks, Tasks | 2 places (within budget) |
-| No work started | Header (0%), Claude ("Idle") | 2 places (within budget) |
+| No work started | Header (0%), Progress phase table | 2 places (within budget) |
 
 ### Expected
 
@@ -94,11 +92,11 @@ Each fact appears in at most 2 places (primary actionable location + reference d
 
 ## Trace 08C: Information hierarchy and density
 
-- **Path:** dashboard.md → section structure (header lines → Action Required → Claude → Progress)
+- **Path:** dashboard.md → section structure (header lines → Action Required → Progress)
 
 ### Current position
 
-Header lines provide instant orientation (project name, stage, completion %). Action Required follows immediately with only populated sub-sections. Progress comes after Claude status.
+Header lines provide instant orientation (project name, stage, completion %). Action Required follows immediately with only populated sub-sections. Progress comes next.
 
 ### Observation
 

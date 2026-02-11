@@ -10,6 +10,10 @@ A structured development environment for Claude Code using the **Spec → Execut
 2. **Build:** Run `/work` to decompose tasks and start implementation
 3. **Track progress:** Open `.claude/dashboard.md` to see what needs your attention
 
+## Design Philosophy
+
+This environment is domain-agnostic. While many examples reference software concepts, the workflow applies equally to research projects, procurement, renovation, event planning, or any spec-driven work. The dashboard, task tracking, decisions, and verification adapt to whatever you are building.
+
 ## Essential Files
 
 | File / Directory | What It Does |

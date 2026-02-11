@@ -612,7 +612,6 @@ Users can control which sections Claude builds via `dashboard_sections` in spec 
 ```yaml
 dashboard_sections:
   action_required: build        # actively create/update
-  claude: build
   progress: build
   tasks: build
   decisions: maintain           # preserve existing, minor updates only
@@ -642,13 +641,12 @@ Default: all sections `build` if no configuration exists. Configure in spec fron
    - Rotate old backups (keep last 3)
 
 3. **Generate dashboard**
-   - Use exact section headings from dashboard.md template (including emojis): `# Dashboard`, `## 🚨 Action Required`, `## 🤖 Claude`, `## 📊 Progress`, `## 📋 Tasks`, `## 📋 Decisions`, `## 💡 Notes`
-   - **Header lines** (before first section): project name, stage, start date on line 1; overall completion %, task count, decision count on line 2
-   - **Action Required sub-sections:** Only render sub-sections that have content. Empty categories are omitted entirely — no placeholder lines. Sub-sections: Verification Debt, Decisions, Your Tasks, Reviews, Spec Drift
-   - **Claude section:** Compact format — one line per state (Working on / Up next / Blocked). Omit empty lines.
-   - **Progress section:** Phase breakdown table + critical path one-liner + "This week" activity line. Omit "This week" if all counts are zero.
+   - Follow the structure and format documented in dashboard.md (HTML comments specify rules per section)
+   - Use exact section headings: `# Dashboard`, `## 🚨 Action Required`, `## 📊 Progress`, `## 📋 Tasks`, `## 📋 Decisions`, `## 💡 Notes`
+   - **Timeline sub-section** in Progress: render when any task has `due_date` or `external_dependency.expected_date`
    - Check `dashboard_sections` config and respect modes
    - Enforce atomicity: only tasks with JSON files, only decisions with MD files
+   - On first regeneration: replace the template example with actual project data
 
 4. **Compute and add metadata block** (after `# Dashboard` title)
    ```
@@ -673,21 +671,14 @@ Default: all sections `build` if no configuration exists. Configure in spec fron
    - Healthy: `[Spec aligned](# "0 drift deferrals, 0 verification debt")`
    - Issues: `⚠️ N drift deferrals, M verification debt`
 
-**Action Item Contract:**
+**Section Format Reference:**
 
-Every item in "Action Required" must be:
-- **Actionable** — the user can see what to do without guessing
-- **Linked** — if the action involves a file, include a link
-- **Completable** — include a checkbox, command, or clear completion signal
-- **Contextual** — if feedback is needed, provide a feedback area or link
+Follow the structure and format shown in `.claude/dashboard.md`. The template contains:
+- Populated example for every section with realistic data
+- HTML comments documenting format rules, column structures, and display conditions per section
+- The Action Item Contract and Review Item Derivation rules
 
-**Review Item Derivation:**
-
-Review items are derived, not stored. During regeneration:
-1. Scan for unresolved items — `out_of_spec: true` without `out_of_spec_approved`, decision files with `draft`/`proposed` status, blocking questions in questions.md
-2. Populate Reviews sub-section from current data
-3. Never carry forward stale entries — resolved items disappear on next regeneration
-4. No dangling references — every item must link to a concrete file
+Generate content matching the template's structure. Preserve HTML format comments in the regenerated dashboard (they guide future regenerations). The rendered dashboard contains only content — no format instructions are visible to the user.
 
 **Spec snapshot process:**
 ```

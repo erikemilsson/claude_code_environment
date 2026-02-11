@@ -633,13 +633,15 @@ Two files control template behavior:
 ├── vision/                    # Vision documents from ideation
 │   └── {project}-vision.md   # Design philosophy, future roadmap
 ├── tasks/                     # Task data
-│   └── task-*.json           # Individual task files
+│   ├── task-*.json           # Individual task files
+│   └── archive/              # Completed tasks (when count exceeds 100)
 ├── commands/                  # /work and task commands
 ├── agents/                    # Specialist agents
 │   ├── implement-agent.md    # Task execution
 │   └── verify-agent.md       # Validation against spec
 ├── support/                   # Supporting documentation
-│   ├── reference/            # Schemas, guides, definitions (see README.md for index)
+│   ├── reference/            # Schemas, guides, definitions
+│   │   ├── README.md          # Index of all reference files
 │   │   ├── shared-definitions.md
 │   │   ├── task-schema.md
 │   │   ├── workflow.md
@@ -651,10 +653,11 @@ Two files control template behavior:
 │   ├── decisions/            # Decision documentation
 │   │   ├── decision-*.md     # Individual decision records
 │   │   └── .archive/         # Research documents
-│   ├── learnings/            # Project-specific patterns
-│   │   └── README.md
+│   ├── learnings/            # Project-specific patterns (see README.md)
+│   │   └── README.md         # Categories, format, maintenance guidelines
 │   ├── previous_specifications/  # Spec snapshots at decomposition (for drift detection)
-│   ├── workspace/            # Claude's working area (gitignored)
+│   ├── workspace/            # Claude's working area (gitignored, see README.md)
+│   │   ├── README.md         # Directory rules, file placement guide
 │   │   ├── scratch/          # Temporary notes, quick analysis
 │   │   ├── research/         # Web search results, reference material
 │   │   └── drafts/           # WIP docs before final location

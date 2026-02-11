@@ -6,7 +6,7 @@ Project-specific patterns, strategies, and insights accumulated over time.
 
 This folder stores learnings that help Claude work more effectively on your specific project. Unlike core reference docs, these are discovered through experience rather than defined upfront.
 
-**Claude doesn't auto-read these files.** Ask explicitly when you want to leverage them:
+**The implement-agent checks this directory during Step 4 (Implement).** If learnings files exist, they're consulted for relevant patterns before implementation begins. You can also reference them explicitly:
 - "Check learnings for patterns on X"
 - "Look at the API patterns before implementing"
 - "What strategies have worked for task breakdown?"
@@ -17,7 +17,6 @@ Add files as you discover useful patterns. Common categories:
 
 | Category | What to capture |
 |----------|-----------------|
-| `critical-llm-knowledge.md` | Rules where Claude consistently struggles, counterintuitive patterns |
 | `task-strategies.md` | Effective task decomposition approaches, sequencing patterns |
 | `api-patterns.md` | API design conventions, error handling patterns |
 | `testing-patterns.md` | Test strategies, mock patterns, coverage approaches |

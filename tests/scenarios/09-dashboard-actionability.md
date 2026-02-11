@@ -155,16 +155,16 @@ Every item in Action Required should be traceable to its detail section:
 - Verification debt tasks → appear in Tasks with correct status
 - Pending decision → appears in Decisions with "proposed" status and link
 - Human tasks → appear in Tasks with correct owner
-- Blocking question → affects Claude section (should show as blocked)
+- Blocking question → appears in Action Required → Reviews
 
 ### Pass criteria
 
 - [ ] No item in Action Required references a task/decision that's missing from detail sections
-- [ ] Claude → Blocked line reflects the blocking question
+- [ ] Blocking question appears in Action Required → Reviews with link to questions.md
 - [ ] Tasks shows task 7 as "Awaiting Verification" (not hidden or mislabeled)
 
 ### Fail indicators
 
 - Dashboard says "2 tasks have verification debt" but Tasks shows them as "Finished" without any indicator
 - Decision appears as pending in Action Required but as "approved" in Decisions
-- Blocking question blocks work but Claude says "Ready to Start"
+- Blocking question blocks work but isn't surfaced in Action Required

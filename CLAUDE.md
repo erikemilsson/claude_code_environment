@@ -10,6 +10,7 @@ The `.claude/` directory contains the environment that ships to new projects. Th
 - **Don't create project-specific content** — no real specs, tasks, or decisions
 - **Don't run `/work` or `/iterate` as if building a project** — these commands are what you're maintaining, not using
 - **The spec file (`.claude/spec_v1.md`) should stay as a placeholder** — it's a template for users to fill in
+- **The dashboard (`.claude/dashboard.md`) is a populated format example** — unlike other template files that use `[bracketed placeholders]`, the dashboard shows a fictional renovation project mid-execution. This is intentional: it serves as a golden example for Claude to pattern-match when generating dashboards. It gets replaced on first `/work` run.
 
 ## What You Should Do
 
@@ -19,7 +20,7 @@ The `.claude/` directory contains the environment that ships to new projects. Th
 - **Edit `.claude/CLAUDE.md`** to improve project instructions
 - **Edit `.claude/README.md`** to improve the user-facing environment guide
 - **Run conceptual tests** (`tests/scenarios/`) after significant command changes
-- **Use `[bracketed text]` for user-customizable placeholder sections**
+- **Use `[bracketed text]` for user-customizable placeholder sections** (exception: `dashboard.md` uses populated example data instead)
 
 ## Testing
 

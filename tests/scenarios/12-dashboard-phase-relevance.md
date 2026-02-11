@@ -18,7 +18,6 @@ The same dashboard sections are generated at every phase. Some sub-sections are 
 |---------|----------------------|-------|
 | Header lines | Name, Setup stage, 0% complete | **High** — orients the user |
 | Action Required | Decisions pending (if any), human tasks (empty subs omitted) | **High** — tells user what to do |
-| Claude | All tasks "Ready to Start" | **Medium** — confirms Claude knows what to do |
 | Progress | Phase table, critical path one-liner | **Medium** — provides structure overview |
 | Tasks | Full task list by phase | **High** — the complete work breakdown |
 | Decisions | Empty or initial decisions | **Low** — only if decisions exist |
@@ -53,7 +52,6 @@ The consolidated structure handles null-state naturally: Action Required omits e
 |---------|----------------------|-------|
 | Header lines | Phase 1, 37% complete | **High** — instant orientation |
 | Action Required | Any human tasks, verification debt (Spec Drift omitted if no drift) | **High** |
-| Claude | Current task, next up, blocked | **High** — user knows what Claude is doing |
 | Progress | Phase table, critical path one-liner, this week completions | **High** — shows momentum |
 | Tasks | Full list with statuses | **High** — detailed reference |
 | Decisions | 1 resolved, 0 pending | **Low** — nothing actionable |
@@ -67,7 +65,7 @@ Most sections are useful during active execution. Action Required omits Spec Dri
 
 - [ ] Active execution phase has the highest information density
 - [ ] Critical path one-liner updates to show remaining work
-- [ ] Claude section clearly shows what Claude is currently doing
+- [ ] Tasks section clearly shows task statuses including what's In Progress
 
 ### Fail indicators
 
@@ -86,7 +84,6 @@ Most sections are useful during active execution. Action Required omits Spec Dri
 |---------|----------------------|-------|
 | Header lines | Phase 1, 100% tasks done | **High** |
 | Action Required | Phase transition approval, verification debt, Spec Drift (if any) | **Critical** — user decides what happens next |
-| Claude | "Ready: Phase-level verification" | **Medium** |
 | Progress | 100%, critical path one-liner, completions | **Medium** — confirms all done |
 | Tasks | All Finished | **Medium** — reference for verification |
 | Decisions | All resolved | **Low** — historical record |
@@ -121,7 +118,6 @@ Users configure in spec frontmatter or CLAUDE.md:
 ```yaml
 dashboard_sections:
   action_required: build
-  claude: build
   progress: exclude          # User doesn't care about phase table
   tasks: build
   decisions: exclude         # Small project, few decisions

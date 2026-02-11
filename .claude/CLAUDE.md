@@ -12,6 +12,10 @@ This environment is designed for **Claude Opus 4.6** (`claude-opus-4-6`). The di
 
 > **Scope note:** "The project" and "the system" refer to what's being built. The supporting workflow infrastructure in `.claude/` is "the environment."
 
+## Design Philosophy
+
+This environment is domain-agnostic. It works for software development, research, procurement, renovation, event planning, or any project describable by a specification. Dashboard language, task tracking, and verification adapt to the project domain — no code-specific assumptions are built in.
+
 ## How the Environment Works
 
 **The dashboard is your communication channel with Claude** (`.claude/dashboard.md`). During the build phase (Spec → Execute → Verify), everything Claude needs from you is surfaced there: decisions to make, files to review, actions to take. You should always be able to open the dashboard and see what your next action is.
@@ -23,6 +27,8 @@ This environment is designed for **Claude Opus 4.6** (`claude-opus-4-6`). The di
 - You don't need to browse `.claude/` internals to understand what's happening
 
 **This is pragmatic, not rigid.** The dashboard is the primary communication hub during active development. Post-completion activities (testing, deployment) may involve more direct interaction. Claude should surface information through the dashboard when it makes sense, not force everything through it artificially.
+
+**Note:** The dashboard ships as a populated format example (a fictional renovation project). On first `/work` run after spec decomposition, it is replaced with your actual project data. The example exists so Claude can see exactly what format to produce.
 
 For full details, see `.claude/support/reference/workflow.md` § "System Overview".
 
@@ -84,8 +90,7 @@ Commands defined in `.claude/commands/` for this workflow. Not Claude Code built
 **Important:** Always use the project's task system (`.claude/tasks/task-*.json` files) for all task management. Never use built-in TaskCreate/TaskUpdate/TaskList tools as a replacement — those are separate from this project's tracking.
 
 Tasks are tracked in `.claude/tasks/` as JSON files. The **Project Dashboard** at `.claude/dashboard.md` is your communication channel with Claude during the build phase:
-- 🚨 **Action Required** — everything Claude needs from you: decisions, tasks, reviews, drift — with links and completion signals
-- 🤖 **Claude** — what Claude is working on, up next, and blocked on
+- 🚨 **Action Required** — everything Claude needs from you: decisions, tasks, reviews — with links and completion signals
 - 📊 **Progress** — phase breakdown, critical path, and recent activity
 - 📋 **Tasks** — full task list by phase
 - 📋 **Decisions** — decision log with status
@@ -104,14 +109,14 @@ Major decisions are documented in `.claude/support/decisions/`.
 
 - **Dashboard tracks all decisions** - Status, pending items, and timeline in one place
 - **Records:** `decision-*.md` - full analysis with comparison tables
-- **Research:** `.archive/` - background research documents
+- **Research:** `.claude/support/decisions/.archive/` - background research documents
 - **Reference:** `.claude/support/reference/decisions.md`
 
 When facing significant choices, create a decision record rather than deciding inline.
 
 ## Workspace
 
-Temporary documents go in `.claude/support/workspace/` (scratch, research, drafts). Never create working documents in the project root. See `.claude/support/reference/workflow.md` § "Workspace" for details.
+Temporary documents go in `.claude/support/workspace/` (scratch, research, drafts). Never create working documents in the project root. See `.claude/support/workspace/README.md` for directory rules and file placement guide.
 
 ## Archiving Rules
 

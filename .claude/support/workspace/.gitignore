@@ -1,0 +1,17 @@
+# Ignore all workspace contents (temporary working documents)
+*
+
+# Keep structure and documentation
+!.gitignore
+!README.md
+!scratch/
+!research/
+!drafts/
+
+# Inside subdirectories: ignore contents, keep structure
+scratch/*
+!scratch/.gitkeep
+research/*
+!research/.gitkeep
+drafts/*
+!drafts/.gitkeep

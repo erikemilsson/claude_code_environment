@@ -101,9 +101,9 @@ The `owner` field determines who is responsible and where tasks appear in the da
 
 | Value | Emoji | Dashboard Location | When to Use |
 |-------|-------|-------------------|-------------|
-| `claude` | 🤖 | Claude section | Tasks Claude can do autonomously (default) |
+| `claude` | 🤖 | Tasks section | Tasks Claude can do autonomously (default) |
 | `human` | ❗ | Action Required → Your Tasks | Requires human action (config, decisions, external) |
-| `both` | 👥 | Both sections | Collaborative work (appears in BOTH dashboard sections) |
+| `both` | 👥 | Action Required + Tasks | Collaborative work (appears in both sections) |
 
 ### Examples by Owner
 

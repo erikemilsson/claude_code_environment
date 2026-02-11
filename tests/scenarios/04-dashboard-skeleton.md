@@ -20,15 +20,13 @@ Same as Scenario 02:
 
 1. **Header lines** — project name, stage, start date, completion %, task/decision counts
 2. **Action Required** — both decisions in Decisions sub-section with links
-3. **Claude** — Ready (Phase 1 tasks) + Blocked (Phase 2/3 tasks with reasons)
-4. **Progress** — phase table, critical path one-liner, all 3 phases with blocked reasons
-5. **Tasks** — grouped by phase, per-phase summary lines with blocking reasons
-6. **Decisions** — DEC-001 and DEC-002 with status
+3. **Progress** — phase table, critical path one-liner, all 3 phases with blocked reasons
+4. **Tasks** — grouped by phase, per-phase summary lines with blocking reasons
+5. **Decisions** — DEC-001 and DEC-002 with status
 
 ### Key details
 
 - Progress phase table: `Phase 2 | 0 | 3 | Blocked (DEC-001)`
-- Claude Blocked line: `Task 4 | Run analysis | DEC-001 (Analysis Method)`
 - Phase summary in Tasks: `*Phase 2: 0/3 complete — waiting on DEC-001*`
 - Critical path one-liner includes: `❗ Resolve DEC-001 → 🤖 Phase 2 tasks → Done`
 
@@ -41,7 +39,7 @@ Same as Scenario 02:
 - [ ] Progress phase table shows all phases with blocking reasons
 - [ ] Critical path one-liner includes decision resolution steps
 - [ ] Action Required → Decisions sub-section links to decision docs
-- [ ] Claude → Blocked line lists blocked tasks with specific reasons
+- [ ] Tasks section shows blocked tasks with decision deps in Deps column
 - [ ] Full project journey visible from dashboard alone
 
 ## Fail indicators

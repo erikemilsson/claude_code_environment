@@ -29,10 +29,10 @@ The user runs Claude Code CLI in one pane and has `dashboard.md` open in the oth
 
 ### Expected sequence
 
-1. **Before:** Dashboard shows Task 7 under "Claude → In Progress"
+1. **Before:** Tasks section shows Task 7 as "In Progress"
 2. **After verification:** Dashboard updates:
    - Task 7 → "In Progress" (failed verification, needs fixes)
-   - New fix task 7a appears under "Claude → Ready to Start"
+   - New fix task 7a appears in Tasks section as "Pending"
    - Verification Debt section shows Task 7
 3. **After fix:** Claude implements fix → re-verifies → passes
 4. **After pass:** Dashboard updates:

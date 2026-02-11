@@ -37,8 +37,8 @@ Open the decision doc to make your selection, then run /work again.
 
 ## Trace: Dashboard regeneration
 
-- **Path:** dashboard.md → Claude Blocked line, Action Required → Decisions, Tasks grouped by phase
-- All phases visible, blocked tasks show decision dependency in "Blocked By" column
+- **Path:** dashboard.md → Action Required → Decisions, Tasks grouped by phase
+- All phases visible, blocked tasks show decision dependency in Deps column
 - Phase summary lines explain blocking reason
 
 ## Pass criteria

@@ -16,7 +16,8 @@
 | Dashboard | `.claude/dashboard.md` |
 | Questions | `.claude/support/questions.md` |
 | Vision documents | `.claude/vision/` |
-| Reference docs | `.claude/support/reference/` |
+| Reference docs | `.claude/support/reference/` (see `README.md` for index) |
+| Learnings | `.claude/support/learnings/` (see `README.md` for categories) |
 | Commands | `.claude/commands/` |
 | Agents | `.claude/agents/` |
 

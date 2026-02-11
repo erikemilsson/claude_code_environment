@@ -90,6 +90,8 @@ Do the work:
 - Keep changes focused on the task
 - Don't over-engineer
 - Don't add unrequested features
+- Use `.claude/support/workspace/` for temporary files (see `README.md` there for placement rules)
+- If `.claude/support/learnings/` contains files, check for patterns relevant to this task
 
 ### Step 5: Self-Review
 

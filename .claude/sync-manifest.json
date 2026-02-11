@@ -12,6 +12,9 @@
       ".claude/support/reference/extension-patterns.md",
       ".claude/support/reference/paths.md",
       ".claude/support/reference/desktop-project-prompt.md",
+      ".claude/support/reference/README.md",
+      ".claude/support/learnings/README.md",
+      ".claude/support/workspace/README.md",
       ".claude/support/previous_specifications/README.md",
       ".claude/vision/README.md"
     ],
