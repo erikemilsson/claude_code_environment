@@ -99,62 +99,7 @@ See `task-schema.md` for detailed field documentation.
 
 ## Section Parsing Algorithm
 
-How spec files are parsed into sections for fingerprinting:
-
-### Definition
-
-```
-Section = ## heading + all content until next ## or EOF
-```
-
-### Parsing Rules
-
-1. **Strip YAML frontmatter** - Remove `---` delimited frontmatter before parsing
-2. **Extract ## level headings** - Each `## Title` starts a new section
-3. **Include ### subsections** - Subsections belong to their parent ## section
-4. **Normalize heading text** - Trim whitespace from heading
-5. **Compute fingerprint** - `sha256(heading + "\n" + content)`
-
-### Example
-
-Given spec:
-```markdown
----
-version: 1
----
-
-# Project Spec
-
-## Authentication
-
-Users can log in with email and password.
-
-### Password Requirements
-
-- Minimum 8 characters
-- Must include number
-
-## API Endpoints
-
-RESTful API with JSON responses.
-```
-
-Produces sections:
-| Section | Content |
-|---------|---------|
-| `## Authentication` | "Users can log in...\n\n### Password Requirements\n\n- Minimum 8 characters..." |
-| `## API Endpoints` | "RESTful API with JSON responses." |
-
-Note: `# Project Spec` (H1) is not a section - only H2 (`##`) headings define sections.
-
-### Edge Cases
-
-| Scenario | Handling |
-|----------|----------|
-| No ## headings | Entire spec content (after frontmatter) is one "section" |
-| Empty section | Section with heading but no content - fingerprint is hash of heading only |
-| Consecutive ## | Creates sections with empty content between them |
-| Content before first ## | Ignored for section purposes (preamble) |
+Spec files are parsed into sections for fingerprinting: each `##` heading starts a new section that includes all content until the next `##` or EOF (including `###` subsections). YAML frontmatter is stripped first, and H1 headings are ignored. Fingerprint: `sha256(heading + "\n" + content)`.
 
 ## Mandatory Rules
 

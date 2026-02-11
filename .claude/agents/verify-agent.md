@@ -56,33 +56,6 @@ The `/work` command directs you to follow this workflow when:
 - `.claude/verification-result.json` — structured result file used by `/work` and `/health-check` (Step 7)
 - Verification report displayed to user (Step 8)
 
-## Verification Areas
-
-### 1. Functional Verification
-Does it do what the spec says?
-- Each acceptance criterion checked
-- Edge cases handled
-- Error states tested
-
-### 2. Quality Verification
-Is the code good?
-- Follows project conventions
-- No obvious bugs
-- Reasonable error handling
-- No security vulnerabilities
-
-### 3. Integration Verification
-Does it work together?
-- Components integrate correctly
-- Data flows as expected
-- No broken dependencies
-
-### 4. Performance Verification (if applicable)
-Does it meet performance requirements?
-- Response times acceptable
-- Resource usage reasonable
-- Handles expected load
-
 ## How This Workflow Is Invoked
 
 This file is read by `/work` during verification. **You are reading this file because `/work` directed you here.**

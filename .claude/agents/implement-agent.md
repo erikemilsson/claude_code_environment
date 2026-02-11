@@ -175,20 +175,6 @@ After verification completes (pass or fail):
 
 ## Implementation Guidelines
 
-### Code Quality
-
-**Do:**
-- Follow existing code style
-- Write clear, readable code
-- Handle errors appropriately
-- Add comments only where logic is complex
-
-**Don't:**
-- Refactor unrelated code
-- Add unnecessary abstractions
-- Change coding conventions mid-project
-- Skip error handling
-
 ### Scope Discipline
 
 Stay within task boundaries:

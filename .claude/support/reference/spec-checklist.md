@@ -57,12 +57,3 @@ Watch for these regardless of project type:
 - Decisions without rationale
 - Acceptance criteria requiring subjective judgment ("looks good")
 
-## Spec → Task Connection
-
-When the spec moves to `/work`, it decomposes into tasks. Keep this in mind:
-
-- Each acceptance criterion typically becomes 1-3 tasks
-- Vague specs produce vague tasks (garbage in, garbage out)
-- Missing decisions become blocking questions during implementation
-
-If you want to preview how a spec might decompose, describe your acceptance criteria at a level where each one is a concrete, demonstrable behavior.
