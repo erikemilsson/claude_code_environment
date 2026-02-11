@@ -1034,7 +1034,7 @@ Quick check: ❌ BLOCKS COMPLETION
 | Aspect | Lightweight | Full (`/health-check`) |
 |--------|-------------|------------------------|
 | Execution time | < 1 second | Several seconds |
-| Checks | 6 critical checks | All validations |
+| Checks | 13 fast checks (4 critical, 3 error, 5 warning, 1 info) | All validations (Parts 1–5) |
 | Auto-fix | No | Yes (prompts for fixes) |
 | Report | Single line + issues | Full report with sections |
 
