@@ -17,7 +17,7 @@ This environment is designed for **Claude Opus 4.6** (`claude-opus-4-6`). The di
 **The dashboard is your communication channel with Claude** (`.claude/dashboard.md`). During the build phase (Spec → Execute → Verify), everything Claude needs from you is surfaced there: decisions to make, files to review, actions to take. You should always be able to open the dashboard and see what your next action is.
 
 **How it works in practice:**
-- Claude tracks tasks, implements code, and runs verification autonomously
+- Claude tracks tasks, produces deliverables, and runs verification autonomously
 - When Claude needs your input, it appears in the dashboard — with links to the relevant files, checkboxes to confirm actions, and space for feedback
 - You click through to files when needed, then signal completion back through the dashboard
 - You don't need to browse `.claude/` internals to understand what's happening
@@ -74,8 +74,7 @@ Commands defined in `.claude/commands/` for this workflow. Not Claude Code built
 
 ### Task Management
 - `/breakdown {id}` - Split complex tasks into subtasks
-- `/health-check` - Validate tasks, decisions, and CLAUDE.md health
-- `/update-template` - Check for and apply template updates
+- `/health-check` - Validate tasks, decisions, CLAUDE.md health, and template sync
 
 ### Setup
 - `/setup-check` - Validate template configuration (run after cloning)
@@ -85,12 +84,12 @@ Commands defined in `.claude/commands/` for this workflow. Not Claude Code built
 **Important:** Always use the project's task system (`.claude/tasks/task-*.json` files) for all task management. Never use built-in TaskCreate/TaskUpdate/TaskList tools as a replacement — those are separate from this project's tracking.
 
 Tasks are tracked in `.claude/tasks/` as JSON files. The **Project Dashboard** at `.claude/dashboard.md` is your communication channel with Claude during the build phase:
-- 🚨 **Needs Your Attention** - everything Claude needs from you: decisions, tasks, reviews — with links to relevant files and ways to respond
-- 🤖 **Claude Status** - what Claude is working on
-- 📊 **Progress This Week** - recent completions and activity
-- 📋 **All Decisions** - decision log with status
-- 📝 **All Tasks** - full task list with details
-- 💡 **Notes & Ideas** - your preserved notes section
+- 🚨 **Action Required** — everything Claude needs from you: decisions, tasks, reviews, drift — with links and completion signals
+- 🤖 **Claude** — what Claude is working on, up next, and blocked on
+- 📊 **Progress** — phase breakdown, critical path, and recent activity
+- 📋 **Tasks** — full task list by phase
+- 📋 **Decisions** — decision log with status
+- 💡 **Notes** — your preserved notes section
 
 **Key rules:**
 - Break down tasks with difficulty >= 7 before starting
@@ -130,13 +129,13 @@ See `.claude/support/reference/paths.md` for all canonical paths.
 
 See `.claude/support/reference/workflow.md` § "Project Structure" for the full directory tree and template configuration file documentation.
 
-## Technology Stack
+## Technology Stack / Tools
 
-[List key technologies, frameworks, languages]
+[List key technologies, frameworks, tools, or services used in this project]
 
 ## Conventions
 
-[Project-specific coding conventions, naming patterns, etc.]
+[Project-specific conventions, naming patterns, document formats, etc.]
 
 ## Glossary
 

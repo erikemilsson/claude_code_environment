@@ -32,8 +32,7 @@ A structured development environment for Claude Code using the **Spec → Execut
 | `/iterate` | Structured spec review (checks gaps, asks questions, suggests content) |
 | `/status` | Quick read-only view of project state |
 | `/breakdown {id}` | Split complex tasks into subtasks |
-| `/health-check` | Validate system health |
-| `/update-template` | Check for and apply template updates |
+| `/health-check` | Validate system health and check for template updates |
 | `/setup-check` | Validate template configuration (run after cloning) |
 
 ## Core Concepts
@@ -49,12 +48,12 @@ A structured development environment for Claude Code using the **Spec → Execut
 
 The dashboard (`.claude/dashboard.md`) is your primary interface during development:
 
-- Claude tracks tasks, implements code, and runs verification autonomously
+- Claude tracks tasks, produces deliverables, and runs verification autonomously
 - When Claude needs your input, it appears in the dashboard — with links to relevant files, checkboxes to confirm actions, and space for feedback
 - You click through to files when needed, then signal completion back through the dashboard
 
 Two specialist agents check each other's work:
-- **implement-agent** builds features based on task requirements
+- **implement-agent** executes tasks and produces deliverables
 - **verify-agent** validates the implementation independently
 
 This eliminates the blind spots of self-validation.

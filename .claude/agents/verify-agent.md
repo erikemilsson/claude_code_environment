@@ -6,7 +6,7 @@ Specialist for testing and validating implementations against the specification.
 
 ## Purpose
 
-- Run tests and quality checks
+- Run validation and quality checks
 - Validate implementation against spec
 - Identify issues for correction
 - Confirm readiness for completion
@@ -39,7 +39,7 @@ The `/work` command directs you to follow this workflow when:
 **Phase-level mode:**
 - Completed implementation (all tasks finished with passing per-task verification)
 - `.claude/spec_v{N}.md` - Specification with acceptance criteria
-- Test files and test commands
+- Test files and validation commands
 - Quality standards/requirements
 - Per-task verification results from each task JSON
 
@@ -104,17 +104,17 @@ Compare the implementation against both:
 - Does the implementation match the spec's intent for this area?
 - Are there contradictions between what was built and what was specified?
 
-### Step T4: Verify Code Quality and Patterns
+### Step T4: Verify Output Quality and Patterns
 
 - Check for TODOs, FIXMEs, placeholders, or incomplete implementations
-- If earlier tasks established patterns (naming conventions, error handling style, file structure), verify this task follows them
-- Check for obvious bugs: missing error handling, unclosed resources, hardcoded values that should be configurable
+- If earlier tasks established patterns (naming conventions, structure, formatting), verify this task follows them
+- Check for obvious issues: missing error handling, incomplete sections, hardcoded values that should be configurable
 
 ### Step T5: Verify Integration Boundaries
 
 - If the task has dependencies: are the outputs of those dependencies consumed correctly?
 - If other tasks depend on this one: does this task produce what they will need?
-- Check: imports, function signatures, table/column names, file paths that downstream code will reference
+- Check: references, interfaces, naming conventions, and file paths that downstream tasks will depend on
 
 ### Step T6: Produce Verification Result
 
@@ -129,7 +129,7 @@ Record the per-task verification outcome in the task JSON:
     "checks": {
       "files_exist": "pass",
       "spec_alignment": "pass",
-      "code_quality": "pass",
+      "output_quality": "pass",
       "integration_ready": "pass"
     },
     "notes": "All files created as specified.",
@@ -147,7 +147,7 @@ Record the per-task verification outcome in the task JSON:
     "checks": {
       "files_exist": "pass",
       "spec_alignment": "fail",
-      "code_quality": "pass",
+      "output_quality": "pass",
       "integration_ready": "pass"
     },
     "notes": "Task description specifies upsert for 4 bronze tables but only 3 are implemented.",
@@ -197,7 +197,7 @@ Pass:
 Task 5 verification: PASS
   Files: 1/1 exist
   Spec alignment: matches task description
-  Code quality: no issues
+  Output quality: no issues
   Integration: outputs match downstream expectations
 ```
 
@@ -254,8 +254,8 @@ For each acceptance criterion:
 ### Step 4: Manual Verification
 
 For criteria not covered by tests:
-- Review code manually
-- Test functionality directly
+- Review deliverables manually
+- Validate deliverables directly
 - Document findings
 
 ### Step 5: Identify Issues
@@ -273,7 +273,7 @@ For failures, categorize:
 - Missing error handling
 
 **Minor (nice to fix):**
-- Code style issues
+- Style and formatting issues
 - Minor UX improvements
 - Documentation gaps
 
@@ -305,8 +305,8 @@ For issues found that need fixing:
    Out-of-spec tasks require explicit user approval before `/work` will execute them. See the out-of-spec consent flow in `work.md`.
 4. **Regenerate dashboard.md** - Follow work.md § "Dashboard Regeneration Procedure"
    - Additional verify-agent requirements:
-     - Update Verification Debt in Needs Your Attention section
-     - Show out-of-spec tasks with ⚠️ prefix in All Tasks table
+     - Populate Verification Debt sub-section in Action Required (only if debt exists)
+     - Show out-of-spec tasks with ⚠️ prefix in Tasks section
 
 ### Step 7: Persist Verification Result
 
@@ -356,14 +356,14 @@ Display verification report: overall status, per-criterion pass/fail list, issue
 
 ## Separation of Concerns
 
-**Do NOT implement fixes.** Your role is to identify and document issues, not resolve them. Create fix tasks, set the verification result to "fail" (for in-spec issues) or "pass_with_issues" (for recommendation-only findings), and return control to `/work`. The implement-agent handles all code changes.
+**Do NOT implement fixes.** Your role is to identify and document issues, not resolve them. Create fix tasks, set the verification result to "fail" (for in-spec issues) or "pass_with_issues" (for recommendation-only findings), and return control to `/work`. The implement-agent handles all changes.
 
 ## Handling Ad-Hoc Tasks
 
 For tasks that weren't in the spec (ad-hoc requests):
 - Cannot validate against spec acceptance criteria
 - Verify the task's stated requirements were met
-- Check code quality and integration
+- Check output quality and integration
 - Note: "Ad-hoc task - verified against task requirements, not spec"
 
 ## Handling Failures

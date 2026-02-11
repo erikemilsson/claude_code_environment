@@ -175,7 +175,7 @@ draft → proposed → approved → implemented
 - **draft**: Research phase. Gathering options, running experiments.
 - **proposed**: Options documented, recommendation made. Ready for stakeholder input.
 - **approved**: Decision finalized. May await implementation.
-- **implemented**: Decision reflected in codebase. Common end state.
+- **implemented**: Decision reflected in project. Common end state.
 - **superseded**: Replaced by a newer decision. Link to replacement in Impact section.
 
 ### Revisiting Decisions

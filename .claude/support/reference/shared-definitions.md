@@ -19,11 +19,11 @@ Canonical terminology used across the system.
 
 | Level | Category | Action | Examples |
 |-------|----------|--------|----------|
-| 1-2 | Routine | Just do it | Fix typo, add field, update config, simple CRUD, add validation rules |
-| 3-4 | Standard | May take multiple steps | OAuth integration, REST API with auth, DB schema + migrations, component library setup |
-| 5-6 | Substantial | Design decisions needed | Full auth system (JWT + sessions + RBAC), real-time WebSocket features, payment integration, new service with API + tests |
-| 7-8 | Large scope | **MUST break down first** | Microservice extraction from monolith, full DB migration (schema + data + rollback), multi-tenant architecture |
-| 9-10 | Multi-phase | **MUST break down into phases** | Platform migration (e.g., Rails → Next.js), architecture redesign, security overhaul across all services |
+| 1-2 | Routine | Just do it | Fix typo, add field, update config, simple CRUD, single vendor lookup, update a contact list |
+| 3-4 | Standard | May take multiple steps | OAuth integration, REST API with auth, compare 5+ vendor quotes and produce shortlist, research and summarize 3 options with pros/cons |
+| 5-6 | Substantial | Design decisions needed | Full auth system (JWT + sessions + RBAC), payment integration, full vendor evaluation with site visits and scoring matrix, project timeline with dependencies and resource allocation |
+| 7-8 | Large scope | **MUST break down first** | Microservice extraction from monolith, full DB migration (schema + data + rollback), complete procurement process (research + quotes + negotiation + contracts) |
+| 9-10 | Multi-phase | **MUST break down into phases** | Platform migration (e.g., Rails → Next.js), architecture redesign, full project delivery (research → planning → procurement → execution → validation) |
 
 ### When to Break Down
 
@@ -127,15 +127,15 @@ When conditions are not met, fall back to sequential execution (one "In Progress
 
 Tasks have an `owner` field that determines responsibility and dashboard placement:
 
-| Value | Emoji | Dashboard Section | When to Use |
+| Value | Emoji | Dashboard Location | When to Use |
 |-------|-------|-------------------|-------------|
-| `claude` | 🤖 | Claude Status | Autonomous work (default when omitted) |
-| `human` | ❗ | Your Actions | Requires human action |
+| `claude` | 🤖 | Claude section | Autonomous work (default when omitted) |
+| `human` | ❗ | Action Required → Your Tasks | Requires human action |
 | `both` | 👥 | Both sections | Collaborative work |
 
-**Human tasks** - Configure secrets, external actions, review/approve
-**Claude tasks** - Write code, implement features, tests, docs, research
-**Both tasks** - Human provides direction, Claude implements (appears in BOTH dashboard sections with 👥)
+**Human tasks** - Configure secrets, external actions (phone calls, site visits), review/approve
+**Claude tasks** - Execute tasks, create deliverables, research, analysis, documentation
+**Both tasks** - Human provides direction or external input, Claude produces deliverables (appears in BOTH dashboard sections with 👥)
 
 ## Task ID Conventions
 
@@ -178,7 +178,7 @@ Canonical definitions for terms used across the environment. Terms already defin
 | **Pick-and-Go Decision** | Default decision type. After resolution, blocked tasks simply unblock and `/work` continues. Any decision without `inflection_point: true`. |
 | **Comparison Matrix** | Core of a decision record. Criteria-vs-options table forcing structured evaluation. Common criteria: Performance, Complexity, Cost, Ecosystem, Fit, Risk. |
 | **Weighted Scoring** | Optional addition for high-stakes decisions. Each criterion gets a percentage weight, options scored 1–5. Makes evaluation explicit. |
-| **Implementation Anchor** | Reference linking a decision to code. Added at `implemented` status. Fields: `file`, `line` (optional), `description`. Validated by `/health-check`. |
+| **Implementation Anchor** | Reference linking a decision to where it was realized. Added at `implemented` status. Fields: `file`, `line` (optional), `description`. Validated by `/health-check`. |
 | **Spec-Level Choice** | Choice defining requirements or user-visible behavior (the "what"). Changes require spec revision. |
 | **Implementation-Level Choice** | Choice defining tools or technical details (the "how"). Changes don't require spec revision. |
 
@@ -195,7 +195,7 @@ Canonical definitions for terms used across the environment. Terms already defin
 
 | Term | Definition |
 |------|------------|
-| **Per-Task Verification (Tier 1)** | Runs after each task implementation. Checks: files exist, spec alignment, code quality, integration readiness. Pass → Finished. Fail → back to In Progress (max 2 retries). |
+| **Per-Task Verification (Tier 1)** | Runs after each task implementation. Checks: files exist, spec alignment, output quality, integration readiness. Pass → Finished. Fail → back to In Progress (max 2 retries). |
 | **Phase-Level Verification (Tier 2)** | Runs once when all tasks Finished. Validates full implementation against spec acceptance criteria. Result: `pass`, `fail`, or `pass_with_issues`. Written to `.claude/verification-result.json`. |
 | **Verification Debt** | Tasks that bypassed or failed verification: status "Awaiting Verification", "Finished" without `task_verification`, or `task_verification.result` is "fail". Blocks project completion. |
 
@@ -203,7 +203,7 @@ Canonical definitions for terms used across the environment. Terms already defin
 
 | Term | Definition |
 |------|------------|
-| **Implement-Agent** | Builder agent. Executes tasks, writes code, self-reviews, marks "Awaiting Verification". Defined in `.claude/agents/implement-agent.md`. |
+| **Implement-Agent** | Builder agent. Executes tasks, produces deliverables, self-reviews, marks "Awaiting Verification". Defined in `.claude/agents/implement-agent.md`. |
 | **Verify-Agent** | Validator agent. Tests against spec, finds issues, handles both Tier 1 and Tier 2 verification. Defined in `.claude/agents/verify-agent.md`. |
 | **Dashboard** | Project dashboard at `.claude/dashboard.md`. Primary communication channel during build phase. Regenerated after task changes. |
 | **Dashboard Freshness** | Whether dashboard reflects current state. Detected by comparing `task_hash` (SHA-256 of sorted task_id:status pairs) against current computed hash. |

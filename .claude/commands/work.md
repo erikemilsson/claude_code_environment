@@ -554,14 +554,12 @@ Break the spec into granular tasks:
      - Tasks: Only include tasks that have corresponding `task-*.json` files. Never add a task to the dashboard without creating its JSON file first.
      - Decisions: Only include decisions that have corresponding `decision-*.md` files in `.claude/support/decisions/`. If a decision is significant enough for the dashboard, create the file first.
    - **User section backup** (see below)
-   - Preserve the Notes & Ideas section between `<!-- USER SECTION -->` markers
-   - Update **Project Context** with project name from spec and current phase (e.g., "Phase 1: Data Pipeline (9/10 tasks)")
-   - Calculate **Overall completion** percentage and **phase breakdown table** for Quick Status
-   - Group tasks by phase in **All Tasks** section with per-phase progress lines
-   - Show **All Decisions** with `ID | Decision | Status | Selected` format (selected option name for decided, link for pending)
-   - Generate **Spec Alignment** section from drift status
-   - Generate **Critical Path** from dependency chain of incomplete tasks (see below)
-   - List **Recently Completed** tasks with completion dates in Progress This Week
+   - Preserve the Notes section between `<!-- USER SECTION -->` markers
+   - Update the **header lines** with project name from spec, current phase, and overall completion percentage
+   - Group tasks by phase in **Tasks** section with per-phase progress lines
+   - Show **Decisions** with `ID | Decision | Status | Selected` format (selected option name for decided, link for pending)
+   - Generate **Progress** section: phase breakdown table, critical path one-liner, and "This week" activity line
+   - Populate **Action Required** sub-sections — only show sub-sections that have content (omit empty categories entirely)
    - **Add dashboard metadata** (see below)
 
 **User section backup process:**
@@ -613,15 +611,11 @@ Users can control which sections Claude builds via `dashboard_sections` in spec 
 
 ```yaml
 dashboard_sections:
-  project_context: build        # actively create/update
-  needs_attention: build
-  quick_status: build
-  spec_alignment: build
-  critical_path: build
-  claude_status: build
+  action_required: build        # actively create/update
+  claude: build
   progress: build
-  all_decisions: maintain       # preserve existing, minor updates only
-  all_tasks: build
+  tasks: build
+  decisions: maintain           # preserve existing, minor updates only
   notes: preserve               # always preserved (never overwritten)
 ```
 
@@ -630,7 +624,7 @@ dashboard_sections:
 | `build` | Actively generate from source data on every regeneration (default) |
 | `maintain` | Keep existing content, only update if data changes significantly |
 | `exclude` | Skip this section entirely during regeneration |
-| `preserve` | Never modify (Notes & Ideas always uses this) |
+| `preserve` | Never modify (Notes always uses this) |
 
 Default: all sections `build` if no configuration exists. Configure in spec frontmatter (takes precedence) or `.claude/CLAUDE.md`.
 
@@ -648,7 +642,11 @@ Default: all sections `build` if no configuration exists. Configure in spec fron
    - Rotate old backups (keep last 3)
 
 3. **Generate dashboard**
-   - Use exact section headings from dashboard.md template (including emojis)
+   - Use exact section headings from dashboard.md template (including emojis): `# Dashboard`, `## 🚨 Action Required`, `## 🤖 Claude`, `## 📊 Progress`, `## 📋 Tasks`, `## 📋 Decisions`, `## 💡 Notes`
+   - **Header lines** (before first section): project name, stage, start date on line 1; overall completion %, task count, decision count on line 2
+   - **Action Required sub-sections:** Only render sub-sections that have content. Empty categories are omitted entirely — no placeholder lines. Sub-sections: Verification Debt, Decisions, Your Tasks, Reviews, Spec Drift
+   - **Claude section:** Compact format — one line per state (Working on / Up next / Blocked). Omit empty lines.
+   - **Progress section:** Phase breakdown table + critical path one-liner + "This week" activity line. Omit "This week" if all counts are zero.
    - Check `dashboard_sections` config and respect modes
    - Enforce atomicity: only tasks with JSON files, only decisions with MD files
 
@@ -670,14 +668,14 @@ Default: all sections `build` if no configuration exists. Configure in spec fron
 6. **Add footer line** (at very end)
    ```
    ---
-   *Dashboard generated: [timestamp] | Tasks: N | [status indicator]*
+   *[timestamp] · N tasks · [status indicator]*
    ```
    - Healthy: `[Spec aligned](# "0 drift deferrals, 0 verification debt")`
    - Issues: `⚠️ N drift deferrals, M verification debt`
 
 **Action Item Contract:**
 
-Every item in "Needs Your Attention" must be:
+Every item in "Action Required" must be:
 - **Actionable** — the user can see what to do without guessing
 - **Linked** — if the action involves a file, include a link
 - **Completable** — include a checkbox, command, or clear completion signal
@@ -687,7 +685,7 @@ Every item in "Needs Your Attention" must be:
 
 Review items are derived, not stored. During regeneration:
 1. Scan for unresolved items — `out_of_spec: true` without `out_of_spec_approved`, decision files with `draft`/`proposed` status, blocking questions in questions.md
-2. Populate Reviews & Approvals from current data
+2. Populate Reviews sub-section from current data
 3. Never carry forward stale entries — resolved items disappear on next regeneration
 4. No dangling references — every item must link to a concrete file
 
@@ -899,7 +897,7 @@ When all tasks are finished and verification conditions are met:
    ---
    ```
 
-2. **Regenerate dashboard with completion summary:** Update Project Context to "Complete", replace Critical Path with final stats (task count, verification date, spec status).
+2. **Regenerate dashboard with completion summary:** Update header to show "Complete" stage, replace Progress section's critical path with final stats (task count, verification date, spec status).
 
 3. **Present final checkpoint:** Report completion with verification summary. Note how to continue (update spec, run `/work`).
 
@@ -942,7 +940,7 @@ Questions accumulate in `.claude/support/questions.md` during work.
 
 **Blocking questions:** Questions prefixed with `[BLOCKING]` halt work until answered. `/work` will not proceed to the next task or phase while blocking questions remain unresolved.
 
-**Dashboard integration:** Unresolved questions (especially blocking ones) appear in the dashboard's "Needs Your Attention" → "Reviews & Approvals" section during regeneration.
+**Dashboard integration:** Unresolved questions (especially blocking ones) appear in the dashboard's "Action Required" → "Reviews" sub-section during regeneration.
 
 ### Step 6: Lightweight Health Check
 
@@ -996,15 +994,17 @@ For the difficulty scale, see `.claude/support/reference/shared-definitions.md`.
 
 ### Critical Path Generation
 
-The Critical Path shows the sequence of tasks blocking project completion:
+The critical path is rendered as a single line in the **Progress** section: owner-tagged steps joined by `→`.
 
 1. **Find unblocked incomplete tasks** - Tasks with no unfinished dependencies
 2. **Build dependency chains** - Trace what depends on each recursively
 3. **Identify longest chain** - This is the critical path
-4. **Format with owners** - `❗ **You**:` (human), `🤖 **Claude**:` (claude), `👥 **Both**:` (both)
-5. **Show blocking relationships** - Indicate what each step blocks
+4. **Format as one-liner** - `❗ Resolve DEC-001 → 🤖 Build API layer → 🤖 Phase verification → Done *(N steps)*`
+   - Owners: `❗` (human), `🤖` (Claude), `👥` (both)
+   - For complex paths (>5 steps), show first 3 + "... N more → Done"
+5. **Prioritize human-owned steps** - Surfaces blockers the user can act on
 
-**Edge cases:** No dependencies → show all as "can start now". Multiple equal paths → prioritize human-owned (surfaces blockers). No incomplete → "All tasks complete!". Single task → no "blocks" annotation.
+**Edge cases:** No dependencies → "All tasks can start now". No incomplete → "All tasks complete!". Single task → just that task → Done.
 
 ---
 
@@ -1074,7 +1074,7 @@ Use `/work complete` for manual task completion outside of implement-agent's wor
 6. **Regenerate dashboard** - Follow the Dashboard Regeneration Procedure in Step 4
    - Additional completion requirements:
      - Update overall completion percentage
-     - Recalculate Critical Path with remaining incomplete tasks
+     - Recalculate critical path line in Progress section with remaining incomplete tasks
      - Add completed task to Recently Completed with completion_date
 7. **Auto-archive check** - If active task count > 100, archive old tasks
 8. **Lightweight health check** - Run quick validation (see Step 6 in main process)

@@ -59,7 +59,7 @@ Pay special attention to decisions where the outcome changes the plan — not ju
 
 - What can only the user do? (Set up accounts, configure hosting, get API keys, provide credentials)
 - Are there external approvals needed? (Design review, security audit, stakeholder sign-off)
-- What requires real-world action outside the codebase?
+- What requires real-world action outside the project?
 
 These become explicit tasks assigned to the user in the build system, visible on a dashboard so nothing gets forgotten.
 

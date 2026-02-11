@@ -4,5 +4,5 @@
   "template_repo": "https://github.com/user/claude_code_environment",
   "project_version": "0.1.0",
   "project_initialized": "2026-01-26",
-  "notes": "template_repo points to the environment builder template (used for /update-template). Project's own repo is determined from git remote. Update template_repo if you forked the template."
+  "notes": "template_repo points to the environment builder template (used by /health-check template sync). Project's own repo is determined from git remote. Update template_repo if you forked the template."
 }

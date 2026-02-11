@@ -1,6 +1,6 @@
 # Scenario 09: Dashboard Action Item Completeness
 
-Verify that every item in "Needs Your Attention" is fully actionable from the dashboard — the user should never need to browse the file tree to figure out what to do or where to go.
+Verify that every item in "Action Required" is fully actionable from the dashboard — the user should never need to browse the file tree to figure out what to do or where to go.
 
 ## Context
 
@@ -51,12 +51,12 @@ The user has `dashboard.md` open in a split pane next to Claude Code CLI. The pr
 
 ## Trace 09B: Decision pending action item
 
-- **Path:** dashboard.md → Sub-Section Structure → Decisions Pending
+- **Path:** dashboard.md → Sub-Section Structure → Decisions
 
 ### Expected
 
 ```markdown
-### Decisions Pending
+### Decisions
 
 | ID | Decision | Question | Options Doc |
 |----|----------|----------|-------------|
@@ -82,12 +82,12 @@ The user has `dashboard.md` open in a split pane next to Claude Code CLI. The pr
 
 ## Trace 09C: Human task action item
 
-- **Path:** dashboard.md → Sub-Section Structure → Tasks Ready for You
+- **Path:** dashboard.md → Sub-Section Structure → Your Tasks
 
 ### Expected
 
 ```markdown
-### Tasks Ready for You
+### Your Tasks
 
 | ID | Task | Action | Link |
 |----|------|--------|------|
@@ -118,14 +118,14 @@ The user has `dashboard.md` open in a split pane next to Claude Code CLI. The pr
 
 ---
 
-## Trace 09D: Reviews & Approvals action item
+## Trace 09D: Reviews action item
 
-- **Path:** dashboard.md → Sub-Section Structure → Reviews & Approvals
+- **Path:** dashboard.md → Sub-Section Structure → Reviews
 
 ### Expected
 
 ```markdown
-### Reviews & Approvals
+### Reviews
 
 - [ ] **Resolve caching question** — [BLOCKING] What caching solution to use? → [questions.md](../support/questions.md)
 ```
@@ -151,20 +151,20 @@ The user has `dashboard.md` open in a split pane next to Claude Code CLI. The pr
 
 ### Check
 
-Every item in Needs Your Attention should be traceable to its detail section:
-- Verification debt tasks → appear in All Tasks with correct status
-- Pending decision → appears in All Decisions with "proposed" status and link
-- Human tasks → appear in All Tasks with correct owner
-- Blocking question → affects Claude Status (should show as blocked)
+Every item in Action Required should be traceable to its detail section:
+- Verification debt tasks → appear in Tasks with correct status
+- Pending decision → appears in Decisions with "proposed" status and link
+- Human tasks → appear in Tasks with correct owner
+- Blocking question → affects Claude section (should show as blocked)
 
 ### Pass criteria
 
-- [ ] No item in Needs Your Attention references a task/decision that's missing from detail sections
-- [ ] Claude Status → Blocked section reflects the blocking question
-- [ ] All Tasks shows task 7 as "Awaiting Verification" (not hidden or mislabeled)
+- [ ] No item in Action Required references a task/decision that's missing from detail sections
+- [ ] Claude → Blocked line reflects the blocking question
+- [ ] Tasks shows task 7 as "Awaiting Verification" (not hidden or mislabeled)
 
 ### Fail indicators
 
-- Dashboard says "2 tasks have verification debt" but All Tasks shows them as "Finished" without any indicator
-- Decision appears as pending in Needs Your Attention but as "approved" in All Decisions
-- Blocking question blocks work but Claude Status says "Ready to Start"
+- Dashboard says "2 tasks have verification debt" but Tasks shows them as "Finished" without any indicator
+- Decision appears as pending in Action Required but as "approved" in Decisions
+- Blocking question blocks work but Claude says "Ready to Start"

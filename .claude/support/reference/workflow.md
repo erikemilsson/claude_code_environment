@@ -70,7 +70,7 @@ To create or revise the spec, run `/iterate`. Claude will guide you through iter
 **Activities:**
 - Decompose spec into tasks (handled by /work if no tasks exist)
 - Work through tasks in dependency order
-- Write code and create files
+- Create deliverables and files
 - Self-review changes
 - Per-task verification after each task completion
 - Document completion notes
@@ -79,7 +79,7 @@ To create or revise the spec, run `/iterate`. Claude will guide you through iter
 **Exit Criteria:**
 - All tasks have status "Finished" with passing per-task verification
 - No blocked tasks remain
-- Code follows project conventions
+- Deliverables follow project conventions
 - Ready for phase-level verification
 
 **Agent:** implement-agent
@@ -97,7 +97,7 @@ Verification operates in two tiers:
 **Activities:**
 - Verify file artifacts exist and match task description
 - Check spec alignment against task description and spec section
-- Validate code quality (no TODOs, follows patterns)
+- Validate output quality (no incomplete items, follows patterns)
 - Check integration boundaries (dependencies consumed correctly, outputs match downstream expectations)
 
 **Output:** `task_verification` field written to task JSON with per-check pass/fail
@@ -115,7 +115,7 @@ Verification operates in two tiers:
 **Activities:**
 - Run existing test suite (if available)
 - Validate each spec acceptance criterion individually
-- Check code quality, security, and integration
+- Check quality, completeness, and integration
 - Identify and categorize issues (critical/major/minor)
 - Create fix tasks for issues found (in-spec bugs as regular tasks; recommendations as `out_of_spec: true`)
 - Write verification result to `.claude/verification-result.json`
@@ -163,7 +163,7 @@ This project uses two specialist agents that check each other's work:
 
 | Agent | Role | Focus |
 |-------|------|-------|
-| **implement-agent** | Builder | Executes tasks, writes code, marks tasks finished |
+| **implement-agent** | Builder | Executes tasks, produces deliverables, marks tasks finished |
 | **verify-agent** | Validator | Tests against spec, finds issues, ensures quality |
 
 **Why two agents?**
@@ -252,10 +252,10 @@ When decomposing the spec into execute-phase tasks, organize them into logical s
 
 | Stage | Focus | Examples |
 |-------|-------|----------|
-| **Foundation** | Setup, core infrastructure, basic scaffolding | Project structure, database schema, auth setup |
-| **Core Features** | Main functionality from spec | Primary user flows, API endpoints, business logic |
-| **Polish** | Edge cases, error handling, UX | Validation, error messages, loading states |
-| **Validation** | Testing, documentation, verification | Unit tests, integration tests, API docs |
+| **Foundation** | Setup, core infrastructure, initial research | Project structure, database schema, vendor research, requirements gathering |
+| **Core Features** | Main functionality from spec | Primary user flows, API endpoints, procurement, key deliverables |
+| **Polish** | Edge cases, error handling, refinement | Validation, error messages, budget reconciliation, final reviews |
+| **Validation** | Testing, documentation, verification | Unit tests, integration tests, documentation, acceptance checks |
 
 **Note:** These are organizational stages for tasks within the Execute phase, not to be confused with workflow phases (Spec → Execute → Verify).
 
@@ -563,7 +563,7 @@ Tasks can be marked `out_of_spec: true` in two ways:
 
 ### Dashboard Display
 
-Out-of-spec tasks appear in the All Tasks table with a ⚠️ prefix:
+Out-of-spec tasks appear in the Tasks section with a ⚠️ prefix:
 
 ```
 | ID | Title | Status | Owner |
@@ -571,7 +571,7 @@ Out-of-spec tasks appear in the All Tasks table with a ⚠️ prefix:
 | 13 | ⚠️ Add unit tests for CI | Pending | claude |
 ```
 
-Unapproved out-of-spec tasks also appear in the "Needs Your Attention" section under "Reviews & Approvals" to prompt user action.
+Unapproved out-of-spec tasks also appear in "Action Required" → "Reviews" to prompt user action.
 
 ---
 
@@ -612,7 +612,7 @@ When you need to create temporary documents (research, analysis, drafts), use `.
 
 Two files control template behavior:
 
-**sync-manifest.json** — Defines which files sync from template updates vs stay project-specific:
+**sync-manifest.json** — Defines which files sync during `/health-check` template sync vs stay project-specific:
 
 | Category | Purpose | Examples |
 |----------|---------|----------|

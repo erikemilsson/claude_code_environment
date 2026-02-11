@@ -18,21 +18,19 @@ Same as Scenario 02:
 
 ### Expected sections (exact headings from dashboard.md)
 
-1. **Project Context** — name, phase, start date
-2. **Needs Your Attention** — both decisions in Decisions Pending table with links
-3. **Quick Status** — all 3 phases in table, blocked phases show reason
-4. **Spec Alignment** — drift status
-5. **Critical Path** — includes decision resolution as steps (with owner indicators)
-6. **Claude Status** — Ready (Phase 1 tasks) + Blocked (Phase 2/3 tasks with reasons)
-7. **All Decisions** — DEC-001 and DEC-002 with status
-8. **All Tasks** — grouped by phase, per-phase summary lines with blocking reasons
+1. **Header lines** — project name, stage, start date, completion %, task/decision counts
+2. **Action Required** — both decisions in Decisions sub-section with links
+3. **Claude** — Ready (Phase 1 tasks) + Blocked (Phase 2/3 tasks with reasons)
+4. **Progress** — phase table, critical path one-liner, all 3 phases with blocked reasons
+5. **Tasks** — grouped by phase, per-phase summary lines with blocking reasons
+6. **Decisions** — DEC-001 and DEC-002 with status
 
 ### Key details
 
-- Quick Status table: `Phase 2 | 0 | 3 | Blocked (DEC-001)`
-- Blocked sub-section: `Task 4 | Run analysis | DEC-001 (Analysis Method)`
-- Phase summary: `*Phase 2: 0/3 complete — waiting on DEC-001*`
-- Critical Path includes: `You: Resolve DEC-001 — inflection point, triggers spec revision`
+- Progress phase table: `Phase 2 | 0 | 3 | Blocked (DEC-001)`
+- Claude Blocked line: `Task 4 | Run analysis | DEC-001 (Analysis Method)`
+- Phase summary in Tasks: `*Phase 2: 0/3 complete — waiting on DEC-001*`
+- Critical path one-liner includes: `❗ Resolve DEC-001 → 🤖 Phase 2 tasks → Done`
 
 ## Pass criteria
 
@@ -40,10 +38,10 @@ Same as Scenario 02:
 - [ ] ALL tasks across ALL phases visible
 - [ ] Decision deps shown in task Deps column
 - [ ] Phase summary lines explain what's blocking
-- [ ] Quick Status shows all phases with blocking reasons
-- [ ] Critical Path includes decision resolution steps with owner indicators
-- [ ] Decisions Pending section links to decision docs
-- [ ] Blocked section lists all blocked tasks with specific reasons
+- [ ] Progress phase table shows all phases with blocking reasons
+- [ ] Critical path one-liner includes decision resolution steps
+- [ ] Action Required → Decisions sub-section links to decision docs
+- [ ] Claude → Blocked line lists blocked tasks with specific reasons
 - [ ] Full project journey visible from dashboard alone
 
 ## Fail indicators
@@ -51,5 +49,5 @@ Same as Scenario 02:
 - Only Phase 1 tasks shown (blocked phases hidden)
 - Tasks show as "Pending" without decision dependency info
 - Phase summary says "0/3 complete" without explaining the block
-- Critical path doesn't include decisions
+- Critical path one-liner doesn't include decisions
 - Dashboard requires reading task JSON to understand blocking

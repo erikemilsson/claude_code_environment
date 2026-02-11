@@ -50,7 +50,7 @@ Keep entries concise and actionable:
 
 **What to check:**
 - Remove learnings now captured in the spec (they've graduated)
-- Remove learnings that no longer apply (codebase changed)
+- Remove learnings that no longer apply (project changed)
 - Consolidate duplicate or overlapping entries
 - Update examples if APIs or patterns have evolved
 

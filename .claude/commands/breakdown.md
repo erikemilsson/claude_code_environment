@@ -44,15 +44,24 @@ Split a complex task into smaller subtasks.
 5. **Regenerate dashboard** - Follow work.md § "Dashboard Regeneration Procedure"
    - This ensures metadata block, footer, user section backup, and section toggles are handled consistently
 
-## Example
+## Examples
 
-**Before:** Task 5 "Build auth system" (difficulty 8)
+**Software — Before:** Task 5 "Build auth system" (difficulty 8)
 
 **After:**
 - Task 5: status = "Broken Down", subtasks = ["5_1", "5_2", "5_3"]
 - Task 5_1: "Setup OAuth providers" (difficulty 5)
 - Task 5_2: "Create login/logout flows" (difficulty 4)
 - Task 5_3: "Add session management" (difficulty 5)
+
+**Project management — Before:** Task 3 "Complete bathroom renovation procurement" (difficulty 8)
+
+**After:**
+- Task 3: status = "Broken Down", subtasks = ["3_1", "3_2", "3_3", "3_4"]
+- Task 3_1: "Research and shortlist tile vendors" (difficulty 4, owner: both)
+- Task 3_2: "Get plumber quotes from 3+ contractors" (difficulty 3, owner: human)
+- Task 3_3: "Compare countertop materials and pricing" (difficulty 4, owner: claude)
+- Task 3_4: "Produce final procurement recommendation" (difficulty 5, dependencies: [3_1, 3_2, 3_3])
 
 ## Creating Parallel-Friendly Subtasks
 

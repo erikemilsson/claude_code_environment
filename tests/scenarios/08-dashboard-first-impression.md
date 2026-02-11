@@ -26,44 +26,38 @@ This is the user's first real look at the dashboard. They've just run `/iterate`
 The user sees `dashboard.md` in their editor. The first screenful determines whether the dashboard feels useful or overwhelming.
 
 **Current section order (from dashboard.md):**
-1. `# Dashboard` + metadata block + header line
-2. `## Project Context` — name, phase, start date
-3. `## 🚨 Needs Your Attention` — decisions, human tasks, reviews
-4. `## Quick Status` — completion %, owner counts
+1. `# Dashboard` + metadata block + header lines (project name, stage, completion %)
+2. `## 🚨 Action Required` — decisions, human tasks, reviews (only populated sub-sections shown)
+3. `## 🤖 Claude` — working on / up next / blocked
+4. `## 📊 Progress` — phase table, critical path one-liner, this week activity
 
 ### Expected (current spec)
 
-- Project Context table: 3 rows (name, phase, date) — compact
-- Needs Your Attention:
-  - Verification Debt: `✅ No verification debt` (nothing to verify yet)
-  - Decisions Pending: DEC-001 with link to decision doc
-  - Tasks Ready for You: Task 5 "Configure API keys" with link to `.env.example`
-  - Reviews & Approvals: empty (`*Nothing to review*`)
-- Quick Status appears AFTER Needs Your Attention
+- Header lines: project name, Setup stage, start date, 0% complete, task/decision counts
+- Action Required:
+  - Decisions: DEC-001 with link to decision doc
+  - Your Tasks: Task 5 "Configure API keys" with link to `.env.example`
+  - (Verification Debt, Reviews, Spec Drift sub-sections omitted — nothing to show)
+- Claude: "Ready to Start" with Phase 1 task list
 
-### Observation: noise in early state
+### Observation: null-state noise handled by omission
 
-Several sub-sections are empty or uninformative at this stage:
-- **Verification Debt** shows `✅ No verification debt` — accurate but takes space for a null result
-- **Reviews & Approvals** shows `*Nothing to review*` — same issue
-- **Spec Alignment** (section 5) shows `✅ All sections aligned` — of course it does, we just decomposed
-- **Progress This Week** (section 8) shows `*No recent completions*` — nothing happened yet
+Empty sub-sections within Action Required are omitted entirely (no "✅ None" placeholders). At project start this means only Decisions and Your Tasks appear — no Verification Debt, Reviews, or Spec Drift noise.
 
 ### Pass criteria
 
-- [ ] Needs Your Attention is visible without scrolling past boilerplate
+- [ ] Action Required is visible without scrolling past boilerplate
 - [ ] DEC-001 appears with a link to the decision doc file
 - [ ] Human task "Configure API keys" appears with a link and action description
-- [ ] Quick Status shows all 3 phases with blocking reasons for Phase 2 and 3
-- [ ] Critical Path shows user actions (DEC-001 resolution) before Claude actions
+- [ ] Progress phase table shows all 3 phases with blocking reasons for Phase 2 and 3
+- [ ] Critical path one-liner shows user actions before Claude actions
 
 ### Fail indicators
 
-- User must scroll past 3+ empty/null sections to reach actionable content
+- User must scroll past empty sections to reach actionable content
 - DEC-001 appears in the table but without a clickable link to the file
 - "Configure API keys" appears but user doesn't know what to do or where to go
-- Spec Alignment section takes multiple lines to say "everything is fine"
-- Progress This Week section takes multiple lines to say "nothing happened"
+- Empty sub-sections rendered with placeholder text instead of being omitted
 
 ---
 
@@ -75,14 +69,14 @@ Several sub-sections are empty or uninformative at this stage:
 
 | Information | Where it appears | Redundant? |
 |-------------|------------------|------------|
-| DEC-001 blocks Phase 2 | Needs Your Attention, Quick Status Phase table, Critical Path, Claude Status → Blocked, All Tasks Phase 2 summary | 5 places |
-| Phase 2 is blocked | Quick Status, Critical Path, Claude Status, All Tasks | 4 places |
-| Human task exists | Needs Your Attention, Quick Status owner counts, All Tasks | 3 places |
-| No work started | Quick Status (0%), Claude Status, Progress This Week | 3 places |
+| DEC-001 blocks Phase 2 | Action Required → Decisions, Claude → Blocked, Tasks Phase 2 summary | 3 places (budget: max 2) |
+| Phase 2 is blocked | Progress phase table, Tasks phase summary | 2 places (within budget) |
+| Human task exists | Action Required → Your Tasks, Tasks | 2 places (within budget) |
+| No work started | Header (0%), Claude ("Idle") | 2 places (within budget) |
 
 ### Expected
 
-The dashboard should communicate each fact once in the right place, with cross-references only where they add context (e.g., "Blocked by DEC-001" in the task table is useful because it's next to the task).
+Each fact appears in at most 2 places (primary actionable location + reference detail). The consolidated structure eliminates the previous 4-5 place redundancy.
 
 ### Pass criteria
 
@@ -98,13 +92,13 @@ The dashboard should communicate each fact once in the right place, with cross-r
 
 ---
 
-## Trace 08C: Quick Status position and usefulness
+## Trace 08C: Information hierarchy and density
 
-- **Path:** dashboard.md → section structure (section 4: Quick Status)
+- **Path:** dashboard.md → section structure (header lines → Action Required → Claude → Progress)
 
 ### Current position
 
-Quick Status is section 4 — after Project Context and Needs Your Attention.
+Header lines provide instant orientation (project name, stage, completion %). Action Required follows immediately with only populated sub-sections. Progress comes after Claude status.
 
 ### Observation
 
@@ -112,16 +106,15 @@ At project start, the user wants two things immediately:
 1. **Where are we?** — overall shape of the project (phases, task counts, what's blocked)
 2. **What do I need to do?** — decisions, human tasks
 
-Quick Status answers #1. Needs Your Attention answers #2. Both are high-priority.
-
-The current order (Needs Your Attention before Quick Status) prioritizes #2 over #1. This may work during active execution but at project start, the user may want the overview first.
+The header lines answer #1 (completion %, task counts). Action Required answers #2 (decisions, human tasks). Both appear in the first ~15 lines because header is compact (2 lines) and Action Required omits empty sub-sections.
 
 ### Pass criteria
 
-- [ ] Quick Status data (phase breakdown, overall progress) is reachable within 15 lines of the first content section
-- [ ] The phase table in Quick Status adds value beyond what's in Project Context (which already shows current phase)
+- [ ] Progress data (phase breakdown) is reachable within 20 lines of the dashboard heading
+- [ ] Header lines provide enough orientation that a separate "Project Context" section isn't needed
+- [ ] Action Required sub-sections omit empty categories (no null-state noise)
 
 ### Fail indicators
 
-- Quick Status is buried after 30+ lines of Needs Your Attention content
-- Project Context and Quick Status show nearly identical information
+- Action Required is 30+ lines of mostly-empty sub-sections pushing Progress out of view
+- Header lines and Progress section show nearly identical information

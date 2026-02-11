@@ -99,7 +99,7 @@ Check the `template_repo` field:
 }
 ```
 
-Should point to the environment builder template repo (or your fork of it). Used by `/update-template` to compare against template updates. The project's own repo is determined from `git remote`.
+Should point to the environment builder template repo (or your fork of it). Used by `/health-check` (Part 5: Template Sync) to compare against template updates. The project's own repo is determined from `git remote`.
 
 ### Spec File
 

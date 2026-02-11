@@ -34,7 +34,7 @@ Phases are implicit — they come from the spec structure, not from special conf
 1. **Spec defines phases:** Sections in the spec naturally group into phases (e.g., "## Phase 1: Data Pipeline", "## Phase 2: Visualization")
 2. **Tasks get a `phase` field:** During decomposition, `/work` assigns each task a phase based on its spec section
 3. **Phase ordering is enforced:** Tasks in Phase N+1 remain blocked until all Phase N tasks are "Finished"
-4. **Dashboard groups by phase:** All Tasks section shows tasks under phase headers with per-phase progress
+4. **Dashboard groups by phase:** Tasks section shows tasks under phase headers with per-phase progress; Progress section shows phase breakdown table
 
 ### Task Schema
 
@@ -135,23 +135,21 @@ When `/work` detects a previously-pending decision is now resolved:
 
 Decisions appear in the dashboard:
 
-- **All Decisions table:** `ID | Decision | Status | Selected`
-  - Decided entries show the selected option name
-  - Pending entries link to the decision doc
-- **Needs Your Attention:** Pending decisions that block tasks appear here with links
-- **Blocked tasks:** Show decision IDs in their dependency column
+- **Decisions section:** `ID | Decision | Status | Selected` — decided entries show selected option name, pending entries link to doc
+- **Action Required → Decisions:** Pending decisions that block tasks appear here with links
+- **Blocked tasks:** Show decision IDs in their dependency column (in Claude section and Tasks section)
 
 ---
 
 ## Domain-Specific Sub-Dashboards
 
-For projects with complex domain areas (workshop management, inventory, experiment logs), create separate markdown files in `.claude/support/` for domain-specific tracking, then link from the main dashboard's Notes & Ideas section.
+For projects with complex domain areas (workshop management, inventory, experiment logs), create separate markdown files in `.claude/support/` for domain-specific tracking, then link from the main dashboard's Notes section.
 
 ---
 
 ## Optional Visualizations
 
-For complex projects, create Mermaid diagram files in `.claude/support/visualizations/` and link from the dashboard's Notes & Ideas section. Useful for workflow phases, decision dependency graphs, system architecture, and progress timelines. Only add visualizations when dashboard tables aren't sufficient — stale diagrams are worse than none.
+For complex projects, create Mermaid diagram files in `.claude/support/visualizations/` and link from the dashboard's Notes section. Useful for workflow phases, decision dependency graphs, system architecture, and progress timelines. Only add visualizations when dashboard tables aren't sufficient — stale diagrams are worse than none.
 
 ---
 

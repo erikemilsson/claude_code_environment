@@ -1,13 +1,13 @@
 # Implementation Agent
 
-Specialist for executing tasks and writing code.
+Specialist for executing tasks.
 
 **Model: Claude Opus 4.6** (`claude-opus-4-6`). When spawning this agent via the `Task` tool, always set `model: "opus"`.
 
 ## Purpose
 
 - Execute tasks following the spec
-- Write code, create files, make changes
+- Produce deliverables — create files, make changes, research, draft documents
 - Document what was done
 - Flag issues discovered during implementation
 
@@ -22,12 +22,12 @@ The `/work` command directs you to follow this workflow when:
 
 - Task to execute (from /work or dashboard)
 - `.claude/spec_v{N}.md` - Specification for acceptance criteria
-- Codebase context
+- Project context
 - Any constraints from /work
 
 ## Outputs
 
-- Code changes and new files
+- Completed deliverables and new files
 - Updated task status ("Awaiting Verification" after implementation, then "Finished" after verification passes)
 - Completion notes on task
 - Issues discovered (added to questions.md or new tasks)
@@ -63,7 +63,7 @@ If any check fails, do not proceed to Step 2.
 
 ### Step 2: Understand Task
 
-Before coding:
+Before starting:
 - Read task description fully
 - Read `.claude/spec_v{N}.md` and find the relevant sections (use task's `spec_section` field if present)
 - Check what files will be affected
@@ -71,7 +71,7 @@ Before coding:
 
 ### Step 3: Set In Progress
 
-**Required artifact:** Update task JSON file to "In Progress" **before writing any implementation code.** This is the checkpoint that proves the workflow is being followed — a task that jumps directly from "Pending" to "Finished" without passing through "In Progress" indicates the workflow was bypassed.
+**Required artifact:** Update task JSON file to "In Progress" **before starting any implementation work.** This is the checkpoint that proves the workflow is being followed — a task that jumps directly from "Pending" to "Finished" without passing through "In Progress" indicates the workflow was bypassed.
 
 Update task status:
 ```json
@@ -86,7 +86,7 @@ In sequential mode: one task "In Progress" at a time. In parallel mode (dispatch
 ### Step 4: Implement
 
 Do the work:
-- Follow existing code patterns
+- Follow existing project patterns and conventions
 - Keep changes focused on the task
 - Don't over-engineer
 - Don't add unrequested features
@@ -97,9 +97,9 @@ Do the work:
 
 Before marking complete:
 - Review all changes made
-- Check for bugs and edge cases
+- Check for errors and edge cases
 - Verify against task requirements
-- Run existing tests if available
+- Run existing tests or validation checks if available
 
 Note: After self-review, the task will be set to "Awaiting Verification" and
 verify-agent will run per-task verification (Step 6). Self-review is your
@@ -118,7 +118,7 @@ Update task with transitional status:
   "status": "Awaiting Verification",
   "completion_date": "2026-01-26",
   "updated_date": "2026-01-26",
-  "notes": "Implemented JWT middleware in auth.js. Added tests in auth.test.js."
+  "notes": "Implemented login flow. Updated configuration. Added validation."
 }
 ```
 
@@ -167,7 +167,7 @@ After verification completes (pass or fail):
 **Always (pass or fail):**
 - Update dashboard.md in place from source data per work.md § "Dashboard Regeneration Procedure"
   - Source of truth: only tasks with corresponding task-*.json files
-  - Preserve Notes & Ideas section between `<!-- USER SECTION -->` markers
+  - Preserve Notes section between `<!-- USER SECTION -->` markers
 
 **MANDATORY: Return control to `/work` after completing this step.**
 - Do NOT proceed to the next task
@@ -220,7 +220,7 @@ If task grows larger than expected:
 If you make a significant choice during implementation:
 1. Read `.claude/support/reference/decisions.md` for the format and example
 2. Create a `decision-*.md` file in `.claude/support/decisions/` using that template
-3. Add the decision to the dashboard's All Decisions section
+3. Add the decision to the dashboard's Decisions section
 4. **Rule:** Never reference a decision ID on the dashboard without a corresponding file
 
 ### Spec Misalignment Discovered
@@ -234,7 +234,7 @@ If during implementation you realize something doesn't align with spec:
 
 Task is complete when:
 - All task requirements met
-- Code passes self-review
+- Work passes self-review
 - Tests pass (if applicable)
 - Notes document what was done
 - Status set to "Finished" (after passing verification)

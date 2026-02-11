@@ -46,7 +46,7 @@
     "checks": {
       "files_exist": "pass",
       "spec_alignment": "pass",
-      "code_quality": "pass",
+      "output_quality": "pass",
       "integration_ready": "pass"
     },
     "issues": [],
@@ -99,19 +99,19 @@
 
 The `owner` field determines who is responsible and where tasks appear in the dashboard:
 
-| Value | Emoji | Dashboard Section | When to Use |
+| Value | Emoji | Dashboard Location | When to Use |
 |-------|-------|-------------------|-------------|
-| `claude` | 🤖 | Claude Status | Tasks Claude can do autonomously (default) |
-| `human` | ❗ | Your Actions | Requires human action (config, decisions, external) |
+| `claude` | 🤖 | Claude section | Tasks Claude can do autonomously (default) |
+| `human` | ❗ | Action Required → Your Tasks | Requires human action (config, decisions, external) |
 | `both` | 👥 | Both sections | Collaborative work (appears in BOTH dashboard sections) |
 
 ### Examples by Owner
 
 **`claude`** (default - omit field if this):
-- Write code, implement features
+- Implement features, create deliverables
+- Research, analysis, comparisons
 - Create tests, documentation
-- Refactor, fix bugs
-- Research and analysis
+- Refactor, fix issues
 
 **`human`**:
 - Configure API keys, secrets
@@ -212,7 +212,7 @@ Per-task verification result recorded by verify-agent when a task is in "Awaitin
     "checks": {
       "files_exist": "pass",
       "spec_alignment": "pass",
-      "code_quality": "pass",
+      "output_quality": "pass",
       "integration_ready": "pass"
     },
     "issues": [],
@@ -227,7 +227,7 @@ Per-task verification result recorded by verify-agent when a task is in "Awaitin
 |-----------|------|--------|-------------|
 | `result` | String | `"pass"`, `"fail"`, `"pass_with_issues"` | Overall per-task verification outcome |
 | `timestamp` | String | ISO 8601 | When verification completed |
-| `checks` | Object | Keys: `files_exist`, `spec_alignment`, `code_quality`, `integration_ready` | Per-check pass/fail |
+| `checks` | Object | Keys: `files_exist`, `spec_alignment`, `output_quality`, `integration_ready` | Per-check pass/fail |
 | `checks.*` | String | `"pass"` or `"fail"` | Individual check result |
 | `issues` | Array | Issue objects `{severity, description}` | Issues found during verification |
 | `notes` | String | Free text | Brief summary of verification |
@@ -258,7 +258,7 @@ Tasks that bypass verification create "verification debt":
 | Finished with `task_verification.result == "fail"` | Verification failed, not re-verified |
 | Finished with `task_verification.result == "pass_with_issues"` and critical issues | Passed with issues that should block |
 
-**Debt is tracked in the dashboard** under "Needs Your Attention" and **blocks project completion**.
+**Debt is tracked in the dashboard** under "Action Required" → "Verification Debt" and **blocks project completion**.
 
 ## External Dependencies
 

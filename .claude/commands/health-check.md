@@ -1,6 +1,6 @@
 # Health Check
 
-Combined system health check for tasks, decisions, and `.claude/CLAUDE.md`.
+Combined system health check for tasks, decisions, `.claude/CLAUDE.md`, and template sync.
 
 ## Usage
 ```
@@ -10,7 +10,7 @@ Combined system health check for tasks, decisions, and `.claude/CLAUDE.md`.
 
 ## Purpose
 
-Over time, task systems drift from standards, decision records become stale, and `.claude/CLAUDE.md` files accumulate bloat. This command catches all these issues in one pass.
+Over time, task systems drift from standards, decision records become stale, `.claude/CLAUDE.md` files accumulate bloat, and template workflow files fall behind. This command catches all these issues in one pass.
 
 ---
 
@@ -56,16 +56,12 @@ Validate dashboard.md section structure:
 
 **Required sections (exact headings, in this order):**
 1. `# Dashboard`
-2. `## Project Context`
-3. `## 🚨 Needs Your Attention`
-4. `## Quick Status`
-5. `## 📐 Spec Alignment`
-6. `## 🛤️ Critical Path`
-7. `## 🤖 Claude Status`
-8. `## 📊 Progress This Week`
-9. `## 📋 All Decisions`
-10. `## 📝 All Tasks`
-11. `## 💡 Notes & Ideas`
+2. `## 🚨 Action Required`
+3. `## 🤖 Claude`
+4. `## 📊 Progress`
+5. `## 📋 Tasks`
+6. `## 📋 Decisions`
+7. `## 💡 Notes`
 
 Checks:
 - Each heading exists (exact text including emoji)
@@ -106,7 +102,7 @@ Detects tasks that may have bypassed the implement-agent or verify-agent workflo
 
 **Per-task verification compliance checks (ERRORS, not warnings):**
 - Finished tasks MUST have a `task_verification` field with `result` of `"pass"` or `"pass_with_issues"`
-- `task_verification.checks` should have all 4 keys (`files_exist`, `spec_alignment`, `code_quality`, `integration_ready`) with pass/fail values
+- `task_verification.checks` should have all 4 keys (`files_exist`, `spec_alignment`, `output_quality`, `integration_ready`) with pass/fail values
 - If any finished task lacks `task_verification`: **ERROR** — "Verification debt: N finished tasks missing verification"
 - If any finished task has `task_verification.result == "fail"`: **ERROR** — "Verification debt: N finished tasks have failed verification"
 - If a task was sent back to "In Progress" by verification, notes should contain `[VERIFICATION FAIL]` prefix
@@ -393,8 +389,11 @@ READ .claude/spec_v{N}.md (current spec)
 READ .claude/drift-deferrals.json (if exists)
 READ .claude/CLAUDE.md
 READ all .claude/support/decisions/decision-*.md files
+READ .claude/version.json (template version info)
+READ .claude/sync-manifest.json (file categories)
 SCAN .claude/support/previous_specifications/ for archived specs
 SCAN for misplaced spec files in non-canonical locations
+FETCH template repo (shallow clone for comparison — skip if offline)
 ```
 
 ### Step 2: Run Checks
@@ -439,6 +438,11 @@ Run archive validation:
 - Misplaced spec file detection (specs in wrong directories)
 - Optional: decomposed spec snapshot validation
 
+Run template sync check:
+- Compare local version against template repo
+- Diff sync-category files
+- Report modified/new/local-only files
+
 ### Step 3: Report
 
 **Report sections:**
@@ -452,6 +456,7 @@ Run archive validation:
 - `.claude/CLAUDE.md` (line counts, flagged sections/code blocks)
 - Decision System (schema validation, staleness, completeness, anchors)
 - Archive Validation (spec version continuity, misplaced files)
+- Template Sync (version comparison, file status, updates available)
 - Summary (overall status: HEALTHY / NEEDS ATTENTION / CRITICAL ISSUES)
 
 **Verification Debt Report Format:**
@@ -558,7 +563,7 @@ Each `decision-*.md` file must have valid frontmatter:
 
 **Every decision file must have dashboard entry:**
 - Scan `.claude/support/decisions/decision-*.md` files
-- Compare against entries in dashboard's "All Decisions" table
+- Compare against entries in dashboard's "Decisions" table
 - Flag files missing from dashboard
 
 **Every dashboard entry must have file:**
@@ -588,11 +593,11 @@ Decisions with status `approved` or `implemented` must have:
 
 #### 5. Implementation Anchor Validation
 
-Validates that implemented decisions have traceable code anchors:
+Validates that implemented decisions have traceable anchors:
 
 **Check for `implemented` decisions:**
 - Must have non-empty `implementation_anchors` array
-- Each anchor file path must exist in the codebase
+- Each anchor file path must exist in the project
 - Warn if anchor file is missing
 
 **Report format:**
@@ -664,7 +669,7 @@ Reports: record count, schema validation, dashboard consistency, staleness (draf
 
 | Issue | Auto-Fix |
 |-------|----------|
-| File missing from dashboard | Add entry to dashboard's All Decisions with data from frontmatter |
+| File missing from dashboard | Add entry to dashboard's Decisions table with data from frontmatter |
 | Dashboard entry missing file | Remove orphan entry from dashboard |
 | Status mismatch | Ask user which is correct, update the other |
 | Stale draft (> 30 days) | Ask user: delete, or set reminder |
@@ -815,7 +820,154 @@ Archive validation: ⚠️ Issues found
 
 ---
 
-## Part 5: Lightweight Health Checks (Continuous)
+## Part 5: Template Sync Check
+
+Checks whether the project's workflow files are up to date with the template repository.
+
+### Purpose
+
+Over time, the upstream template may improve commands, agents, and reference docs. This check detects when your project's workflow infrastructure is behind, and suggests updates — all within the health check flow, no separate command needed.
+
+### Requirements
+
+- `.claude/version.json` - Contains `template_repo` and `template_version`
+- `.claude/sync-manifest.json` - Lists files in `sync` category
+- `gh` CLI installed and authenticated (or GitHub MCP tools)
+
+### Process
+
+#### 1. Gather Information
+
+Read local configuration:
+- `.claude/version.json` → `template_repo`, `template_version`
+- `.claude/sync-manifest.json` → `categories.sync` file patterns
+
+Check remote version first (lightweight API call):
+```bash
+gh api repos/{owner}/{repo}/contents/.claude/version.json
+```
+
+If remote `template_version` matches local → report up to date, skip file comparison.
+
+If versions differ, fetch files for comparison:
+```bash
+git clone --depth 1 {template_repo} /tmp/template-check-{timestamp}
+```
+
+Cleanup: Remove `/tmp/template-check-{timestamp}` after comparison completes (or on error).
+
+If offline or fetch fails → report as informational, skip remaining template checks.
+
+#### 2. Compare Files
+
+For each file matching a `sync` category pattern:
+
+| Category | Meaning |
+|----------|---------|
+| **Up to date** | Local matches template |
+| **Modified** | Template has changes |
+| **New in template** | File added in template, doesn't exist locally |
+| **Local only** | File exists locally but not in template |
+
+#### 3. Report
+
+**All current:**
+```
+### Template Sync
+
+[Checkmark] Template up to date (v1.5.0)
+  All 12 sync files match template.
+```
+
+**Updates available:**
+```
+### Template Sync
+
+[Warning] Template updates available (v1.5.0 local → v1.6.0 template)
+
+  Modified in template (3 files):
+    .claude/commands/work.md (+15 -8 lines)
+    .claude/agents/implement-agent.md (+23 -5 lines)
+    .claude/commands/health-check.md (+45 -12 lines)
+
+  New in template (1 file):
+    .claude/commands/new-feature.md
+
+  Local only (1 file):
+    .claude/commands/my-custom.md (kept — not in template)
+```
+
+**Offline:**
+```
+### Template Sync
+
+[Warning] Cannot reach template repository
+  - Check network connection
+  - Verify gh CLI: gh auth status
+  - Skipping template checks
+```
+
+#### 4. Offer Updates (unless `--report`)
+
+If updates are available and not in `--report` mode, offer to apply:
+
+```
+[U] Update all modified/new files
+[P] Preview diffs first
+[S] Select files individually
+[K] Keep current (no changes)
+```
+
+### Safety Principles
+
+1. **No silent deletions** — Local-only files are never removed without explicit confirmation
+2. **Preview before apply** — Shows diffs before making changes
+3. **Sync category only** — Never touches `customize` or `ignore` category files
+4. **Preserves local additions** — Files not in template are kept
+5. **Backup before update** — Creates backup in `.claude/support/workspace/sync-backup-{timestamp}/` (auto-deleted after 7 days)
+
+### Conflict Handling
+
+If a sync file has local modifications that differ from the expected template version:
+
+```
+Conflict: .claude/commands/work.md
+
+This file has local changes not in the template.
+Updating will overwrite your modifications.
+
+[O] Overwrite with template
+[K] Keep local version
+[D] Show diff
+```
+
+### Post-Update
+
+After applying updates:
+```
+Updated:
+  ✓ .claude/commands/work.md
+  ✓ .claude/agents/implement-agent.md
+
+Version: v1.5.0 → v1.6.0
+
+Backup: .claude/support/workspace/sync-backup-20260127-143022/
+```
+
+Updates `.claude/version.json` with new `template_version`.
+
+### Template Sync Auto-Fixes
+
+| Issue | Auto-Fix |
+|-------|----------|
+| Modified files in template | Offer update (with preview/selection) |
+| New files in template | Offer to add |
+| Missing version.json | Skip with note: "Create .claude/version.json to enable template sync" |
+| Missing sync-manifest.json | Skip with note: "Create .claude/sync-manifest.json to enable template sync" |
+
+---
+
+## Part 6: Lightweight Health Checks (Continuous)
 
 A subset of checks designed to run automatically after `/work`, `/work complete`, and `/breakdown` commands.
 
@@ -902,6 +1054,10 @@ Quick check: ❌ BLOCKS COMPLETION
 
 **Malformed frontmatter:** Flags as error, requires manual YAML fix
 
+**Missing version.json or sync-manifest.json:** Template sync skipped with informational note
+
+**Template repo unreachable:** Template sync skipped gracefully, other checks still run
+
 ---
 
 ## When to Run
@@ -910,8 +1066,7 @@ Quick check: ❌ BLOCKS COMPLETION
 - After extensive task operations
 - When something feels "off"
 - Before major handoffs
-- Periodically (weekly recommended for tasks, monthly for `.claude/CLAUDE.md`)
-- **For template updates**, use `/update-template`
+- Periodically (weekly recommended for tasks and template sync, monthly for `.claude/CLAUDE.md`)
 
 ## Reference
 
@@ -919,4 +1074,4 @@ Task schema: `.claude/support/reference/task-schema.md`
 Difficulty guide: `.claude/support/reference/shared-definitions.md`
 Workflow guide: `.claude/support/reference/workflow.md`
 Decisions reference: `.claude/support/reference/decisions.md`
-Template sync: `/update-template`
+Template config: `.claude/version.json`, `.claude/sync-manifest.json`
