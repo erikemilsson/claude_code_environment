@@ -56,33 +56,6 @@ The `/work` command directs you to follow this workflow when:
 - `.claude/verification-result.json` — structured result file used by `/work` and `/health-check` (Step 7)
 - Verification report displayed to user (Step 8)
 
-## Verification Areas
-
-### 1. Functional Verification
-Does it do what the spec says?
-- Each acceptance criterion checked
-- Edge cases handled
-- Error states tested
-
-### 2. Quality Verification
-Is the code good?
-- Follows project conventions
-- No obvious bugs
-- Reasonable error handling
-- No security vulnerabilities
-
-### 3. Integration Verification
-Does it work together?
-- Components integrate correctly
-- Data flows as expected
-- No broken dependencies
-
-### 4. Performance Verification (if applicable)
-Does it meet performance requirements?
-- Response times acceptable
-- Resource usage reasonable
-- Handles expected load
-
 ## How This Workflow Is Invoked
 
 This file is read by `/work` during verification. **You are reading this file because `/work` directed you here.**
@@ -211,7 +184,7 @@ The task now has both `status: "Finished"` AND `task_verification.result: "pass"
 - Append verification failure notes to the task `notes` field (prepend with `[VERIFICATION FAIL]`)
 - Clear `completion_date`
 - Update `updated_date`
-- Regenerate dashboard following the Regeneration Checklist in `.claude/support/reference/dashboard-patterns.md`
+- Regenerate dashboard per work.md § "Dashboard Regeneration Procedure"
 
 **Re-verification limit:** Maximum 2 re-verification attempts per task. After 2 failures, set task status to "Blocked" with notes explaining the repeated failures and escalate to human review.
 
@@ -330,7 +303,7 @@ For issues found that need fixing:
    }
    ```
    Out-of-spec tasks require explicit user approval before `/work` will execute them. See the out-of-spec consent flow in `work.md`.
-4. **Regenerate dashboard.md** - Follow the Regeneration Checklist in `.claude/support/reference/dashboard-patterns.md`
+4. **Regenerate dashboard.md** - Follow work.md § "Dashboard Regeneration Procedure"
    - Additional verify-agent requirements:
      - Update Verification Debt in Needs Your Attention section
      - Show out-of-spec tasks with ⚠️ prefix in All Tasks table
@@ -393,25 +366,6 @@ For tasks that weren't in the spec (ad-hoc requests):
 - Check code quality and integration
 - Note: "Ad-hoc task - verified against task requirements, not spec"
 
-## Test Strategies
-
-### Unit Testing
-Test individual functions/components:
-- Input validation
-- Business logic
-- Error handling
-
-### Integration Testing
-Test component interactions:
-- API endpoints
-- Database operations
-- External service calls
-
-### End-to-End Testing
-Test complete workflows:
-- User journeys
-- Full feature flows
-
 ## Handling Failures
 
 ### Test Failures
@@ -451,18 +405,3 @@ Verification fails when:
 - Human must review before proceeding
 - Verification result written with `"result": "fail"` (Step 7)
 
-## Anti-Patterns
-
-**Avoid:**
-- Fixing issues yourself instead of creating fix tasks
-- Skipping verification for "simple" changes
-- Assuming tests catch everything
-- Ignoring non-functional requirements
-- Marking pass when critical issues exist
-
-**Instead:**
-- Create fix tasks and report result: "fail" — implement-agent handles all fixes
-- Always verify against spec
-- Do manual checks too
-- Check performance/security
-- Be honest about issues found

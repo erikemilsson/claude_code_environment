@@ -548,8 +548,8 @@ Break the spec into granular tasks:
    - **Important:** Create all task JSON files before regenerating the dashboard. Every task must have a `task-*.json` file — the dashboard is generated from these files, never the other way around.
 8. **Map dependencies** - What must complete before what
 9. **Regenerate dashboard** - Read all task-*.json files and regenerate dashboard.md
-   - **Follow the canonical template** in `.claude/support/reference/dashboard-patterns.md` — use exact section headings, emojis, and table formats defined there
-   - **Check section toggles** — if `dashboard_sections` config exists (in spec frontmatter or `.claude/CLAUDE.md`), respect `build`/`maintain`/`exclude`/`preserve` modes per section. See dashboard-patterns.md for details.
+   - **Follow the Dashboard Regeneration Procedure** below — use exact section headings, emojis, and format hints from dashboard.md
+   - **Check section toggles** — if `dashboard_sections` config exists (in spec frontmatter or `.claude/CLAUDE.md`), respect `build`/`maintain`/`exclude`/`preserve` modes per section.
    - **Atomicity rules:**
      - Tasks: Only include tasks that have corresponding `task-*.json` files. Never add a task to the dashboard without creating its JSON file first.
      - Decisions: Only include decisions that have corresponding `decision-*.md` files in `.claude/support/decisions/`. If a decision is significant enough for the dashboard, create the file first.
@@ -559,7 +559,7 @@ Break the spec into granular tasks:
    - Calculate **Overall completion** percentage and **phase breakdown table** for Quick Status
    - Group tasks by phase in **All Tasks** section with per-phase progress lines
    - Show **All Decisions** with `ID | Decision | Status | Selected` format (selected option name for decided, link for pending)
-   - Generate **Spec Alignment** section from drift status (see dashboard-patterns.md)
+   - Generate **Spec Alignment** section from drift status
    - Generate **Critical Path** from dependency chain of incomplete tasks (see below)
    - List **Recently Completed** tasks with completion dates in Progress This Week
    - **Add dashboard metadata** (see below)
@@ -602,6 +602,94 @@ Add at the very bottom of dashboard.md:
 ---
 *Dashboard generated: 2026-01-28 14:30 UTC | Tasks: 15 | [Spec aligned](# "0 drift deferrals, 0 verification debt")*
 ```
+
+#### Dashboard Regeneration Procedure
+
+Every dashboard regeneration MUST follow this procedure. All commands and agents reference this section for consistency.
+
+**Section Toggle Configuration:**
+
+Users can control which sections Claude builds via `dashboard_sections` in spec frontmatter or `.claude/CLAUDE.md`:
+
+```yaml
+dashboard_sections:
+  project_context: build        # actively create/update
+  needs_attention: build
+  quick_status: build
+  spec_alignment: build
+  critical_path: build
+  claude_status: build
+  progress: build
+  all_decisions: maintain       # preserve existing, minor updates only
+  all_tasks: build
+  notes: preserve               # always preserved (never overwritten)
+```
+
+| Mode | Behavior |
+|------|----------|
+| `build` | Actively generate from source data on every regeneration (default) |
+| `maintain` | Keep existing content, only update if data changes significantly |
+| `exclude` | Skip this section entirely during regeneration |
+| `preserve` | Never modify (Notes & Ideas always uses this) |
+
+Default: all sections `build` if no configuration exists. Configure in spec frontmatter (takes precedence) or `.claude/CLAUDE.md`.
+
+**Regeneration Steps:**
+
+1. **Read source data**
+   - All `task-*.json` files (tasks)
+   - All `decision-*.md` files in `.claude/support/decisions/` (decisions)
+   - `drift-deferrals.json` (if exists)
+   - `verification-result.json` (if exists)
+
+2. **Backup user section**
+   - Extract content between `<!-- USER SECTION -->` and `<!-- END USER SECTION -->`
+   - Save to `.claude/support/workspace/dashboard-notes-backup.md`
+   - Rotate old backups (keep last 3)
+
+3. **Generate dashboard**
+   - Use exact section headings from dashboard.md template (including emojis)
+   - Check `dashboard_sections` config and respect modes
+   - Enforce atomicity: only tasks with JSON files, only decisions with MD files
+
+4. **Compute and add metadata block** (after `# Dashboard` title)
+   ```
+   <!-- DASHBOARD META
+   generated: [ISO timestamp]
+   task_hash: sha256:[hash of sorted task_id:status pairs]
+   task_count: [number]
+   verification_debt: [count of tasks needing verification]
+   drift_deferrals: [count from drift-deferrals.json]
+   -->
+   ```
+
+5. **Restore user section**
+   - Insert backed-up content between markers
+   - If markers missing, append with warning comment
+
+6. **Add footer line** (at very end)
+   ```
+   ---
+   *Dashboard generated: [timestamp] | Tasks: N | [status indicator]*
+   ```
+   - Healthy: `[Spec aligned](# "0 drift deferrals, 0 verification debt")`
+   - Issues: `⚠️ N drift deferrals, M verification debt`
+
+**Action Item Contract:**
+
+Every item in "Needs Your Attention" must be:
+- **Actionable** — the user can see what to do without guessing
+- **Linked** — if the action involves a file, include a link
+- **Completable** — include a checkbox, command, or clear completion signal
+- **Contextual** — if feedback is needed, provide a feedback area or link
+
+**Review Item Derivation:**
+
+Review items are derived, not stored. During regeneration:
+1. Scan for unresolved items — `out_of_spec: true` without `out_of_spec_approved`, decision files with `draft`/`proposed` status, blocking questions in questions.md
+2. Populate Reviews & Approvals from current data
+3. Never carry forward stale entries — resolved items disappear on next regeneration
+4. No dangling references — every item must link to a concrete file
 
 **Spec snapshot process:**
 ```
@@ -701,8 +789,7 @@ After all agents complete:
        Set parent status to "Finished"
 
 2. Single dashboard regeneration:
-   Regenerate dashboard.md following the Regeneration Checklist
-   in .claude/support/reference/dashboard-patterns.md
+   Regenerate dashboard.md per the Dashboard Regeneration Procedure in Step 4
 
 3. Lightweight health check (Step 6)
 
@@ -730,7 +817,7 @@ Execute these steps in order:
 **After per-task verification completes:**
 - If **pass**: Proceed to select next pending task (loop back to Execute routing)
 - If **fail**: Task is set back to "In Progress". Route to implement-agent to fix the issues. After fix, route back to verify-agent for re-verification. This loop continues until pass.
-- Regenerate dashboard after any status change.
+- Regenerate dashboard after any status change, per the Dashboard Regeneration Procedure in Step 4.
 
 **Fail → Fix → Re-Verify Loop:**
 ```
@@ -984,7 +1071,7 @@ Use `/work complete` for manual task completion outside of implement-agent's wor
 5. **Check parent auto-completion:**
    - If parent_task exists and all sibling subtasks are "Finished"
    - Set parent status to "Finished"
-6. **Regenerate dashboard** - Follow the Regeneration Checklist in `.claude/support/reference/dashboard-patterns.md`
+6. **Regenerate dashboard** - Follow the Dashboard Regeneration Procedure in Step 4
    - Additional completion requirements:
      - Update overall completion percentage
      - Recalculate Critical Path with remaining incomplete tasks

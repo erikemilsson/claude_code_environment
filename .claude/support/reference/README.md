@@ -9,7 +9,6 @@ Documentation that Claude reads during workflow execution and on-demand guidance
 | `shared-definitions.md` | Status values, difficulty scale, owner types, glossary of all terms |
 | `task-schema.md` | JSON schema for task files |
 | `workflow.md` | Spec→Execute→Verify process, parallel execution, verification tiers, system overview, project structure |
-| `dashboard-patterns.md` | Dashboard structure, sections, regeneration rules, mermaid diagram patterns |
 | `paths.md` | Canonical file locations — prevents Claude from inventing paths |
 
 ## Guides (read on-demand for specific situations)

@@ -37,7 +37,7 @@ Open the decision doc to make your selection, then run /work again.
 
 ## Trace: Dashboard regeneration
 
-- **Path:** dashboard-patterns.md → Blocked sub-section, Decisions Pending, All Tasks grouped by phase
+- **Path:** dashboard.md → Blocked sub-section, Decisions Pending, All Tasks grouped by phase
 - All phases visible, blocked tasks show decision dependency in "Blocked By" column
 - Phase summary lines explain blocking reason
 

@@ -28,33 +28,45 @@ Everything Claude needs from you — with links to the relevant files and a way 
 
 ✅ No verification debt
 
+<!-- Debt format when debt > 0:
+⛔ **Verification Debt: N tasks** — Project cannot complete until resolved
+| Task | Title | Issue |
+|------|-------|-------|
+Debt includes: "Awaiting Verification", "Finished" without task_verification,
+or task_verification.result == "fail". Out-of-spec tasks excluded.
+End with: *Run `/work` to trigger verification for these tasks.* -->
+
 ### Decisions Pending
 
 *No pending decisions*
 
-<!-- When decisions exist, format:
+<!-- Format when decisions exist:
 | ID | Decision | Question | Options Doc |
 |----|----------|----------|-------------|
--->
+| D-001 | Auth strategy | OAuth vs JWT? | [decision-001.md](../support/decisions/decision-001.md) |
+End with: *Open the decision doc, review options, and check your selection.* -->
 
 ### Tasks Ready for You
 
 *No human tasks ready*
 
-<!-- When human tasks exist, format:
+<!-- Format when human tasks exist:
 | ID | Task | Action | Link |
 |----|------|--------|------|
-
-Feedback areas appear below the table when a task needs written feedback.
--->
+| 7 | Configure API keys | Add keys to `.env` and check off | [.env.example](../../.env.example) |
+For tasks needing feedback, add below the table:
+**Task N — Feedback:**
+\<!-- Write your feedback here, then run /work complete N --\>
+Rules: every task has Action (what to DO) and Link (to relevant file). -->
 
 ### Reviews & Approvals
 
 *Nothing to review*
 
-<!-- When reviews exist, format:
+<!-- Format when reviews exist:
 - [ ] **Item** — What to do → [link to file](path)
--->
+Rules: always include link when action involves a file, say what user should DO,
+provide feedback area or completion signal, keep descriptions short. -->
 
 ---
 
@@ -68,17 +80,37 @@ Feedback areas appear below the table when a task needs written feedback.
 
 *(Pending tasks by owner; Blocked = all owners)*
 
+<!-- Phase breakdown format:
+| Phase | Done | Total | Status |
+|-------|------|-------|--------|
+| 1. [Name] | X | Y | 🔄 In progress |
+| 2. [Name] | 0 | Z | ⏳ Waiting on Phase 1 | -->
+
 ---
 
 ## 📐 Spec Alignment
 
 *No spec defined yet — run `/iterate` to create one*
 
+<!-- Format when sections exist:
+| Section | Status | Tasks | Last Reconciled |
+|---------|--------|-------|-----------------|
+**Drift status:** N sections deferred (M tasks affected)
+When all aligned: ✅ All sections aligned — no drift detected -->
+
 ---
 
 ## 🛤️ Critical Path
 
 *No tasks defined yet*
+
+<!-- Format:
+**Next steps to completion:**
+1. ❗ **You**: [action] — *blocks step 2*
+2. 🤖 **Claude**: [action] — *blocks step 3*
+3. 👥 **Both**: [action]
+Owners: ❗ You (human), 🤖 Claude, 👥 Both.
+End with: *N steps remaining on critical path* -->
 
 ---
 
@@ -88,13 +120,29 @@ Feedback areas appear below the table when a task needs written feedback.
 
 *No tasks in progress*
 
+<!-- Sequential: 🔄 **Task N**: Title
+Parallel batch:
+**Parallel batch (N tasks):**
+| Task | Title | Files | Status |
+|------|-------|-------|--------| -->
+
 ### Ready to Start
 
 *No Claude tasks ready*
 
+<!-- Format with parallelism info:
+| Task | Title | Parallel-Eligible? |
+|------|-------|--------------------|
+Parallel-eligibility column shown when parallel execution enabled. -->
+
 ### Blocked
 
 *No Claude tasks blocked*
+
+<!-- Format:
+| Task | Title | Blocked By |
+|------|-------|------------|
+Blocked By: decision IDs, phase deps, task deps, or file conflicts. Multiple joined with +. -->
 
 ---
 
@@ -114,11 +162,23 @@ Feedback areas appear below the table when a task needs written feedback.
 
 *No decisions yet*
 
+<!-- Format:
+| ID | Decision | Status | Selected |
+|----|----------|--------|----------|
+Decided: show selected option name. Pending: link to decision doc. -->
+
 ---
 
 ## 📝 All Tasks
 
 *No tasks yet*
+
+<!-- Group by phase:
+### Phase N: [Name]
+| ID | Title | Status | Diff | Owner | Deps |
+|----|-------|--------|------|-------|------|
+*Phase N: X/Y complete (N%)*
+Out-of-spec tasks: prefix title with ⚠️. Summary: *Summary: X/Y complete (N%)* -->
 
 ---
 
@@ -130,5 +190,8 @@ Feedback areas appear below the table when a task needs written feedback.
 
 <!-- END USER SECTION -->
 
+<!-- Footer variants:
+Healthy: *Dashboard generated: [time] | Tasks: N | [Spec aligned](# "0 drift deferrals, 0 verification debt")*
+Issues: *Dashboard generated: [time] | Tasks: N | ⚠️ N drift deferrals, M verification debt* -->
 ---
 *Dashboard generated: [timestamp] | Tasks: 0 | Ready for setup*

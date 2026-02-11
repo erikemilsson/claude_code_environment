@@ -52,15 +52,26 @@ When breaking down tasks, IDs must not collide:
 
 ### 5. Dashboard Structure
 
-Validates that dashboard.md follows the canonical template defined in `.claude/support/reference/dashboard-patterns.md`.
+Validate dashboard.md section structure:
 
-**Read the Section Definitions table** from dashboard-patterns.md and validate:
-- Each required section header exists (exact heading text including emoji)
-- Sections appear in the correct order
-- Flag missing or out-of-order sections
-- Suggest regenerating dashboard.md
+**Required sections (exact headings, in this order):**
+1. `# Dashboard`
+2. `## Project Context`
+3. `## 🚨 Needs Your Attention`
+4. `## Quick Status`
+5. `## 📐 Spec Alignment`
+6. `## 🛤️ Critical Path`
+7. `## 🤖 Claude Status`
+8. `## 📊 Progress This Week`
+9. `## 📋 All Decisions`
+10. `## 📝 All Tasks`
+11. `## 💡 Notes & Ideas`
 
-**Single source of truth:** The canonical section headings and emojis are defined in `dashboard-patterns.md` only. Both this health check and `/work` dashboard regeneration reference that file. Do not hardcode section names here.
+Checks:
+- Each heading exists (exact text including emoji)
+- Sections in correct order
+- Flag missing or out-of-order
+- Sections with `exclude` in dashboard_sections config are allowed to be missing
 
 ### 6. Status Rules
 

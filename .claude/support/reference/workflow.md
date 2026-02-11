@@ -575,42 +575,6 @@ Unapproved out-of-spec tasks also appear in the "Needs Your Attention" section u
 
 ---
 
-## Best Practices
-
-### Keep Phases Clean
-- Don't code during Spec phase
-- Don't change scope during Execute phase
-- Don't skip Verify phase
-
-### Respect the Spec
-- Check requests against spec
-- Update spec intentionally, not accidentally
-- Key decisions belong in spec, not just in code
-
-### Respect Boundaries
-- Complete current phase before moving on
-- Get human approval at transitions
-- Don't gold-plate
-
-### For Specialists
-- Stay focused on your phase
-- Don't do work outside your responsibility
-- Document everything for handoff
-- Flag issues early
-- Report spec misalignments back to /work
-
-### Document Everything
-- Log decisions as they're made
-- Update phase status
-- Note questions as they arise
-
-### Handle Issues Gracefully
-- Create tasks for discovered work
-- Don't derail current task
-- Flag blocking issues immediately
-
----
-
 ## System Overview
 
 Reference documentation for the environment builder system.
@@ -679,7 +643,6 @@ Two files control template behavior:
 │   │   ├── shared-definitions.md
 │   │   ├── task-schema.md
 │   │   ├── workflow.md
-│   │   ├── dashboard-patterns.md
 │   │   ├── paths.md
 │   │   ├── decisions.md
 │   │   ├── spec-checklist.md

@@ -165,38 +165,15 @@ After verification completes (pass or fail):
   - Set the parent task status to "Finished"
 
 **Always (pass or fail):**
-- Regenerate dashboard.md from task JSON files, following the canonical template in `.claude/support/reference/dashboard-patterns.md`:
-  - **Source of truth:** Only include tasks that have corresponding `task-*.json` files
-  - **User section backup:** Save existing user section before regenerating (see work.md)
-  - Preserve the Notes & Ideas section between `<!-- USER SECTION -->` markers
-  - Use exact section headings, emojis, and table formats from dashboard-patterns.md
-  - Update Project Context with current phase
-  - Update overall completion percentage in Quick Status
-  - Update Spec Alignment section with drift status
-  - Update Verification Debt in Needs Your Attention section
-  - Recalculate Critical Path from dependency chain of incomplete tasks
-  - Add completed task to Recently Completed with date
-  - Add dashboard metadata block and footer line
+- Update dashboard.md in place from source data per work.md § "Dashboard Regeneration Procedure"
+  - Source of truth: only tasks with corresponding task-*.json files
+  - Preserve Notes & Ideas section between `<!-- USER SECTION -->` markers
 
 **MANDATORY: Return control to `/work` after completing this step.**
 - Do NOT proceed to the next task
 - `/work` will select the next task or route to phase-level verification if all tasks done
 
 ## Implementation Guidelines
-
-### Code Quality
-
-**Do:**
-- Follow existing code style
-- Write clear, readable code
-- Handle errors appropriately
-- Add comments only where logic is complex
-
-**Don't:**
-- Refactor unrelated code
-- Add unnecessary abstractions
-- Change coding conventions mid-project
-- Skip error handling
 
 ### Scope Discipline
 
@@ -263,20 +240,3 @@ Task is complete when:
 - Status set to "Finished" (after passing verification)
 - Per-task verification passes (Step 6b triggers verify-agent as part of this workflow)
 
-## Anti-Patterns
-
-**Avoid:**
-- Working on multiple tasks at once (UNLESS dispatched in parallel by `/work`)
-- Skipping the self-review step
-- Making changes outside task scope
-- Leaving tasks "In Progress" for long periods
-- Forgetting to update notes
-- Proceeding when you notice spec misalignment
-
-**Instead:**
-- One task at a time (or parallel batch managed by `/work`)
-- Always self-review before completing
-- Create new tasks for discovered work
-- Complete or block tasks promptly
-- Document what was actually done
-- Flag misalignments back to /work
