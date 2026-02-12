@@ -293,10 +293,11 @@ Tasks that bypass verification create "verification debt":
 3. Display count in dashboard footer: `⚠️ N verification debt`
 4. Surface each debt item in "Action Required" → "Verification Debt" with task ID, title, and specific issue
 
-**How it blocks completion:**
-- `/work` Step 3 routing algorithm (work.md lines 184-206) checks for verification debt before routing to phase-level verification or completion
+**How it blocks completion (structural enforcement):**
+- `/work` Step 3 routing algorithm checks for verification debt before routing to phase-level verification or completion
 - If debt count > 0, `/work` routes to verify-agent (per-task) for the first unverified task instead of proceeding to phase-level verification
-- The completion gate (work.md § Step 4 "If Completing", line 305) enforces mandatory verification checks before updating spec status to `complete`
+- The completion gate (work.md § Step 4 "If Completing") enforces mandatory verification checks before updating spec status to `complete`
+- `/health-check` treats missing or failed verification on Finished tasks as an ERROR
 
 ## Completion Notes Contract
 

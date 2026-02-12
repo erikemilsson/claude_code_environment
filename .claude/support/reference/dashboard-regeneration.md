@@ -25,7 +25,6 @@ Progress         → [x] always (core section)
 Tasks            → [x] always (core section)
 Decisions        → [x] if any decision-*.md files exist, [ ] otherwise
 Notes            → [x] always (preserve mode)
-Timeline         → [x] if any task has due_date or external_dependency.expected_date, [ ] otherwise
 Custom Views     → [ ] always (user opts in when they want custom views)
 ```
 
@@ -33,7 +32,6 @@ Custom Views     → [ ] always (user opts in when they want custom views)
 
 When `/work` detects a phase transition (all Phase N tasks "Finished", Phase N+1 becoming active), check whether toggle suggestions are warranted:
 - If Phase N+1 introduces decision dependencies and Decisions is unchecked → suggest: "Phase {N+1} has pending decisions. Consider enabling the Decisions section in the dashboard."
-- If Phase N+1 tasks have due dates and Timeline is unchecked → suggest: "Phase {N+1} has deadlines. Consider enabling the Timeline section."
 - Suggestions are logged, never auto-toggled. The user's checkbox state is always authoritative.
 
 ### During Regeneration (All Subsequent)
@@ -68,7 +66,6 @@ User-authored content is persisted in `.claude/dashboard-state.json` as a durabl
     "tasks": true,
     "decisions": true,
     "notes": true,
-    "timeline": false,
     "custom_views": false
   },
   "phase_gates": {},
@@ -99,12 +96,12 @@ User-authored content is persisted in `.claude/dashboard-state.json` as a durabl
 
 ## When to Regenerate
 
-Not every state change requires a full dashboard regeneration. Use this table to determine when regeneration is needed:
+The dashboard is regenerated automatically after every task change. This ensures the user always sees current state.
 
 | State Change | Regenerate? | Rationale |
 |-------------|:-----------:|-----------|
-| Task: Pending → In Progress | **No** | Transient; user doesn't need to see intermediate state |
-| Task: In Progress → Awaiting Verification | **No** | Transient; verification happens immediately after |
+| Task: Pending → In Progress | **Yes** | Reflects work starting |
+| Task: In Progress → Awaiting Verification | **Yes** | Reflects implementation complete |
 | Task: Awaiting Verification → Finished (pass) | **Yes** | User-visible completion event |
 | Task: Awaiting Verification → In Progress (fail) | **Yes** | User may need to see verification failure |
 | Task: any → Blocked | **Yes** | User may need to act on blocker |
@@ -117,8 +114,6 @@ Not every state change requires a full dashboard regeneration. Use this table to
 | Decision resolved | **Yes** | Decision status changed, tasks may unblock |
 
 **In parallel mode:** Individual agents never regenerate. The `/work` coordinator regenerates once after all agents complete.
-
-**Rule of thumb:** Regenerate when the user would benefit from seeing the change. Skip for intermediate states that resolve within the same `/work` run.
 
 ---
 
@@ -326,8 +321,7 @@ The user selects an option when prompted, and `/work` updates the task according
 - Spec Drift: only render when drift-deferrals.json has active entries
 - Reviews sub-section format: `- [ ] **Item title** — what to do → [link to file](path)`
 - Reviews appear for: out_of_spec tasks without approval, draft/proposed decisions, blocking questions from `questions.md` (each linked to the file)
-- Timeline sub-section in Progress: only render when tasks have `due_date` or `external_dependency.expected_date`
-- Timeline has its own toggle in the section checklist (independent of Progress)
+- Timeline sub-section in Progress: only render when tasks have `due_date` or `external_dependency.expected_date` (part of Progress, not an independent toggle)
 - Phase table in Progress: always show ALL phases (including blocked/future)
 - Critical path owners: ❗ (human), 🤖 (Claude), 👥 (both)
 - Critical path parallel branches: `[step A | step B]` notation for fork/join points; max 3 branches per group
