@@ -289,6 +289,38 @@ Validates that the dashboard is current with task state:
 - Can happen after manual task deletion or archive errors
 - Critical for maintaining dependency graph integrity
 
+### 16. Migration Detection (Pre-Existing Task Schemas)
+
+Detects when task files use a non-conforming schema — common when adopting the template into a project with an existing `.claude/tasks/` directory.
+
+**Detection:**
+- For each task JSON file, check for:
+  - Missing required fields (`id`, `title`, `status`, `difficulty`)
+  - Unknown status values (not in: Pending, In Progress, Awaiting Verification, Blocked, On Hold, Absorbed, Broken Down, Finished)
+  - Unexpected fields not in the template schema (e.g., `assignee`, `sprint`, `labels`)
+  - Missing optional fields that the workflow depends on (`phase`, `owner`, `decision_dependencies`)
+
+**Migration guidance:** When non-conforming tasks are found, report specific remediation steps:
+
+```
+[Warning] Migration needed — {N} task files use non-conforming schema
+
+  Task 5: Missing required field `difficulty` — add with estimated value 1-10
+  Task 5: Unknown status "done" — map to "Finished" (requires task_verification)
+  Task 5: Unknown field `assignee` — consider mapping to `owner` (claude/human/both)
+  Task 12: Unknown status "completed" — map to "Finished" (requires task_verification)
+  Task 12: Missing field `phase` — add phase assignment based on spec structure
+
+  Recommended steps:
+  1. Add missing required fields (difficulty) to each task
+  2. Map status values: "done"/"completed" → "Finished", "todo" → "Pending", "doing" → "In Progress"
+  3. Map custom fields: "assignee" → "owner", "sprint" → "phase"
+  4. Remove or keep unknown fields (they won't affect workflow but add noise)
+  5. Run /health-check again to verify compliance
+```
+
+**Important:** Never auto-migrate task files. Report issues and suggest steps — the user decides how to map their existing data.
+
 ## Task Auto-Fixes
 
 | Issue | Auto-Fix |
@@ -447,6 +479,14 @@ Run template sync check:
 - Diff sync-category files
 - Report modified/new/local-only files
 
+Run command collision detection:
+- Scan `.claude/commands/` for non-template files
+- Check for naming and functional overlaps
+
+Run settings conflict detection:
+- Check for existing settings files
+- Confirm template does not interfere
+
 ### Step 3: Report
 
 **Report sections:**
@@ -461,6 +501,8 @@ Run template sync check:
 - Decision System (schema validation, staleness, completeness, anchors)
 - Archive Validation (spec version continuity, misplaced files)
 - Template Sync (version comparison, file status, updates available)
+- Command Collision Detection (custom commands, functional overlaps)
+- Settings Conflict Detection (user settings preservation)
 - Summary (overall status: HEALTHY / NEEDS ATTENTION / CRITICAL ISSUES)
 
 **Verification Debt Report Format:**
@@ -968,6 +1010,103 @@ Updates `.claude/version.json` with new `template_version`.
 | New files in template | Offer to add |
 | Missing version.json | Skip with note: "Create .claude/version.json to enable template sync" |
 | Missing sync-manifest.json | Skip with note: "Create .claude/sync-manifest.json to enable template sync" |
+
+---
+
+## Part 5b: Command Collision Detection
+
+Detects when pre-existing custom commands in `.claude/commands/` overlap with template commands.
+
+### Purpose
+
+When adopting the template into a project that already has custom `.claude/commands/` files, naming collisions or functional overlaps can cause confusion (e.g., a custom `plan.md` overlapping with `/iterate`, or `update-tasks.md` overlapping with `/work complete`).
+
+### Process
+
+1. **Identify template commands** — the known set: `work.md`, `iterate.md`, `breakdown.md`, `health-check.md`, `status.md`
+2. **Scan `.claude/commands/`** for all `.md` files
+3. **Detect collisions:**
+   - **Name collision:** A custom file has the same name as a template command (should not happen if template was merged properly, but flag if found)
+   - **Functional overlap:** A custom command's filename or content suggests overlap with template functionality. Check for keywords:
+     - `plan`, `spec`, `requirements` → may overlap with `/iterate`
+     - `update-tasks`, `complete`, `finish`, `done` → may overlap with `/work complete`
+     - `check`, `validate`, `lint` → may overlap with `/health-check`
+     - `decompose`, `break`, `split` → may overlap with `/breakdown`
+4. **Report non-template files** — list all `.md` files in commands/ that are not in the template set
+
+### Report Format
+
+```
+### Command Collision Detection
+
+[Warning] 2 custom commands detected in .claude/commands/
+
+  Custom commands:
+  - plan.md — potential overlap with /iterate (spec review/planning)
+  - update-tasks.md — potential overlap with /work complete (task completion)
+
+  These commands are preserved. Review for functional overlap:
+  - If a custom command duplicates template functionality, consider archiving it
+  - If a custom command extends template functionality, consider renaming to avoid confusion
+  - Template commands take precedence when invoked by name
+```
+
+**No collisions:**
+```
+### Command Collision Detection
+
+[Checkmark] No custom commands detected (all commands are template-provided)
+```
+
+### Auto-Fixes
+
+| Issue | Auto-Fix |
+|-------|----------|
+| Custom commands detected | Report only — never delete or rename without user consent |
+| Name collision with template | Warn and suggest renaming the custom command |
+
+---
+
+## Part 5c: Settings Conflict Detection
+
+Detects existing user settings files and confirms the template does not interfere with them.
+
+### Purpose
+
+When adopting the template, users may have existing `settings.local.json` or other configuration files with project-specific permissions. This check confirms those settings are preserved and reports any potential conflicts.
+
+### Process
+
+1. **Check for existing settings files:**
+   - `.claude/settings.local.json`
+   - `.claude/settings.json`
+2. **If settings files exist:**
+   - Report their presence and summarize their contents (permission grants, tool restrictions)
+   - Confirm: "The template does not ship settings files — your existing settings are preserved."
+   - Check for any permission restrictions that might interfere with template workflow (e.g., if `Bash` is restricted, agents may not be able to run tests)
+3. **If no settings files exist:**
+   - Report as informational: "No settings files detected."
+
+### Report Format
+
+**Settings found:**
+```
+### Settings Conflict Detection
+
+[Checkmark] User settings preserved
+  - .claude/settings.local.json exists (3 permission grants, 1 tool restriction)
+  - Template does not ship settings files — no conflicts
+
+  Note: Tool restriction on `Bash` may affect verify-agent test execution.
+  Review settings if agent workflows report permission issues.
+```
+
+**No settings:**
+```
+### Settings Conflict Detection
+
+[Checkmark] No settings files detected (template does not ship settings)
+```
 
 ---
 

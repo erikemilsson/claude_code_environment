@@ -235,17 +235,30 @@ Update the task JSON based on the result. **Do NOT regenerate the dashboard or s
 
 | Result | Action |
 |--------|--------|
-| `pass` | Set task status to "Finished". Return your T8 report. |
+| `pass` | Set task status to "Finished". If `owner: "both"`, also set `user_review_pending: true`. Return your T8 report. |
 | `fail` | Set task status back to "In Progress". Return your T8 report with issues. |
 
 **When verification passes (status: "Awaiting Verification" → "Finished"):**
+
+For `claude`-owned tasks:
 ```json
 {
   "status": "Finished",
   "updated_date": "YYYY-MM-DD"
 }
 ```
-The task now has both `status: "Finished"` AND `task_verification.result: "pass"`, satisfying the verification requirement.
+
+For `both`-owned tasks (user review gate):
+```json
+{
+  "status": "Finished",
+  "updated_date": "YYYY-MM-DD",
+  "user_review_pending": true
+}
+```
+The `user_review_pending` flag keeps the task visible in the dashboard "Your Tasks" section so the user can review the implementation and provide feedback. The flag is cleared when the user runs `/work complete {id}`.
+
+In both cases, the task now has `status: "Finished"` AND `task_verification.result: "pass"`, satisfying the verification requirement.
 
 **When setting task back to "In Progress" (fail):**
 - Set status to "In Progress"

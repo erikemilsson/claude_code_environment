@@ -100,6 +100,7 @@ The checkbox UI maps to `build`/`exclude`. Users who need `maintain` mode can se
 - Preserve the section toggle checklist between its markers during regeneration (keep the `<details>` wrapper around the markers)
 - Enforce atomicity: only tasks with JSON files, only decisions with MD files
 - On first regeneration (detected by `> **This is a format example**` line): replace the template example with actual project data and compute toggle defaults per the "First Regeneration" section above
+- **User review gate for `both` tasks:** When generating "Your Tasks", include `both`-owned tasks that have `user_review_pending: true` — even if their status is "Finished". These tasks passed verification but still need user review. Show them with status `✅ Verified — awaiting your review` and include a `/work complete {id}` prompt. Remove them from "Your Tasks" only after the user runs `/work complete`.
 - **Inline feedback areas:** When generating "Your Tasks", add feedback markers for each `human`/`both`-owned task:
   ```
   <!-- FEEDBACK:{id} -->
@@ -107,13 +108,24 @@ The checkbox UI maps to `build`/`exclude`. Users who need `maintain` mode can se
   [Leave feedback here, then run /work complete {id}]
   <!-- END FEEDBACK:{id} -->
   ```
-- **Phase Transitions sub-section:** When all tasks in Phase N are "Finished" AND Phase N+1 tasks exist AND no `<!-- PHASE GATE:{N}→{N+1} APPROVED -->` marker exists in the dashboard, render a phase gate with checkbox between markers:
+- **Phase Transitions sub-section:** When all tasks in Phase N are "Finished" AND Phase N+1 tasks exist AND no `<!-- PHASE GATE:{N}→{N+1} APPROVED -->` marker exists in the dashboard, render a phase gate with enumerated conditions between markers:
   ```
   <!-- PHASE GATE:{N}→{N+1} -->
-  - [ ] **Phase {N} complete** — Review results and approve transition to Phase {N+1}
-    - {M} tasks finished, {K} tasks in Phase {N+1} ready
+  **Phase {N} → Phase {N+1} Transition**
+
+  Conditions:
+  - [x] All Phase {N} tasks finished ({M}/{M})
+  - [x] All verifications passed ({V}/{V})
+  - [ ] Approve transition to Phase {N+1}
+
   <!-- END PHASE GATE:{N}→{N+1} -->
   ```
+  **Enumerated condition rules:**
+  - Auto-conditions (task completion, verification status) are computed and rendered as pre-checked `[x]` items — the user cannot uncheck these, they reflect actual state
+  - The final "Approve transition" checkbox is the manual gate — the user must check this
+  - If any auto-condition is NOT met (e.g., a task has verification debt), render it as `[ ]` with detail: `- [ ] All verifications passed (8/10 — 2 tasks have verification debt)`
+  - Custom gate conditions from the spec: if the Phase N spec section contains a `### Gate Conditions` or `### Transition Criteria` sub-section with bullets, each bullet becomes an additional checkbox between auto-conditions and the approval checkbox. If no such sub-section exists, skip custom conditions.
+  - The gate is approved only when ALL checkboxes are checked (both auto and manual)
 - **Verification Pending sub-section:** When all spec tasks are "Finished" with passing per-task verification AND no valid `verification-result.json` exists, render:
   ```
   All tasks complete — phase-level verification will run on next `/work`
@@ -212,6 +224,7 @@ Review items are derived, not stored. During regeneration:
 - Critical path >5 steps (after collapsing parallel branches): show first 3 + "... N more → Done"
 - "This week" line: omit when all counts are zero
 - Tasks grouped by phase with per-phase progress lines
+- **Completed task summarization (scale):** When a phase has more than 10 finished tasks, render a summary line (`✅ {N} tasks finished`) instead of listing each individually. Only list active tasks (Pending, In Progress, Awaiting Verification, Blocked, On Hold) with full detail rows. This keeps the dashboard navigable for large projects (50+ tasks).
 - Tasks with `conflict_note`: show status as `Pending (held: conflict with Task {id})` during parallel dispatch
 - Decisions: status display mapping: `approved`/`implemented` → "Decided", `draft`/`proposed` → "Pending". Decided → show selected option name; Pending → link to doc in Selected column
 - Out-of-spec tasks: prefix title with ⚠️
@@ -224,7 +237,7 @@ Review items are derived, not stored. During regeneration:
 
 | Section | Columns / Format |
 |---------|-----------------|
-| Action Required → Phase Transitions | `- [ ] **Phase N complete** — description` with `<!-- PHASE GATE -->` markers |
+| Action Required → Phase Transitions | Enumerated conditions (`[x]`/`[ ]` checkboxes) between `<!-- PHASE GATE -->` markers — auto-conditions + manual approval |
 | Action Required → Verification Pending | Plain text status message |
 | Action Required → Verification Debt | `Task \| Title \| Issue` |
 | Action Required → Spec Drift | `- ⚠️ **{section}** — {N} tasks affected, deferred {M} days ago` |

@@ -58,13 +58,39 @@ Phase dependencies are checked alongside task dependencies. A task is eligible w
 ### Phase Transitions
 
 When all Phase N tasks complete:
-- `/work` detects the transition and logs it
+- `/work` detects the transition and renders a phase gate in the dashboard
+- The gate shows **enumerated conditions** — auto-computed status items plus a manual approval checkbox
+- All conditions must be checked before Phase N+1 begins
 - If Phase N+1 needs more detail in the spec, `/work` suggests running `/iterate` to flesh it out
-- Dashboard updates to show the new active phase
+- Dashboard updates to show the new active phase after approval
+
+### Phase Gate Conditions
+
+Phase gates display three types of conditions:
+
+1. **Auto-conditions** (computed, pre-checked when satisfied):
+   - All Phase N tasks finished (count)
+   - All verifications passed (count)
+
+2. **Custom conditions** (from spec, if defined):
+   - If the spec section for Phase N contains a `### Gate Conditions` or `### Transition Criteria` sub-section with a bulleted list, each bullet becomes a checkbox in the phase gate
+   - Example spec format:
+     ```
+     ### Gate Conditions
+     - User has approved production rollout
+     - Load testing results reviewed
+     ```
+   - Custom conditions start unchecked — the user must verify and check them manually
+   - If no gate conditions sub-section exists in the spec, only auto-conditions and the approval checkbox are rendered
+
+3. **Approval checkbox** (always last):
+   - "Approve transition to Phase N+1" — the manual gate
+
+`/work` checks all checkboxes within the gate markers. The transition is approved only when every condition is checked.
 
 ### No Special Configuration
 
-Unlike the previous stage gates pattern, phases require no frontmatter config, no criteria files, and no folder blocking. Phase membership comes from task metadata, and ordering is enforced through the existing dependency system.
+Phases require no frontmatter config, no criteria files, and no folder blocking. Phase membership comes from task metadata, and ordering is enforced through the existing dependency system. Custom gate conditions are optional and derived from spec content.
 
 ---
 

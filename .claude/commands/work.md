@@ -43,6 +43,15 @@ Read and analyze:
 - `.claude/dashboard.md` - Task status and progress
 - `.claude/support/questions/questions.md` - Pending questions
 
+**Scale optimization (50+ tasks):** When the task directory contains many files, avoid reading all task JSON upfront. Instead:
+1. Glob for `task-*.json` files to get the file count
+2. Compare file count against dashboard metadata `task_count` — if they match, the dashboard is likely fresh; skip the full hash computation in Step 1a and trust dashboard data for completed task totals
+3. Only read non-Finished task files for routing decisions (use dashboard task table for finished task statuses when dashboard is fresh)
+4. Read completed task files only when needed for specific dependency checks
+5. If file count differs from `task_count`, fall back to full hash computation (Step 1a) and read all tasks
+
+This reconciles with Step 1a: the file count check is a lightweight gate that avoids the full O(N) hash computation in most cases. After auto-archive runs (threshold: 100), archived tasks are excluded automatically.
+
 ### Step 1a: Dashboard Freshness Check
 
 Verify the dashboard is current before using its data. Compute a SHA-256 hash of all task IDs and statuses, compare against the dashboard's `<!-- DASHBOARD META -->` block. If the hash differs or no metadata exists, regenerate the dashboard from task JSON files before continuing.
@@ -154,16 +163,21 @@ Check whether phases or unresolved decisions block any intended work:
    │        2. IF APPROVED marker exists:
    │             → Already approved. Continue to next phase.
    │        3. Read dashboard for phase gate marker: <!-- PHASE GATE:{P}→{next_phase} -->
-   │        4. IF marker contains checked box [x]:
-   │             → Phase transition approved.
-   │             → Replace gate content with: <!-- PHASE GATE:{P}→{next_phase} APPROVED -->
-   │             → Log: "Phase {P} → {next_phase} approved"
-   │             → Execute Version Transition Procedure (see iterate.md § "Version Transition Procedure")
-   │             → Suggest running /iterate to flesh out Phase {next_phase} sections
-   │             → Continue to next phase
-   │        5. IF marker absent OR contains unchecked box [ ]:
+   │        4. IF marker exists, check ALL checkboxes within the gate:
+   │             - Parse all `- [x]` and `- [ ]` lines between gate markers
+   │             - IF ALL checkboxes are checked [x]:
+   │               → Phase transition approved.
+   │               → Replace gate content with: <!-- PHASE GATE:{P}→{next_phase} APPROVED -->
+   │               → Log: "Phase {P} → {next_phase} approved"
+   │               → Execute Version Transition Procedure (see iterate.md § "Version Transition Procedure")
+   │               → Suggest running /iterate to flesh out Phase {next_phase} sections
+   │               → Continue to next phase
+   │             - IF any checkbox is unchecked [ ]:
+   │               → Log: "Phase gate {P}→{next_phase}: {N} of {M} conditions met. Waiting for remaining approvals."
+   │               → STOP — do not dispatch any tasks
+   │        5. IF marker absent:
    │             → Regenerate dashboard with phase gate in Action Required (see `dashboard-regeneration.md` § "Regeneration Steps" Step 3)
-   │             → Log: "Phase {P} complete. Approve transition in dashboard, then run /work."
+   │             → Log: "Phase {P} complete. Review conditions and approve transition in dashboard, then run /work."
    │             → STOP — do not dispatch any tasks
    │      ELSE (final phase, all tasks Finished):
    │        → Fall through to Step 3 routing (phase-level verification → completion)
@@ -451,7 +465,7 @@ Task tool call:
 **Timeout handling:** If verify-agent exhausts `max_turns` (30) without completing, treat as verification failure — set task to "Blocked" with note `[VERIFICATION TIMEOUT]` and report to user.
 
 **After per-task verification completes:**
-- If **pass**: Proceed to select next pending task (loop back to Execute routing)
+- If **pass**: Check the task's `owner` field. If `owner: "both"`, verify that `user_review_pending: true` was set by verify-agent (the task remains in "Your Tasks" until the user runs `/work complete`). Proceed to select next pending task (loop back to Execute routing).
 - If **fail**: Task is set back to "In Progress". Route to implement-agent to fix the issues. After fix, route back to verify-agent for re-verification. This loop continues until pass.
 - Regenerate dashboard after any status change, per `.claude/support/reference/dashboard-regeneration.md`.
 
@@ -687,7 +701,8 @@ Use `/work complete` for manual task completion outside of implement-agent's wor
 
 1. **Identify task** - If no ID provided, use current "In Progress" task
 2. **Validate task is completable:**
-   - Status must be "In Progress" (not "Pending", "Broken Down", "On Hold", "Absorbed", or "Finished")
+   - Status must be "In Progress", OR "Finished" with `user_review_pending: true` (user reviewing a `both`-owned task)
+   - Reject: "Pending", "Broken Down", "On Hold", "Absorbed", or "Finished" without `user_review_pending`
    - For quick tasks, first set status to "In Progress", then complete
    - Dependencies must all be "Finished"
 3. **Check work** - Review all changes made for this task
@@ -706,6 +721,7 @@ Use `/work complete` for manual task completion outside of implement-agent's wor
      "user_feedback": "Use OAuth2 instead of JWT. The client requires SSO support."
    }
    ```
+   - If `user_review_pending` is `true`, clear it (set to `false` or remove the field). This signals the user has reviewed the task.
 5. **Check parent auto-completion:**
    - If parent_task exists and all non-Absorbed sibling subtasks are "Finished"
    - Set parent status to "Finished"
