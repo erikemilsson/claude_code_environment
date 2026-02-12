@@ -113,7 +113,7 @@ Parent Task 10 has subtasks [10_1, 10_2, 10_3]. Task 10_1: Finished, Task 10_2: 
 
 ## Trace 29D: Health check validates On Hold and Absorbed rules
 
-- **Path:** health-check.md Part 1 → Status Rules (Check 6)
+- **Path:** health-check.md Part 1 → Status Rules (Check 5)
 
 ### Scenario
 

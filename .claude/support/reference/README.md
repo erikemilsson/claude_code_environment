@@ -21,7 +21,7 @@ The reference files form a layered system. Commands (`work.md`, `health-check.md
 | `workflow.md` | Spec→Execute→Verify process, phase transitions, verification tiers, system overview | `work.md`, `health-check.md`, `CLAUDE.md` (always in context) |
 | `paths.md` | Canonical file locations — prevents Claude from inventing paths | `CLAUDE.md` (always in context) |
 | `dashboard-regeneration.md` | Dashboard regeneration procedure, section format, critical path, overview diagram | `work.md`, `breakdown.md`, both agents |
-| `drift-reconciliation.md` | Spec drift detection, reconciliation UI, drift budget, task migration | `work.md` (pre-execution check), `health-check.md`, `iterate.md` |
+| `drift-reconciliation.md` | Spec drift detection, reconciliation UI, drift budget, task migration | `work.md` (pre-execution check), `iterate.md` |
 | `parallel-execution.md` | Parallelism eligibility, file conflict algorithm, parallel dispatch | `work.md` (task routing) |
 
 ## Guides (read on-demand for specific situations)

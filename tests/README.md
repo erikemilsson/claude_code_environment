@@ -31,7 +31,7 @@ No fixture files or project setup needed. The state description in each scenario
 | 03 | Inflection Point Handoff | Resolved inflection point pauses `/work`, hands to `/iterate` | work.md Step 2b-post, iterate.md Post-Inflection-Point |
 | 04 | Dashboard Skeleton | Dashboard shows full project shape including blocked areas | dashboard.md, work.md |
 | 05 | Phase Transition | Pick-and-go decision unblocks without `/iterate` | work.md Step 2b-post |
-| 06 | Late Decision Detection | Catches decisions created after work already started | work.md Step 2b item 5, health-check.md Check 6 |
+| 06 | Late Decision Detection | Catches decisions created after work already started | work.md Step 2b item 5, health-check.md Part 3 Check 6 |
 | 07 | Session Resumption | State persists across session boundaries | All commands |
 
 ### Dashboard Deep Dive (08-14)
@@ -90,7 +90,7 @@ Tests for core lifecycle operations that were previously uncovered: task breakdo
 | 26 | Work Complete Flow | `/work complete` validates, completes, auto-completes parents, regenerates dashboard | work.md § Task Completion |
 | 27 | Verification Failure and Rework | Fail → fix → re-verify loop, 2-attempt limit, phase-level fix tasks | verify-agent.md Steps T6-T7, implement-agent.md |
 | 28 | Task Dependency Chains | Linear chains, multi-blocker convergence, circular detection, critical path | work.md Step 2c, Step 3 |
-| 29 | On Hold and Absorbed Statuses | On Hold/Absorbed excluded from routing, phase completion, parent auto-completion | work.md Step 3, health-check.md Check 6, shared-definitions.md |
+| 29 | On Hold and Absorbed Statuses | On Hold/Absorbed excluded from routing, phase completion, parent auto-completion | work.md Step 3, health-check.md Part 1 Check 5, shared-definitions.md |
 
 **Key behaviors surfaced by 25-29:**
 - `/breakdown` is the only path for difficulty >= 7 tasks — implement-agent rejects them
@@ -100,6 +100,38 @@ Tests for core lifecycle operations that were previously uncovered: task breakdo
 - Circular dependencies must be detected and reported, not cause infinite loops
 - On Hold is a user-owned transition — Claude never auto-resumes paused tasks
 - Absorbed preserves audit trail while removing tasks from active work
+
+### Error Recovery (30-31)
+
+Tests for unhappy paths: agent crashes, timeouts, corrupted state. The system must leave the project recoverable, not silently broken.
+
+| # | Name | Tests | Key Commands/Files |
+|---|------|-------|-------------------|
+| 30 | Agent Crash and Timeout Recovery | Agent timeout/crash in sequential and parallel modes, partial work handling | work.md Step 4, implement-agent.md § Handling Issues |
+| 31 | Corrupted Task JSON | Malformed files, missing fields, invalid values, dangling dependencies | work.md Step 1, health-check.md Part 1 |
+
+**Key behaviors surfaced by 30-31:**
+- One agent's failure must not abort an entire parallel batch
+- Corrupted task files must not crash `/work` — degrade gracefully, surface the problem
+- Partial work is preserved by default — never silently deleted
+- Blocked tasks from timeouts can be retried on next `/work` run
+
+### Spec Lifecycle (32-34)
+
+Tests for spec evolution after initial decomposition: drift detection, version transitions, and vision-to-spec distillation.
+
+| # | Name | Tests | Key Commands/Files |
+|---|------|-------|-------------------|
+| 32 | Spec Drift During Execution | Section-level drift detection, per-section reconciliation, in-progress task conflicts, drift budget | work.md Step 1b, drift-reconciliation.md |
+| 33 | Spec Version Transition | v1→v2 archival, task migration, snapshot management, when NOT to bump | iterate.md § Version Transition, work.md Step 1 |
+| 34 | `/iterate distill` | Vision doc discovery, distillation questions, spec generation, re-distill after update | iterate.md Step 2 § distill |
+
+**Key behaviors surfaced by 32-34:**
+- Drift detection is granular (section-level), not binary (whole-spec)
+- In-progress tasks with changed requirements require explicit user decision
+- Version transitions maintain single-spec invariant (exactly one `spec_v{N}.md`)
+- Distill is suggest-only — Claude never writes directly to the spec file
+- Vision docs are preserved, not consumed by distillation
 
 ## Example Project
 

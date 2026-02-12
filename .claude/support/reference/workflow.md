@@ -218,7 +218,7 @@ Tasks with empty `files_affected` and no `parallel_safe: true` are excluded from
 3. **Annotate held-back tasks** — Add `conflict_note` to held-back task JSONs (surfaced in the dashboard's Status column); cap batch at `max_parallel_tasks`
 4. **Dispatch** — If batch size >= 2, set all to "In Progress" and spawn parallel agents (using `run_in_background: true`) via Claude Code's `Task` tool. Each agent reads `implement-agent.md` and runs Steps 2/4/5/6a/6b independently
 5. **Incremental re-dispatch** — Poll for agent completion. When an agent finishes, re-run eligibility assessment: tasks whose file conflicts are now resolved become eligible and can be dispatched immediately (even while other agents are still running). Clear `conflict_note` from newly-dispatched tasks
-6. **Post-parallel cleanup** — After all agents finish: final parent auto-completion check, single dashboard regeneration (clears remaining `conflict_note` fields), lightweight health check
+6. **Post-parallel cleanup** — After all agents finish: final parent auto-completion check, single dashboard regeneration (clears remaining `conflict_note` fields), operational checks (see `/work` Step 6)
 
 ### Constraints
 

@@ -41,7 +41,7 @@ User runs `/work complete 4` to mark Task 4 (human-owned, "In Progress") as done
 5. Parent auto-completion checked (Step 5) — Task 4 has no parent, skip
 6. Dashboard regenerated (Step 6)
 7. Auto-archive check (Step 7) — count < 100, skip
-8. Lightweight health check (Step 8)
+8. Operational checks (Step 8)
 
 ### Pass criteria
 

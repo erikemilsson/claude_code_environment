@@ -202,7 +202,6 @@ IF active_deferrals > max_deferred_sections OR any deferral expired:
 **Clearing deferrals:** When a section is reconciled (user selects Apply or reviews individually and applies), remove it from `drift-deferrals.json`.
 
 **See also:**
-- `/health-check` performs the same drift detection as a validation check. Keep algorithms in sync.
 - `.claude/support/reference/workflow.md` § "Spec Change and Feature Addition Workflow" for the end-to-end process (user edits spec → detection → confirmation → task updates → implementation → verification).
 
 ---

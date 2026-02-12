@@ -24,7 +24,7 @@ This is the most common adoption path: a user has an existing project with a cus
 - **Path:** `/work` → first decomposition → setup checklist (automatic), then `/health-check` (user must run separately)
 - Setup checklist does not inspect task file schemas — it checks configuration files only
 - `/health-check` Part 1 validates task JSON schema and would detect missing `difficulty`, non-standard `status` values, etc.
-- The lightweight health check that runs automatically after `/work` (Part 6) does **not** include schema validation
+- The operational checks that run automatically after `/work` (Step 6) do **not** include schema validation — run `/health-check` for full schema validation
 
 ### Expected
 

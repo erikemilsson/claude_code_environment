@@ -427,7 +427,7 @@ Execute these steps in order:
 
 #### If Executing (Parallel)
 
-When Step 2c produces a parallel batch of >= 2 tasks, execute them concurrently. Log the dispatch, set all batch tasks to "In Progress", annotate held-back tasks with `conflict_note`, spawn one `Task` agent per task (`model: "opus"`, `max_turns: 40`), and poll for completion with incremental re-dispatch (newly-unblocked tasks start as earlier ones finish). After all agents complete: final parent auto-completion check, single dashboard regeneration, lightweight health check, then loop back to Step 2c.
+When Step 2c produces a parallel batch of >= 2 tasks, execute them concurrently. Log the dispatch, set all batch tasks to "In Progress", annotate held-back tasks with `conflict_note`, spawn one `Task` agent per task (`model: "opus"`, `max_turns: 40`), and poll for completion with incremental re-dispatch (newly-unblocked tasks start as earlier ones finish). After all agents complete: final parent auto-completion check, single dashboard regeneration, operational checks (Step 6), then loop back to Step 2c.
 
 **Key rules:**
 - Each parallel agent reads `implement-agent.md` and runs Steps 2/4/5/6a/6b independently
@@ -611,13 +611,14 @@ Questions accumulate in `.claude/support/questions/questions.md` during work.
 
 **Dashboard integration:** Unresolved questions (especially blocking ones) appear in the dashboard's "Action Required" → "Reviews" sub-section during regeneration.
 
-### Step 6: Lightweight Health Check
+### Step 6: Operational Checks
 
-Run the Part 6 lightweight checks from `.claude/commands/health-check.md` § "Part 6: Lightweight Health Checks (Continuous)". These include 13 checks (4 critical, 3 error, 5 warning, 1 info). Critical checks — verification debt, drift budget, stale "Awaiting Verification", completion gate integrity — block further work if they fail.
+<!-- TODO: Define operational checks inline here during work.md deep dive.
+     These were previously delegated to health-check.md Part 6, which has been removed.
+     health-check.md is now a standalone manual maintenance tool.
+     The operational checks that /work needs should be defined directly in this step. -->
 
-**Full check list, output format, and severity levels:** See health-check.md Part 6.
-
-This is a lightweight subset of `/health-check`. Use `/health-check` for full validation (Parts 1-5).
+Run quick validation after task dispatch to catch issues before they compound. Use `/health-check` for full maintenance validation (Parts 1-5).
 
 ---
 
@@ -731,8 +732,7 @@ Use `/work complete` for manual task completion outside of implement-agent's wor
      - Recalculate critical path line in Progress section with remaining incomplete tasks
      - Add completed task to Recently Completed with completion_date
 7. **Auto-archive check** - If active task count > 100, archive old tasks
-8. **Lightweight health check** - Run quick validation (see Step 6 in main process)
-   - Output: `Quick check: ✓` or `Quick check: ⚠️ N issues`
+8. **Operational checks** - Run quick validation (see Step 6 in main process)
 
 ### Rules
 

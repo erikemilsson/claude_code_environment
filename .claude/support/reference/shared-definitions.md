@@ -134,7 +134,7 @@ Canonical definitions for terms used across the environment. Terms already defin
 |------|------------|
 | **Spec Drift** | When spec changes after tasks were decomposed from it. Detected by comparing current spec hash against task fingerprints. |
 | **Drift Deferral** | When user selects "Skip section" during reconciliation. Recorded in `.claude/drift-deferrals.json` with timestamp. |
-| **Drift Budget** | Limit on unreconciled drift. Configured via `drift_policy` in spec frontmatter: `max_deferred_sections` (default: 3), `max_deferral_age_days` (default: 14). Enforced by `/work` and `/health-check`. |
+| **Drift Budget** | Limit on unreconciled drift. Configured via `drift_policy` in spec frontmatter: `max_deferred_sections` (default: 3), `max_deferral_age_days` (default: 14). Enforced by `/work`. |
 | **Reconciliation** | Updating tasks to match a changed spec. Options per section: apply suggestions, review individually, skip (creates deferral), mark out-of-spec. |
 
 ### Verification
