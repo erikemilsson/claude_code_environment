@@ -289,7 +289,31 @@ Review items are derived, not stored. During regeneration:
 3. Never carry forward stale entries — resolved items disappear on next regeneration
 4. No dangling references — every item must link to a concrete file
 5. Blocking questions: scan `questions.md` for `[BLOCKING]` entries, render each as a review item linking to [questions.md](support/questions/questions.md)
-6. Non-blocking unanswered questions: if count > 0, add summary line to Reviews: `- [ ] **N pending questions** → [questions.md](support/questions/questions.md)`
+6. Non-blocking unanswered questions: if count > 0, add summary line to Reviews: `- [ ] **N pending questions** → [questions.md](support/questions/questions.md)
+
+### Out-of-Spec Task Approval UI
+
+Out-of-spec tasks (`out_of_spec: true`) require explicit user approval before execution. The approval UI appears in **Action Required → Reviews**:
+
+**Presentation format:**
+```markdown
+- [ ] **Task {id}: {title}** — Review and approve out-of-spec task → [task-{id}.json](../tasks/task-{id}.json)
+```
+
+**User actions (via `/work` after reviewing):**
+- `[A]` Accept → Sets `out_of_spec_approved: true`, task becomes eligible for execution
+- `[R]` Reject → Sets `out_of_spec_rejected: true`, prompts for optional `rejection_reason`, archives task to `.claude/tasks/archive/`
+- `[D]` Defer → Task remains in pending state, continues to appear in Reviews on next regeneration
+- `[AA]` Accept all → Batch-approves all pending out-of-spec tasks
+
+**Where out-of-spec tasks come from:**
+1. User requests that don't align with spec (user chose "Proceed anyway" during `/work` Step 2 spec check)
+2. verify-agent recommendations (improvement suggestions beyond spec acceptance criteria, created with `out_of_spec: true` + `source: "verify-agent"`)
+
+**Dashboard visibility:**
+- Unapproved out-of-spec tasks appear in both "Action Required → Reviews" (for approval) and "Tasks" section (with ⚠️ prefix)
+- Approved out-of-spec tasks appear only in "Tasks" section (with ⚠️ prefix)
+- Rejected out-of-spec tasks are archived and removed from dashboard
 
 ### Section Display Rules
 

@@ -180,6 +180,8 @@ After phase and decision checks, assess whether multiple tasks can be dispatched
 
 **CRITICAL: Verification enforcement.** Before routing to phase-level verification or completion, EVERY "Finished" spec task must have `task_verification.result == "pass"`. Never skip this check.
 
+**Note on enforcement mechanism:** This verification requirement is enforced *procedurally* through workflow ordering (the checks in Step 3 below), not *structurally* at the file-write level. The workflow ensures compliance through status transition sequencing: tasks can only reach "Finished" after passing per-task verification. `/health-check` detects violations after the fact (verification debt), but the primary enforcement is through the workflow steps that prevent bypassing verification during normal operation.
+
 **Explicit routing algorithm:**
 ```
 1. Get all spec tasks (exclude out_of_spec: true, exclude status "Absorbed")

@@ -86,7 +86,7 @@
 | parent_task | String | Parent task ID if this is a subtask |
 | files_affected | Array | File paths this task will modify |
 | external_dependency | Object | External blocker - see External Dependencies below |
-| notes | String | Context, warnings, or completion notes |
+| notes | String | Context, warnings, or completion notes - see Completion Notes Contract below |
 | user_feedback | String | Feedback provided by the user via dashboard inline areas or during /work complete |
 | spec_fingerprint | String | SHA-256 hash of spec at task decomposition (drift detection) |
 | spec_version | String | Spec filename when task was created (e.g., "spec_v1") |
@@ -286,6 +286,50 @@ Tasks that bypass verification create "verification debt":
 | Finished with critical issues in `task_verification.issues` | Passed verification but has critical issues that should block |
 
 **Debt is tracked in the dashboard** under "Action Required" → "Verification Debt" and **blocks project completion**.
+
+**How verification debt is computed:**
+1. Scan all tasks with `status: "Finished"` (excluding `out_of_spec: true` tasks)
+2. Count tasks meeting any debt condition above
+3. Display count in dashboard footer: `⚠️ N verification debt`
+4. Surface each debt item in "Action Required" → "Verification Debt" with task ID, title, and specific issue
+
+**How it blocks completion:**
+- `/work` Step 3 routing algorithm checks for verification debt before routing to phase-level verification or completion
+- If debt count > 0, `/work` routes to verify-agent (per-task) for the first unverified task instead of proceeding to phase-level verification
+- The completion gate (work.md § "If Completing") requires zero verification debt before updating spec status to `complete`
+
+## Completion Notes Contract
+
+The `notes` field serves as structured completion notes for context transfer between implement-agent and verify-agent.
+
+**Purpose:** When implement-agent completes a task, it writes completion notes that verify-agent reads to understand what was done — without carrying the full implementation conversation.
+
+**Expected format:**
+```json
+{
+  "notes": "Implemented login flow with JWT tokens. Updated auth middleware. Added input validation for email format."
+}
+```
+
+**What to include:**
+- **Deliverables summary** — what was built/changed (high-level, 1-3 sentences)
+- **Key decisions** — choices made that affect verification (e.g., "Used bcrypt for password hashing", "Deferred error logging to Phase 2")
+- **Known limitations** — edge cases not handled, deferred work, assumptions made
+- **Integration notes** — how this task connects to others (e.g., "Outputs JSON format expected by Task 5")
+
+**What NOT to include:**
+- Implementation details (line-by-line changes, code snippets)
+- Full reasoning or alternatives considered
+- Temporary debugging notes
+- Conversation history or context from the implementation session
+
+**Verification context transfer:**
+verify-agent receives:
+1. Task JSON (including `notes` field with completion notes)
+2. Relevant spec section (`spec_section` field)
+3. Files affected (`files_affected` list)
+
+This gives verify-agent useful signal without implementation conversation baggage, enabling genuine "fresh eyes" verification.
 
 ## External Dependencies
 

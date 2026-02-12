@@ -428,13 +428,24 @@ When questions accumulate:
 
 ## Questions System
 
-Questions accumulate in `.claude/support/questions/questions.md` under categories: Requirements, Technical, Scope, Dependencies.
+During execution, when implement-agent or verify-agent encounter something they can't resolve autonomously — a spec ambiguity, a technical choice needing user input, a dependency question — they write it to `.claude/support/questions/questions.md` under categories: Requirements, Technical, Scope, Dependencies. Questions are surfaced to the user in the dashboard's Action Required section at natural checkpoints.
 
 **Blocking vs Non-Blocking:**
 - `[BLOCKING]` prefix → cannot proceed, triggers immediate checkpoint
 - Non-blocking → note assumption, present at next phase boundary
 
-**At checkpoints:** Group by category, prioritize blocking, present to human, clear when answered.
+**Checkpoints where questions are surfaced:**
+
+| Checkpoint | Trigger Condition | Question Type Presented |
+|------------|-------------------|-------------------------|
+| **Immediate** | `[BLOCKING]` question added | Blocking only — work halts until answered |
+| **After task completion** | Task transitions to "Finished" | All unanswered questions (blocking + non-blocking) |
+| **Phase boundary (Execute → Verify)** | All tasks in phase finished | All unanswered questions |
+| **Phase boundary (Verify → Complete)** | Phase-level verification passes | All unanswered questions |
+| **Quality gate failure** | Tests fail, spec violation detected | All unanswered questions |
+| **Manual checkpoint** | User runs `/work` after answering questions in questions.md | All unanswered questions (validation that answers were captured) |
+
+**At checkpoints:** Group by category, prioritize blocking first, present to human, clear answered questions to "Answered Questions" table when resolved.
 
 ---
 
@@ -510,7 +521,7 @@ When you need to add features or change requirements after initial decomposition
 
 - **Single-spec invariant**: Exactly one `spec_v{N}.md` exists in `.claude/` at any time
 - **Version discovery**: `/work` globs for `spec_v*.md` and uses the highest N
-- **Direct edits are safe**: The decomposed snapshot preserves the pre-edit state; drift detection handles reconciliation
+- **Direct edits are safe**: The decomposed snapshot preserves the pre-edit state; drift detection handles reconciliation. After editing, run `/work` to continue building (detects changes and reconciles affected tasks) or `/iterate` to keep refining
 - **Version bumps** are for major transitions (phase completion, inflection points, major pivots) — not for routine edits
 - **Substantial change detection**: `/work` evaluates change magnitude and suggests a version bump when edits are large enough
 - **Version Transition Procedure**: Archive → Copy → Bump frontmatter → Remove old (see `iterate.md` § "Version Transition Procedure")
