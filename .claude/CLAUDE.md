@@ -28,7 +28,7 @@ This environment is domain-agnostic. It works for software development, research
 
 **This is pragmatic, not rigid.** The dashboard is the primary communication hub during active development. Post-completion activities (testing, deployment) may involve more direct interaction. Claude should surface information through the dashboard when it makes sense, not force everything through it artificially.
 
-The dashboard has a **Sections** checklist at the top — check or uncheck items to control which sections Claude generates during `/work`. Optional sections like Visualizations and Sub-Dashboards default to unchecked.
+The dashboard has a **Sections** checklist at the top — check or uncheck items to control which sections Claude generates during `/work`. Sub-Dashboards is optional and defaults to unchecked.
 
 **Note:** The dashboard ships as a populated format example (a fictional renovation project). On first `/work` run after spec decomposition, it is replaced with your actual project data. The example exists so Claude can see exactly what format to produce.
 
@@ -93,10 +93,11 @@ Commands defined in `.claude/commands/` for this workflow. Not Claude Code built
 
 Tasks are tracked in `.claude/tasks/` as JSON files. The **Project Dashboard** at `.claude/dashboard.md` is your communication channel with Claude during the build phase:
 - 🚨 **Action Required** — everything Claude needs from you: decisions, tasks, reviews — with links and completion signals
-- 📊 **Progress** — phase breakdown, critical path, and recent activity
+- 📊 **Progress** — phase breakdown, critical path, timeline, and recent activity
 - 📋 **Tasks** — full task list by phase
 - 📋 **Decisions** — decision log with status
 - 💡 **Notes** — your preserved notes section
+- Optional: **Sub-Dashboards** (toggle via Sections checklist)
 
 **Key rules:**
 - Break down tasks with difficulty >= 7 before starting
@@ -119,6 +120,10 @@ When facing significant choices, create a decision record rather than deciding i
 ## Workspace
 
 Temporary documents go in `.claude/support/workspace/` (scratch, research, drafts). Never create working documents in the project root. See `.claude/support/workspace/README.md` for directory rules and file placement guide.
+
+## Documents
+
+User-provided reference files (PDFs, contracts, vendor docs, permits, etc.) go in `.claude/support/documents/`. When the user provides a file path, move it there with a descriptive filename. See `.claude/support/documents/README.md` for conventions.
 
 ## Archiving Rules
 

@@ -15,7 +15,8 @@
 | Decision research archive | `.claude/support/decisions/.archive/` |
 | Workspace/scratch | `.claude/support/workspace/` |
 | Dashboard | `.claude/dashboard.md` |
-| Questions | `.claude/support/questions.md` |
+| Questions | `.claude/support/questions/questions.md` |
+| Documents | `.claude/support/documents/` |
 | Vision documents | `.claude/vision/` |
 | Reference docs | `.claude/support/reference/` (see `README.md` for index) |
 | Learnings | `.claude/support/learnings/` (see `README.md` for categories) |

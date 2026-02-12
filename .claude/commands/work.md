@@ -41,7 +41,7 @@ For workflow concepts (phases, agent synergy, checkpoints), see `.claude/support
 Read and analyze:
 - `.claude/spec_v{N}.md` - The specification (source of truth)
 - `.claude/dashboard.md` - Task status and progress
-- `.claude/support/questions.md` - Pending questions
+- `.claude/support/questions/questions.md` - Pending questions
 
 ### Step 1a: Dashboard Freshness Check
 
@@ -94,14 +94,15 @@ If tasks exist with spec_fingerprint:
 
 **Hash computation:**
 ```bash
-sha256sum .claude/spec_v{N}.md | cut -d' ' -f1
+# Use shasum (available on macOS and Linux; sha256sum is Linux-only)
+shasum -a 256 .claude/spec_v{N}.md | cut -d' ' -f1
 # Prefix with "sha256:" → "sha256:a1b2c3d4..."
 ```
 
 **Section fingerprint computation:**
 ```bash
 # For each ## section, hash: heading + all content until next ## or EOF
-echo -n "## Authentication\nContent here..." | sha256sum | cut -d' ' -f1
+printf '%s' "## Authentication\nContent here..." | shasum -a 256 | cut -d' ' -f1
 # Prefix with "sha256:" → "sha256:e5f6g7h8..."
 ```
 
@@ -642,7 +643,7 @@ The primary source for section toggles is the **dashboard.md section toggle chec
 
 **First regeneration (replacing template example):**
 
-On the initial dashboard generation (when replacing the example with real project data), compute toggle defaults from project state instead of using static defaults:
+Detection: the dashboard is still the template example if it contains the line `> **This is a format example**`. On first regeneration, compute toggle defaults from project state instead of using static defaults:
 
 ```
 Action Required  → [x] always (core section)
@@ -651,7 +652,6 @@ Tasks            → [x] always (core section)
 Decisions        → [x] if any decision-*.md files exist, [ ] otherwise
 Notes            → [x] always (preserve mode)
 Timeline         → [x] if any task has due_date or external_dependency.expected_date, [ ] otherwise
-Visualizations   → [x] if any files exist in .claude/support/visualizations/, [ ] otherwise
 Sub-Dashboards   → [x] if any sub-dashboard files are referenced in spec, [ ] otherwise
 ```
 
@@ -683,7 +683,7 @@ The checkbox UI maps to `build`/`exclude`. Users who need `maintain` mode can se
    - All `decision-*.md` files in `.claude/support/decisions/` (decisions)
    - `drift-deferrals.json` (if exists)
    - `verification-result.json` (if exists)
-   - `.claude/support/questions.md` (scan for blocking questions)
+   - `.claude/support/questions/questions.md` (scan for blocking questions)
 
 2. **Backup user section**
    - Extract content between `<!-- USER SECTION -->` and `<!-- END USER SECTION -->`
@@ -698,12 +698,20 @@ The checkbox UI maps to `build`/`exclude`. Users who need `maintain` mode can se
 3. **Generate dashboard**
    - Follow the Section Format Reference below for all formatting rules
    - Use exact section headings: `# Dashboard`, `## 🚨 Action Required`, `## 📊 Progress`, `## 📋 Tasks`, `## 📋 Decisions`, `## 💡 Notes`
-   - Optional section headings (when enabled, placed between Decisions and Notes): `## 📈 Visualizations`, `## 📑 Sub-Dashboards`
+   - Optional section heading (when enabled, placed between Decisions and Notes): `## 📑 Sub-Dashboards`
    - **Timeline sub-section** in Progress: render when any task has `due_date` or `external_dependency.expected_date`
+   - **Project Overview sub-section** in Progress: render inline Mermaid diagram when 4+ tasks remain (see § "Project Overview Diagram")
    - Read section toggles from dashboard checklist (between `<!-- SECTION TOGGLES -->` markers) and respect modes
    - Preserve the section toggle checklist between its markers during regeneration
    - Enforce atomicity: only tasks with JSON files, only decisions with MD files
-   - On first regeneration: replace the template example with actual project data
+   - On first regeneration (detected by `> **This is a format example**` line): replace the template example with actual project data and compute toggle defaults per the "First regeneration" section above
+   - **Inline feedback areas:** When generating "Your Tasks", add feedback markers for each `human`/`both`-owned task:
+     ```
+     <!-- FEEDBACK:{id} -->
+     **Task {id} — Feedback:**
+     [Leave feedback here, then run /work complete {id}]
+     <!-- END FEEDBACK:{id} -->
+     ```
 
 4. **Compute and add metadata block** (after `# Dashboard` title)
    ```
@@ -719,6 +727,11 @@ The checkbox UI maps to `build`/`exclude`. Users who need `maintain` mode can se
 5. **Restore user section**
    - Insert backed-up content between markers
    - If markers missing, append with warning comment
+
+5b. **Restore inline feedback**
+   - For each feedback entry backed up in Step 2b:
+     - If the task still appears in "Your Tasks" (task still active with `human`/`both` owner): restore the backed-up content between its `<!-- FEEDBACK:{id} -->` markers
+     - If the task is no longer in "Your Tasks" (completed or removed): write the feedback content to the task JSON `user_feedback` field (preserves feedback that would otherwise be lost)
 
 6. **Add footer line** (at very end)
    ```
@@ -745,7 +758,8 @@ Review items are derived, not stored. During regeneration:
 2. Populate Reviews sub-section from current data
 3. Never carry forward stale entries — resolved items disappear on next regeneration
 4. No dangling references — every item must link to a concrete file
-5. Blocking questions: scan `questions.md` for `[BLOCKING]` entries, render each as a review item linking to [questions.md](support/questions.md)
+5. Blocking questions: scan `questions.md` for `[BLOCKING]` entries, render each as a review item linking to [questions.md](support/questions/questions.md)
+6. Non-blocking unanswered questions: if count > 0, add summary line to Reviews: `- [ ] **N pending questions** → [questions.md](support/questions/questions.md)`
 
 **Section Display Rules:**
 - Action Required sub-sections: only render when they have content (omit empty categories entirely)
@@ -761,10 +775,9 @@ Review items are derived, not stored. During regeneration:
 - "This week" line: omit when all counts are zero
 - Tasks grouped by phase with per-phase progress lines
 - Tasks with `conflict_note`: show status as `Pending (held: conflict with Task {id})` during parallel dispatch
-- Decisions: decided → show selected option name; pending → link to doc in Selected column
+- Decisions: status display mapping: `approved`/`implemented` → "Decided", `draft`/`proposed` → "Pending". Decided → show selected option name; Pending → link to doc in Selected column
 - Out-of-spec tasks: prefix title with ⚠️
 - Footer: healthy = spec aligned tooltip; issues = ⚠️ with counts
-- Visualizations section: link collection to `.claude/support/visualizations/` files (when enabled)
 - Sub-Dashboards section: link collection to domain-specific tracking files (when enabled)
 
 **Per-Section Format:**
@@ -779,7 +792,7 @@ Review items are derived, not stored. During regeneration:
 | Progress → Timeline | `Date \| Item \| Status \| Notes` — sorted chronologically, overdue: strikethrough date + ⚠️ OVERDUE prefix, external deps with contact info, human tasks marked with ❗ |
 | Tasks → Per phase | `ID \| Title \| Status \| Diff \| Owner \| Deps` — grouped by phase headers |
 | Decisions | `ID \| Decision \| Status \| Selected` |
-| Visualizations | Bulleted link list to `.mmd` or diagram files |
+| Progress → Project Overview | Inline Mermaid `graph LR` diagram — see Project Overview Diagram rules below |
 | Sub-Dashboards | Bulleted link list to domain-specific `.md` files |
 
 **Domain Agnosticism:**
@@ -827,7 +840,7 @@ Execute these steps in order:
    - Step 4: Implementation done
    - Step 5: Self-review completed
    - Step 6a: Task JSON updated to `"Awaiting Verification"`
-   - Step 6b: verify-agent runs per-task verification → status becomes `"Finished"` if pass
+   - Step 6b: verify-agent **spawned as a separate Task agent** (fresh context, no implementation memory) → status becomes `"Finished"` if pass
    - Step 6c: Dashboard regenerated
 3. **Context to provide:** Current task, relevant spec sections, constraints/notes
 
@@ -872,8 +885,9 @@ This note is surfaced in the dashboard Tasks section (appended to the task's Sta
 Use Claude Code's `Task` tool to spawn one agent per task. **Always set `model: "opus"`** to ensure agents run on Claude Opus 4.6. Each agent receives:
 - The task JSON to execute
 - Instructions to read `.claude/agents/implement-agent.md`
-- Instructions to follow Steps 2, 4, 5, 6a, and 6b (understand, implement, self-review, mark awaiting verification, trigger per-task verification)
+- Instructions to follow Steps 2, 4, 5, 6a, and 6b (understand, implement, self-review, mark awaiting verification, spawn verify-agent as a sub-agent for per-task verification)
 - **Explicit instruction: "DO NOT regenerate dashboard. DO NOT select next task. DO NOT check parent auto-completion. Return results when verification completes."**
+- **Note:** Each parallel implement-agent will spawn its own verify-agent sub-agent (nested Task call). This is expected — verification separation applies in parallel mode too.
 
 All agents run concurrently via parallel `Task` tool calls with `model: "opus"`.
 
@@ -932,13 +946,27 @@ When some tasks pass and others fail verification:
 
 #### If Verifying (Per-Task)
 
-**You must use the verify-agent per-task workflow. Do not verify directly.**
+**You must spawn verify-agent as a separate agent. Do not verify inline.**
 
-Execute these steps in order:
+Spawn a verify-agent using the `Task` tool (same pattern as implement-agent Step 6b):
 
-1. **Read the agent file now:** Use the Read tool to read `.claude/agents/verify-agent.md` in full.
-2. **Identify the mode:** This is a **per-task** verification. Follow the "Per-Task Verification Workflow" section (Steps T1 through T8).
-3. **Context to provide:** The specific task JSON that needs verification, its spec section, and completion notes.
+```
+Task tool call:
+  subagent_type: "general-purpose"
+  model: "opus"
+  description: "Verify task {id}"
+  prompt: |
+    You are the verify-agent. Read `.claude/agents/verify-agent.md` and follow
+    the Per-Task Verification Workflow (Steps T1-T8) for this task.
+
+    Task file: .claude/tasks/task-{id}.json
+    Spec file: .claude/spec_v{N}.md (section: "{spec_section}")
+
+    Verify the implementation independently. Do NOT assume correctness.
+    Write your verification result to the task JSON (task_verification field).
+    Update task status to "Finished" (pass) or "In Progress" (fail).
+    Return your T8 report.
+```
 
 **After per-task verification completes:**
 - If **pass**: Proceed to select next pending task (loop back to Execute routing)
@@ -980,15 +1008,29 @@ Before starting phase-level verification, ALL drift must be reconciled:
 
 **Why:** Verifying against a spec that doesn't match task definitions produces unreliable results. Reconciliation ensures tasks actually reflect what the spec says before verification runs.
 
-Execute these steps in order:
+Spawn a verify-agent using the `Task` tool:
 
-1. **Read the agent file now:** Use the Read tool to read `.claude/agents/verify-agent.md` in full. Do not skip this step or work from memory.
-2. **Identify the mode:** This is a **phase-level** verification. Follow the "Phase-Level Verification Workflow" section (Steps 1 through 8). Required outputs:
-   - Step 3: Per-criterion pass/fail table (not just a summary)
-   - Step 5: Issue categorization (critical/major/minor counts)
-   - Step 7: `verification-result.json` written with all required fields
-   - Step 8: Verification report displayed to user
-3. **Context to provide:** List of completed work with per-task verification results, spec acceptance criteria, test commands
+```
+Task tool call:
+  subagent_type: "general-purpose"
+  model: "opus"
+  description: "Phase-level verification"
+  prompt: |
+    You are the verify-agent. Read `.claude/agents/verify-agent.md` and follow
+    the Phase-Level Verification Workflow (Steps 1-8).
+
+    Spec file: .claude/spec_v{N}.md
+    Task directory: .claude/tasks/
+
+    Validate the full implementation against spec acceptance criteria.
+    Required outputs:
+    - Step 3: Per-criterion pass/fail table
+    - Step 5: Issue categorization (critical/major/minor counts)
+    - Step 7: Write verification-result.json with all required fields
+    - Step 8: Return the verification report
+
+    Create fix tasks for any issues found. Do NOT implement fixes yourself.
+```
 
 **After phase-level verification completes:**
 
@@ -1033,7 +1075,7 @@ When all tasks are finished and verification conditions are met:
 
 ### Step 5: Handle Questions
 
-Questions accumulate in `.claude/support/questions.md` during work.
+Questions accumulate in `.claude/support/questions/questions.md` during work.
 
 **Check for questions at these points:**
 - After completing a task (before selecting the next one)
@@ -1043,7 +1085,7 @@ Questions accumulate in `.claude/support/questions.md` during work.
 
 **Process:**
 
-1. **Read `.claude/support/questions.md`** — check for unresolved questions (items under Requirements, Technical, Scope, or Dependencies that aren't in the Answered table)
+1. **Read `.claude/support/questions/questions.md`** — check for unresolved questions (items under Requirements, Technical, Scope, or Dependencies that aren't in the Answered table)
 
 2. **If questions exist, present them:**
    ```
@@ -1124,27 +1166,48 @@ For the difficulty scale, see `.claude/support/reference/shared-definitions.md`.
 
 The critical path is rendered as a single line in the **Progress** section: owner-tagged steps joined by `→`, with parallel branches shown in `[ | ]` notation.
 
-1. **Find unblocked incomplete tasks** — tasks with no unfinished dependencies
-2. **Build dependency graph** — trace all dependency relationships (forward and reverse)
-3. **Identify longest chain** — this is the critical path (determines project duration)
-4. **Detect parallel branches** — find fork/join points where multiple paths diverge from a common predecessor and reconverge at a common successor
-   - A **fork** is a node with 2+ incomplete successors
-   - A **join** is a node where 2+ paths converge
-   - Only show parallelism when the branches are on or adjacent to the critical path
-5. **Format as one-liner:**
+1. **Build dependency graph** — include all incomplete tasks and their dependencies (both task deps and decision deps). Unresolved decisions appear as nodes (e.g., `❗ Resolve DEC-001`)
+2. **Compute longest path** — walk the graph to find the longest chain from any current entry point to "Done". This is the critical path (determines project duration)
+3. **Detect parallel branches** — find fork/join points along the critical path:
+   - A **fork** is a node whose completion enables 2+ independent successors
+   - A **join** is a node with 2+ predecessors that must all complete before it starts
+   - Show parallel branches when they share the same fork and join nodes (the branches reconverge)
+   - Branches that don't reconverge are separate sequential paths — pick the longest
+4. **Format as one-liner:**
    - Sequential: `❗ Resolve DEC-001 → 🤖 Build API → Done`
-   - Parallel branches: `❗ Resolve DEC-001 → [🤖 Task A | 🤖 Task B] → 🤖 Merge step → Done`
+   - Parallel branches: `[🤖 Rough plumbing | ❗ Resolve DEC-002] → [❗ Inspection | 🤖 Install] → 👥 Walkthrough → Done`
    - Owners: `❗` (human), `🤖` (Claude), `👥` (both)
-   - Step count includes all steps across branches: `*(N steps)*`
+   - **Step count** = total unique nodes in the rendered path (each branch member counts as 1): `*(N steps)*`
    - For complex paths (>5 steps after collapsing parallel branches), show first 3 + "... N more → Done"
-6. **Prioritize human-owned steps** — surfaces blockers the user can act on
+5. **Prioritize human-owned steps** — surfaces blockers the user can act on
+
+**Decision dependencies as path nodes:** Unresolved decisions appear on the critical path as `❗ Resolve {DEC-ID}` steps. Once resolved, they are removed and their successor tasks become direct successors of the decision's predecessors.
 
 **Parallel branch rules:**
 - Max 3 branches in a single `[ | ]` group (more than 3 → collapse to `[🤖 3 parallel tasks]`)
-- Nested parallelism: don't nest `[ ]` — flatten to separate groups with `→` between them
+- Nested parallelism: don't nest `[ ]` — flatten to separate `[ | ]` groups joined by `→`
 - If parallel branches have different owners, show each: `[❗ Review | 🤖 Build]`
+- Branches of unequal length: show each by its first step (the branch content is what matters, not padding)
 
 **Edge cases:** No dependencies → "All tasks can start now". No incomplete → "All tasks complete!". Single task → just that task → Done. No parallelism detected → pure sequential format (no brackets).
+
+### Project Overview Diagram
+
+An inline Mermaid diagram in the Progress section showing the project's dependency structure at a glance. Placed after the critical path one-liner, before the "This week" activity line, under a `### Project Overview` sub-heading.
+
+**Generation rules:**
+
+1. **Completed phases** → Collapse into a single node: `["✅ Phase Name (N/N)"]`
+2. **Completed tasks in active phases** → Fold away. Reroute their connections: connect their predecessors directly to their incomplete successors. This keeps the diagram focused on remaining work.
+3. **Active/pending tasks** → Show individually with ownership prefix: `🤖` (claude), `❗` (human), `👥` (both)
+4. **Decisions** → Diamond nodes: `{"❓ Decision title"}`
+5. **Dependencies** → Arrows between nodes following task dependency data
+6. **Date constraints** → Annotate nodes with deadlines when present: `["🤖 Task title<br/><small>Due: 2026-02-15</small>"]`
+7. **Clumping** → When >15 active nodes would result, group related tasks into subgraph clusters by phase or functional area to reduce visual noise
+8. **Direction** → Always `graph LR` (left to right)
+9. **Labels** → Keep short: ownership emoji + task title. No status text in labels.
+
+**Edge cases:** No tasks → omit diagram. All tasks complete → omit diagram (project done). Single task → omit diagram (one-liner is sufficient). Fewer than 4 remaining tasks → omit diagram (one-liner covers it).
 
 ---
 
@@ -1199,13 +1262,17 @@ Use `/work complete` for manual task completion outside of implement-agent's wor
 3. **Check work** - Review all changes made for this task
    - Look for bugs, edge cases, inefficiencies
    - If issues found, fix them before proceeding
+3b. **Capture inline feedback** - Read dashboard for `<!-- FEEDBACK:{id} -->` markers matching the completing task
+   - If non-empty content found (user wrote feedback between the markers), save it to the task JSON `user_feedback` field in Step 4
+   - This ensures feedback is captured before dashboard regeneration clears the inline area
 4. **Update task file:**
    ```json
    {
      "status": "Finished",
      "completion_date": "YYYY-MM-DD",
      "updated_date": "YYYY-MM-DD",
-     "notes": "What was done, any follow-ups needed"
+     "notes": "What was done, any follow-ups needed",
+     "user_feedback": "Use OAuth2 instead of JWT. The client requires SSO support."
    }
    ```
 5. **Check parent auto-completion:**

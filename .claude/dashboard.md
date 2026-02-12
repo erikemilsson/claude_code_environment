@@ -16,8 +16,7 @@ drift_deferrals: 0
 - [x] Decisions
 - [x] Notes
 - [x] Timeline
-- [ ] Visualizations
-- [ ] Sub-Dashboards
+- [x] Sub-Dashboards
 <!-- END SECTION TOGGLES -->
 
 > **This is a format example** using a fictional renovation project. It will be replaced with your actual project data when you run `/work`.
@@ -52,11 +51,17 @@ drift_deferrals: 0
 
 | Task | What To Do | Where |
 |------|------------|-------|
-| 8 | Obtain building permit from city hall | [permit-application.pdf](../permits/permit-application.pdf) |
+| 8 | Obtain building permit from city hall | [permit-application.pdf](support/documents/permit-application.pdf) |
+
+<!-- FEEDBACK:8 -->
+**Task 8 — Feedback:**
+Applied in person on 2026-01-25. Expect 2-week processing time.
+<!-- END FEEDBACK:8 -->
 
 ### Reviews
 
-- [ ] **Plumbing code compliance?** — blocking question needs answer before Phase 3 → [questions.md](support/questions.md)
+- [ ] **Plumbing code compliance?** — blocking question needs answer before Phase 3 → [questions.md](support/questions/questions.md)
+- [ ] **2 pending questions** → [questions.md](support/questions/questions.md)
 
 ---
 
@@ -77,7 +82,23 @@ drift_deferrals: 0
 | 2026-02-10 | Task 10 — Electrical inspection | Pending | ❗ Human task |
 | 2026-02-15 | External: Flooring delivery | Waiting | Contact: Bob at FloorCo |
 
-**Critical path:** ❗ Resolve DEC-002 → 🤖 Install flooring → 🤖 Final walkthrough → Done *(3 steps)*
+**Critical path:** [🤖 Rough plumbing | ❗ Resolve DEC-002] → [❗ Electrical inspection | 🤖 Install flooring] → 👥 Final walkthrough → Done *(5 steps)*
+
+### Project Overview
+
+```mermaid
+graph LR
+    P1["✅ Planning (4/4)"]
+    P1 --> T6["🤖 Order materials"]
+    P1 --> T8["❗ Building permit"]
+    P1 --> T9["🤖 Rough plumbing"]
+    DEC002{"❓ Flooring decision"}
+    T9 --> T10["❗ Electrical inspection"]
+    DEC002 --> T10
+    DEC002 --> T11["🤖 Install flooring"]
+    T10 --> T12["👥 Final walkthrough"]
+    T11 --> T12
+```
 
 **This week:** 1 completed · 1 started · 0 created
 
@@ -131,28 +152,23 @@ drift_deferrals: 0
 
 ---
 
-## 📈 Visualizations
-
-- [Phase workflow](support/visualizations/renovation-phases.mmd)
-- [Decision dependencies](support/visualizations/decision-graph.mmd)
-
----
-
 ## 📑 Sub-Dashboards
 
-- [Materials & Procurement](support/materials-tracking.md)
+- [Materials & Procurement](support/materials-tracking.md) — vendor orders, delivery tracking, budget vs. actual
 
 ---
 
 ## 💡 Notes
 
+**Quick links:**
+- **Questions** — blocking & unresolved items from work sessions → [questions.md](support/questions/questions.md)
+- **Decisions** — comparison records and research → [decisions/](support/decisions/)
+
 <!-- USER SECTION -->
 
 [Your notes here — ideas, questions, reminders]
 
-**Resources:** [Questions & Answers](support/questions.md) · [Decisions](support/decisions/)
-
 <!-- END USER SECTION -->
 
 ---
-*2026-01-28 14:30 UTC · 12 tasks · [Spec aligned](# "0 drift deferrals, 1 verification debt")*
+*2026-01-28 14:30 UTC · 12 tasks · ⚠️ 0 drift deferrals, 1 verification debt*

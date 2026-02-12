@@ -58,28 +58,26 @@ The `/work` command directs you to follow this workflow when:
 
 ## How This Workflow Is Invoked
 
-This file is read by `/work` during verification. **You are reading this file because `/work` directed you here.**
+This agent runs as a **separate context** from the implement-agent. You are spawned via the `Task` tool specifically so that you do NOT share the implementation conversation. This architectural separation is what makes verification meaningful — you have no memory of implementation decisions, only the artifacts.
 
-- **Per-task:** `/work` routes here when a task has status "Awaiting Verification". Follow the "Per-Task Verification Workflow" section (Steps T1–T8).
-- **Phase-level:** `/work` routes here after all spec tasks are finished and all have passing per-task verification. Follow the "Phase-Level Verification Workflow" section (Steps 1–8).
+- **Per-task:** You are spawned after a task reaches "Awaiting Verification" status. Follow the "Per-Task Verification Workflow" section (Steps T1–T8).
+- **Phase-level:** You are spawned by `/work` after all spec tasks are finished and all have passing per-task verification. Follow the "Phase-Level Verification Workflow" section (Steps 1–8).
 
 Do not skip steps, write results without performing actual verification, or declare pass without checking requirements. Each step produces a required output.
 
 ## Per-Task Verification Workflow
 
-Follow this workflow when `/work` routes you here in **per-task** mode — a single task was just marked "Awaiting Verification" and needs verification before the next task begins.
-
-**Parallel mode note:** In parallel mode, this workflow operates identically to sequential. Each parallel agent runs its own implement → verify cycle independently. The only difference is post-verification cleanup (Step T7) — see notes there.
+Follow this workflow when spawned in **per-task** mode — a single task was just marked "Awaiting Verification" and needs verification before the next task begins.
 
 ### Step T1: Read Task and Spec Context
 
 1. Read the task JSON file in full (status should be "Awaiting Verification")
 2. Read the spec section referenced by `spec_section` field
 3. Read the task description and completion notes
-4. **Independence principle:** You are verifying someone else's work. Approach with fresh eyes.
+4. **Independence principle:** You are running in a separate context from the implementer. Use this advantage.
    - Do NOT assume the implementation is correct just because it exists
    - Actually read and evaluate the files — don't rubber-stamp based on task notes
-   - If you have context suggesting you also implemented this task, be extra rigorous
+   - Your only inputs are the task JSON, spec, and file artifacts — judge solely on these
 
 ### Step T2: Verify File Artifacts
 
@@ -163,12 +161,12 @@ Record the per-task verification outcome in the task JSON:
 
 ### Step T7: Route Result
 
+Update the task JSON based on the result. **Do NOT regenerate the dashboard or select the next task** — you are a spawned agent; the calling context handles post-verification cleanup.
+
 | Result | Action |
 |--------|--------|
-| `pass` | Set task status to "Finished". Report result to `/work`. Proceed to next task. |
-| `fail` | Set task status back to "In Progress". Report issues to `/work`. implement-agent will fix and re-submit. |
-
-**In parallel mode:** Do not regenerate dashboard or select next task after routing. The `/work` coordinator handles dashboard regeneration and next-task selection after all parallel agents complete.
+| `pass` | Set task status to "Finished". Return your T8 report. |
+| `fail` | Set task status back to "In Progress". Return your T8 report with issues. |
 
 **When verification passes (status: "Awaiting Verification" → "Finished"):**
 ```json
@@ -184,7 +182,6 @@ The task now has both `status: "Finished"` AND `task_verification.result: "pass"
 - Append verification failure notes to the task `notes` field (prepend with `[VERIFICATION FAIL]`)
 - Clear `completion_date`
 - Update `updated_date`
-- Regenerate dashboard per work.md § "Dashboard Regeneration Procedure"
 
 **Re-verification limit:** Maximum 2 re-verification attempts per task. After 2 failures, set task status to "Blocked" with notes explaining the repeated failures and escalate to human review.
 
@@ -212,7 +209,7 @@ Task 5 verification: FAIL
 
 ## Phase-Level Verification Workflow
 
-Follow this workflow when `/work` routes you here in **phase-level** mode — all spec tasks are finished with passing per-task verification, and the full implementation needs validation against acceptance criteria.
+Follow this workflow when spawned in **phase-level** mode — all spec tasks are finished with passing per-task verification, and the full implementation needs validation against acceptance criteria.
 
 Each step produces a required output. The verification-result.json file (Step 7) must contain real per-criterion data from Step 3, not fabricated results.
 

@@ -21,7 +21,9 @@
     "customize": [
       ".claude/CLAUDE.md",
       "README.md",
-      ".claude/support/questions.md"
+      ".claude/support/questions/questions.md",
+      ".claude/support/questions/README.md",
+      ".claude/support/documents/README.md"
     ],
     "ignore": [
       ".claude/tasks/*.json",

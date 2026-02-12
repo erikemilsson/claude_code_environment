@@ -110,7 +110,7 @@ task back to "In Progress."
 
 ### Step 6: Document and Trigger Verification
 
-Implementation and verification are now a single atomic operation. A task only reaches "Finished" if verification passes.
+Implementation and verification are a single atomic operation. A task only reaches "Finished" if verification passes.
 
 #### Step 6a: Mark Ready for Verification
 
@@ -135,18 +135,38 @@ Update task with transitional status:
 
 #### Step 6b: Trigger Per-Task Verification (MANDATORY)
 
-Immediately after setting "Awaiting Verification", trigger verification:
+Immediately after setting "Awaiting Verification", **spawn a separate agent** for verification. This ensures genuine context separation — the verifier does not share the implementation conversation and cannot be biased by it.
 
-1. **Read the verify-agent file:** Use the Read tool to read `.claude/agents/verify-agent.md`
-2. **Follow per-task verification workflow:** Execute Steps T1-T8 from verify-agent's "Per-Task Verification Workflow" section
-3. **Handle the result:**
+**Spawn the verify-agent using the `Task` tool:**
+
+```
+Task tool call:
+  subagent_type: "general-purpose"
+  model: "opus"
+  description: "Verify task {id}"
+  prompt: |
+    You are the verify-agent. Read `.claude/agents/verify-agent.md` and follow
+    the Per-Task Verification Workflow (Steps T1-T8) for this task.
+
+    Task file: .claude/tasks/task-{id}.json
+    Spec file: .claude/spec_v{N}.md (section: "{spec_section}")
+
+    Verify the implementation independently. Do NOT assume correctness.
+    Write your verification result to the task JSON (task_verification field).
+    Update task status to "Finished" (pass) or "In Progress" (fail).
+    Return your T8 report.
+```
+
+**Why a separate agent:** Reading verify-agent.md in the same context that just implemented the task creates confirmation bias — the verifier has full memory of every implementation decision. Spawning a separate agent gives genuine "fresh eyes" by starting from only the task JSON, spec, and file artifacts.
+
+**Handle the result:**
 
 | Result | What Happens |
 |--------|--------------|
 | **Pass** | verify-agent sets status to "Finished" with `task_verification.result = "pass"` |
 | **Fail** | verify-agent sets status to "In Progress" with `[VERIFICATION FAIL]` notes. Return to Step 4 to fix issues, then re-verify. |
 
-**This is now atomic:** implement → verify. The gap where tasks could be "Finished" without verification no longer exists.
+**This is atomic:** implement → verify. The gap where tasks could be "Finished" without verification no longer exists.
 
 #### Step 6c: Post-Verification Cleanup
 

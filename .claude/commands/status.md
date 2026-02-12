@@ -27,7 +27,7 @@ Quick, read-only view of project state without starting any work.
 Read (but don't modify):
 - `.claude/dashboard.md` - Current status (primary data source)
 - `.claude/tasks/task-*.json` - Task data for phase detection
-- `.claude/support/questions.md` - Check for blocking questions
+- `.claude/support/questions/questions.md` - Check for blocking questions
 - `.claude/spec_v{N}.md` - Check phase (Spec/Execute/Verify)
 
 **Important:** Use dashboard data for display. Only read task files for phase detection and data not in dashboard.

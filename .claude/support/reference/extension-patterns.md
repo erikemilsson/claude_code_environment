@@ -120,13 +120,14 @@ When `/work` detects a task blocked by an unresolved decision:
 
 ### Post-Decision Behavior in `/work`
 
-When `/work` detects a previously-pending decision is now resolved:
+When `/work` detects a checked box in "## Select an Option" and the decision's frontmatter status is not yet `approved`/`implemented`:
 
-1. **Read the decision record** — check `inflection_point` field
-2. **If pick-and-go** (`inflection_point: false` or absent):
+1. **Auto-update frontmatter** — set `status: approved` and `decided: [today's date]`, extract selected option name
+2. **Check `inflection_point` field** in the decision record
+3. **If pick-and-go** (`inflection_point: false` or absent):
    - Unblock dependent tasks
    - Continue executing
-3. **If inflection point** (`inflection_point: true`):
+4. **If inflection point** (`inflection_point: true`):
    - Pause execution
    - Inform user: "Decision DEC-002 was an inflection point. The spec may need updating. Run `/iterate` to review affected sections, then `/work` to continue."
    - Do not proceed until `/iterate` has run
@@ -159,21 +160,25 @@ For projects with complex domain areas (workshop management, inventory, experime
 
 ---
 
-## Optional Visualizations
+## Project Overview Diagram
 
-For complex projects, create Mermaid diagram files in `.claude/support/visualizations/` and link from the dashboard.
+The dashboard includes an inline Mermaid diagram in the Progress section that provides a bird's-eye view of the project's dependency structure.
 
-**Enabling:** Check `Visualizations` in the **Sections** checklist at the top of `dashboard.md`. When enabled, a `## 📈 Visualizations` section appears in the dashboard as a link collection pointing to your diagram files.
+**When it appears:** Generated during dashboard regeneration when there are 4+ remaining tasks. For smaller projects, the critical path one-liner is sufficient.
 
-**When to use:**
-- Only when dashboard tables aren't sufficient to convey relationships or flow
-- Stale diagrams are worse than none — only create what you'll maintain
-- Useful for: workflow phases, decision dependency graphs, system architecture, progress timelines
+**What it shows:**
+- Completed phases collapsed into single nodes
+- Active/pending tasks with ownership indicators (🤖/❗/👥)
+- Decision gates as diamond nodes
+- Dependency arrows between tasks
+- Date constraints when present
 
-**Convention:**
-- Place diagram files in `.claude/support/visualizations/` (e.g., `support/visualizations/phase-flow.mmd`)
-- Use Mermaid (`.mmd`) format for portability
-- Keep diagrams focused — one concept per file
+**Design principles:**
+- Focus on relationships, not detail — clump completed work, show remaining structure
+- Ownership at a glance — immediately see what's Claude vs human vs collaborative
+- Compact — when >15 nodes would result, group by phase or functional area
+
+**Generation rules:** See `work.md` § "Project Overview Diagram" for the full algorithm.
 
 ---
 

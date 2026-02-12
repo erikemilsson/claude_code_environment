@@ -45,50 +45,72 @@ Parallel execution is a core template feature: when multiple tasks are eligible 
 
 ## Trace 24B: Dashboard shows parallel execution status
 
-- **Path:** dashboard.md → task status during parallel execution
-- A, B, D in progress; C queued
+- **Path:** dashboard.md → task status during parallel execution; work.md § "If Executing (Parallel)" Step 2
 
 ### Expected
 
-- Dashboard shows A, B, D as in_progress with their respective agents
-- Task C shown as pending/queued with reason: "Waiting for Task A (file conflict: `src/database/models.py`)"
+- Dashboard shows A, B, D as "In Progress"
+- Task C shown as "Pending (held: conflict with Task A)" — the `conflict_note` field drives this display
 - Overall progress reflects parallel work accurately
+
+### Mechanism
+
+Step 2 of "If Executing (Parallel)" annotates held-back tasks with a `conflict_note` in the task JSON:
+```json
+{ "conflict_note": "Held: file conflict with Task A on src/database/models.py. Auto-clears when conflict resolves." }
+```
+
+The Section Display Rules render this as: `Pending (held: conflict with Task A)` in the Status column.
 
 ### Pass criteria
 
-- [ ] Parallel task status is visible in dashboard
-- [ ] Conflict reason is visible in dashboard or task status
+- [ ] Parallel task status is visible in dashboard (A, B, D as "In Progress")
+- [ ] Conflict reason is visible in dashboard task status column via `conflict_note`
 - [ ] Queued task shows what it's waiting for and why
+- [ ] `conflict_note` is removed when the task is dispatched
 
 ### Fail indicators
 
-- Dashboard shows C as "pending" with no explanation of why it's not running
+- Dashboard shows C as "Pending" with no explanation of why it's not running
 - No indication that A, B, D are running concurrently
 - Conflict reason is only in logs, not visible to user
+- `conflict_note` persists after conflict resolves
 
 ---
 
 ## Trace 24C: After conflict resolves, queued task becomes eligible
 
-- **Path:** `/work` after Task A completes
-- Task A is now completed. Task C was waiting on it.
-- Tasks B and D may still be in progress
+- **Path:** `/work` "If Executing (Parallel)" Step 4 → incremental re-dispatch loop
+- Task A completes. Task C was waiting on it due to `src/database/models.py` conflict.
+- Tasks B and D are still in progress.
 
 ### Expected
 
-- Task C becomes eligible immediately after Task A completes
-- If B or D are still running, C can run in parallel with them (no file conflicts)
-- No manual intervention needed to unblock C
+- Task C becomes eligible immediately after Task A completes (within the same polling loop iteration)
+- C is dispatched in parallel with still-running B and D (no file conflicts between them)
+- C's `conflict_note` is cleared when it's dispatched
+- No manual intervention needed
+
+### Mechanism
+
+Step 4 of "If Executing (Parallel)" uses `run_in_background: true` and polls for completion. When Task A finishes:
+1. A is removed from `active_agents`
+2. Step 2c eligibility is re-run — Task C's conflict on `models.py` is now resolved (A is "Finished")
+3. C is dispatched as a new background agent and added to `active_agents`
+4. `conflict_note` is cleared from C's task JSON
+
+This is **incremental re-dispatch** — tasks are released as soon as their specific conflicts resolve, not when the entire batch finishes.
 
 ### Pass criteria
 
-- [ ] After A completes, C becomes eligible for dispatch
+- [ ] After A completes, C becomes eligible for dispatch within the same parallel execution cycle
 - [ ] C can run in parallel with still-running B and D
 - [ ] No user action required to unblock C
-- [ ] The re-check happens automatically, not only on next `/work` invocation
+- [ ] The re-check happens automatically via the polling loop, not only on next `/work` invocation
+- [ ] `conflict_note` is cleared from C when dispatched
 
 ### Fail indicators
 
 - C remains blocked after A completes
 - User must run `/work` again to unblock C
-- C can't run until B and D also complete (over-serialization)
+- C can't run until B and D also complete (over-serialization — the old "wait for entire batch" pattern)

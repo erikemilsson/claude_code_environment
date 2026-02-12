@@ -124,18 +124,19 @@ Users check/uncheck items in the **Sections** checklist at the top of dashboard.
 - [ ] Decisions          # Small project, few decisions
 - [x] Notes
 - [x] Timeline
-- [ ] Visualizations
 - [ ] Sub-Dashboards
 <!-- END SECTION TOGGLES -->
 ```
 
 Checked (`[x]`) → `build` mode. Unchecked (`[ ]`) → `exclude` mode. Notes always `preserve` regardless. Spec frontmatter `dashboard_sections` can override with `maintain` mode if needed.
 
-### What's handled vs what's missing
+### What's handled
 
-The consolidated structure already handles the primary null-state problem: Action Required omits empty sub-sections (Verification Debt, Decisions, Your Tasks, Reviews, Spec Drift only appear when populated). This eliminates the noise that previously required toggles.
+The consolidated structure handles the primary null-state problem: Action Required omits empty sub-sections. Toggles control entire sections.
 
-The remaining toggle use case is for **entire sections** that a project doesn't need (e.g., Decisions for a project with no decision records, Progress for a simple project). Optional sections (Visualizations, Sub-Dashboards) default to unchecked.
+**Phase-aware initialization:** On first dashboard generation (replacing the template example), toggle defaults are computed from project state — Decisions is checked only if decision records exist, Timeline only if tasks have dates, Sub-Dashboards only if sub-dashboard files are referenced in spec.
+
+**Phase transition suggestions:** When a phase transition occurs, `/work` checks whether newly relevant sections are unchecked and logs suggestions (e.g., "Phase 2 has pending decisions. Consider enabling the Decisions section."). Suggestions are never auto-applied — the user's checkbox state is authoritative.
 
 ### Pass criteria
 
@@ -144,7 +145,9 @@ The remaining toggle use case is for **entire sections** that a project doesn't 
 - [ ] Checking a section causes it to be generated from source data
 - [ ] Toggle is directly in dashboard.md (user doesn't need to find a config file)
 - [ ] Regeneration preserves the checklist between its markers (never overwrites user's checkbox state)
-- [ ] Optional sections (Visualizations, Sub-Dashboards) default to unchecked
+- [ ] First regeneration computes defaults from project state (not static)
+- [ ] Phase transitions suggest toggle adjustments when new sections become relevant
+- [ ] Suggestions are logged, never auto-applied
 
 ### Fail indicators
 
@@ -152,3 +155,5 @@ The remaining toggle use case is for **entire sections** that a project doesn't 
 - `exclude` still renders the section heading with "(excluded)" note
 - Regeneration overwrites the user's checklist state
 - Toggle requires editing spec frontmatter or CLAUDE.md instead of the dashboard itself
+- First regeneration uses static defaults regardless of project content
+- Phase transition silently enables/disables sections without user consent

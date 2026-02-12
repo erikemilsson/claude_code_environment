@@ -74,27 +74,23 @@ Then BEFORE the user runs `/work complete`, something triggers a dashboard regen
 
 The "Your Tasks" section is rebuilt from source data. The inline feedback area is part of that section. On regeneration, the feedback is overwritten with a fresh empty template.
 
-### Expected behavior (current spec)
+### Solution implemented
 
-dashboard.md states:
-- Action Required sub-sections are rebuilt from source data
-- Only the Notes section (between `<!-- USER SECTION -->` markers) is preserved
-- Inline feedback areas in "Your Tasks" are NOT in the user section
+Feedback persistence is now handled via `<!-- FEEDBACK:{id} -->` marker pairs and a backup/restore cycle in the Dashboard Regeneration Procedure:
 
-**This means feedback IS lost on regeneration.** This is a design gap.
+1. **Step 2b** backs up all `<!-- FEEDBACK:{id} -->` content before regeneration
+2. **Step 3** generates fresh feedback markers for each `human`/`both`-owned task in "Your Tasks"
+3. **Step 5b** restores backed-up feedback content into the new markers (if task still active) or writes it to task JSON `user_feedback` field (if task was removed)
+4. **`/work complete` Step 3b** also captures inline feedback before completing the task
 
-### Mitigation options
-
-1. **Read inline feedback during `/work complete`** — `/work complete` reads the dashboard for inline feedback and captures it in task JSON before regenerating
-2. **Store feedback in a durable location** — Link to a file where feedback persists (e.g., task-specific feedback file or a section in questions.md)
-3. **Treat feedback areas as user-preserved** — Add feedback area markers similar to `<!-- USER SECTION -->`
+This means feedback survives both mid-work regenerations and task completion.
 
 ### Pass criteria
 
-- [ ] If feedback areas exist in the dashboard, there's a defined mechanism to prevent data loss
-- [ ] `/work complete` captures inline feedback before dashboard regeneration
-- [ ] OR: feedback is directed to a durable location (file linked from dashboard)
-- [ ] User is warned if feedback might be lost (or it simply can't be lost)
+- [x] If feedback areas exist in the dashboard, there's a defined mechanism to prevent data loss
+- [x] `/work complete` captures inline feedback before dashboard regeneration
+- [x] OR: feedback is directed to a durable location (file linked from dashboard)
+- [x] User is warned if feedback might be lost (or it simply can't be lost)
 
 ### Fail indicators
 
@@ -124,22 +120,15 @@ Then runs `/work`.
 
 1. `/work` Step 2b reads decision-002.md
 2. Detects checked box (`- [x]`) in "Select an Option" section
-3. Updates decision status to "approved" (or keeps "proposed" and marks as selected?)
-4. Checks if inflection_point → routes accordingly
-5. Unblocks dependent tasks
-6. Regenerates dashboard → DEC-002 moves from Action Required → Decisions sub-section to the Decisions section with selected option shown
+3. Auto-updates frontmatter: `status: proposed` → `status: approved`, sets `decided` date
+4. Extracts selected option name from the checked line
+5. Checks if inflection_point → routes accordingly
+6. Unblocks dependent tasks
+7. Regenerates dashboard → DEC-002 moves from Action Required → Decisions sub-section to the Decisions section with selected option shown
 
-### Gap analysis
+### Design note
 
-**Who updates the decision status field?**
-- The user checks a box in the markdown
-- Does `/work` update the frontmatter `status: proposed` → `status: approved`?
-- Or does it just use the checked box as the resolution signal?
-
-**Current behavior (from work.md Step 2b):**
-- Checks "if decision has a checked box in '## Select an Option'"
-- If checked → runs post-decision check (Step 2b-post)
-- But doesn't explicitly state that frontmatter status is updated
+**Status automation is explicit in work.md Step 2b.** When a checked box is detected and frontmatter status is not yet `approved`/`implemented`, `/work` auto-updates the frontmatter fields (`status`, `decided`). This closes the gap where the checkbox was the detection mechanism but the frontmatter was never updated, leaving status permanently stale.
 
 ### Pass criteria
 

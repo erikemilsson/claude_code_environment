@@ -97,7 +97,7 @@ Mark your selection by checking one box:
 **Questions:**
 - [e.g., "What's the expected data volume in year 2?"]
 
-*You can also add decision questions to [questions.md](../questions.md).*
+*You can also add decision questions to [questions.md](../questions/questions.md).*
 
 ## Decision
 

@@ -35,6 +35,7 @@
   "phase": "1",
   "decision_dependencies": [],
   "notes": "",
+  "user_feedback": "",
   "spec_fingerprint": "sha256:a1b2c3d4...",
   "spec_version": "spec_v1",
   "spec_section": "## Authentication",
@@ -84,6 +85,7 @@
 | files_affected | Array | File paths this task will modify |
 | external_dependency | Object | External blocker - see External Dependencies below |
 | notes | String | Context, warnings, or completion notes |
+| user_feedback | String | Feedback provided by the user via dashboard inline areas or during /work complete |
 | spec_fingerprint | String | SHA-256 hash of spec at task decomposition (drift detection) |
 | spec_version | String | Spec filename when task was created (e.g., "spec_v1") |
 | spec_section | String | Originating section heading from spec |
@@ -93,6 +95,7 @@
 | phase | String | Phase this task belongs to (e.g., "1" or "Data Pipeline"). Tasks in Phase N+1 are blocked until all Phase N tasks complete. |
 | decision_dependencies | Array | Decision IDs that block this task (e.g., ["DEC-002"]). Task remains blocked until all referenced decisions are resolved. |
 | parallel_safe | Boolean | When true, task is eligible for parallel execution even with empty `files_affected`. Use for research/analysis tasks with no file side effects. |
+| conflict_note | String | **Transient.** Set during parallel dispatch when a task is held back due to file conflicts (e.g., `"Held: file conflict with Task 3 on src/models.py"`). Cleared when the task is dispatched or during post-parallel cleanup. Surfaced in the dashboard Status column. |
 | task_verification | Object | Per-task verification result recorded by verify-agent |
 
 ## Owner Values

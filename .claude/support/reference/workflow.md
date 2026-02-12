@@ -173,18 +173,20 @@ By separating concerns:
 - verify-agent validates against the spec with fresh perspective
 - Issues caught by verify-agent become new tasks for implement-agent
 
+**Architectural separation:** verify-agent always runs as a **separate `Task` agent** (spawned via the Task tool), never inline in the implementation context. This ensures genuine independence — the verifier has no memory of implementation decisions, only the artifacts (task JSON, spec section, and files). This applies to both sequential and parallel execution modes.
+
 **The workflow:**
 1. `/work` reads and follows implement-agent workflow for the next pending task
 2. implement-agent: build, self-review, update status to "Awaiting Verification"
-3. implement-agent Step 6b: trigger verify-agent per-task workflow (atomic with step 2)
-4. verify-agent: verify files, spec alignment, quality, integration boundaries
+3. implement-agent Step 6b: **spawn** verify-agent as a separate Task agent (fresh context)
+4. verify-agent (separate context): verify files, spec alignment, quality, integration boundaries
 5. If verification passes: status → "Finished", regenerate dashboard, back to step 1 for next task
 6. If verification fails: status → "In Progress", back to step 1 (implement-agent fixes)
-7. When all tasks have "Finished" status with passing verification, `/work` reads verify-agent phase-level workflow
+7. When all tasks have "Finished" status with passing verification, `/work` spawns verify-agent for phase-level workflow
 8. verify-agent: test against spec acceptance criteria
 9. Issues found become new tasks, back to implement-agent
 
-This separation produces higher quality output than a single agent could achieve alone.
+This separation — both logical and contextual — produces higher quality output than a single agent could achieve alone.
 
 ---
 
@@ -211,11 +213,11 @@ Tasks with empty `files_affected` and no `parallel_safe: true` are excluded from
 ### How It Works
 
 1. **Gather candidates** — `/work` collects all eligible tasks
-2. **Build conflict-free batch** — Pairwise check of `files_affected`; add tasks to batch only if no file overlaps with any existing batch member
-3. **Cap batch size** — Limit to `max_parallel_tasks` (default: 3, configurable in spec frontmatter)
-4. **Dispatch** — If batch size >= 2, set all to "In Progress" and spawn parallel agents via Claude Code's `Task` tool. Each agent reads `implement-agent.md` and runs Steps 2/4/5/6a/6b independently
-5. **Collect results** — Wait for all agents to complete
-6. **Post-parallel cleanup** — Check parent auto-completion, single dashboard regeneration, lightweight health check
+2. **Build conflict-free batch** — Pairwise check of `files_affected`; add tasks to batch only if no file overlaps with any existing batch member. Tasks with conflicts are tracked in a `held_back` list with the specific conflict reason (task ID and shared files)
+3. **Annotate held-back tasks** — Add `conflict_note` to held-back task JSONs (surfaced in the dashboard's Status column); cap batch at `max_parallel_tasks`
+4. **Dispatch** — If batch size >= 2, set all to "In Progress" and spawn parallel agents (using `run_in_background: true`) via Claude Code's `Task` tool. Each agent reads `implement-agent.md` and runs Steps 2/4/5/6a/6b independently
+5. **Incremental re-dispatch** — Poll for agent completion. When an agent finishes, re-run eligibility assessment: tasks whose file conflicts are now resolved become eligible and can be dispatched immediately (even while other agents are still running). Clear `conflict_note` from newly-dispatched tasks
+6. **Post-parallel cleanup** — After all agents finish: final parent auto-completion check, single dashboard regeneration (clears remaining `conflict_note` fields), lightweight health check
 
 ### Constraints
 
@@ -223,6 +225,7 @@ Tasks with empty `files_affected` and no `parallel_safe: true` are excluded from
 - **Dashboard regeneration is coordinator-only** — Parallel agents do NOT regenerate the dashboard; the `/work` coordinator does it once after all agents finish
 - **Parent auto-completion is deferred** — The coordinator checks parent completion after collecting all results, preventing races when siblings finish simultaneously
 - **Phase-level verification remains sequential** — Runs once when ALL tasks are done
+- **Conflict notes are transient** — `conflict_note` fields are cleaned up during post-parallel dashboard regeneration
 
 ### Configuration
 
@@ -408,7 +411,7 @@ When questions accumulate:
 
 ## Questions System
 
-Questions accumulate in `.claude/support/questions.md` under categories: Requirements, Technical, Scope, Dependencies.
+Questions accumulate in `.claude/support/questions/questions.md` under categories: Requirements, Technical, Scope, Dependencies.
 
 **Blocking vs Non-Blocking:**
 - `[BLOCKING]` prefix → cannot proceed, triggers immediate checkpoint
@@ -617,7 +620,7 @@ Two files control template behavior:
 | Category | Purpose | Examples |
 |----------|---------|----------|
 | `sync` | Updated from template | Commands, agents, reference docs |
-| `customize` | User-editable, template provides defaults | `.claude/CLAUDE.md`, README.md, questions.md |
+| `customize` | User-editable, template provides defaults | `.claude/CLAUDE.md`, README.md, questions/questions.md, documents/README.md |
 | `ignore` | Project-specific data, never synced | Tasks, dashboard, decision records, learnings |
 
 **settings.local.json** — Pre-approved permissions for consistent Claude Code behavior. Ensures the template works the same way for everyone using it.
@@ -661,7 +664,11 @@ Two files control template behavior:
 │   │   ├── scratch/          # Temporary notes, quick analysis
 │   │   ├── research/         # Web search results, reference material
 │   │   └── drafts/           # WIP docs before final location
-│   └── questions.md          # Accumulated questions for human
+│   ├── questions/            # Questions for human input
+│   │   ├── README.md         # Workflow and categories
+│   │   └── questions.md      # Active questions and archive
+│   └── documents/            # User-provided reference files (PDFs, contracts, etc.)
+│       └── README.md         # Conventions and file placement
 ├── sync-manifest.json
 ├── settings.local.json
 └── version.json

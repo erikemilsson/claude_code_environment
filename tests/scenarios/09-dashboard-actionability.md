@@ -127,7 +127,7 @@ The user has `dashboard.md` open in a split pane next to Claude Code CLI. The pr
 ```markdown
 ### Reviews
 
-- [ ] **Resolve caching question** — [BLOCKING] What caching solution to use? → [questions.md](../support/questions.md)
+- [ ] **Resolve caching question** — [BLOCKING] What caching solution to use? → [questions.md](../support/questions/questions.md)
 ```
 
 ### Pass criteria

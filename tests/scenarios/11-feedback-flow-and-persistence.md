@@ -29,44 +29,47 @@ Task 11 needs user feedback on the auth design. The dashboard should make it cle
 ```markdown
 ### Your Tasks
 
-| ID | Task | Action | Link |
-|----|------|--------|------|
-| 11 | Review auth design | Read doc, leave feedback below | [auth-design.md](../support/decisions/decision-003.md) |
+| Task | What To Do | Where |
+|------|------------|-------|
+| 11 | Review auth design, leave feedback below | [auth-design.md](../support/decisions/decision-003.md) |
 
+<!-- FEEDBACK:11 -->
 **Task 11 — Feedback:**
-<!-- Write your feedback here, then run /work complete 11 -->
-
+[Leave feedback here, then run /work complete 11]
+<!-- END FEEDBACK:11 -->
 ```
 
 ### Feedback lifecycle
 
 1. User reads linked file (auth-design.md)
-2. User writes feedback in the designated area
+2. User writes feedback between the `<!-- FEEDBACK:11 -->` markers
 3. User runs `/work complete 11`
-4. `/work complete` reads the dashboard, picks up feedback from the inline area
-5. Feedback is captured in task JSON notes field
+4. `/work complete` Step 3b reads the dashboard, picks up feedback from the marker area
+5. Feedback is captured in task JSON `user_feedback` field
 6. Dashboard is regenerated, feedback area disappears (task complete)
 
-### Gap analysis
+### Solution summary
 
-**Where does the feedback actually persist?**
-- The inline feedback area in dashboard.md is between `<!-- USER SECTION -->` markers — but it's NOT in the user section. It's in the "Your Tasks" sub-section.
-- When dashboard regenerates, the "Your Tasks" table is rebuilt from source data. Feedback written there is LOST on regeneration.
-- The Notes section (`## 💡 Notes`) is preserved, but task feedback isn't written there.
+Feedback persistence is implemented via `<!-- FEEDBACK:{id} -->` / `<!-- END FEEDBACK:{id} -->` marker pairs in the dashboard's "Your Tasks" section:
 
-**Current persistence model:**
-- Dashboard inline feedback → transient (lost on regen)
-- Task JSON notes → durable (persists across sessions)
+1. **Dashboard Regeneration Procedure Step 3** generates feedback markers for each `human`/`both`-owned task
+2. **Step 2b** backs up existing feedback content before regeneration
+3. **Step 5b** restores feedback content after regeneration (if task is still active) or writes it to task JSON `user_feedback` field (if task was removed)
+4. **`/work complete` Step 3b** captures inline feedback before marking task Finished
+
+**Persistence model:**
+- Dashboard inline feedback → backed up on regen (Step 2b), restored (Step 5b), or persisted to task JSON
+- Task JSON `user_feedback` → durable (persists across sessions, separate from Claude's `notes`)
 - Decision doc → durable (persists across sessions)
 - questions.md answers → durable (persists across sessions)
 
 ### Pass criteria
 
-- [ ] Dashboard provides a clear place to write feedback for Task 11
-- [ ] Feedback area has instructions on what to do after writing
-- [ ] `/work complete` captures feedback before regenerating dashboard
-- [ ] Feedback persists in task JSON notes after completion
-- [ ] If dashboard regenerates BEFORE user runs `/work complete`, feedback in the inline area is not silently lost
+- [x] Dashboard provides a clear place to write feedback for Task 11
+- [x] Feedback area has instructions on what to do after writing
+- [x] `/work complete` captures feedback before regenerating dashboard
+- [x] Feedback persists in task JSON `user_feedback` after completion
+- [x] If dashboard regenerates BEFORE user runs `/work complete`, feedback in the inline area is not silently lost
 
 ### Fail indicators
 
@@ -94,25 +97,23 @@ User is reviewing DEC-002 (caching strategy). They want to:
 - Decision doc has a structured "Select an Option" section with checkboxes
 - Decision doc has space for notes/constraints
 
-### Gap analysis
+### Solution summary
 
-**Where does the user add constraints?**
-- The decision doc template has: Background, Options Comparison, Option Details, Select an Option, Decision, Trade-offs, Impact
-- There's no explicit "Your Notes" or "Constraints" section in the decision template
-- The user could write in "Background" but that's meant to be Claude-authored context
-- The user could write after the checkboxes but there's no designated area
+The decision doc template now includes a "Your Notes & Constraints" section between "Select an Option" and "Decision":
 
-**Where does the user ask a clarifying question?**
-- They could add to questions.md, but that requires knowing about that file
-- They could write in the decision doc, but where?
-- The dashboard doesn't provide a "Ask about this decision" mechanism
+- **Designated area** for user constraints, preferences, and questions
+- **User-owned** — Claude reads but never overwrites this section
+- **Cross-linked** — includes a link to `questions.md` for decision-related questions
+- **Documentation** — Quick Start section in `decisions.md` explains the section's purpose
+
+The section is inherently durable because decision docs are not regenerated by the dashboard.
 
 ### Pass criteria
 
-- [ ] Decision doc has a clear place for user notes/constraints (not just Claude-authored sections)
-- [ ] Dashboard's decision link takes user to a file where they can both READ context and WRITE their input
-- [ ] If user has questions about a decision, there's a clear path to ask (linked from dashboard)
-- [ ] User constraints on a decision persist in the decision record (discoverable later)
+- [x] Decision doc has a clear place for user notes/constraints (not just Claude-authored sections)
+- [x] Dashboard's decision link takes user to a file where they can both READ context and WRITE their input
+- [x] If user has questions about a decision, there's a clear path to ask (linked from dashboard)
+- [x] User constraints on a decision persist in the decision record (discoverable later)
 
 ### Fail indicators
 
@@ -142,27 +143,28 @@ Later, they need to compile this into a report or reference it for a follow-up p
 | Feedback type | Storage location | Structured? | Discoverable? |
 |---------------|-----------------|-------------|---------------|
 | Decision rationale | `decision-*.md` files | Yes (template) | Yes (Decisions section) |
-| Task implementation feedback | Task JSON `notes` field | Partially | Requires reading JSON |
-| Questions & answers | `questions.md` | Yes (table) | Yes (but file not linked from dashboard) |
-| Constraints | No designated location | No | No |
+| Task implementation feedback | Task JSON `user_feedback` field | Yes (dedicated field) | Yes (via dashboard feedback markers) |
+| Questions & answers | `questions.md` | Yes (table) | Yes (linked from dashboard Reviews) |
+| Constraints | Decision doc "Your Notes & Constraints" | Yes (template section) | Yes (in decision doc) |
 | Trade-off notes | Decision doc "Trade-offs" section | Yes | Yes (in decision doc) |
 | Architecture reasoning | No designated location | No | No |
 
-### Gap analysis
+### Solution summary
 
-- Decision records are well-structured and discoverable — good
-- Task feedback in JSON notes is durable but not easily browsable
-- Questions and answers are structured but questions.md isn't linked from the dashboard
-- There's no single "project journal" or "feedback log" that aggregates user inputs
-- For research projects, compiling these into a report requires reading multiple file types
+Several improvements make feedback more discoverable:
+
+- **Decision records** now include "Your Notes & Constraints" — user rationale persists alongside the selection
+- **Task feedback** stored in dedicated `user_feedback` field (separate from Claude's `notes`) — semantically clear
+- **questions.md** is now linked from the dashboard Reviews section: non-blocking questions show as `- [ ] **N pending questions** → [questions.md](support/questions/questions.md)` even when no questions are blocking
+- **No unified journal** — feedback remains distributed across task JSON, decision docs, and questions.md. This is acceptable: each has a clear owner and the dashboard indexes them.
 
 ### Pass criteria
 
-- [ ] Decision records capture user rationale (not just the selection)
-- [ ] Task feedback is stored in a format that's browsable (not buried in JSON)
-- [ ] questions.md is accessible from the dashboard (linked in Notes or a dedicated section)
-- [ ] A user can reconstruct the decision-making history from the file system
-- [ ] Archived user inputs are structured enough to be compiled into a report
+- [x] Decision records capture user rationale (not just the selection)
+- [x] Task feedback is stored in a format that's browsable (not buried in JSON)
+- [x] questions.md is accessible from the dashboard (linked in Notes or a dedicated section)
+- [x] A user can reconstruct the decision-making history from the file system
+- [ ] Archived user inputs are structured enough to be compiled into a report *(partial — no aggregation tool, but all inputs are in structured files)*
 
 ### Fail indicators
 

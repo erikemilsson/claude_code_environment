@@ -17,44 +17,51 @@ The user wants to glance at the critical path one-liner and immediately understa
 
 ---
 
-## Trace 13A: Current text format (numbered list)
+## Trace 13A: Text format with parallel branch notation
 
 - **Path:** dashboard.md → Progress section (critical path one-liner); work.md → Critical Path Generation
 
-### Current format (from work.md § Section Format Reference)
+### Current format (from work.md § Critical Path Generation)
 
-The critical path is now a one-liner within the Progress section:
+The critical path is a one-liner within the Progress section, with `[ | ]` notation for parallel branches:
 
 ```markdown
-**Critical path:** ❗ Resolve DEC-001 → 🤖 Phase 2 tasks → ❗ Review → 🤖 Phase 3 → Done
+# Sequential only:
+**Critical path:** ❗ Resolve DEC-001 → 🤖 Build API → 🤖 Phase verification → Done *(3 steps)*
+
+# With parallel branches:
+**Critical path:** ❗ Resolve DEC-001 → [🤖 Data cleaning | 🤖 API integration] → 🤖 Analysis → Done *(4 steps)*
 ```
 
 ### Strengths
 
 - Glanceable — entire critical path in one line
 - Owner indicators (❗/🤖/👥) show who owns each step
-- Collapses sequential Claude tasks into phase-level summaries
+- Parallel branches visible via `[step A | step B]` notation — shows fork/join structure
 - User actions stand out because they're fewer
+- Step count includes all parallel steps
 
-### Limitations for complex projects
+### Design constraints
 
-- One-liner can't show parallel branches
-- Doesn't visually distinguish decision gates from implementation steps
-- No status indication (which steps are done vs upcoming)
-- Very complex projects may need more detail than one line allows
+- Max 3 branches per `[ | ]` group (more → collapse to `[🤖 N parallel tasks]`)
+- No nested brackets — flatten to separate groups
+- Mixed-owner parallel branches show each owner: `[❗ Review | 🤖 Build]`
 
 ### Pass criteria
 
 - [ ] Owner indicators are present on every step in the one-liner
-- [ ] Arrow notation shows the sequence
+- [ ] Arrow notation shows sequential flow
+- [ ] Parallel branches use `[ | ]` notation showing fork/join points
 - [ ] User can determine "what do I need to do" vs "what is Claude doing" at a glance
-- [ ] The one-liner format works for projects with <= 6 critical path steps
+- [ ] The format works for projects with <= 6 critical path steps
+- [ ] Step count in `*(N steps)*` includes parallel branches
 
 ### Fail indicators
 
 - Steps listed without owner indicators
 - One-liner is so long it wraps multiple times (defeating the purpose)
 - User can't quickly find their own action items in the line
+- Parallel branches shown as sequential (losing the parallelism information)
 - Critical path is a numbered list instead of a one-liner (old format)
 
 ---
@@ -128,13 +135,13 @@ flowchart LR
 
 | Project complexity | Tasks on critical path | Parallel branches | Recommended format |
 |-------------------|----------------------|-------------------|-------------------|
-| Simple | 1-4 | None | Numbered list |
-| Medium | 5-8 | 1-2 | Either (user preference) |
-| Complex | 8+ | 2+ | Mermaid diagram |
+| Simple | 1-4 | None | One-liner (sequential) |
+| Medium | 5-8 | 1-2 | One-liner with `[ \| ]` notation |
+| Complex | 8+ | 2+ | One-liner + inline Project Overview diagram |
 
 ### Pass criteria
 
-- [ ] extension-patterns.md defines a mermaid template for Critical Path
+- [ ] work.md § "Project Overview Diagram" defines the generation rules; extension-patterns.md describes the pattern
 - [ ] The mermaid diagram uses distinct shapes for: tasks (rectangles), decisions (diamonds), gates (special shape)
 - [ ] Color coding distinguishes: done (green), active (blue), human-required (yellow), blocked (grey)
 - [ ] Parallel branches are visually parallel (not serialized)
@@ -154,7 +161,7 @@ flowchart LR
 
 ### Current structure
 
-The critical path one-liner lives inside the Progress section:
+The critical path one-liner lives inside the Progress section, with parallel branch notation:
 
 ```markdown
 ## 📊 Progress
@@ -162,12 +169,12 @@ The critical path one-liner lives inside the Progress section:
 | Phase | Done | Total | Status |
 ...
 
-**Critical path:** ❗ Resolve DEC-001 → 🤖 Phase 2 tasks → ❗ Review → 🤖 Phase 3 → Done
+**Critical path:** ❗ Resolve DEC-001 → [🤖 Data cleaning | 🤖 API integration] → ❗ Review → 🤖 Phase 3 → Done *(5 steps)*
 
 *This week: 3 tasks completed*
 ```
 
-For complex projects, a mermaid diagram can supplement this in `.claude/support/visualizations/` linked from the Notes section.
+For complex projects (4+ remaining tasks), an inline Mermaid diagram in the Progress section supplements the one-liner with a full dependency overview.
 
 ### Advantages
 
@@ -180,7 +187,7 @@ For complex projects, a mermaid diagram can supplement this in `.claude/support/
 
 - [ ] Critical path one-liner answers "what's blocking completion?" in one line
 - [ ] User action items (❗) appear visibly in the line
-- [ ] For complex projects, a mermaid diagram is available as a linked visualization
+- [ ] For complex projects (4+ remaining tasks), an inline Mermaid diagram appears in the Progress section
 - [ ] One-liner format works in all markdown editors
 
 ### Fail indicators

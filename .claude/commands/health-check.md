@@ -67,7 +67,7 @@ Checks:
 - Sections in correct order
 - Flag missing or out-of-order
 - Sections with unchecked toggles (`[ ]`) in the dashboard's section toggle checklist (between `<!-- SECTION TOGGLES -->` and `<!-- END SECTION TOGGLES -->` markers) are allowed to be missing. Falls back to `dashboard_sections` config if no checklist exists.
-- Optional sections (`## 📈 Visualizations`, `## 📑 Sub-Dashboards`) may appear between Decisions and Notes when their toggles are checked — do not flag these as unexpected
+- Optional section (`## 📑 Sub-Dashboards`) may appear between Decisions and Notes when its toggle is checked — do not flag it as unexpected
 
 ### 6. Status Rules
 
@@ -139,7 +139,7 @@ verification_debt = count of tasks where:
 ### 9. Questions and Workspace Staleness
 
 **Stale Questions:**
-- Questions in `.claude/support/questions.md` older than 14 days
+- Questions in `.claude/support/questions/questions.md` older than 14 days
 - Warning: "N questions have been pending for over 14 days"
 - Suggests reviewing and answering or removing outdated questions
 
@@ -419,7 +419,7 @@ Run semantic validation (if task count >= 20):
 - Workflow diagram staleness check
 
 Run questions and workspace staleness (always):
-- Questions older than 14 days in `.claude/support/questions.md`
+- Questions older than 14 days in `.claude/support/questions/questions.md`
 - Files older than 30 days in `.claude/support/workspace/`
 
 Run `.claude/CLAUDE.md` audit:
