@@ -1,6 +1,6 @@
 # Shared Definitions
 
-Single source of truth for task management definitions.
+Rules, vocabulary, and glossary for the environment. For task JSON field definitions, validation, and structural details, see `task-schema.md`.
 
 ## Vocabulary
 
@@ -52,59 +52,9 @@ These statuses represent different situations:
 - **Blocked** — A specific, identifiable impediment prevents progress (unresolved dependency, failed verification, missing prerequisite). The task will resume once the blocker is cleared. `/work` tracks and surfaces blockers.
 - **On Hold** — The task is intentionally paused for reasons that aren't a direct blocker: user chose to defer it, waiting on an external timeline, lower priority than current focus, seasonal or calendar constraint. The task will resume when the user explicitly moves it back to Pending.
 
-## Priority Values
+## Priority, Owner, and JSON Fields
 
-See `task-schema.md` for full priority definitions. Summary:
-
-| Value | Emoji | Meaning |
-|-------|-------|---------|
-| critical | 🔴 | Blocking other work, immediate attention |
-| high | 🟠 | Important, should be done soon |
-| medium | (none) | Normal priority (default) |
-| low | (none) | Nice to have, do when time permits |
-
-Priority affects sorting in Ready sections (critical → high → medium → low).
-Only critical and high show emoji prefixes in the dashboard.
-
-## Task JSON Structure
-
-See `task-schema.md` for complete field definitions including timeline fields (priority, due_date, external_dependency).
-
-### Minimal Task
-```json
-{
-  "id": "1",
-  "title": "Brief description",
-  "status": "Pending",
-  "difficulty": 3
-}
-```
-
-## Drift Prevention Fields
-
-Optional fields that track spec-to-task alignment:
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `spec_fingerprint` | String | SHA-256 hash of full spec at decomposition |
-| `spec_version` | String | Spec filename (e.g., "spec_v1") |
-| `spec_section` | String | Originating section heading |
-| `section_fingerprint` | String | SHA-256 hash of specific section at decomposition |
-| `section_snapshot_ref` | String | Reference to snapshot file for diffs |
-| `phase` | String | Phase this task belongs to (e.g., "1" or "Data Pipeline") |
-| `decision_dependencies` | Array | Decision IDs that block this task (e.g., ["DEC-002"]) |
-| `out_of_spec` | Boolean | Task not aligned with spec |
-| `task_verification` | Object | Per-task verification result from verify-agent (see task-schema.md) |
-
-These fields enable:
-- **Spec drift detection**: Warning when spec changes after tasks are created
-- **Granular section tracking**: Detecting which specific sections changed
-- **Out-of-spec tracking**: Identifying tasks created outside spec scope
-- **Spec provenance**: Tracing which tasks came from which spec sections
-- **Diff generation**: Showing exactly what changed via snapshot comparison
-- **Per-task verification**: Recording verify-agent results for each completed task
-
-See `task-schema.md` for detailed field documentation.
+See `task-schema.md` for priority values, owner values with examples, drift prevention fields, task verification, and all JSON field definitions.
 
 ## Section Parsing Algorithm
 
@@ -132,20 +82,6 @@ When conditions are not met, fall back to sequential execution (one "In Progress
 - Skip status updates
 - Dispatch parallel tasks without checking file conflicts
 - Move "On Hold" tasks back to "Pending" without user approval
-
-## Owner Field
-
-Tasks have an `owner` field that determines responsibility and dashboard placement:
-
-| Value | Emoji | Dashboard Location | When to Use |
-|-------|-------|-------------------|-------------|
-| `claude` | 🤖 | Tasks section | Autonomous work (default when omitted) |
-| `human` | ❗ | Action Required → Your Tasks | Requires human action |
-| `both` | 👥 | Action Required + Tasks | Collaborative work |
-
-**Human tasks** - Configure secrets, external actions (phone calls, site visits), review/approve
-**Claude tasks** - Execute tasks, create deliverables, research, analysis, documentation
-**Both tasks** - Human provides direction or external input, Claude produces deliverables (appears in Action Required with 👥)
 
 ## Task ID Conventions
 

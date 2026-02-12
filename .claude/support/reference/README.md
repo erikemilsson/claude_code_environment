@@ -1,18 +1,28 @@
 # Reference Files
 
-Documentation that Claude reads during workflow execution and on-demand guidance for specific situations.
+Documentation that commands and agents read during workflow execution. Files are organized into complementary pairs and standalone references — understanding the division of responsibility prevents duplication and makes lookups faster.
+
+## How These Files Work Together
+
+The reference files form a layered system. Commands (`work.md`, `health-check.md`, etc.) contain the procedural logic — the steps to follow. Reference files contain the definitions, schemas, and algorithms that commands delegate to rather than inline.
+
+**Key relationships:**
+
+- **`shared-definitions.md` + `task-schema.md`** — Split by concern. Shared definitions owns the *rules and vocabulary*: difficulty scale, status meanings, mandatory behavioral rules, glossary of all terms. Task schema owns the *data structure*: JSON field definitions, validation rules, owner/priority values, verification fields, status flow diagram. Commands reference shared-definitions for "what does this mean?" and task-schema for "what's the correct JSON?"
+- **`workflow.md` + command files** — Workflow is the narrative overview of the full Spec→Execute→Verify process. Commands contain the procedural implementation. Workflow answers "how does the system work?" while commands answer "what do I do right now?"
+- **`dashboard-regeneration.md`, `drift-reconciliation.md`, `parallel-execution.md`** — Extracted algorithms that `work.md` delegates to rather than inlining. `work.md` uses "Full procedure:", "Full algorithm:", or "Follow ..." references to point into these files. This keeps `work.md` focused on orchestration while the detailed algorithms live in dedicated files.
 
 ## Core (read by commands/agents during execution)
 
-| File | Purpose |
-|------|---------|
-| `shared-definitions.md` | Status values, difficulty scale, owner types, glossary of all terms |
-| `task-schema.md` | JSON schema for task files |
-| `workflow.md` | Spec→Execute→Verify process, parallel execution, verification tiers, system overview, project structure |
-| `paths.md` | Canonical file locations — prevents Claude from inventing paths |
-| `dashboard-regeneration.md` | Dashboard regeneration procedure, section format reference, critical path, project overview diagram |
-| `drift-reconciliation.md` | Spec drift detection, reconciliation UI, drift budget, task migration |
-| `parallel-execution.md` | Parallelism eligibility, file conflict algorithm, parallel dispatch |
+| File | Purpose | Primary consumers |
+|------|---------|-------------------|
+| `shared-definitions.md` | Difficulty scale, status values, mandatory rules, vocabulary, glossary | `work.md` (difficulty scale), `health-check.md` (difficulty validation), `CLAUDE.md` (always in context) |
+| `task-schema.md` | JSON field definitions, owner/priority values, verification fields, status flow, archiving | `health-check.md` (schema validation), `CLAUDE.md` (always in context) |
+| `workflow.md` | Spec→Execute→Verify process, phase transitions, verification tiers, system overview | `work.md`, `health-check.md`, `CLAUDE.md` (always in context) |
+| `paths.md` | Canonical file locations — prevents Claude from inventing paths | `CLAUDE.md` (always in context) |
+| `dashboard-regeneration.md` | Dashboard regeneration procedure, section format, critical path, overview diagram | `work.md`, `breakdown.md`, both agents |
+| `drift-reconciliation.md` | Spec drift detection, reconciliation UI, drift budget, task migration | `work.md` (pre-execution check), `health-check.md`, `iterate.md` |
+| `parallel-execution.md` | Parallelism eligibility, file conflict algorithm, parallel dispatch | `work.md` (task routing) |
 
 ## Guides (read on-demand for specific situations)
 
