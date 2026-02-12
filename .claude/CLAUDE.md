@@ -112,6 +112,8 @@ Temporary documents go in `.claude/support/workspace/` (scratch, research, draft
 
 User-provided reference files (PDFs, contracts, vendor docs, permits, etc.) go in `.claude/support/documents/`. When the user provides a file path, move it there with a descriptive filename. See `.claude/support/documents/README.md` for conventions.
 
+**Credentials and secrets:** Never commit API keys, passwords, tokens, or credentials to any tracked file. Use environment variables or a `.env` file (which must be in `.gitignore`). If a task requires secrets, set `owner: "human"` for the credential setup step.
+
 ## Archiving Rules
 
 Archived files have specific locations. Do not create new archive locations.

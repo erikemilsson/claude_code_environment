@@ -41,6 +41,9 @@ Validates required fields (id, title, status, difficulty) and optional fields pe
 - All task IDs in `dependencies` array must exist
 - No circular dependencies
 
+**Absorbed reference validity:**
+- If task has `absorbed_into`, the referenced task ID must exist and must not itself be Absorbed (no absorption chains)
+
 #### 3. ID Safety (Breakdown Protection)
 
 When breaking down tasks, IDs must not collide:
@@ -141,13 +144,23 @@ Reports tasks with `"out_of_spec": true` in a separate section of the report. In
 #### 10. Dashboard Staleness
 
 **Task state hash check:**
-1. Compute: `SHA-256(sorted list of task_id + ":" + status)`
+1. Compute: `SHA-256(sorted list of task_id + ":" + status + ":" + difficulty + ":" + owner)`
 2. Read dashboard metadata block (if exists)
 3. Compare hashes — if different, dashboard is stale
 
 **Stale "In Progress" tasks:**
 - Tasks with status `"In Progress"` where `updated_date` (or `created_date`) is > 7 days old
 - Indicates abandoned work or forgotten state updates
+
+#### 11. Provenance Integrity
+
+**Snapshot file existence:**
+- For each task with `section_snapshot_ref`, verify the referenced file exists at `.claude/support/previous_specifications/{section_snapshot_ref}`
+- Missing snapshot: WARNING — "Task {id} references snapshot `{ref}` which does not exist. Drift detection will fall back to full-spec comparison."
+
+**Decision dependency format:**
+- For each task with `decision_dependencies`, verify each entry matches pattern `DEC-\d+`
+- Invalid format: ERROR — "Task {id} has malformed decision dependency `{value}`"
 
 ### Task Auto-Fixes
 
@@ -166,6 +179,10 @@ Reports tasks with `"out_of_spec": true` in a separate section of the report. In
 | Stale "In Progress" (> 7 days) | Ask user: mark Pending, On Hold, Blocked, or keep |
 | Stale "On Hold" (> 30 days) | Ask user: resume, absorb, or keep |
 | Absorbed without `absorbed_into` | Ask user: provide absorbing task ID, or change status |
+| Absorbed referencing non-existent task | Ask user: provide valid task ID, or change status |
+| Absorbed referencing another Absorbed task (chain) | Suggest the non-Absorbed end of the chain; ask user to confirm or change |
+| Missing snapshot file | Informational only — drift detection degrades gracefully |
+| Malformed decision dependency format | Ask user: correct or remove the entry |
 | Stale questions (> 14 days) | List questions, ask user to answer or remove |
 | Stale workspace files (> 30 days) | List files, ask user: graduate to final location, or delete |
 | Dashboard state sidecar missing | Create from current dashboard markers (or defaults if markers broken) |
@@ -230,7 +247,7 @@ Validates the decision documentation system for schema compliance and consistenc
 Each `decision-*.md` file must have valid frontmatter:
 
 **Required fields:**
-- `id` - Format: `DEC-NNN` (e.g., DEC-001, DEC-042)
+- `id` - Format: `DEC-NNN` (e.g., DEC-001, DEC-042). Must match `\d+` pattern after `DEC-`. The numeric portion must match the filename: `decision-{NNN}-*.md` → frontmatter `id: DEC-{NNN}`. Mismatch is an ERROR.
 - `title` - Non-empty string
 - `status` - One of: `draft`, `proposed`, `approved`, `implemented`, `superseded`
 - `category` - One of: `architecture`, `technology`, `process`, `scope`, `methodology`, `vendor`
@@ -270,8 +287,14 @@ For decisions with status `implemented`:
 #### 6. Decision-Task Cross-Reference
 
 Reports mismatches between decision `related.tasks` and task `decision_dependencies`:
+
+**Decision → Task direction:**
 - For each decision, check if referenced tasks have the decision ID in their `decision_dependencies`
 - Report mismatches grouped by task status (Finished = most concerning, Pending = auto-fixable)
+
+**Task → Decision direction:**
+- For each task with `decision_dependencies`, verify each referenced `DEC-NNN` has a corresponding `decision-{NNN}-*.md` file
+- Missing decision file: ERROR — "Task {id} references non-existent decision {DEC-NNN}"
 
 This is a reporting check. The primary enforcement and interactive resolution happens in `/work` Step 2b.
 
@@ -288,6 +311,8 @@ This is a reporting check. The primary enforcement and interactive resolution ha
 | Anchor file not found | Report for manual review |
 | Cross-reference mismatch (Pending task) | Add decision ID to task's `decision_dependencies` |
 | Cross-reference mismatch (other status) | Report for manual review |
+| ID/filename mismatch | Ask user: rename file or update frontmatter ID |
+| Task references non-existent decision | Ask user: remove dependency or create the decision record |
 
 ### Non-Fixable Issues (Manual Required)
 
@@ -511,7 +536,7 @@ CHECK template repo for updates (skip if offline)
 
 ### Step 2: Run Checks
 
-- Part 1: Task system validation (checks 1-10)
+- Part 1: Task system validation (checks 1-11)
 - Part 2: `.claude/CLAUDE.md` audit
 - Part 3: Decision system validation (checks 1-6)
 - Part 4: Archive validation (checks 1-4)
@@ -520,7 +545,7 @@ CHECK template repo for updates (skip if offline)
 ### Step 3: Report
 
 **Report sections:**
-- Task System — Schema & Integrity (checks 1-6)
+- Task System — Schema & Integrity (checks 1-6, 11)
 - Task System — Verification Debt (check 7)
 - Task System — Dashboard Freshness (check 10)
 - Task System — Out-of-Spec Tasks (check 9, if any exist)
