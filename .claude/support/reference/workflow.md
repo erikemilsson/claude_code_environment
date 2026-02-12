@@ -440,8 +440,8 @@ During execution, when implement-agent or verify-agent encounter something they 
 |------------|-------------------|-------------------------|
 | **Immediate** | `[BLOCKING]` question added | Blocking only — work halts until answered |
 | **After task completion** | Task transitions to "Finished" | All unanswered questions (blocking + non-blocking) |
-| **Phase boundary (Execute → Verify)** | All tasks in phase finished | All unanswered questions |
-| **Phase boundary (Verify → Complete)** | Phase-level verification passes | All unanswered questions |
+| **Phase boundary (Execute → Verify phase-level)** | All tasks in phase finished | All unanswered questions |
+| **Phase boundary (Verify phase-level → Complete)** | Phase-level verification passes | All unanswered questions |
 | **Quality gate failure** | Tests fail, spec violation detected | All unanswered questions |
 | **Manual checkpoint** | User runs `/work` after answering questions in questions.md | All unanswered questions (validation that answers were captured) |
 

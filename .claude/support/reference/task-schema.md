@@ -294,9 +294,9 @@ Tasks that bypass verification create "verification debt":
 4. Surface each debt item in "Action Required" → "Verification Debt" with task ID, title, and specific issue
 
 **How it blocks completion:**
-- `/work` Step 3 routing algorithm checks for verification debt before routing to phase-level verification or completion
+- `/work` Step 3 routing algorithm (work.md lines 184-206) checks for verification debt before routing to phase-level verification or completion
 - If debt count > 0, `/work` routes to verify-agent (per-task) for the first unverified task instead of proceeding to phase-level verification
-- The completion gate (work.md § "If Completing") requires zero verification debt before updating spec status to `complete`
+- The completion gate (work.md § Step 4 "If Completing", line 305) enforces mandatory verification checks before updating spec status to `complete`
 
 ## Completion Notes Contract
 
@@ -307,9 +307,11 @@ The `notes` field serves as structured completion notes for context transfer bet
 **Expected format:**
 ```json
 {
-  "notes": "Implemented login flow with JWT tokens. Updated auth middleware. Added input validation for email format."
+  "notes": "Implemented login flow with JWT tokens. Updated auth middleware. Added input validation for email format. Known limitation: password reset deferred to Phase 2."
 }
 ```
+
+**Note:** Multi-line notes should be written as a single JSON string with natural sentence breaks. Use periods to separate distinct items rather than newlines or structured formatting.
 
 **What to include:**
 - **Deliverables summary** — what was built/changed (high-level, 1-3 sentences)
