@@ -27,10 +27,9 @@ Canonical terminology used across the system.
 
 ### When to Break Down
 
-Ask: "Can Opus 4.6 complete this reliably in one focused session, with changes that are reviewable and verifiable as a unit?"
-- **Yes** → Difficulty 1-6, execute directly
-- **No, too many interacting parts** → Difficulty 7-8, break into chunks
-- **No, requires discovery or affects the whole system** → Difficulty 9-10, break into phases
+- Difficulty 1-6 → execute directly
+- Difficulty 7-8 → break into chunks
+- Difficulty 9-10 → break into phases
 
 ## Status Values
 

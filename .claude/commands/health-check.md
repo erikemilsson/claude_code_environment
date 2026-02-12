@@ -10,9 +10,7 @@ Combined system health check for tasks, decisions, `.claude/CLAUDE.md`, and temp
 
 ## Purpose
 
-Over time, task systems drift from standards, decision records become stale, `.claude/CLAUDE.md` files accumulate bloat, and template workflow files fall behind. This command catches all these issues in one pass.
-
-This is a manual maintenance tool. It does not run automatically during `/work` — operational checks that `/work` needs are defined inline in `work.md`.
+Manual maintenance tool that validates tasks, decisions, CLAUDE.md, and template sync. Operational checks for `/work` are defined inline in `work.md`.
 
 ---
 
@@ -213,19 +211,11 @@ Detects bloat and offers guided cleanup.
 3. **Condense** - Rewrite to fewer lines
 4. **Skip** - No changes
 
-### What Belongs Inline
+### What Belongs Where
 
-Keep in `.claude/CLAUDE.md`:
-- Project overview (2-3 sentences)
-- Critical commands (one-liners)
-- Key conventions (brief list)
-- Navigation pointers
+Keep in `.claude/CLAUDE.md`: project overview, critical commands, key conventions, navigation pointers.
 
-Move to support/reference/:
-- Detailed schemas (>8 lines)
-- Verbose examples
-- Full procedure documentation
-- Technology deep-dives
+Move to `support/reference/`: detailed schemas (>8 lines), verbose examples, procedure docs, technology deep-dives.
 
 ---
 

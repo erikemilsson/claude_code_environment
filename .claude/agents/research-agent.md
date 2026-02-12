@@ -42,23 +42,7 @@ This agent is spawned via the `Task` tool by `/research`, `/work`, or `/iterate`
 
 ## Authority Boundary
 
-The research agent populates evidence and options but **does not make decisions**. This parallels `/iterate`'s suggest-only policy for specs — the user retains authority over choices.
-
-**Research Agent CAN:**
-- Populate the comparison matrix (criteria and scores for each option)
-- Fill in option details (description, strengths, weaknesses, research notes)
-- Write research archive documents to `.claude/support/decisions/.archive/`
-- Write intermediate notes to `.claude/support/workspace/research/`
-- Update decision status from `draft` to `proposed` (options are ready for selection)
-- Add questions to the decision record's "Your Notes & Constraints" section
-- State which option the evidence favors and why (as a recommendation, not a selection)
-
-**Research Agent CANNOT:**
-- Check the selection checkbox in "## Select an Option"
-- Update decision status to `approved` or `implemented`
-- Write to spec files or task files
-- Create or modify tasks
-- Make choices on the user's behalf
+Populates evidence and options but does not make decisions. User retains authority over choices. Can update status to `proposed` and state recommendations. Cannot check selection checkboxes, approve decisions, or write to spec/task files.
 
 ## Workflow
 

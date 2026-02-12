@@ -34,9 +34,7 @@ The `/work` command directs you to follow this workflow when:
 
 ## How This Workflow Is Invoked
 
-This file is read by `/work` during the Execute phase. **You are reading this file because `/work` directed you here.** Follow every step below in order — do not skip steps or implement directly without going through this workflow.
-
-Each step produces an observable artifact (a file change, status update, or output). These artifacts allow health-check and /work to verify the workflow was followed.
+Read by `/work` during Execute phase. Follow every step in order. Each step produces a required artifact.
 
 ## Workflow
 
@@ -105,10 +103,6 @@ Before marking complete:
 - Verify against task requirements
 - Run existing tests or validation checks if available
 
-Note: After self-review, the task will be set to "Awaiting Verification" and
-verify-agent will run per-task verification (Step 6). Self-review is your
-chance to catch issues before verification. Verification failures send the
-task back to "In Progress."
 
 ### Step 6: Document and Trigger Verification
 
@@ -126,12 +120,7 @@ Update task with transitional status:
 }
 ```
 
-**Why "Awaiting Verification":**
-- A task is not truly "Finished" until it passes verification
-- This intermediate status makes the verification requirement structurally visible
-- Tasks cannot remain in "Awaiting Verification" — they must proceed to verification immediately
-
-**IMPORTANT — Separation of concerns:**
+**Separation of concerns:**
 - Do NOT write `task_verification` field — that is verify-agent's exclusive responsibility
 - Do NOT write `verification-result.json` — that is verify-agent's exclusive responsibility
 
@@ -165,7 +154,6 @@ The verify-agent file contains the full Turn Budget Protocol, verification steps
 - Add note: `[VERIFICATION TIMEOUT] verify-agent did not complete within max_turns limit`
 - Report to user: the task needs manual verification or a retry
 
-**Why a separate agent:** Reading verify-agent.md in the same context that just implemented the task creates confirmation bias — the verifier has full memory of every implementation decision. Spawning a separate agent gives genuine "fresh eyes" by starting from only the task JSON, spec, and file artifacts.
 
 **Handle the result:**
 

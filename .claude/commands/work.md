@@ -13,15 +13,7 @@ For workflow concepts (phases, agent synergy, checkpoints), see `.claude/support
 /work complete {id}      # Complete specific task
 ```
 
-## What It Does
-
-1. **Checks against spec** - Every request is validated against the specification
-2. **Analyzes project state** - Reads dashboard, spec, and current progress
-3. **Decomposes spec into tasks** - When spec is ready but no tasks exist
-4. **Completes tasks** - Marks tasks as finished with `/work complete`
-5. **Routes to specialists** - Reads and follows implement-agent or verify-agent workflows
-6. **Surfaces misalignments** - Points out when requests don't fit the spec
-7. **Auto-syncs dashboard** - Regenerates dashboard.md after significant state changes (see `dashboard-regeneration.md` § "When to Regenerate")
+**Dashboard regeneration:** After significant state changes, dashboard.md is regenerated per `.claude/support/reference/dashboard-regeneration.md` § "When to Regenerate".
 
 ---
 
@@ -29,9 +21,7 @@ For workflow concepts (phases, agent synergy, checkpoints), see `.claude/support
 
 ### Step 0: Session Recovery Check
 
-Before gathering context, check for tasks left in recoverable states by a previous session (agent crashes, turn exhaustion, session interruptions).
-
-Read `.claude/support/reference/session-recovery.md` and follow its procedure:
+Check for tasks left in recoverable states by a previous session. Read `.claude/support/reference/session-recovery.md` and follow its procedure:
 1. **Check session sentinel** (`.claude/tasks/.last-clean-exit.json`) — if clean exit, skip full scan
 2. **If sentinel missing or stale** — run full recovery scan (6-case logic in the reference file)
 3. **After recovery actions complete** — proceed to Step 1
@@ -54,43 +44,9 @@ Read and analyze:
 - `.claude/dashboard.md` - Task status and progress (read the `<!-- DASHBOARD META -->` block)
 - `.claude/support/questions/questions.md` - Pending questions
 
-#### Fast-Path: Skip Expensive Checks
+**Fast-path optimization:** If dashboard META block shows matching task_count and spec_fingerprint, skip Steps 1a/1b and jump to Step 1c. Always check drift-deferrals.json for stale deferrals even on fast-path. Full procedure: `.claude/support/reference/work-fastpath.md`.
 
-Before running Steps 1a-1b, do a quick state comparison against the dashboard META block to avoid redundant work:
-
-```
-1. Read dashboard META block → extract task_count, task_hash, spec_fingerprint
-2. Glob task-*.json files → get current count
-
-3. IF task count matches META task_count:
-   → Dashboard task data is likely fresh
-   → Skip full hash computation in Step 1a
-   → Only read non-Finished task files for routing decisions
-   → Trust dashboard for completed task totals and status counts
-
-4. IF META spec_fingerprint matches current spec hash:
-   → Spec hasn't changed since last run
-   → Skip drift detection (Step 1b)
-   → Skip reconciliation checks entirely
-   → BUT still check drift-deferrals.json (see 4b)
-
-4b. EVEN IF spec_fingerprint matches, check for stale deferrals:
-    IF .claude/drift-deferrals.json exists AND has non-empty deferrals array:
-      → Run drift budget enforcement (drift-reconciliation.md § "Drift Budget Enforcement")
-      → If budget exceeded → block work until reconciled
-      → If budget OK → continue with fast-path
-    This ensures deferred sections are not forgotten across runs.
-
-5. IF both task_count and spec_fingerprint match (common case for consecutive /work runs):
-   → Jump directly to Step 1c (state summary) using cached data
-   → Then proceed to Step 2
-
-6. IF either differs → fall through to full Steps 1a/1b
-```
-
-This avoids the O(N) task scan and spec drift analysis on consecutive `/work` runs where nothing changed.
-
-**Malformed task file handling:** When reading task JSON files, if any file fails to parse (invalid JSON, truncated, encoding errors):
+**Malformed task file handling:** When reading task JSON files, if any file fails to parse:
 1. Skip the file — do not abort the entire scan
 2. Report the error prominently: "Task file `task-{id}.json` could not be read: {error}. Run `/health-check` for details."
 3. Exclude the corrupted file from all calculations
@@ -138,14 +94,12 @@ When Step 1b detects spec drift, the following checks run in sequence. Each dele
 3. **Drift budget enforcement** — checks deferred reconciliations against limits. § "Drift Budget Enforcement"
 4. **Granular reconciliation UI** — per-section options: `[A]` Apply, `[R]` Review, `[S]` Skip. § "Granular Reconciliation UI"
 
-**Post-reconciliation In Progress warning:** After reconciliation completes, check if any "In Progress" tasks had their section fingerprints updated. If so, warn the user:
+**Post-reconciliation In Progress warning:** After reconciliation completes, check if any "In Progress" tasks had their section fingerprints updated. If so, warn:
 
 ```
 ⚠️ Task {id} "{title}" is In Progress but its spec section changed during reconciliation.
   Review the task's partial work against the updated requirements before continuing.
 ```
-
-This is a warning, not a gate.
 
 ### Step 2: Spec Check (if request provided)
 
@@ -167,9 +121,7 @@ Check request against spec:
 - Dashboard shows ⚠️ prefix for these tasks
 - Health check reports out-of-spec tasks separately
 
-**What counts as "significant":** New features, architecture changes, new integrations, anything affecting acceptance criteria.
-
-**What's "minor/trivial":** Bug fixes, code cleanup, small improvements within existing scope, documentation.
+**Scope significance:** New features, architecture changes, new integrations, acceptance criteria changes = significant. Bug fixes, cleanup, small improvements = minor/trivial.
 
 ### Step 2b: Phase and Decision Gate
 
@@ -269,10 +221,7 @@ Read `.claude/support/reference/decomposition.md` and follow its 10-step procedu
 
 #### If Executing
 
-**You must use the implement-agent workflow. Do not implement directly.**
-
-1. **Read the agent file now:** Use the Read tool to read `.claude/agents/implement-agent.md` in full.
-2. **Follow every numbered step** in the agent's Workflow section (Steps 1 through 6). Each step produces a required artifact:
+Read `.claude/agents/implement-agent.md` and follow Steps 1-6. Required artifacts:
    - Step 1: Task selected (logged)
    - Step 1b: Validation checks passed
    - Step 3: Task JSON updated to `"In Progress"` **before any implementation begins**

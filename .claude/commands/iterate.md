@@ -1,6 +1,6 @@
 # Iterate Command
 
-Structured spec review and implementation review. In early project phases, identifies spec gaps, asks focused questions, and suggests content. Once work is underway, shifts to reviewing implementation quality — architecture coherence, integration, patterns, and technical debt.
+Spec review and implementation quality assessment. Identifies gaps, asks questions, suggests improvements.
 
 ## Usage
 
@@ -12,48 +12,13 @@ Structured spec review and implementation review. In early project phases, ident
 /iterate review {area}      # Focus implementation review on a specific area
 ```
 
-## What It Does
-
-1. **Reads current spec and project state** to determine which mode to enter
-2. **Determines mode:**
-   - Empty/placeholder spec → Bootstrap mode (foundational questions)
-   - Partial spec → Identify weakest area and improve it
-   - Spec ready + tasks in progress/completed → **Implementation review** (quality assessment)
-   - Explicit `/iterate review` → Implementation review mode directly
-3. **Asks up to 4 questions** about the focus area
-4. **Generates suggestions** based on your answers (spec content or implementation improvements)
-5. **You make the changes** — suggestions only, never direct edits
-6. **Repeat** until spec is ready or implementation quality is satisfactory
+Determines mode based on spec state, asks focused questions (max 4), generates suggestions. User makes all edits.
 
 ---
 
 ## Rules
 
-**Spec editing policy:** `suggest_only` — Claude suggests content, the user decides what goes in.
-
-**DO NOT author spec content directly.** Only suggest changes for the user to make. This means Claude does not write requirements, acceptance criteria, scope definitions, or architecture decisions into the spec.
-
-Claude **CAN** perform spec infrastructure operations: archiving, copying during version transitions, updating frontmatter metadata (version number, dates, status). See "Suggest-Only Boundary" in the Spec Versioning section below for the full distinction.
-
-When suggesting content changes:
-- Quote the specific section
-- Explain what to change and why
-- Provide copy-pasteable content
-- Let the user make the edit
-
-**Why this mode exists:** The spec is your anchor. If Claude authors content freely, it's easy to lose sight of what you originally wanted vs. what Claude decided to build. By requiring you to make content edits, you stay in control of scope and intent.
-
-**Claude MUST NOT:**
-- Author spec content (requirements, criteria, scope) directly
-- Skip the question step and jump to suggestions
-- Ask more than 4 questions at once
-- Generate suggestions before receiving answers
-
-**Claude MUST:**
-- Assess spec state before diving into questions
-- Match rigor to stated project seriousness
-- Format suggestions as copy-pasteable content
-- Report readiness status when spec has substance
+**Spec editing policy:** `suggest_only` — Claude suggests content, user decides what goes in. Claude does NOT author requirements, criteria, scope, or architecture directly. Claude CAN perform infrastructure operations: archiving, version transitions, frontmatter updates. See "Suggest-Only Boundary" below for full distinction.
 
 ---
 
@@ -313,9 +278,7 @@ See `.claude/support/reference/spec-checklist.md` for full readiness criteria.
 | At phase gate, assess phase quality | `/iterate review` | Comprehensive phase review |
 | Spec active, no specific topic | `/iterate` | Auto-enters review if 3+ tasks finished (bare `/iterate` only) |
 
-**Note on distill questions:** The four distillation questions are intentionally fixed (core value, essential features, Phase 1 exclusions, first user path). These cover the minimum information needed to convert abstract vision into buildable scope. The answers are what vary — Claude adapts its generated content based on your responses.
-
-**Note on review mode:** Implementation review is purely advisory. It suggests improvements but does not create tasks, modify files, or change any project state. The user decides what to act on.
+**Implementation review is purely advisory** — suggests improvements but does not create tasks, modify files, or change project state.
 
 ---
 

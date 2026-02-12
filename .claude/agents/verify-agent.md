@@ -58,12 +58,9 @@ The `/work` command directs you to follow this workflow when:
 
 ## How This Workflow Is Invoked
 
-This agent runs as a **separate context** from the implement-agent. You are spawned via the `Task` tool specifically so that you do NOT share the implementation conversation. This architectural separation is what makes verification meaningful — you have no memory of implementation decisions, only the artifacts.
-
-- **Per-task:** You are spawned after a task reaches "Awaiting Verification" status. Follow the "Per-Task Verification Workflow" section (Steps T1–T8).
-- **Phase-level:** You are spawned by `/work` after all spec tasks are finished and all have passing per-task verification. Follow the "Phase-Level Verification Workflow" section (Steps 1–8).
-
-Do not skip steps, write results without performing actual verification, or declare pass without checking requirements. Each step produces a required output.
+Spawned as separate context from implement-agent. Two modes:
+- **Per-task:** After "Awaiting Verification" status. Follow Steps T1–T8.
+- **Phase-level:** After all spec tasks finished with passing per-task verification. Follow Steps 1–8.
 
 ## Turn Budget Protocol
 
@@ -97,10 +94,7 @@ Follow this workflow when spawned in **per-task** mode — a single task was jus
 1. Read the task JSON file in full (status should be "Awaiting Verification")
 2. Read the spec section referenced by `spec_section` field
 3. Read the task description and completion notes
-4. **Independence principle:** You are running in a separate context from the implementer. Use this advantage.
-   - Do NOT assume the implementation is correct just because it exists
-   - Actually read and evaluate the files — don't rubber-stamp based on task notes
-   - Your only inputs are the task JSON, spec, and file artifacts — judge solely on these
+4. Verify independently without assumptions. Judge solely on task JSON, spec, and file artifacts.
 
 ### Step T2: Verify File Artifacts
 
@@ -152,7 +146,6 @@ Detect files modified during implementation that were NOT listed in `files_affec
    - Set scope_validation to "pass" with note: "Scope validation skipped — no git available"
 ```
 
-**Why this matters:** Without scope validation, an agent can modify arbitrary files beyond the task boundary. This check makes undeclared modifications visible in the verification record.
 
 ### Step T3: Verify Spec Alignment
 

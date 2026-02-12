@@ -10,28 +10,9 @@ Verify that `/iterate` identifies spec sections with vague language implying unr
 - No decision records exist
 - No tasks exist
 
-## Trace: `/iterate` readiness assessment
+## Trace
 
-- **Path:** /iterate readiness checklist (spec has content)
-- Checklist item `Key decisions documented: ✗` triggers (0 decision records)
-- **Implicit decision detection** during readiness assessment: scan spec for vague language
-  - "appropriate statistical methods" → matches "vague method references" pattern
-  - "a charting library" → matches "unnamed technology choices" pattern
-- Both flagged as implicit decisions contributing to `✗`
-
-### Expected
-
-```
-Key decisions documented: ✗
-  - Resolved decisions: 0
-  - (2 implicit decisions detected in spec text)
-```
-
-## Trace: `/iterate` question and suggestion generation
-
-- Questions surface whether each is inflection point or pick-and-go
-- User confirms: statistical method is critical (affects data prep + reporting), charting library matters less
-- **Must suggest decision records** rather than filling in the choice inline
+`/iterate` readiness check flags implicit decisions in vague spec text: "appropriate statistical methods" and "a charting library". User confirms statistical method is inflection point, charting library is pick-and-go.
 
 ### Expected suggestions
 

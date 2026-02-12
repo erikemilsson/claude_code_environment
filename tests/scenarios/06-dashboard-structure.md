@@ -2,31 +2,15 @@
 
 Verify that the dashboard provides a complete, actionable view of the project at every stage — from first generation through active execution to completion.
 
-## Context
-
-The dashboard is the user's primary communication channel with Claude. They open it in a split pane and expect to see: where the project is, what they need to do, and what Claude is doing. The dashboard must be useful at every project phase without requiring the user to browse internal files.
-
----
-
 ## Trace A: Full project skeleton visible
 
 ### State
 
-- 3 phases with 8 tasks total
-- Phase 1: 3 tasks (Pending, ready)
-- Phase 2: 3 tasks (Pending, blocked by DEC-001)
-- Phase 3: 2 tasks (Pending, blocked by DEC-002 + Phase 2)
-- DEC-001: draft, inflection_point: true
-- DEC-002: draft, inflection_point: false
+3 phases, 8 tasks. Phase 1: 3 ready. Phase 2: 3 blocked by DEC-001 (inflection point). Phase 3: 2 blocked by DEC-002 + Phase 2.
 
 ### Expected
 
-- ALL phases visible in the dashboard (not just Phase 1)
-- ALL tasks across ALL phases visible with their statuses
-- Decision dependencies shown for blocked tasks
-- Phase summaries explain what's blocking each phase
-- Critical path one-liner includes decision resolution steps
-- Decisions listed with links to decision docs
+All phases, tasks, and decisions visible with blocking context.
 
 ### Pass criteria
 

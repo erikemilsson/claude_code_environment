@@ -14,8 +14,7 @@ Split a complex task into smaller subtasks.
 
 ## Process
 
-1. Read the task and understand scope
-2. Identify logical components (aim for 3-6 subtasks)
+1. Identify logical components (aim for 3-6 subtasks)
 3. Create subtask files (inheriting spec provenance from parent):
    ```json
    {
@@ -65,13 +64,9 @@ Split a complex task into smaller subtasks.
 
 ## Creating Parallel-Friendly Subtasks
 
-When breaking down tasks, consider whether subtasks can run concurrently. `/work` automatically dispatches parallel-eligible tasks, but you can maximize parallelism by designing subtasks well:
-
-**Guidelines:**
-- **Minimize file overlaps** between subtasks — tasks sharing `files_affected` cannot run in parallel
-- **Use the `N_Ma` convention** for parallel-intent subtasks (e.g., `5_1a`, `5_1b`) — these signal to `/work` that they were designed for concurrent execution
-- **Set `files_affected` explicitly** on each subtask — this enables the file conflict detection that makes parallel dispatch safe. Tasks with empty `files_affected` are excluded from parallel batches unless `parallel_safe: true`
-- **Mark research tasks `parallel_safe: true`** — analysis/research tasks with no file side effects can run in parallel even without `files_affected`
+Maximize parallelism by minimizing file overlaps and setting `files_affected` explicitly:
+- Use `N_Ma` convention (e.g., `5_1a`, `5_1b`) to signal parallel intent
+- Mark research tasks `parallel_safe: true` if no file side effects
 
 **Example — Parallel breakdown with file assignments:**
 

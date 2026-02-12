@@ -34,8 +34,6 @@ Each parallel lane runs the full implement → verify cycle independently. The `
   next task...
 ```
 
-**Core principle:** The spec is the living source of truth. All work should align with it, or the spec should be updated intentionally.
-
 ---
 
 ## Phase Details

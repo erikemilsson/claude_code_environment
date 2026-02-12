@@ -6,9 +6,7 @@ Single-document reference for the entire environment: lifecycle, features, desig
 
 ## What This System Is
 
-A domain-agnostic project execution environment for Claude Code. It takes a project from idea to verified completion through a structured workflow: define what to build (Spec), build it (Execute), and confirm it was built correctly (Verify). Two specialist agents — one that builds, one that validates — check each other's work. A dashboard keeps the human informed and in control.
-
-The system works for software, research, procurement, renovation, or any project describable by a specification.
+Domain-agnostic project execution environment for Claude Code: Spec → Execute → Verify. Two specialist agents check each other's work. Works for software, research, procurement, renovation, or any spec-driven project.
 
 ---
 
@@ -31,11 +29,11 @@ graph LR
 **Output:** A markdown document saved to `.claude/vision/`
 **Authoritative file:** `support/reference/desktop-project-prompt.md`
 
-**The desktop-project-prompt** is a set of instructions you paste into a Claude Desktop project. Its purpose is to streamline the brainstorming conversation so that the information needed for a buildable spec gets captured early: natural phase boundaries, key decisions (including inflection points that change what gets built), dependencies, and areas of ambiguity or uncertainty. Without it, brainstorming might produce a freeform document that's hard to distill. With it, the vision document is pre-structured to carry forward smoothly into specification.
+**The desktop-project-prompt** streamlines brainstorming to capture spec-relevant information early: phase boundaries, key decisions, dependencies, ambiguities.
 
-**A vision document is a first conceptual iteration** — it captures intent, philosophy, and ambitious scope. It is NOT a spec: it doesn't have acceptance criteria, YAML frontmatter, or task breakdowns. The specification is what nails down the concrete requirements needed to actually build the project and removes ambiguity around the building.
+**A vision document** captures intent, philosophy, and ambitious scope. It's not a spec — no acceptance criteria, no YAML frontmatter, no task breakdowns. The spec extracts concrete buildable requirements.
 
-**Every project starts here.** A vision document is required before a specification can be created. If Claude encounters an empty spec with no vision document, it directs the user to brainstorm in Claude Desktop first. There is no path to a first spec that skips ideation.
+**Every project starts with ideation.** Vision document required before spec creation. No spec-skipping path.
 
 **Vision docs can be added throughout the project lifecycle** — not just at the start. If the user gets new ideas, receives additional documentation, or wants to incorporate external reference material, they save it to `.claude/vision/` and run `/iterate distill` to fold it into the spec. The vision folder is a living input, not a one-time artifact.
 
@@ -44,7 +42,7 @@ graph LR
 **Where:** Claude Code, `/iterate` command
 **What happens:** Transform ideas into a buildable specification with clear requirements and acceptance criteria.
 **Two entry points:**
-- `/iterate distill` — Extract spec from a vision document (asks 4 fixed questions about core value, essential features, Phase 1 scope, first user path). Claude reads all files in `.claude/vision/` — both vision documents and any supplementary documentation — to inform the spec.
+- `/iterate distill` — Extract spec from vision document via 4 core questions (value, features, scope, user path)
 - `/iterate` on existing spec — Auto-detects weakest area and improves it
 
 **If the spec is empty and no vision document exists**, Claude does not bootstrap a spec from scratch. It directs the user to brainstorm in Claude Desktop first (see Phase 0).
@@ -105,7 +103,7 @@ graph LR
 
 The dashboard (`.claude/dashboard.md`) is the primary channel between Claude and the user during the build phase.
 
-**Purpose:** Everything the user needs to know or do is surfaced here — decisions to make, tasks to review, progress to track. The user should never need to browse `.claude/` internals.
+**Purpose:** Acts as a navigation hub — everything the user needs to know or do is surfaced here with links to the specific files (decision records, task files, deliverables) that need attention. The user clicks through to those files when needed, but the dashboard tells them *which* files to look at and *why*, rather than requiring them to hunt through `.claude/` on their own.
 
 **Sections (toggleable via checklist at top):**
 | Section | Content |
@@ -205,7 +203,7 @@ Each feature below includes its purpose (why it exists), how it works (brief), a
 
 **Key invariant:** Exactly one `spec_v{N}.md` exists in `.claude/` at any time.
 
-**Direct edits are always safe** — the decomposed snapshot preserves the before-state, and drift detection handles reconciliation. Version bumps are for major transitions (phase completion, inflection points, major pivots), not routine edits.
+**Direct edits are always safe** — the decomposed snapshot preserves the before-state, and drift detection handles reconciliation. After editing the spec directly, run `/work` to continue building (it detects the changes via drift detection and reconciles affected tasks) or `/iterate` to keep refining the spec further. Version bumps are for major transitions (phase completion, inflection points, major pivots), not routine edits.
 
 **Version Transition Procedure:** Confirm with user → Archive to `previous_specifications/` → Copy to v{N+1} → Bump frontmatter → Delete old file.
 
@@ -244,9 +242,9 @@ Each feature below includes its purpose (why it exists), how it works (brief), a
 
 ### Questions System
 
-**Purpose:** Accumulate questions for the user and surface them at appropriate checkpoints.
+**Purpose:** Let agents accumulate questions for the user during execution and surface them at natural checkpoints.
 
-**How it works:** Questions go to `.claude/support/questions/questions.md` under categories (Requirements, Technical, Scope, Dependencies). `[BLOCKING]` prefix halts work until answered. Non-blocking questions are presented at task completion or phase boundaries.
+**How it works:** During execution, when implement-agent or verify-agent encounter something they can't resolve autonomously — a spec ambiguity, a technical choice needing user input, a dependency question — they write it to `.claude/support/questions/questions.md` under categories (Requirements, Technical, Scope, Dependencies). Questions marked with `[BLOCKING]` halt work until answered. Non-blocking questions accumulate and are surfaced to the user in the dashboard's Action Required section at natural checkpoints (after a task completes or at a phase boundary).
 
 **Authoritative file:** `commands/work.md` § Step 5
 
@@ -300,8 +298,8 @@ A task cannot reach "Finished" without `task_verification.result == "pass"`. Thi
 ### Context Separation Between Agents
 verify-agent always runs as a separate Task agent, never inline in the implementation conversation. This applies to both sequential and parallel execution modes.
 
-### The Dashboard Is the User Interface
-During the build phase, everything the user needs is surfaced through the dashboard. The user should never need to browse `.claude/` internals to understand what's happening or what to do next.
+### The Dashboard Is the Navigation Hub
+During the build phase, the dashboard surfaces what needs attention and links to the specific files that require review. The user follows these links to inspect files directly — but the dashboard guides them there, so they don't need to browse `.claude/` on their own to figure out what's happening or what to do next.
 
 ### Domain Agnosticism
 Nothing in the system assumes software development. Dashboard language, task tracking, verification, and all features adapt to whatever domain the project is in.

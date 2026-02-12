@@ -18,15 +18,7 @@ This environment is domain-agnostic. It works for software development, research
 
 ## How the Environment Works
 
-**The dashboard is your communication channel with Claude** (`.claude/dashboard.md`). During the build phase (Spec → Execute → Verify), everything Claude needs from you is surfaced there: decisions to make, files to review, actions to take. You should always be able to open the dashboard and see what your next action is.
-
-**How it works in practice:**
-- Claude tracks tasks, produces deliverables, and runs verification autonomously
-- When Claude needs your input, it appears in the dashboard — with links to the relevant files, checkboxes to confirm actions, and space for feedback
-- You click through to files when needed, then signal completion back through the dashboard
-- You don't need to browse `.claude/` internals to understand what's happening
-
-**This is pragmatic, not rigid.** The dashboard is the primary communication hub during active development. Post-completion activities (testing, deployment) may involve more direct interaction. Claude should surface information through the dashboard when it makes sense, not force everything through it artificially.
+**The dashboard is your communication channel with Claude** (`.claude/dashboard.md`). During the build phase, everything Claude needs from you is surfaced there: decisions to make, files to review, actions to take. The dashboard is the primary hub during active development; post-completion activities may involve more direct interaction.
 
 The dashboard has a **Sections** checklist at the top — check or uncheck items to control which sections Claude generates during `/work`. Custom Views is optional and defaults to unchecked.
 
@@ -38,12 +30,7 @@ For full details, see `.claude/support/reference/workflow.md` § "System Overvie
 
 The project specification lives at `.claude/spec_v{N}.md` (exactly one file; `/work` discovers N by globbing).
 
-**Do not author spec content directly.** If you identify improvements:
-1. Quote the relevant section
-2. Explain the suggested change
-3. Let the user make the edit
-
-**You CAN perform spec infrastructure operations** — archiving, copying during version transitions, updating frontmatter version numbers and dates. The boundary is authorship (deciding what to build) vs infrastructure (managing files). See `iterate.md` § "Suggest-Only Boundary" for details.
+**Do not author spec content directly.** Suggest improvements; user makes edits. You CAN perform spec infrastructure operations (archiving, version transitions, frontmatter updates). See `iterate.md` § "Suggest-Only Boundary".
 
 To create or revise specifications, run `/iterate`.
 
@@ -60,7 +47,7 @@ Vision docs capture intent and philosophy; specs capture buildable scope. Both a
 
 ## Workflow: Spec → Execute → Verify
 
-This project uses a phased workflow: **Spec** (define requirements) → **Execute** (build via implement-agent) → **Verify** (validate via verify-agent). Two specialist agents check each other's work, eliminating the blind spots of self-validation.
+Phased workflow: **Spec** (define requirements) → **Execute** (implement-agent) → **Verify** (verify-agent). Two specialist agents check each other's work.
 
 **Primary command:** `/work` - Checks requests against spec, decomposes spec into tasks, routes to specialist agents.
 
