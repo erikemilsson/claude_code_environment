@@ -1,10 +1,10 @@
-# Scenario 25: Breakdown Command
+# Scenario 14: Breakdown Command
 
 Verify that `/breakdown` correctly splits high-difficulty tasks into subtasks, updates parent status, inherits spec provenance, and integrates with the `/work` routing that rejects difficulty >= 7 tasks.
 
 ## Context
 
-Tasks with difficulty >= 7 cannot be dispatched to implement-agent (Step 1b rejects them). The `/breakdown` command is the only way to make them workable. This scenario tests the full lifecycle: detection, breakdown, provenance inheritance, parent status, and re-eligibility of subtasks.
+Tasks with difficulty >= 7 cannot be dispatched to implement-agent (task validation rejects them). The `/breakdown` command is the only way to make them workable. This scenario tests the full lifecycle: detection, breakdown, provenance inheritance, parent status, and re-eligibility of subtasks.
 
 ## State (Base)
 
@@ -16,9 +16,9 @@ Tasks with difficulty >= 7 cannot be dispatched to implement-agent (Step 1b reje
 
 ---
 
-## Trace 25A: `/work` rejects high-difficulty task
+## Trace 14A: `/work` rejects high-difficulty task
 
-- **Path:** `/work` → Step 3 routing → implement-agent.md → Step 1b Validate Task
+- **Path:** `/work` → task routing → implement-agent task validation
 
 ### Scenario
 
@@ -26,13 +26,13 @@ Task 1 is "Finished". Task 2 (difficulty 8) is next eligible. `/work` routes to 
 
 ### Expected
 
-- implement-agent Step 1b: `difficulty >= 7` → Stop
+- implement-agent validates task, finds `difficulty >= 7` → Stop
 - Reports back: "Task 2 needs breakdown first (difficulty 8). Use `/breakdown 2`."
 - Task 2 stays "Pending" — not set to "In Progress"
 
 ### Pass criteria
 
-- [ ] implement-agent rejects difficulty 8 task at Step 1b
+- [ ] implement-agent rejects difficulty 8 task during task validation
 - [ ] Task status remains "Pending" (not modified)
 - [ ] User is directed to `/breakdown` with the task ID
 - [ ] No implementation work begins on the high-difficulty task
@@ -45,9 +45,9 @@ Task 1 is "Finished". Task 2 (difficulty 8) is next eligible. `/work` routes to 
 
 ---
 
-## Trace 25B: `/breakdown` creates subtasks with inherited provenance
+## Trace 14B: `/breakdown` creates subtasks with inherited provenance
 
-- **Path:** breakdown.md → Process Steps 1-5
+- **Path:** `/breakdown` process
 
 ### Scenario
 
@@ -86,7 +86,7 @@ User runs `/breakdown 2`. The command reads Task 2 and splits it into 3 subtasks
 
 ---
 
-## Trace 25C: Downstream dependencies transfer to subtasks
+## Trace 14C: Downstream dependencies transfer to subtasks
 
 - **Path:** `/work` auto-detect after breakdown
 
@@ -116,9 +116,9 @@ Tasks 3 and 4 depend on Task 2 (`dependencies: ["2"]`). After breakdown, Task 2 
 
 ---
 
-## Trace 25D: `/work` rejects "Broken Down" parent task
+## Trace 14D: `/work` rejects "Broken Down" parent task
 
-- **Path:** implement-agent.md → Step 1b Validate Task
+- **Path:** implement-agent task validation
 
 ### Scenario
 
@@ -126,12 +126,12 @@ User tries `/work 2` to work directly on the broken-down parent task.
 
 ### Expected
 
-- implement-agent Step 1b: `status is "Broken Down"` → Stop
+- implement-agent validates task, finds `status is "Broken Down"` → Stop
 - Reports: "Task 2 has been broken down — work on subtasks 2_1, 2_2, 2_3 instead"
 
 ### Pass criteria
 
-- [ ] implement-agent rejects "Broken Down" tasks at Step 1b
+- [ ] implement-agent rejects "Broken Down" tasks during task validation
 - [ ] User directed to work on subtasks instead
 - [ ] Parent task status not modified
 

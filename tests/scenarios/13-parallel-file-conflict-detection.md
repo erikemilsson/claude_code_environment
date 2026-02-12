@@ -1,4 +1,4 @@
-# Scenario 24: Parallel Execution with File Conflict Detection
+# Scenario 13: Parallel Execution with File Conflict Detection
 
 Verify that `/work` parallel dispatch correctly detects file conflicts between concurrent tasks and holds back conflicting tasks.
 
@@ -16,9 +16,9 @@ Parallel execution is a core template feature: when multiple tasks are eligible 
 - Parallel execution enabled in spec frontmatter
 - All tasks have no explicit dependency relationships
 
-## Trace 24A: Conflict detection and dispatch
+## Trace 13A: Conflict detection and dispatch
 
-- **Path:** `/work` Step 4 (parallel dispatch)
+- **Path:** `/work` parallel dispatch
 - `/work` examines file lists for each eligible task
 - Detects overlap: Task A and Task C both touch `src/database/models.py`
 
@@ -43,24 +43,15 @@ Parallel execution is a core template feature: when multiple tasks are eligible 
 
 ---
 
-## Trace 24B: Dashboard shows parallel execution status
+## Trace 13B: Dashboard shows parallel execution status
 
-- **Path:** dashboard.md → task status during parallel execution; work.md § "If Executing (Parallel)" Step 2
+- **Path:** `/work` parallel execution → dashboard task status display
 
 ### Expected
 
 - Dashboard shows A, B, D as "In Progress"
 - Task C shown as "Pending (held: conflict with Task A)" — the `conflict_note` field drives this display
 - Overall progress reflects parallel work accurately
-
-### Mechanism
-
-Step 2 of "If Executing (Parallel)" annotates held-back tasks with a `conflict_note` in the task JSON:
-```json
-{ "conflict_note": "Held: file conflict with Task A on src/database/models.py. Auto-clears when conflict resolves." }
-```
-
-The Section Display Rules render this as: `Pending (held: conflict with Task A)` in the Status column.
 
 ### Pass criteria
 
@@ -78,9 +69,9 @@ The Section Display Rules render this as: `Pending (held: conflict with Task A)`
 
 ---
 
-## Trace 24C: After conflict resolves, queued task becomes eligible
+## Trace 13C: After conflict resolves, queued task becomes eligible
 
-- **Path:** `/work` "If Executing (Parallel)" Step 4 → incremental re-dispatch loop
+- **Path:** `/work` parallel execution → incremental re-dispatch after task completion
 - Task A completes. Task C was waiting on it due to `src/database/models.py` conflict.
 - Tasks B and D are still in progress.
 
@@ -90,16 +81,6 @@ The Section Display Rules render this as: `Pending (held: conflict with Task A)`
 - C is dispatched in parallel with still-running B and D (no file conflicts between them)
 - C's `conflict_note` is cleared when it's dispatched
 - No manual intervention needed
-
-### Mechanism
-
-Step 4 of "If Executing (Parallel)" uses `run_in_background: true` and polls for completion. When Task A finishes:
-1. A is removed from `active_agents`
-2. Step 2c eligibility is re-run — Task C's conflict on `models.py` is now resolved (A is "Finished")
-3. C is dispatched as a new background agent and added to `active_agents`
-4. `conflict_note` is cleared from C's task JSON
-
-This is **incremental re-dispatch** — tasks are released as soon as their specific conflicts resolve, not when the entire batch finishes.
 
 ### Pass criteria
 

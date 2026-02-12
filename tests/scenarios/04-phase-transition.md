@@ -1,4 +1,4 @@
-# Scenario 05: Pick-and-Go Decision Unblocks Without `/iterate`
+# Scenario 04: Pick-and-Go Decision Unblocks Without `/iterate`
 
 Verify that a non-inflection decision unblocks tasks immediately, contrasting with the inflection point flow in Scenario 03.
 
@@ -10,11 +10,9 @@ Verify that a non-inflection decision unblocks tasks immediately, contrasting wi
 - DEC-001: `status: implemented` (already done)
 - DEC-002: `status: approved`, selected: "matplotlib", `inflection_point: false`
 
-## Trace: `/work` Step 2b-post — Pick-and-Go
-
-- **Path:** work.md → Step 2b-post
+## Trace: `/work` post-decision handling (pick-and-go)
 - DEC-002: `inflection_point: false` → pick-and-go branch
-- Unblock dependent tasks, continue to Step 2c
+- Unblock dependent tasks, continue to dispatch
 
 ### Expected
 

@@ -1,4 +1,4 @@
-# Scenario 28: Task Dependency Chains
+# Scenario 17: Task Dependency Chains
 
 Verify that `/work` correctly resolves complex dependency relationships — linear chains, multi-blocker convergence, and circular dependency detection.
 
@@ -20,9 +20,9 @@ Task dependencies control execution order. Simple cases (A depends on B) are imp
 
 ---
 
-## Trace 28A: Linear chain — only root tasks eligible initially
+## Trace 17A: Linear chain — only root tasks eligible initially
 
-- **Path:** `/work` Step 2c (parallelism eligibility) → Step 3 (routing)
+- **Path:** /work eligibility assessment → /work task routing
 
 ### Scenario
 
@@ -50,7 +50,7 @@ Fresh start. All tasks are "Pending". `/work` assesses eligibility.
 
 ---
 
-## Trace 28B: Chain propagation — completing a task unblocks the next
+## Trace 17B: Chain propagation — completing a task unblocks the next
 
 - **Path:** `/work` after Task 1 completes → re-assessment
 
@@ -80,9 +80,9 @@ Task 1 finishes (passes verification). Task 4 is still "In Progress". `/work` re
 
 ---
 
-## Trace 28C: Multi-blocker convergence — all dependencies must be satisfied
+## Trace 17C: Multi-blocker convergence — all dependencies must be satisfied
 
-- **Path:** `/work` Step 2c eligibility assessment for Task 5
+- **Path:** /work eligibility assessment for Task 5
 
 ### Scenario
 
@@ -108,7 +108,7 @@ Task 2 is now "Finished". Task 4 is still "In Progress". Task 5 depends on both 
 
 ---
 
-## Trace 28D: Convergence resolves — multi-dep task unblocks
+## Trace 17D: Convergence resolves — multi-dep task unblocks
 
 - **Path:** `/work` after Task 4 completes
 
@@ -135,7 +135,7 @@ Task 4 now finishes. Task 2 was already "Finished". Task 5 depends on [2, 4].
 
 ---
 
-## Trace 28E: Deep convergence — task with 3+ dependencies
+## Trace 17E: Deep convergence — task with 3+ dependencies
 
 - **Path:** `/work` eligibility for Task 7
 
@@ -161,7 +161,7 @@ Tasks 3, 5, and 6 are all "Finished". Task 7 depends on [3, 5, 6].
 
 ---
 
-## Trace 28F: Circular dependency detection
+## Trace 17F: Circular dependency detection
 
 - **Path:** `/health-check` or `/work` dependency validation
 
@@ -195,9 +195,9 @@ Due to a manual edit error, task files contain a circular dependency:
 
 ---
 
-## Trace 28G: Critical path reflects dependency chain
+## Trace 17G: Critical path reflects dependency chain
 
-- **Path:** work.md § "Critical Path Generation"
+- **Path:** /work critical path generation
 
 ### Scenario
 

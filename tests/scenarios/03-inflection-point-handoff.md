@@ -9,9 +9,7 @@ Verify that a resolved inflection point pauses `/work`, hands off to `/iterate` 
 - DEC-001: `status: approved`, `inflection_point: true`, `spec_revised`: absent, selected: "Multilevel Modeling"
 - Spec still says "Apply appropriate statistical methods" (not yet updated)
 
-## Trace: `/work` Step 2b-post — Inflection Point Detection
-
-- **Path:** work.md → Step 2b-post
+## Trace: `/work` post-decision inflection point check
 - DEC-001: `inflection_point: true` → check `spec_revised` → absent → pause
 
 ### Expected
@@ -25,9 +23,7 @@ Run /iterate to review affected spec sections, then /work to continue.
 - No Phase 2 tasks change status
 - Spec not edited directly (suggest_only policy)
 
-## Trace: `/iterate` Post-Inflection-Point Re-Entry
-
-- **Path:** iterate.md → Post-Inflection-Point Re-Entry
+## Trace: `/iterate` inflection point re-entry
 - Detection: `inflection_point: true`, `status: approved`, `spec_revised: NOT true` → match
 - Focuses on affected sections (Phase 2 + potential Phase 1 impact)
 - Suggests spec changes + suggests adding `spec_revised: true` to DEC-001 frontmatter
@@ -40,9 +36,8 @@ Run /iterate to review affected spec sections, then /work to continue.
 
 ## Trace: `/work` after spec update and `spec_revised: true`
 
-- **Path:** work.md → Step 2b-post
 - DEC-001: `inflection_point: true`, `spec_revised: true` → proceed
-- Step 1b detects spec drift → Granular Reconciliation UI → task updates
+- Spec drift detection triggers reconciliation → task updates
 
 ### Expected
 

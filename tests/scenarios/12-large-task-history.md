@@ -1,4 +1,4 @@
-# Scenario 21: Large Task History and Archival
+# Scenario 12: Large Task History and Archival
 
 Verify that the template remains performant and navigable when a project accumulates hundreds of completed tasks.
 
@@ -12,10 +12,10 @@ Long-lived projects accumulate significant task history. Real projects have reac
   - 350 completed
   - 20 pending (across 2 phases)
   - 10 in_progress (5 with implement-agent, 5 with verify-agent)
-- `task-overview.md` is 2000+ lines
+- `dashboard.md` is 2000+ lines
 - Dashboard was last regenerated with 370 tasks (10 new since then)
 
-## Trace 21A: /work focuses on active tasks
+## Trace 12A: /work focuses on active tasks
 
 - **Path:** `/work` invoked with large task history
 - Must identify eligible tasks among 380 total
@@ -40,7 +40,7 @@ Long-lived projects accumulate significant task history. Real projects have reac
 
 ---
 
-## Trace 21B: Dashboard generation at scale
+## Trace 12B: Dashboard generation at scale
 
 - **Path:** dashboard.md regeneration with 380 tasks
 - Dashboard must show actionable information without becoming unwieldy
@@ -68,7 +68,7 @@ Long-lived projects accumulate significant task history. Real projects have reac
 
 ---
 
-## Trace 21C: Archival threshold triggers
+## Trace 12C: Archival threshold triggers
 
 - **Path:** `/work` or `/health-check` → archival check
 - CLAUDE.md specifies archival threshold at 100 completed tasks
@@ -79,7 +79,7 @@ Long-lived projects accumulate significant task history. Real projects have reac
 - Archival is suggested (or triggered if automatic) when threshold is exceeded
 - Completed tasks are moved to `.claude/tasks/archive/`
 - Archived tasks are removed from active processing but preserved for reference
-- `task-overview.md` is regenerated with only active tasks
+- Dashboard is regenerated with only active tasks
 
 ### Pass criteria
 
@@ -97,7 +97,7 @@ Long-lived projects accumulate significant task history. Real projects have reac
 
 ---
 
-## Trace 21D: /status responds quickly at scale
+## Trace 12D: /status responds quickly at scale
 
 - **Path:** `/status` invoked with 380 tasks
 - `/status` is documented as read-only and quick

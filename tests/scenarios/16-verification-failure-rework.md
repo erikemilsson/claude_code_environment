@@ -1,4 +1,4 @@
-# Scenario 27: Verification Failure and Rework Cycle
+# Scenario 16: Verification Failure and Rework Cycle
 
 Verify that per-task verification failure correctly routes back to implement-agent for fixes, and that the fail → fix → re-verify loop operates correctly including the 2-attempt re-verification limit.
 
@@ -18,9 +18,9 @@ Verification is not a rubber stamp. When verify-agent finds issues, the task mus
 
 ---
 
-## Trace 27A: First verification failure
+## Trace 16A: First verification failure
 
-- **Path:** verify-agent → Steps T1-T8; work.md → Step 3 routing algorithm
+- **Path:** verify-agent per-task verification; /work task routing
 
 ### Scenario
 
@@ -28,10 +28,10 @@ Verification is not a rubber stamp. When verify-agent finds issues, the task mus
 
 ### Expected
 
-1. verify-agent Step T1: Reads task, spec section, completion notes
-2. Steps T2-T5: Verifies files, spec alignment, quality, integration
-3. Step T3 fails: spec says "upsert for 4 bronze tables", only 3 implemented
-4. Step T6: Writes `task_verification` to task JSON:
+1. verify-agent reads task, spec section, completion notes
+2. Verifies files, spec alignment, quality, integration
+3. Spec alignment fails: spec says "upsert for 4 bronze tables", only 3 implemented
+4. Writes `task_verification` to task JSON:
    ```json
    {
      "task_verification": {
@@ -49,7 +49,7 @@ Verification is not a rubber stamp. When verify-agent finds issues, the task mus
      }
    }
    ```
-5. Step T7: Task status set back to "In Progress"
+5. Task status set back to "In Progress"
    - `[VERIFICATION FAIL]` prepended to notes
    - `completion_date` cleared
 6. Dashboard regenerated showing Task 5 back to "In Progress"
@@ -74,26 +74,26 @@ Verification is not a rubber stamp. When verify-agent finds issues, the task mus
 
 ---
 
-## Trace 27B: Fix and re-verify (pass on second attempt)
+## Trace 16B: Fix and re-verify (pass on second attempt)
 
-- **Path:** `/work` → implement-agent (fix) → verify-agent (re-verify)
+- **Path:** implement-agent completion handoff → verify-agent re-verification
 
 ### Scenario
 
-After 27A, `/work` detects Task 5 "In Progress" with `[VERIFICATION FAIL]` notes. Routes to implement-agent. implement-agent reads the failure notes, adds the missing 4th table upsert, then triggers re-verification.
+After 16A, `/work` detects Task 5 "In Progress" with `[VERIFICATION FAIL]` notes. Routes to implement-agent. implement-agent reads the failure notes, adds the missing 4th table upsert, then triggers re-verification.
 
 ### Expected
 
 1. implement-agent reads `[VERIFICATION FAIL]` notes → understands what to fix
-2. Step 4: Implements missing `raw_game_designers` upsert
-3. Step 5: Self-review confirms all 4 tables now have upserts
-4. Step 6a: Sets "Awaiting Verification" again
-5. Step 6b: Triggers verify-agent
+2. Implements missing `raw_game_designers` upsert
+3. Self-review confirms all 4 tables now have upserts
+4. Sets "Awaiting Verification" again
+5. Hands off to verify-agent
 6. verify-agent re-verifies:
    - All 4 tables present → spec_alignment: pass
    - All checks pass
    - `task_verification.result: "pass"`
-7. Step T7: Task status → "Finished"
+7. Task status → "Finished"
 8. Tasks 6 and 7 (which depend on Task 5) become eligible
 
 ### Pass criteria
@@ -114,9 +114,9 @@ After 27A, `/work` detects Task 5 "In Progress" with `[VERIFICATION FAIL]` notes
 
 ---
 
-## Trace 27C: Re-verification limit (2 failures → escalate)
+## Trace 16C: Re-verification limit (2 failures → escalate)
 
-- **Path:** verify-agent → Step T7 re-verification limit
+- **Path:** verify-agent re-verification limit
 
 ### Scenario
 
@@ -126,7 +126,7 @@ Task 5 has now failed verification twice. implement-agent attempts a fix and tri
 
 1. verify-agent counts previous `[VERIFICATION FAIL]` entries in task notes
 2. Detects this is attempt 3 (after 2 prior failures)
-3. Per Step T7: "Maximum 2 re-verification attempts per task"
+3. Maximum 2 re-verification attempts per task exceeded
 4. Task status set to "Blocked"
 5. Notes explain the repeated failures
 6. Task escalated to human review
@@ -150,9 +150,9 @@ Task 5 has now failed verification twice. implement-agent attempts a fix and tri
 
 ---
 
-## Trace 27D: Phase-level verification creates fix tasks
+## Trace 16D: Phase-level verification creates fix tasks
 
-- **Path:** verify-agent phase-level → Steps 5-6; work.md § "If Verifying (Phase-Level)"
+- **Path:** verify-agent phase-level issue handling; /work phase verification routing
 
 ### Scenario
 
@@ -160,13 +160,13 @@ All spec tasks are "Finished" with passing per-task verification. Phase-level ve
 
 ### Expected
 
-1. verify-agent Step 3: Per-criterion table shows "API serves pipeline data" as FAIL
-2. Step 5: Categorized as "Major" (core functionality broken)
-3. Step 6: Creates a new fix task:
+1. Per-criterion table shows "API serves pipeline data" as FAIL
+2. Categorized as "Major" (core functionality broken)
+3. Creates a new fix task:
    - Regular task (NOT `out_of_spec: true`) — this is an in-spec bug
    - `source: "verify-agent"`
    - Describes the integration mismatch
-4. Step 7: `verification-result.json` written with `result: "fail"`
+4. `verification-result.json` written with `result: "fail"`
 5. `/work` reads result → routes back to implement-agent for the fix task
 6. After fix: `/work` routes to phase-level re-verification
 
@@ -189,9 +189,9 @@ All spec tasks are "Finished" with passing per-task verification. Phase-level ve
 
 ---
 
-## Trace 27E: Out-of-spec recommendations require user approval
+## Trace 16E: Out-of-spec recommendations require user approval
 
-- **Path:** verify-agent phase-level → Step 6; work.md § out-of-spec consent flow
+- **Path:** verify-agent phase-level issue handling; /work out-of-spec approval flow
 
 ### Scenario
 
@@ -199,7 +199,7 @@ During phase-level verification, verify-agent also notices that adding request c
 
 ### Expected
 
-1. verify-agent Step 6: Creates recommendation task:
+1. Creates recommendation task:
    - `out_of_spec: true`
    - `source: "verify-agent"`
    - `status: "Pending"`

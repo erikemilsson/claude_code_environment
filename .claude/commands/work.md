@@ -182,6 +182,16 @@ Read `.claude/support/reference/phase-decision-gates.md` and follow its procedur
 - Post-decision check (inflection point handling)
 - Early-exit conditions (skip when no phases or no decisions exist)
 
+**When a decision blocks work**, present options including research:
+```
+Decision {DEC-NNN}: "{title}" is unresolved and blocks Task {id}.
+  [R] Research options (spawns research-agent to investigate and populate the decision record)
+  [S] Skip (you'll research manually)
+  [D] Defer decision
+```
+
+If user selects `[R]`: Gather context (decision record, spec, related tasks/decisions), then spawn research-agent. See `.claude/commands/research.md` Steps 2-4 for the delegation flow. After research completes, re-present the decision for user selection. If user selects via checkbox, auto-update frontmatter per the phase-decision-gates procedure and continue.
+
 If all checks pass → proceed to Step 2c.
 
 ### Step 2c: Parallelism Eligibility Assessment

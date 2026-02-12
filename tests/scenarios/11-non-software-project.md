@@ -1,4 +1,4 @@
-# Scenario 18: Non-Software Specification Project
+# Scenario 11: Non-Software Specification Project
 
 Verify that the template works for a project where the deliverable is a specification document, not runnable code.
 
@@ -16,9 +16,9 @@ Not all projects produce code. Some produce specifications, research documents, 
 - No `src/`, no `package.json`, no `pyproject.toml`, no build tools
 - No test framework configured
 
-## Trace 18A: Implement-agent adapts to documentation deliverables
+## Trace 11A: Implement-agent adapts to documentation deliverables
 
-- **Path:** `/work` → implement-agent dispatched for Task-1
+- **Path:** `/work` dispatches implement-agent for a documentation task
 - Task-1 deliverable is a Markdown document (`docs/security-threat-model.md`)
 - No code to write, compile, or lint
 
@@ -43,9 +43,9 @@ Not all projects produce code. Some produce specifications, research documents, 
 
 ---
 
-## Trace 18B: Verify-agent validates documents, not builds
+## Trace 11B: Verify-agent validates documents, not builds
 
-- **Path:** verify-agent invocation after implement-agent completes Task-1
+- **Path:** verify-agent invoked after implement-agent completes a documentation task
 - No test suite exists. No build system exists. Deliverable is a Markdown file.
 
 ### Expected
@@ -69,9 +69,9 @@ Not all projects produce code. Some produce specifications, research documents, 
 
 ---
 
-## Trace 18C: Dashboard language adapts to project type
+## Trace 11C: Dashboard language adapts to project type
 
-- **Path:** dashboard.md regeneration after task progress
+- **Path:** dashboard regeneration after task progress
 - 1 of 3 tasks complete, 2 pending
 
 ### Expected

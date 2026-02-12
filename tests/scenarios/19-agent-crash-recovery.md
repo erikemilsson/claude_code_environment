@@ -1,4 +1,4 @@
-# Scenario 30: Agent Crash and Timeout Recovery
+# Scenario 19: Agent Crash and Timeout Recovery
 
 Verify that `/work` correctly handles agent failures — both implement-agent and verify-agent — including timeouts, unexpected exits, and partial work.
 
@@ -16,21 +16,17 @@ Agents run as separate Task invocations with `max_turns` limits. When an agent c
 
 ---
 
-## Trace 30A: Implement-agent times out (parallel)
+## Trace 19A: Implement-agent times out (parallel)
 
-- **Path:** work.md Step 4 § "If Executing (Parallel)" → one agent reaches `max_turns: 40` without completing
+- **Path:** /work parallel execution
 
 ### Scenario
 
-Tasks 1 and 3 dispatched in parallel (no file conflicts, no dependencies between them). Task 1's agent reaches the turn limit while still implementing — Step 6b (verify-agent spawn) was never reached. Files have been partially modified. Task 3's agent completes successfully.
-
-### Note on sequential mode
-
-In sequential mode, implement-agent runs inline in the `/work` conversation (not as a spawned Task agent), so there is no `max_turns` limit. Timeout is only relevant for parallel agents (spawned with `max_turns: 40`) and verify-agents (spawned with `max_turns: 30`). This trace tests the parallel case.
+Tasks 1 and 3 dispatched in parallel (no file conflicts, no dependencies between them). Task 1's agent reaches the turn limit while still implementing — verification was never reached. Files have been partially modified. Task 3's agent completes successfully. Timeout is relevant for parallel agents (spawned with turn limits) and verify-agents; sequential mode runs inline without a turn limit.
 
 ### Expected
 
-1. Polling loop detects Task 1's agent exited without completion signal (60 poll iterations)
+1. Polling loop detects Task 1's agent exited without completion signal
 2. Task 1 status set to "Blocked"
 3. Task 1 notes updated: `[AGENT TIMEOUT]`
 4. Task 3 completes normally — its results are processed independently
@@ -54,9 +50,9 @@ In sequential mode, implement-agent runs inline in the `/work` conversation (not
 
 ---
 
-## Trace 30B: Verify-agent times out (sequential)
+## Trace 19B: Verify-agent times out (sequential)
 
-- **Path:** work.md Step 4 § "If Verifying (Per-Task)" → verify-agent reaches `max_turns: 30`; work.md Step 0 Case 2 (recovery on next run); verify-agent.md § "Timeout Handling"
+- **Path:** /work session recovery, verify-agent timeout handling
 
 ### Scenario
 
@@ -87,9 +83,9 @@ implement-agent completed successfully for Task 1. verify-agent was spawned but 
 
 ---
 
-## Trace 30C: Parallel agent crash — one of three agents fails
+## Trace 19C: Parallel agent crash — one of three agents fails
 
-- **Path:** work.md Step 4 § "If Executing (Parallel)" → polling loop
+- **Path:** /work parallel execution
 
 ### Scenario
 
@@ -121,13 +117,13 @@ Tasks 1, 3, and a new Task 4 dispatched in parallel. Task 1's agent crashes (exi
 
 ---
 
-## Trace 30D: Agent produces partial work — files modified but task incomplete
+## Trace 19D: Agent produces partial work — files modified but task incomplete
 
-- **Path:** work.md Step 4 → implement-agent.md § "Handling Issues"
+- **Path:** implement-agent issue handling
 
 ### Scenario
 
-implement-agent for Task 1 created 2 of 3 required files, then hit a blocking issue (e.g., discovered a missing dependency). Agent correctly set status to "Blocked" and documented the blocker per implement-agent.md § "Handling Issues" — but files are in a half-done state.
+implement-agent for Task 1 created 2 of 3 required files, then hit a blocking issue (e.g., discovered a missing dependency). Agent correctly set status to "Blocked" and documented the blocker — but files are in a half-done state.
 
 ### Expected
 

@@ -1,4 +1,4 @@
-# Scenario 29: On Hold and Absorbed Statuses
+# Scenario 18: On Hold and Absorbed Statuses
 
 Verify that `/work` correctly handles `On Hold` and `Absorbed` task statuses — skipping them during routing, excluding them from completion checks, and preserving audit trails.
 
@@ -22,9 +22,9 @@ Verify that `/work` correctly handles `On Hold` and `Absorbed` task statuses —
 
 ---
 
-## Trace 29A: `/work` skips On Hold tasks during routing
+## Trace 18A: `/work` skips On Hold tasks during routing
 
-- **Path:** work.md Step 3 → Explicit routing algorithm
+- **Path:** /work task routing
 
 ### Scenario
 
@@ -32,7 +32,7 @@ User runs `/work` (auto-detect mode). Task 2 is "On Hold", Task 3 is "Pending" w
 
 ### Expected
 
-1. Step 3 routing scans for actionable tasks
+1. Routing scans for actionable tasks
 2. Task 2 ("On Hold") is excluded from candidate pool — not treated as Pending, Blocked, or actionable
 3. Task 3 ("Pending") is selected as next work item
 4. Status summary line shows on hold count: "Tasks: 6 total (1 finished, 0 in progress, 3 pending, 1 on hold, 1 absorbed)"
@@ -41,7 +41,7 @@ User runs `/work` (auto-detect mode). Task 2 is "On Hold", Task 3 is "Pending" w
 
 - [ ] Task 2 not selected for execution despite being a non-finished task
 - [ ] Task 3 correctly identified as next actionable task
-- [ ] On Hold tasks excluded from parallelism eligibility (Step 2c)
+- [ ] On Hold tasks excluded from parallelism eligibility
 - [ ] Status summary includes on hold and absorbed counts
 
 ### Fail indicators
@@ -52,9 +52,9 @@ User runs `/work` (auto-detect mode). Task 2 is "On Hold", Task 3 is "Pending" w
 
 ---
 
-## Trace 29B: Absorbed tasks excluded from phase completion
+## Trace 18B: Absorbed tasks excluded from phase completion
 
-- **Path:** work.md Step 3 → Explicit routing algorithm, Step 1
+- **Path:** /work task routing, /work task loading
 
 ### Scenario
 
@@ -82,9 +82,9 @@ Phase 1 tasks: 1 (Finished), 2 (On Hold), 3 (Finished), 4 (Absorbed), 5 (Finishe
 
 ---
 
-## Trace 29C: Parent auto-completion with Absorbed subtask
+## Trace 18C: Parent auto-completion with Absorbed subtask
 
-- **Path:** work.md § "Task Completion" → Step 5
+- **Path:** /work complete parent auto-completion
 
 ### Scenario
 
@@ -111,9 +111,9 @@ Parent Task 10 has subtasks [10_1, 10_2, 10_3]. Task 10_1: Finished, Task 10_2: 
 
 ---
 
-## Trace 29D: Health check validates On Hold and Absorbed rules
+## Trace 18D: Health check validates On Hold and Absorbed rules
 
-- **Path:** health-check.md Part 1 → Status Rules (Check 5)
+- **Path:** /health-check status validation
 
 ### Scenario
 
@@ -143,9 +143,9 @@ Health check runs on a project with:
 
 ---
 
-## Trace 29E: Only user can resume On Hold tasks
+## Trace 18E: Only user can resume On Hold tasks
 
-- **Path:** work.md Step 3, shared-definitions.md § Mandatory Rules
+- **Path:** /work task routing, mandatory task rules
 
 ### Scenario
 

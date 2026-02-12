@@ -10,10 +10,9 @@ Verify that `/work` blocks tasks whose `decision_dependencies` reference unresol
 - DEC-001: status `draft`, `inflection_point: true`
 - DEC-002: status `draft`, `inflection_point: false`
 
-## Trace: `/work` Step 2b item 4 — Decision Check
+## Trace: `/work` decision dependency check
 
-- **Path:** work.md → Step 2b → item 4 (DECISION CHECK)
-- For each task, read `decision_dependencies` → read decision record → check checkbox state
+- For each task, check `decision_dependencies` against decision record status
 - Phase 2 tasks: DEC-001 unresolved → blocked
 - Phase 3 tasks: DEC-002 unresolved → blocked (also phase-blocked)
 - Phase 1 tasks: no decision deps → eligible
@@ -36,8 +35,6 @@ Open the decision doc to make your selection, then run /work again.
 ```
 
 ## Trace: Dashboard regeneration
-
-- **Path:** dashboard.md → Action Required → Decisions, Tasks grouped by phase
 - All phases visible, blocked tasks show decision dependency in Deps column
 - Phase summary lines explain blocking reason
 

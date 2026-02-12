@@ -1,4 +1,4 @@
-# Scenario 34: `/iterate distill` — Vision Document to Spec
+# Scenario 23: `/iterate distill` — Vision Document to Spec
 
 Verify that `/iterate distill` correctly transforms a vision document into a buildable specification, preserving intent while adding structure.
 
@@ -6,7 +6,7 @@ Verify that `/iterate distill` correctly transforms a vision document into a bui
 
 Vision documents capture intent and philosophy from ideation sessions (e.g., Claude Desktop brainstorming). They're often conversational, aspirational, and lack the structure needed for task decomposition. `/iterate distill` bridges this gap: it reads the vision, asks clarifying questions, and generates spec content that preserves the original vision's intent while adding buildable structure. The vision doc is preserved — distill produces suggestions, not replacements.
 
-## State (for 34A-34C)
+## State (for 23A-23C)
 
 - `.claude/vision/product-vision.md` exists with:
   - Project name and mission statement
@@ -19,9 +19,9 @@ Vision documents capture intent and philosophy from ideation sessions (e.g., Cla
 
 ---
 
-## Trace 34A: Vision discovery and summarization
+## Trace 23A: Vision discovery and summarization
 
-- **Path:** iterate.md Step 2 § "If user specified `/iterate distill`" — steps 1-2
+- **Path:** /iterate distill process
 
 ### Scenario
 
@@ -50,9 +50,9 @@ User runs `/iterate distill`. One vision doc exists in `.claude/vision/`.
 
 ---
 
-## Trace 34B: Distillation questions and structure extraction
+## Trace 23B: Distillation questions and structure extraction
 
-- **Path:** iterate.md Step 2 § distill — steps 3-4
+- **Path:** /iterate distill questions and structure extraction
 
 ### Scenario
 
@@ -88,9 +88,9 @@ After summarization, Claude asks the 4 distillation questions and maps vision st
 
 ---
 
-## Trace 34C: Spec generation and handoff
+## Trace 23C: Spec generation and handoff
 
-- **Path:** iterate.md Step 2 § distill — steps 5-6
+- **Path:** /iterate distill spec generation
 
 ### Scenario
 
@@ -126,9 +126,9 @@ Distillation complete. Claude generates spec content.
 
 ---
 
-## Trace 34D: Re-running distill after vision update
+## Trace 23D: Re-running distill after vision update
 
-- **Path:** iterate.md Step 2 § distill — "Re-running distill"
+- **Path:** /iterate distill re-run
 
 ### Scenario
 

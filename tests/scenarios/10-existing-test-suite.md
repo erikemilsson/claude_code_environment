@@ -1,4 +1,4 @@
-# Scenario 16: Python Project with Existing pytest Suite
+# Scenario 10: Existing Test Suite Integration
 
 Verify that verify-agent discovers and uses an existing pytest setup rather than creating redundant verification.
 
@@ -14,12 +14,11 @@ Many real projects already have a mature test suite before the template is appli
 - `requirements.txt` includes pytest, pytest-cov
 - Task-1 modified `src/database/models.py` and added `src/database/queries.py`
 
-## Trace 16A: Test infrastructure discovery
+## Trace 10A: Test infrastructure discovery
 
-- **Path:** verify-agent invocation after implement-agent completes task-1
-- verify-agent reads `pyproject.toml` to discover test configuration
-- Finds `[tool.pytest.ini_options]` with testpaths, markers, and coverage settings
-- Identifies `tests/` directory with 11 existing test files
+- **Path:** verify-agent invoked after implement-agent completes task-1
+- verify-agent discovers the project's existing test configuration
+- Identifies the test directory and existing test files
 
 ### Expected
 
@@ -41,11 +40,10 @@ Many real projects already have a mature test suite before the template is appli
 
 ---
 
-## Trace 16B: No duplicate test files created
+## Trace 10B: No duplicate test files created
 
-- **Path:** verify-agent → file creation check
-- Task-1 added `src/database/queries.py`
-- `tests/test_database.py` already exists with tests for the database module
+- **Path:** verify-agent checks whether existing tests already cover new code
+- Task-1 added new source files to a module that already has test coverage
 
 ### Expected
 
@@ -67,9 +65,9 @@ Many real projects already have a mature test suite before the template is appli
 
 ---
 
-## Trace 16C: Test failure reporting
+## Trace 10C: Test failure reporting
 
-- **Path:** verify-agent → test execution → failure handling
+- **Path:** verify-agent runs tests and some fail due to task-1 changes
 - pytest runs and 2 of 45 tests fail due to task-1 changes
 
 ### Expected

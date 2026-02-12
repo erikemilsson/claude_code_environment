@@ -157,25 +157,28 @@ Verification operates in two tiers:
 
 ---
 
-## Agent Synergy: Implement + Verify
+## Agent Synergy: Implement + Verify + Research
 
-This project uses two specialist agents that check each other's work:
+This project uses three specialist agents:
 
 | Agent | Role | Focus |
 |-------|------|-------|
 | **implement-agent** | Builder | Executes tasks, produces deliverables, marks tasks finished |
 | **verify-agent** | Validator | Tests against spec, finds issues, ensures quality |
+| **research-agent** | Investigator | Gathers evidence for decisions, populates comparison matrices |
 
-**Why two agents?**
+**Why three agents?**
 A single agent implementing and validating its own work has blind spots.
 By separating concerns:
 - implement-agent focuses purely on building (no self-validation bias)
 - verify-agent validates against the spec with fresh perspective
+- research-agent investigates options without implementation or compliance bias
 - Issues caught by verify-agent become new tasks for implement-agent
+- Evidence gathered by research-agent feeds into decision records for human selection
 
 **Architectural separation:** verify-agent always runs as a **separate `Task` agent** (spawned via the Task tool), never inline in the implementation context. This ensures genuine independence — the verifier has no memory of implementation decisions, only the artifacts (task JSON, spec section, and files). This applies to both sequential and parallel execution modes.
 
-**The workflow:**
+**The build workflow:**
 1. `/work` reads and follows implement-agent workflow for the next pending task
 2. implement-agent: build, self-review, update status to "Awaiting Verification"
 3. implement-agent Step 6b: **spawn** verify-agent as a separate Task agent (fresh context)
@@ -185,6 +188,21 @@ By separating concerns:
 7. When all tasks have "Finished" status with passing verification, `/work` spawns verify-agent for phase-level workflow
 8. verify-agent: test against spec acceptance criteria
 9. Issues found become new tasks, back to implement-agent
+
+**The research workflow:**
+1. `/work` encounters an unresolved decision blocking a task (or `/research` is invoked directly)
+2. research-agent is spawned with decision record and project context
+3. research-agent: gathers options, evaluates against criteria, checks compatibility with existing decisions
+4. research-agent: populates decision record comparison matrix and option details, writes research archive
+5. research-agent: updates decision status to `proposed` (ready for user selection)
+6. User selects option via checkbox → `/work` auto-updates status to `approved` → dependent tasks unblock
+
+**The review workflow** (via `/iterate review`):
+1. `/iterate` detects active spec with completed tasks (or user explicitly requests review)
+2. Reviews implementation artifacts across completed tasks for quality patterns
+3. Assesses: architecture coherence, integration quality, pattern consistency, cross-cutting concerns, technical debt, decision alignment
+4. Presents findings and suggestions — purely advisory, no state changes
+5. User applies suggestions manually, then continues with `/work`
 
 This separation — both logical and contextual — produces higher quality output than a single agent could achieve alone.
 
@@ -642,7 +660,8 @@ Two files control template behavior:
 ├── commands/                  # /work and task commands
 ├── agents/                    # Specialist agents
 │   ├── implement-agent.md    # Task execution
-│   └── verify-agent.md       # Validation against spec
+│   ├── verify-agent.md       # Validation against spec
+│   └── research-agent.md     # Decision investigation
 ├── support/                   # Supporting documentation
 │   ├── reference/            # Schemas, guides, definitions
 │   │   ├── README.md          # Index of all reference files

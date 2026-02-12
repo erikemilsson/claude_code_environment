@@ -1,4 +1,4 @@
-# Scenario 33: Spec Version Transition (v1 → v2)
+# Scenario 22: Spec Version Transition (v1 → v2)
 
 Verify that `/iterate` correctly handles spec version transitions — archiving, creating the new version, and that `/work` properly migrates tasks to the new spec.
 
@@ -6,7 +6,7 @@ Verify that `/iterate` correctly handles spec version transitions — archiving,
 
 Version transitions happen at natural project boundaries: phase completion, inflection point resolution, or major scope changes. The transition must maintain the single-spec invariant (exactly one `spec_v{N}.md` at root), archive the old version, and ensure `/work` can reconcile existing tasks against the new spec. This is one of the most complex state transitions in the workflow.
 
-## State (for 33A-33C)
+## State (for 22A-22C)
 
 - `spec_v1.md` is active (status: "active" in frontmatter)
 - 10 tasks decomposed from v1: Tasks 1-5 (Phase 1, all Finished), Tasks 6-10 (Phase 2, all Pending)
@@ -15,9 +15,9 @@ Version transitions happen at natural project boundaries: phase completion, infl
 
 ---
 
-## Trace 33A: `/iterate` version transition procedure
+## Trace 22A: `/iterate` version transition procedure
 
-- **Path:** iterate.md § "Version Transition Procedure" (5-step procedure)
+- **Path:** /iterate version transition
 
 ### Scenario
 
@@ -53,9 +53,9 @@ User runs `/iterate` and requests a version bump. `/iterate` executes the 5-step
 
 ---
 
-## Trace 33B: `/work` after version transition — task migration
+## Trace 22B: `/work` after version transition — task migration
 
-- **Path:** work.md Step 1 → spec discovery; Step 1b → drift detection; drift-reconciliation.md § "Task Migration on Version Transition"
+- **Path:** /work spec discovery and task migration
 
 ### Scenario
 
@@ -63,8 +63,8 @@ User edited `spec_v2.md` (added Phase 2 detail, removed one Phase 2 section, mod
 
 ### Expected
 
-1. Step 1: `/work` discovers `spec_v2.md` (globs for `spec_v{N}.md`)
-2. Step 1b: Drift detection finds all tasks reference `spec_version: 1`
+1. `/work` discovers `spec_v2.md` (globs for `spec_v{N}.md`)
+2. Drift detection finds all tasks reference `spec_version: 1`
 3. Version mismatch triggers task migration flow:
    - Finished tasks (1-5): `spec_version` updated to 2, no other changes (work is done)
    - Pending tasks mapped to unchanged sections: fingerprints updated
@@ -90,13 +90,13 @@ User edited `spec_v2.md` (added Phase 2 detail, removed one Phase 2 section, mod
 
 ---
 
-## Trace 33C: Decomposed snapshot updated after migration
+## Trace 22C: Decomposed snapshot updated after migration
 
-- **Path:** work.md Step 4 § "If Decomposing" → snapshot creation
+- **Path:** /work decomposition
 
 ### Scenario
 
-After task migration (33B), `/work` needs a new decomposed snapshot for v2 to enable future drift detection.
+After task migration (22B), `/work` needs a new decomposed snapshot for v2 to enable future drift detection.
 
 ### Expected
 
@@ -120,9 +120,9 @@ After task migration (33B), `/work` needs a new decomposed snapshot for v2 to en
 
 ---
 
-## Trace 33D: Version transition refused — when NOT to bump
+## Trace 22D: Version transition refused — when NOT to bump
 
-- **Path:** iterate.md § "When to create new version"
+- **Path:** /iterate version bump assessment
 
 ### Scenario
 

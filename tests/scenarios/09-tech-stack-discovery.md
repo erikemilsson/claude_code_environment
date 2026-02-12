@@ -1,4 +1,4 @@
-# Scenario 15: Tech Stack Discovery During Spec Creation
+# Scenario 09: Tech Stack Discovery During Spec Creation
 
 Verify that `/iterate` correctly identifies the project tech stack from existing files and adapts spec template sections accordingly.
 
@@ -13,9 +13,9 @@ A user applies the template to an existing codebase and runs `/iterate` for the 
 - No CLAUDE.md "Technology Stack" section filled in
 - No test framework configured (no vitest.config, no jest.config)
 
-## Trace 15A: Stack detection from project files
+## Trace 09A: Stack detection from project files
 
-- **Path:** `/iterate` Step 1 (project structure discovery)
+- **Path:** `/iterate` project analysis
 - `/iterate` reads project root files to understand what exists
 - Detects Next.js from `package.json` dependencies + `src/app/` directory (App Router)
 - Detects TypeScript from `tsconfig.json`
@@ -41,9 +41,9 @@ A user applies the template to an existing codebase and runs `/iterate` for the 
 
 ---
 
-## Trace 15B: Missing test infrastructure flagged
+## Trace 09B: Missing test infrastructure flagged
 
-- **Path:** `/iterate` Step 1 → test framework detection
+- **Path:** `/iterate` project analysis → test framework detection
 - No `vitest.config.*`, `jest.config.*`, or `playwright.config.*` found
 - No `test` script in `package.json`
 
@@ -68,7 +68,7 @@ A user applies the template to an existing codebase and runs `/iterate` for the 
 
 ---
 
-## Trace 15C: Non-standard project (no package.json)
+## Trace 09C: Non-standard project (no package.json)
 
 - **Alternate state:** Project root contains `pyproject.toml`, `src/main.py`, `requirements.txt`
 - No JavaScript/TypeScript files

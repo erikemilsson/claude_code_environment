@@ -1,10 +1,10 @@
-# Scenario 32: Spec Drift During Active Execution
+# Scenario 21: Spec Drift During Active Execution
 
 Verify that `/work` detects and handles spec changes made while tasks are already decomposed and in progress.
 
 ## Context
 
-Users frequently edit the spec after decomposition — adding detail, changing requirements, or removing sections. The drift detection system (work.md Step 1b, drift-reconciliation.md) must compare the current spec against the decomposed snapshot using section-level fingerprints, identify what changed, and present reconciliation options. The critical invariant: no task should silently execute against a stale spec section.
+Users frequently edit the spec after decomposition — adding detail, changing requirements, or removing sections. The drift detection system must compare the current spec against the decomposed snapshot using section-level fingerprints, identify what changed, and present reconciliation options. The critical invariant: no task should silently execute against a stale spec section.
 
 ## State
 
@@ -21,13 +21,13 @@ Users frequently edit the spec after decomposition — adding detail, changing r
 
 ---
 
-## Trace 32A: Granular drift detection identifies changed sections
+## Trace 21A: Granular drift detection identifies changed sections
 
-- **Path:** work.md Step 1b § "Spec Drift Detection (Granular)"; drift-reconciliation.md § "Spec Drift Detection"
+- **Path:** /work spec drift detection
 
 ### Scenario
 
-User runs `/work` after editing the spec. Step 1b computes spec fingerprint, detects mismatch, performs section-level analysis.
+User runs `/work` after editing the spec. Drift detection computes spec fingerprint, detects mismatch, performs section-level analysis.
 
 ### Expected
 
@@ -54,9 +54,9 @@ User runs `/work` after editing the spec. Step 1b computes spec fingerprint, det
 
 ---
 
-## Trace 32B: Reconciliation UI — user chooses per-section actions
+## Trace 21B: Reconciliation UI — user chooses per-section actions
 
-- **Path:** drift-reconciliation.md § "Granular Reconciliation UI"
+- **Path:** drift reconciliation UI
 
 ### Scenario
 
@@ -65,7 +65,7 @@ Drift detected in 3 sections. User presented with options per section: `[A]` Acc
 ### Expected
 
 1. "## Authentication" — user selects `[A]` Accept:
-   - Task 2 (In Progress): `section_fingerprint` updated (post-reconciliation warning surfaces this in 32C)
+   - Task 2 (In Progress): `section_fingerprint` updated (post-reconciliation warning surfaces this in 21C)
    - Task 3 (Pending): `section_fingerprint` updated, task description may need revision
 2. "## API Endpoints" — user selects `[S]` Defer:
    - Tasks 5, 6 retain old fingerprints
@@ -79,7 +79,7 @@ Drift detected in 3 sections. User presented with options per section: `[A]` Acc
 - [ ] Accept updates `section_fingerprint` on affected tasks (both In Progress and Pending)
 - [ ] Deferred sections tracked with timestamp in `drift-deferrals.json`
 - [ ] Trivial changes (typos) update fingerprints without flagging for task revision
-- [ ] In Progress tasks with updated fingerprints are handled by the post-reconciliation warning (see 32C)
+- [ ] In Progress tasks with updated fingerprints are handled by the post-reconciliation warning (see 21C)
 
 ### Fail indicators
 
@@ -90,20 +90,20 @@ Drift detected in 3 sections. User presented with options per section: `[A]` Acc
 
 ---
 
-## Trace 32C: In-progress task affected by drift
+## Trace 21C: In-progress task affected by drift
 
-- **Path:** work.md § "Post-reconciliation In Progress warning" → Step 2c routing
+- **Path:** /work post-reconciliation warning
 
 ### Scenario
 
-After reconciliation (32B), Task 2 is In Progress but its spec section changed from "basic auth" to "OAuth 2.0". User accepted the change. `/work` runs the post-reconciliation check.
+After reconciliation (21B), Task 2 is In Progress but its spec section changed from "basic auth" to "OAuth 2.0". User accepted the change. `/work` runs the post-reconciliation check.
 
 ### Expected
 
 1. `/work` detects Task 2 is In Progress with an updated section fingerprint
 2. Warning displayed: `⚠️ Task 2 "Implement authentication" is In Progress but its spec section changed during reconciliation. Review the task's partial work against the updated requirements before continuing.`
 3. Warning is informational, not a gate — user can proceed or manually reset the task
-4. `/work` continues to routing (Step 2c) after displaying the warning
+4. `/work` continues to routing after displaying the warning
 
 ### Pass criteria
 
@@ -121,9 +121,9 @@ After reconciliation (32B), Task 2 is In Progress but its spec section changed f
 
 ---
 
-## Trace 32D: Drift budget enforcement
+## Trace 21D: Drift budget enforcement
 
-- **Path:** drift-reconciliation.md § "Drift Budget Enforcement"
+- **Path:** drift budget enforcement
 
 ### Scenario
 

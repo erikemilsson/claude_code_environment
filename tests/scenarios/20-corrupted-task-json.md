@@ -1,4 +1,4 @@
-# Scenario 31: Corrupted and Malformed Task JSON
+# Scenario 20: Corrupted and Malformed Task JSON
 
 Verify that `/work` and `/health-check` gracefully handle corrupted, malformed, or structurally invalid task JSON files.
 
@@ -17,13 +17,13 @@ Task JSON files can become corrupted through various means: manual editing error
 
 ---
 
-## Trace 31A: `/work` encounters invalid JSON during task scan
+## Trace 20A: `/work` encounters invalid JSON during task scan
 
-- **Path:** work.md Step 1 → task file reading; Step 2c → routing algorithm
+- **Path:** /work task loading, /work routing
 
 ### Scenario
 
-User runs `/work`. Step 1 reads all task files. `task-2.json` fails to parse.
+User runs `/work`. Task loading reads all task files. `task-2.json` fails to parse.
 
 ### Expected
 
@@ -49,9 +49,9 @@ User runs `/work`. Step 1 reads all task files. `task-2.json` fails to parse.
 
 ---
 
-## Trace 31B: `/health-check` validates task schema
+## Trace 20B: `/health-check` validates task schema
 
-- **Path:** health-check.md Part 1 (Task Validation)
+- **Path:** /health-check task validation
 
 ### Scenario
 
@@ -81,9 +81,9 @@ User runs `/work`. Step 1 reads all task files. `task-2.json` fails to parse.
 
 ---
 
-## Trace 31C: Dependency references point to nonexistent tasks
+## Trace 20C: Dependency references point to nonexistent tasks
 
-- **Path:** health-check.md Part 1 → Check 2 (Relationship Integrity) and Check 5 (Status Rules); work.md Step 2c
+- **Path:** /health-check relationship and status validation, /work routing
 
 ### Scenario
 
