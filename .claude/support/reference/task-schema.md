@@ -251,7 +251,7 @@ Per-task verification result recorded by verify-agent when a task is in "Awaitin
 
 | Sub-field | Type | Values | Description |
 |-----------|------|--------|-------------|
-| `result` | String | `"pass"`, `"fail"`, `"pass_with_issues"` | Overall per-task verification outcome |
+| `result` | String | `"pass"`, `"fail"` | Overall per-task verification outcome |
 | `timestamp` | String | ISO 8601 | When verification completed |
 | `checks` | Object | Keys: `files_exist`, `spec_alignment`, `output_quality`, `integration_ready`, `scope_validation` | Per-check pass/fail |
 | `checks.*` | String | `"pass"` or `"fail"` | Individual check result |
@@ -283,7 +283,7 @@ Tasks that bypass verification create "verification debt":
 |----------------|-------------|
 | Finished without `task_verification` | Task marked complete but never verified |
 | Finished with `task_verification.result == "fail"` | Verification failed, not re-verified |
-| Finished with `task_verification.result == "pass_with_issues"` and critical issues | Passed with issues that should block |
+| Finished with critical issues in `task_verification.issues` | Passed verification but has critical issues that should block |
 
 **Debt is tracked in the dashboard** under "Action Required" → "Verification Debt" and **blocks project completion**.
 
@@ -375,7 +375,7 @@ When a task's scope is folded into another task (discovered during breakdown, ov
 
 ### Verification Requirement for Finished Status
 
-**CRITICAL:** A task can only have `status: "Finished"` if it has a valid `task_verification` field with `result: "pass"` or `result: "pass_with_issues"`.
+**CRITICAL:** A task can only have `status: "Finished"` if it has a valid `task_verification` field with `result: "pass"`.
 
 | Status | Verification Requirement |
 |--------|-------------------------|
@@ -386,7 +386,7 @@ When a task's scope is folded into another task (discovered during breakdown, ov
 | On Hold | None (paused — verification not applicable until resumed) |
 | Absorbed | None (scope folded into another task — that task carries verification) |
 | Broken Down | None (subtasks are verified individually) |
-| **Finished** | **REQUIRED:** `task_verification.result` must be `"pass"` or `"pass_with_issues"` |
+| **Finished** | **REQUIRED:** `task_verification.result` must be `"pass"` |
 
 **Enforcement:**
 - `/health-check` treats missing or failed verification on Finished tasks as an **ERROR** (not warning)

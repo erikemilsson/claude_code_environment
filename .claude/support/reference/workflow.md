@@ -127,11 +127,10 @@ Verification operates in two tiers:
 - Pass/fail status for each acceptance criterion
 - Issues found, categorized by severity
 - Tasks created for fixes (if any)
-- Overall result: `pass`, `fail`, or `pass_with_issues`
+- Overall result: `pass` or `fail`
 
 **What happens after phase-level verification:**
-- **Pass:** `/work` transitions to Complete phase. Spec status updates to `complete`.
-- **Pass with issues:** Minor issues noted but no critical/major blockers. Same as pass — project completes, issues logged for future work.
+- **Pass:** `/work` transitions to Complete phase. Spec status updates to `complete`. Any out-of-spec recommendation tasks are presented to the user for approval at the phase boundary.
 - **Fail:** Critical/major issues found where spec requirements aren't met. In-spec fix tasks are created (regular tasks, not out-of-spec). `/work` automatically routes them to implement-agent. Once fixes are done and all spec tasks pass per-task verification again, phase-level verification re-runs.
 
 **Feedback loop — bug fixes (in-spec):**
@@ -144,7 +143,7 @@ Verification operates in two tiers:
 **Feedback loop — recommendations (out-of-spec):**
 1. verify-agent identifies improvements beyond spec acceptance criteria
 2. Recommendation tasks are created with `out_of_spec: true`
-3. Verification result can still be `"pass_with_issues"` (spec criteria met)
+3. Verification result is `"pass"` (spec criteria met)
 4. `/work` presents recommendations to user for Accept/Reject/Defer
 5. Accepted tasks are executed independently; they don't block project completion
 
@@ -352,7 +351,7 @@ Returns: what was completed, files modified, status updates, questions generated
 - Present final checkpoint to human
 - Project complete (or loop back if issues)
 
-**Verification result validity:** The result is valid when `result` is `"pass"` or `"pass_with_issues"`, `spec_fingerprint` matches the current spec, and no tasks changed since the verification `timestamp`. If the spec changes or new tasks appear, the result is automatically invalidated and `/work` re-routes to verification.
+**Verification result validity:** The result is valid when `result` is `"pass"`, `spec_fingerprint` matches the current spec, and no tasks changed since the verification `timestamp`. If the spec changes or new tasks appear, the result is automatically invalidated and `/work` re-routes to verification.
 
 ---
 

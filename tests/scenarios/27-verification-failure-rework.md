@@ -203,7 +203,7 @@ During phase-level verification, verify-agent also notices that adding request c
    - `out_of_spec: true`
    - `source: "verify-agent"`
    - `status: "Pending"`
-2. Result is `"pass_with_issues"` (all spec criteria pass, but recommendation exists)
+2. Result is `"pass"` (all spec criteria pass; recommendation exists as a separate out-of-spec task)
 3. `/work` presents the recommendation to the user:
    - `[A]` Accept, `[R]` Reject, `[D]` Defer
 4. User must explicitly approve before `/work` will execute it
@@ -211,7 +211,7 @@ During phase-level verification, verify-agent also notices that adding request c
 ### Pass criteria
 
 - [ ] Recommendation created with `out_of_spec: true`
-- [ ] Phase result is `"pass_with_issues"` (not "fail" — spec criteria all passed)
+- [ ] Phase result is `"pass"` (not "fail" — spec criteria all passed)
 - [ ] User presented with accept/reject/defer options
 - [ ] Task not auto-executed without user approval
 - [ ] Dashboard shows recommendation with warning prefix

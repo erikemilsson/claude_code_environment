@@ -43,7 +43,7 @@ Ask: "Can Opus 4.6 complete this reliably in one focused session, with changes t
 | On Hold | Intentionally paused | Document reason in notes; not auto-routed by `/work` |
 | Absorbed | Scope folded into another task | Set `absorbed_into` field; preserves audit trail |
 | Broken Down | Split into subtasks | Work on subtasks, not this |
-| Finished | Complete and verified | Requires `task_verification.result` of "pass" or "pass_with_issues" |
+| Finished | Complete and verified | Requires `task_verification.result` of "pass" |
 
 ### Blocked vs On Hold
 
@@ -142,7 +142,7 @@ Canonical definitions for terms used across the environment. Terms already defin
 | Term | Definition |
 |------|------------|
 | **Per-Task Verification (Tier 1)** | Runs after each task implementation. Checks: files exist, spec alignment, output quality, integration readiness. Pass → Finished. Fail → back to In Progress (max 2 retries). |
-| **Phase-Level Verification (Tier 2)** | Runs once when all tasks Finished. Validates full implementation against spec acceptance criteria. Result: `pass`, `fail`, or `pass_with_issues`. Written to `.claude/verification-result.json`. |
+| **Phase-Level Verification (Tier 2)** | Runs once when all tasks Finished. Validates full implementation against spec acceptance criteria. Result: `pass` or `fail`. Written to `.claude/verification-result.json`. |
 | **Verification Debt** | Tasks that bypassed or failed verification: status "Awaiting Verification", "Finished" without `task_verification`, or `task_verification.result` is "fail". Blocks project completion. |
 
 ### Agents & Infrastructure

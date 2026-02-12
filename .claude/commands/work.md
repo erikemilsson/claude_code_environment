@@ -85,6 +85,8 @@ Before gathering context, scan for tasks left in recoverable states by a previou
 
 **Note:** Cases 1 and 2 are auto-recovered because the implementation is already done — we only need to run verification. Cases 4 and 6 present options because the implementation state is uncertain.
 
+**Malformed files during scan:** If a task file fails to parse during Step 0, skip it and continue scanning other files. The malformed file will be reported in Step 1 (see "Malformed task file handling").
+
 ### Step 1: Gather Context
 
 **Version discovery:** Determine the current spec version:
@@ -418,7 +420,7 @@ After phase and decision checks, assess whether multiple tasks can be dispatched
    → IF file missing → Route to verify-agent (phase-level)
    → IF result == "fail" → Route to implement-agent (fix tasks were created, need implementation)
    → IF spec_fingerprint mismatch OR tasks updated after timestamp → Route to verify-agent (re-verification needed)
-   → IF result == "pass" or "pass_with_issues" → Route to completion
+   → IF result == "pass" → Route to completion
 8. ELSE IF parallel_mode (from Step 2c):
    → Route to parallel execution (see "If Executing (Parallel)")
 9. ELSE:
@@ -429,7 +431,7 @@ After phase and decision checks, assess whether multiple tasks can be dispatched
 
 **Important — spec tasks vs out-of-spec tasks:** Phase routing is based on **spec tasks only** (tasks without `out_of_spec: true`). Out-of-spec tasks (recommendations from verify-agent or user requests that bypassed the spec) are excluded from phase detection. This prevents the verify → execute → verify infinite loop.
 
-**Phase-level verification result check:** Read `.claude/verification-result.json`. A result is valid when `result` is `"pass"` or `"pass_with_issues"`, `spec_fingerprint` matches the current spec, and no tasks changed since `timestamp`. See verify-agent Phase-Level Step 7 for the file format.
+**Phase-level verification result check:** Read `.claude/verification-result.json`. A result is valid when `result` is `"pass"`, `spec_fingerprint` matches the current spec, and no tasks changed since `timestamp`. See verify-agent Phase-Level Step 7 for the file format.
 
 **Out-of-spec task handling:** After phase routing completes (or at phase boundaries), check for pending out-of-spec tasks and present them with options: `[A]` Accept (sets `out_of_spec_approved: true`), `[R]` Reject (archives task with reason), `[D]` Defer (skips for now), `[AA]` Accept all.
 
@@ -629,8 +631,7 @@ Check `.claude/verification-result.json`:
 
 | Result | Action |
 |--------|--------|
-| `pass` | Proceed to "If Completing" section |
-| `pass_with_issues` | Proceed to "If Completing" section. Present any out-of-spec recommendation tasks for user approval. |
+| `pass` | Proceed to "If Completing" section. If out-of-spec recommendation tasks exist, present them for user approval at the phase boundary. |
 | `fail` | In-spec fix tasks were created. Loop back to Execute: route to implement-agent for fix tasks, then re-verify when all spec tasks are finished again. |
 
 **In-spec fix tasks vs out-of-spec recommendations:**
@@ -645,7 +646,7 @@ When all tasks are finished and verification conditions are met:
 
 1. **Verify per-task verification completeness:** Every "Finished" spec task must have `task_verification.result == "pass"`. If any task fails this check, route to verify-agent per-task mode.
 
-2. **Verify phase-level verification exists and is valid:** `.claude/verification-result.json` must exist with `result` of "pass" or "pass_with_issues", matching `spec_fingerprint`, and no tasks modified after `timestamp`. If any check fails, route to verify-agent phase-level mode.
+2. **Verify phase-level verification exists and is valid:** `.claude/verification-result.json` must exist with `result` of "pass", matching `spec_fingerprint`, and no tasks modified after `timestamp`. If any check fails, route to verify-agent phase-level mode.
 
 **Once both gates pass:**
 

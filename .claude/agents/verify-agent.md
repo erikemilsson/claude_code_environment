@@ -210,7 +210,7 @@ Record the per-task verification outcome in the task JSON:
 ```json
 {
   "task_verification": {
-    "result": "pass_with_issues",
+    "result": "pass",
     "timestamp": "2026-01-28T15:30:00Z",
     "checks": {
       "files_exist": "pass",
@@ -219,7 +219,7 @@ Record the per-task verification outcome in the task JSON:
       "integration_ready": "pass",
       "scope_validation": "fail"
     },
-    "notes": "Implementation correct but modified 2 files outside declared scope.",
+    "notes": "Implementation correct but modified 2 files outside declared scope. Scope violation recorded but does not block verification.",
     "issues": [
       {
         "severity": "minor",
@@ -449,7 +449,7 @@ Write the verification outcome to `.claude/verification-result.json` so other co
 
 | Field | Values | Description |
 |-------|--------|-------------|
-| `result` | `"pass"`, `"fail"`, `"pass_with_issues"` | Overall verification outcome |
+| `result` | `"pass"`, `"fail"` | Overall verification outcome |
 | `timestamp` | ISO 8601 | When verification completed |
 | `spec_version` | e.g., `"spec_v1"` | Which spec version was verified against |
 | `spec_fingerprint` | SHA-256 hash | Fingerprint of spec at verification time |
@@ -471,7 +471,7 @@ Display verification report: overall status, per-criterion pass/fail list, issue
 
 ## Separation of Concerns
 
-**Do NOT implement fixes.** Your role is to identify and document issues, not resolve them. Create fix tasks, set the verification result to "fail" (for in-spec issues) or "pass_with_issues" (for recommendation-only findings), and return control to `/work`. The implement-agent handles all changes.
+**Do NOT implement fixes.** Your role is to identify and document issues, not resolve them. Create fix tasks, set the verification result to "fail" (for in-spec issues) or "pass" (when only recommendation-level findings beyond spec exist — recommendations become `out_of_spec: true` tasks), and return control to `/work`. The implement-agent handles all changes.
 
 ## Handling Ad-Hoc Tasks
 

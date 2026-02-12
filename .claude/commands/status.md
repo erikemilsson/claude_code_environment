@@ -50,7 +50,7 @@ Read (but don't modify):
 
 **Verification result check:**
 Read `.claude/verification-result.json` if it exists. A result is **valid** when:
-- `result` is `"pass"` or `"pass_with_issues"`
+- `result` is `"pass"`
 - `spec_fingerprint` matches the current spec's fingerprint (spec hasn't changed since verification)
 - No tasks have been added or changed status since the `timestamp`
 
@@ -180,7 +180,7 @@ Computed from task JSON files, `drift-deferrals.json`, and `verification-result.
 | Drift deferrals | `✓ Spec aligned` | `⚠️ N drift deferrals` |
 | Blocking questions | *(omitted when 0)* | `⚠️ N blocking questions` |
 
-**Verification debt** = count of Finished tasks where `task_verification` is missing, has `result == "fail"`, or has a result other than "pass" or "pass_with_issues".
+**Verification debt** = count of Finished tasks where `task_verification` is missing, has `result == "fail"`, or has `result != "pass"`.
 
 **Drift deferrals** = count of active entries in `drift-deferrals.json`.
 

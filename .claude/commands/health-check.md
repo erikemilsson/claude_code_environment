@@ -85,7 +85,7 @@ If dashboard content or structure is inconsistent, the fix is always: regenerate
 | `On Hold` | Should have `notes` explaining why paused. Not auto-routed by `/work`. Warning if on hold > 30 days. |
 | `Absorbed` | Must have `absorbed_into` field referencing a valid task ID that exists. |
 | `Broken Down` | Must have non-empty `subtasks` array |
-| `Finished` | MUST have `task_verification.result` of "pass" or "pass_with_issues". If has subtasks, all subtasks must also be `Finished` |
+| `Finished` | MUST have `task_verification.result` of "pass". If has subtasks, all subtasks must also be `Finished` |
 
 #### 6. Difficulty Range
 
@@ -98,7 +98,7 @@ If dashboard content or structure is inconsistent, the fix is always: regenerate
 Detects tasks that may have bypassed the implement-agent or verify-agent workflows.
 
 **Verification debt (ERRORS):**
-- Finished tasks MUST have a `task_verification` field with `result` of `"pass"` or `"pass_with_issues"`
+- Finished tasks MUST have a `task_verification` field with `result` of `"pass"`
 - `task_verification.checks` should have all 5 keys (`files_exist`, `spec_alignment`, `output_quality`, `integration_ready`, `scope_validation`) with pass/fail values
 - If any finished task lacks `task_verification`: **ERROR** — "Verification debt: N finished tasks missing verification"
 - If any finished task has `task_verification.result == "fail"`: **ERROR**
@@ -109,7 +109,7 @@ verification_debt = count of tasks where:
   - status == "Finished" AND (
     - task_verification does not exist, OR
     - task_verification.result == "fail", OR
-    - task_verification.result not in ["pass", "pass_with_issues"]
+    - task_verification.result != "pass"
   )
 ```
 
@@ -119,7 +119,7 @@ verification_debt = count of tasks where:
 
 **Completion gate checks (ERRORS):**
 - If dashboard shows "Project Complete" or "100%" completion:
-  - `.claude/verification-result.json` MUST exist with `result` of "pass" or "pass_with_issues"
+  - `.claude/verification-result.json` MUST exist with `result` of "pass"
   - ALL finished tasks MUST have passing `task_verification`
   - If either condition fails: ERROR — "Project marked complete without verification"
 - Check for status mismatch: spec says "active" but dashboard shows "Complete" (or vice versa)
