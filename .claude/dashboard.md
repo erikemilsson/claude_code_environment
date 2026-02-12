@@ -8,8 +8,9 @@ verification_debt: 1
 drift_deferrals: 0
 -->
 
+<details><summary><strong>Sections</strong></summary>
+
 <!-- SECTION TOGGLES -->
-**Sections:**
 - [x] Action Required
 - [x] Progress
 - [x] Tasks
@@ -19,11 +20,15 @@ drift_deferrals: 0
 - [x] Custom Views
 <!-- END SECTION TOGGLES -->
 
+</details>
+
 > **This is a format example** using a fictional renovation project. It will be replaced with your actual project data when you run `/work`.
 
 **Community Center Renovation** · Execute · Started 2026-01-15
 
 **50% complete** — 12 tasks · 2 decisions
+
+*Updated 2026-01-28 14:30 — may not reflect changes made outside `/work`*
 
 ---
 

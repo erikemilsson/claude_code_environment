@@ -25,10 +25,14 @@ Quick, read-only view of project state without starting any work.
 ### Step 1: Gather State
 
 Read (but don't modify):
-- `.claude/dashboard.md` - Current status (primary data source for task counts, progress, decisions)
-- `.claude/tasks/task-*.json` - Task data for phase detection and verification result validation
+- `.claude/dashboard.md` - Current status (progress summary, decisions, recent activity)
+- `.claude/tasks/task-*.json` - Task data for phase detection, status counts, and verification result validation
 - `.claude/support/questions/questions.md` - Check for blocking questions
 - `.claude/spec_v{N}.md` - Spec version and fingerprint for verification validation
+- `.claude/drift-deferrals.json` - Drift deferral count (if exists)
+- `.claude/verification-result.json` - Phase-level verification result (if exists)
+
+**Dashboard freshness check:** Compute `SHA-256(sorted list of task_id + ":" + status)` from task JSON files and compare against the `task_hash` in the dashboard's `<!-- DASHBOARD META -->` block. If the hash differs or no metadata exists, flag the dashboard as stale in the Health Indicators output. Task counts always come from JSON files regardless of freshness.
 
 ### Step 2: Determine Phase
 
@@ -37,9 +41,10 @@ Read (but don't modify):
 | No spec exists | Pre-spec |
 | Spec incomplete | Spec (in progress) |
 | Spec complete, no tasks | Ready for decomposition |
-| Tasks exist, not all finished | Execute |
-| All tasks finished, no valid verification result | Ready for verification |
-| All tasks finished, verification result exists and is valid | Complete |
+| Tasks exist, any in "Awaiting Verification" | Execute (verification pending) |
+| Tasks exist, not all finished (none awaiting verification) | Execute |
+| All non-Absorbed tasks finished, no valid phase-level verification result | Ready for verification |
+| All non-Absorbed tasks finished, phase-level verification result exists and is valid | Complete |
 
 **Verification result check:**
 Read `.claude/verification-result.json` if it exists. A result is **valid** when:
@@ -62,13 +67,20 @@ Display the appropriate output format based on mode.
 ```markdown
 ## Project Status
 
-**Phase:** Execute (12/18 tasks complete)
+**Phase:** Execute (12/18 tasks finished)
 **Current:** Task 5_3 "Add Redis caching layer" - In Progress
 
 ### Quick Numbers
-| Total | Done | In Progress | Blocked | On Hold | Human Action |
-|-------|------|-------------|---------|---------|--------------|
-| 18    | 12   | 1           | 0       | 1       | 2            |
+| Finished | In Progress | Awaiting Verification | Pending | Blocked | On Hold |
+|----------|-------------|-----------------------|---------|---------|---------|
+| 12       | 1           | 0                     | 4       | 0       | 1       |
+
+**Human tasks ready:** 2 · **Decisions pending:** 1
+
+### Health Indicators
+- ✓ Dashboard current
+- ✓ No verification debt
+- ⚠️ 1 drift deferral (run /health-check for details)
 
 ### Attention Needed
 - Decision pending: Auth approach (decision-001)
@@ -85,7 +97,13 @@ Display the appropriate output format based on mode.
 Single line for quick check:
 
 ```
-Execute phase: 12/18 tasks done | 1 in progress | 2 need human
+Execute phase: 12/18 finished | 1 in progress | 2 need human
+```
+
+If health indicators have issues, append them:
+
+```
+Execute phase: 12/18 finished | 1 in progress | 2 need human | ⚠️ 1 drift deferral
 ```
 
 ### Tasks Mode (`/status --tasks`)
@@ -98,16 +116,17 @@ Focus on task breakdown:
 **By Status:**
 - Finished: 12
 - In Progress: 1 (Task 5_3)
+- Awaiting Verification: 0
 - Pending: 3
 - Blocked: 0
 - On Hold: 1
 - Absorbed: 0
 - Broken Down: 2
 
-**By Owner:**
-- Claude: 10 remaining
-- Human: 2 ready
-- Both: 1 pending
+**By Owner (non-finished):**
+- Claude: 4
+- Human: 2
+- Both: 1
 
 **Next Up:**
 1. Task 5_4 "Create drill-down endpoints" (blocked by 5_3)
@@ -135,7 +154,7 @@ Focus on task breakdown:
 ```
 # Quick check before a meeting
 /status --brief
-→ Execute phase: 12/18 tasks done | 1 in progress | 2 need human
+→ Execute phase: 12/18 finished | 1 in progress | 2 need human
 
 # Full status report
 /status
@@ -148,9 +167,28 @@ Focus on task breakdown:
 
 ---
 
+## Health Indicators
+
+Computed from task JSON files, `drift-deferrals.json`, and `verification-result.json`:
+
+| Indicator | Healthy | Unhealthy |
+|-----------|---------|-----------|
+| Dashboard freshness | `✓ Dashboard current` | `⚠️ Dashboard stale — run /work to refresh` |
+| Verification debt | `✓ No verification debt` | `⚠️ N tasks with verification debt` |
+| Drift deferrals | `✓ Spec aligned` | `⚠️ N drift deferrals` |
+| Blocking questions | *(omitted when 0)* | `⚠️ N blocking questions` |
+
+**Verification debt** = count of Finished tasks where `task_verification` is missing, has `result == "fail"`, or has a result other than "pass" or "pass_with_issues".
+
+**Drift deferrals** = count of active entries in `drift-deferrals.json`.
+
+These are read-only indicators. Use `/health-check` for full validation with auto-fixes, or `/work` to address issues.
+
+---
+
 ## Notes
 
 - `/status` is purely informational — use `/work` to actually do work
-- Task counts and progress come from dashboard.md; phase detection and verification validation read task files and spec directly
-- If the dashboard seems stale (e.g., task files newer than dashboard), recommend running `/work` to refresh
+- Task counts come from task JSON files directly (not the dashboard), ensuring accuracy even if the dashboard is stale
+- Phase detection and verification validation also read task files and spec directly
 - Brief mode is ideal for quick context before starting work

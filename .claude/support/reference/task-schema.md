@@ -94,6 +94,8 @@
 | section_fingerprint | String | SHA-256 hash of the specific section content at decomposition |
 | section_snapshot_ref | String | Reference to snapshot file for generating diffs (e.g., "spec_v1_decomposed.md") |
 | out_of_spec | Boolean | Task not aligned with spec (user chose "proceed anyway") |
+| out_of_spec_rejected | Boolean | Task rejected during out-of-spec review (archived, preserved for audit) |
+| rejection_reason | String | User's reason for rejecting an out-of-spec task (optional) |
 | absorbed_into | String | Task ID this task was absorbed into (required when status is "Absorbed") |
 | phase | String | Phase this task belongs to (e.g., "1" or "Data Pipeline"). Tasks in Phase N+1 are blocked until all Phase N tasks complete. |
 | decision_dependencies | Array | Decision IDs that block this task (e.g., ["DEC-002"]). Task remains blocked until all referenced decisions are resolved. |
@@ -206,6 +208,20 @@ Marks tasks that don't align with the spec but were created anyway:
 ```
 
 Set when user selects "proceed anyway" on spec misalignment. Dashboard shows ⚠️ prefix for these tasks. Health check reports them separately.
+
+### out_of_spec_rejected
+
+Marks tasks that were rejected by the user during out-of-spec review. Task is archived to `.claude/tasks/archive/` but preserved for audit trail.
+
+```json
+{
+  "out_of_spec": true,
+  "out_of_spec_rejected": true,
+  "rejection_reason": "Not needed — existing validation covers this case"
+}
+```
+
+Set when user selects `[R]` Reject during out-of-spec task review. The `rejection_reason` field is optional — captures user rationale when provided.
 
 ## Task Verification Field
 

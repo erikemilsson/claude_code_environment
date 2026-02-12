@@ -6,10 +6,10 @@ Every dashboard regeneration MUST follow this procedure. All commands and agents
 
 ## Section Toggle Configuration
 
-The primary source for section toggles is the **dashboard.md section toggle checklist** — a visible, editable checklist near the top of the dashboard between `<!-- SECTION TOGGLES -->` and `<!-- END SECTION TOGGLES -->` markers.
+The primary source for section toggles is the **dashboard.md section toggle checklist** — a visible, editable checklist near the top of the dashboard between `<!-- SECTION TOGGLES -->` and `<!-- END SECTION TOGGLES -->` markers. The checklist is wrapped in an HTML `<details>` element so it renders collapsed by default (one line), keeping the dashboard header compact. Users expand it to change toggle settings.
 
 **Reading logic:**
-1. Parse the checklist between the markers
+1. Parse the checklist between the markers (the `<details>` wrapper does not affect parsing)
 2. `- [x] Section Name` → `build` mode (actively generate)
 3. `- [ ] Section Name` → `exclude` mode (skip during regeneration)
 4. Notes section: always `preserve` regardless of checkbox state (enforced)
@@ -92,11 +92,12 @@ The checkbox UI maps to `build`/`exclude`. Users who need `maintain` mode can se
 
 - Follow the Section Format Reference below for all formatting rules
 - Use exact section headings: `# Dashboard`, `## 🚨 Action Required`, `## 📊 Progress`, `## 📋 Tasks`, `## 📋 Decisions`, `## 💡 Notes`
+- **Freshness line:** After the completion % line, add a visible timestamp: `*Updated [YYYY-MM-DD HH:MM] — may not reflect changes made outside `/work`*`. This warns users who view the dashboard without running a command that data could be stale.
 - Optional section heading (when enabled, placed between Decisions and Notes): `## 👁️ Custom Views`
 - **Timeline sub-section** in Progress: render when any task has `due_date` or `external_dependency.expected_date`
 - **Project Overview sub-section** in Progress: render inline Mermaid diagram when 4+ tasks remain (see § "Project Overview Diagram")
 - Read section toggles from dashboard checklist (between `<!-- SECTION TOGGLES -->` markers) and respect modes
-- Preserve the section toggle checklist between its markers during regeneration
+- Preserve the section toggle checklist between its markers during regeneration (keep the `<details>` wrapper around the markers)
 - Enforce atomicity: only tasks with JSON files, only decisions with MD files
 - On first regeneration (detected by `> **This is a format example**` line): replace the template example with actual project data and compute toggle defaults per the "First Regeneration" section above
 - **Inline feedback areas:** When generating "Your Tasks", add feedback markers for each `human`/`both`-owned task:

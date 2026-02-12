@@ -338,7 +338,14 @@ After phase and decision checks, assess whether multiple tasks can be dispatched
 
 **Phase-level verification result check:** Read `.claude/verification-result.json`. A result is valid when `result` is `"pass"` or `"pass_with_issues"`, `spec_fingerprint` matches the current spec, and no tasks changed since `timestamp`. See verify-agent Phase-Level Step 7 for the file format.
 
-**Out-of-spec task handling:** After phase routing completes (or at phase boundaries), check for pending out-of-spec tasks and present them with options: `[A]` Accept (sets `out_of_spec_approved: true`), `[R]` Reject (deletes task), `[D]` Defer (skips for now), `[AA]` Accept all.
+**Out-of-spec task handling:** After phase routing completes (or at phase boundaries), check for pending out-of-spec tasks and present them with options: `[A]` Accept (sets `out_of_spec_approved: true`), `[R]` Reject (archives task with reason), `[D]` Defer (skips for now), `[AA]` Accept all.
+
+**Reject behavior:** When the user selects `[R]`:
+1. Prompt for optional rejection reason: "Reason (optional):"
+2. Set `out_of_spec_rejected: true` on the task JSON
+3. If reason provided, set `rejection_reason` field
+4. Move task file to `.claude/tasks/archive/`
+5. Task is preserved for audit trail but excluded from active processing and dashboard
 
 **Rule:** Never auto-execute an out-of-spec task. Always require explicit user approval first.
 
