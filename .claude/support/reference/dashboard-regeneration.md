@@ -53,6 +53,50 @@ The checkbox UI maps to `build`/`exclude`. Users who need `maintain` mode can se
 
 ---
 
+## Dashboard State Sidecar
+
+User-authored content is persisted in `.claude/dashboard-state.json` as a durable backup. This file survives dashboard corruption and serves as the fallback source of truth when markers are damaged.
+
+### Schema
+
+```json
+{
+  "user_notes": "",
+  "section_toggles": {
+    "action_required": true,
+    "progress": true,
+    "tasks": true,
+    "decisions": true,
+    "notes": true,
+    "timeline": false,
+    "custom_views": false
+  },
+  "phase_gates": {},
+  "inline_feedback": {},
+  "custom_views_instructions": "",
+  "updated": "2026-01-28T14:30:00Z"
+}
+```
+
+**Field definitions:**
+
+| Field | Type | Content |
+|-------|------|---------|
+| `user_notes` | String | Content between `<!-- USER SECTION -->` markers |
+| `section_toggles` | Object | Boolean per section name (lowercase, underscored) |
+| `phase_gates` | Object | Keyed by transition (e.g., `"1→2"`). Value: `{ "status": "active"\|"approved", "content": "full markdown between markers" }` |
+| `inline_feedback` | Object | Keyed by task ID. Value: string content between `<!-- FEEDBACK:{id} -->` markers |
+| `custom_views_instructions` | String | Content between `<!-- CUSTOM VIEWS INSTRUCTIONS -->` markers |
+| `updated` | String | ISO 8601 timestamp of last write |
+
+**Lifecycle:**
+- Created on first dashboard regeneration (populated from marker extraction or defaults)
+- Updated on every regeneration (merged with any user edits from markers)
+- Read as fallback when markers are damaged
+- Never deleted by any command
+
+---
+
 ## Regeneration Steps
 
 ### 1. Read Source Data
@@ -63,30 +107,41 @@ The checkbox UI maps to `build`/`exclude`. Users who need `maintain` mode can se
 - `verification-result.json` (if exists)
 - `.claude/support/questions/questions.md` (scan for blocking questions)
 
-### 2. Backup User Section
+### 2. Extract and Persist User Content
 
-- Extract content between `<!-- USER SECTION -->` and `<!-- END USER SECTION -->`
-- Save to `.claude/support/workspace/dashboard-notes-backup.md`
-- Rotate old backups (keep last 3)
+**2a. Validate markers in current dashboard.md:**
 
-### 2b. Backup Custom Views Instructions
+For each marker type, check that both open and close markers exist:
 
-- Extract content between `<!-- CUSTOM VIEWS INSTRUCTIONS -->` and `<!-- END CUSTOM VIEWS INSTRUCTIONS -->` markers
-- Save to `.claude/support/workspace/dashboard-custom-views-backup.md`
-- Rotate old backups (keep last 3)
+| Marker Type | Open | Close |
+|-------------|------|-------|
+| User notes | `<!-- USER SECTION -->` | `<!-- END USER SECTION -->` |
+| Feedback | `<!-- FEEDBACK:{id} -->` | `<!-- END FEEDBACK:{id} -->` |
+| Phase gates | `<!-- PHASE GATE:{X}→{Y} -->` | `<!-- END PHASE GATE:{X}→{Y} -->` |
+| Phase gate approved | `<!-- PHASE GATE:{X}→{Y} APPROVED -->` | *(single marker, no close)* |
+| Custom views | `<!-- CUSTOM VIEWS INSTRUCTIONS -->` | `<!-- END CUSTOM VIEWS INSTRUCTIONS -->` |
+| Section toggles | `<!-- SECTION TOGGLES -->` | `<!-- END SECTION TOGGLES -->` |
 
-### 2c. Backup Inline Feedback
+For each type:
+- If both markers present → extract content (marker is intact)
+- If only one marker or neither → log warning, skip extraction for this type (marker is damaged)
 
-- Scan dashboard for `<!-- FEEDBACK:{id} -->` / `<!-- END FEEDBACK:{id} -->` marker pairs
-- For each pair, extract the content between the markers, keyed by task ID
-- Store in memory alongside the user section backup (used in Step 5c)
+**2b. Read `.claude/dashboard-state.json`** (if it exists). This is the previous known-good state.
 
-### 2d. Backup Phase Gate Markers
+**2c. Merge:**
 
-- Scan dashboard for active gate pairs (`<!-- PHASE GATE:{X}→{Y} -->` / `<!-- END PHASE GATE:{X}→{Y} -->`) and approved markers (`<!-- PHASE GATE:{X}→{Y} APPROVED -->`)
-- For active gates, extract the content between the markers (preserves user's checkbox state)
-- For approved markers, note the transition they represent
-- Store in memory alongside other backups (used in Step 5d)
+For each content type:
+- If marker extraction succeeded: use extracted content (user may have edited the dashboard since last regen)
+- If marker extraction failed: use dashboard-state.json value (fallback — no data loss)
+- If dashboard-state.json doesn't exist: use extracted content or defaults
+
+**2d. Write merged state to `.claude/dashboard-state.json`.**
+
+This ensures user content is always persisted in a structured file before the dashboard is regenerated.
+
+**2e. Legacy backup (transitional):**
+
+Also write user notes to `.claude/support/workspace/dashboard-notes-backup.md` (keep last 3). This provides an additional safety net during the transition period and can be removed in a future template version.
 
 ### 3. Generate Dashboard
 
@@ -148,30 +203,24 @@ drift_deferrals: [count from drift-deferrals.json]
 -->
 ```
 
-### 5. Restore User Section
+### 5. Inject User Content from Sidecar
 
-- Insert backed-up content between markers
-- If markers missing, append with warning comment
+Read `.claude/dashboard-state.json` and inject content into the generated dashboard:
 
-### 5b. Restore Custom Views Instructions
+**5a. User notes:** Insert `user_notes` value between `<!-- USER SECTION -->` markers. If the value is empty, insert the default placeholder: `[Your notes here — ideas, questions, reminders]`
 
-- Insert backed-up custom views instructions between `<!-- CUSTOM VIEWS INSTRUCTIONS -->` and `<!-- END CUSTOM VIEWS INSTRUCTIONS -->` markers
-- If markers missing, skip (section may be excluded via toggle)
-- Read the restored instructions and generate appropriate rendered content below `<!-- END CUSTOM VIEWS INSTRUCTIONS -->` up to the next `---` separator
+**5b. Custom views instructions:** Insert `custom_views_instructions` value between `<!-- CUSTOM VIEWS INSTRUCTIONS -->` markers. Then generate rendered content below the end marker. If the section toggle is unchecked, skip entirely.
 
-### 5c. Restore Inline Feedback
+**5c. Inline feedback:** For each entry in `inline_feedback`:
+- If the task still appears in "Your Tasks": insert content between `<!-- FEEDBACK:{id} -->` markers
+- If the task is no longer in "Your Tasks": write the feedback content to the task JSON `user_feedback` field (preserves feedback that would otherwise be lost), then remove from dashboard-state.json
 
-- For each feedback entry backed up in Step 2c:
-  - If the task still appears in "Your Tasks" (task still active with `human`/`both` owner): restore the backed-up content between its `<!-- FEEDBACK:{id} -->` markers
-  - If the task is no longer in "Your Tasks" (completed or removed): write the feedback content to the task JSON `user_feedback` field (preserves feedback that would otherwise be lost)
+**5d. Phase gates:** For each entry in `phase_gates`:
+- If `status` is `"active"` and the gate condition still applies: insert `content` between `<!-- PHASE GATE:{X}→{Y} -->` markers
+- If `status` is `"approved"`: insert the `<!-- PHASE GATE:{X}→{Y} APPROVED -->` single marker
+- If the gate no longer applies: remove from dashboard-state.json
 
-### 5d. Restore Phase Gate Markers
-
-- For each active gate backed up in Step 2d:
-  - If the phase gate condition still applies (all Phase X tasks Finished, Phase Y tasks exist, no APPROVED marker for this transition): restore the backed-up content between its `<!-- PHASE GATE:{X}→{Y} -->` markers (preserves user's checkbox state)
-  - If the phase gate no longer applies (transition was approved or phases changed): discard
-- For each APPROVED marker backed up in Step 2d:
-  - Always restore the `<!-- PHASE GATE:{X}→{Y} APPROVED -->` marker (permanent record of approved transitions)
+**5e. Section toggles:** The toggle checklist is generated from `section_toggles` in the sidecar. The `<details>` wrapper and marker format remain unchanged.
 
 ### 6. Add Footer Line
 
@@ -182,6 +231,19 @@ At very end:
 ```
 - Healthy: `[Spec aligned](# "0 drift deferrals, 0 verification debt")`
 - Issues: `⚠️ N drift deferrals, M verification debt`
+
+### 7. Post-Regeneration Validation
+
+After writing the new dashboard.md, verify structural integrity:
+
+1. **Marker pair check:** For each expected marker type, confirm both open and close markers exist in the output
+2. **Section order check:** Verify required headings appear in correct order (same as health-check Part 1 Check 5)
+3. **Metadata check:** Confirm `<!-- DASHBOARD META -->` block was written with valid task_hash
+
+If any check fails:
+- Log: "Dashboard regeneration produced invalid output — {specific issue}"
+- Do NOT overwrite dashboard-state.json (it has the pre-regen good state)
+- The dashboard may be structurally broken but user content is safe in the sidecar
 
 ---
 

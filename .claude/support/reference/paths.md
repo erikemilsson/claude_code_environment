@@ -15,6 +15,7 @@
 | Decision research archive | `.claude/support/decisions/.archive/` |
 | Workspace/scratch | `.claude/support/workspace/` |
 | Dashboard | `.claude/dashboard.md` |
+| Dashboard state sidecar | `.claude/dashboard-state.json` |
 | Questions | `.claude/support/questions/questions.md` |
 | Documents | `.claude/support/documents/` |
 | Vision documents | `.claude/vision/` |

@@ -101,6 +101,7 @@
 | decision_dependencies | Array | Decision IDs that block this task (e.g., ["DEC-002"]). Task remains blocked until all referenced decisions are resolved. |
 | parallel_safe | Boolean | When true, task is eligible for parallel execution even with empty `files_affected`. Use for research/analysis tasks with no file side effects. |
 | conflict_note | String | **Transient.** Set during parallel dispatch when a task is held back due to file conflicts (e.g., `"Held: file conflict with Task 3 on src/models.py"`). Cleared when the task is dispatched or during post-parallel cleanup. Surfaced in the dashboard Status column. |
+| recovery_state | String | **Transient.** Set by `/work` Step 0 when auto-recovering a stuck task. Values: `"verification_retry"` (respawning verify-agent), `"agent_retry"` (user chose to retry after timeout). Cleared after recovery completes. Prevents double-recovery if `/work` runs again before recovery finishes. |
 | user_review_pending | Boolean | Set to `true` by verify-agent when a `both`-owned task passes verification. Keeps the task visible in "Your Tasks" until the user runs `/work complete {id}`. Cleared by `/work complete`. |
 | verification_attempts | Number | Count of per-task verification attempts (incremented by verify-agent on each run). Escalates to human review at >= 3 (initial + 2 retries). Default: 0 (omit until first verification). |
 | task_verification | Object | Per-task verification result recorded by verify-agent |

@@ -66,13 +66,21 @@ When breaking down tasks, IDs must not collide:
 
 If dashboard content or structure is inconsistent, the fix is always: regenerate.
 
+#### 4b. Dashboard State Sidecar
+
+- `.claude/dashboard-state.json` should exist if dashboard.md exists
+- If missing: WARNING — "Dashboard state sidecar missing. Next dashboard regeneration will create it."
+- If present: validate JSON structure (required keys: user_notes, section_toggles, phase_gates, inline_feedback, custom_views_instructions, updated)
+- Cross-reference: section_toggles should match the dashboard's SECTION TOGGLES checklist
+- Cross-reference: phase_gates entries should match PHASE GATE markers in dashboard
+
 #### 5. Status Rules
 
 | Status | Rules |
 |--------|-------|
 | `Pending` | No special requirements |
 | `In Progress` | Multiple allowed only when parallel-eligible: `files_affected` don't overlap, all deps satisfied, within `max_parallel_tasks` limit. **ERROR** if parallel conditions violated. |
-| `Awaiting Verification` | Transitional only — must proceed to verification immediately. |
+| `Awaiting Verification` | Transitional only — must proceed to verification immediately. Auto-recovered by `/work` Step 0. |
 | `Blocked` | Should have `notes` explaining the blocker |
 | `On Hold` | Should have `notes` explaining why paused. Not auto-routed by `/work`. Warning if on hold > 30 days. |
 | `Absorbed` | Must have `absorbed_into` field referencing a valid task ID that exists. |
@@ -162,6 +170,9 @@ Reports tasks with `"out_of_spec": true` in a separate section of the report. In
 | Absorbed without `absorbed_into` | Ask user: provide absorbing task ID, or change status |
 | Stale questions (> 14 days) | List questions, ask user to answer or remove |
 | Stale workspace files (> 30 days) | List files, ask user: graduate to final location, or delete |
+| Dashboard state sidecar missing | Create from current dashboard markers (or defaults if markers broken) |
+| Sidecar/dashboard toggle mismatch | Update sidecar from dashboard markers (dashboard is more recent) |
+| Stale "Awaiting Verification" (> 1 hour) | Auto-recovered by `/work` Step 0 on next run. If running standalone: trigger verify-agent immediately for task |
 
 ### Non-Fixable Issues (Manual Required)
 

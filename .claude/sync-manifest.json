@@ -40,7 +40,8 @@
       ".claude/support/decisions/.archive/*",
       ".claude/support/learnings/*",
       ".claude/support/previous_specifications/*.md",
-      ".claude/vision/*.md"
+      ".claude/vision/*.md",
+      ".claude/dashboard-state.json"
     ]
   },
   "notes": "Paths relative to template root. Use glob patterns."

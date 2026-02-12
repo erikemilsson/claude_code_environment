@@ -153,6 +153,7 @@ Use Claude Code's `Task` tool to spawn one agent per task. **Always set `model: 
 - The task JSON to execute
 - Instructions to read `.claude/agents/implement-agent.md`
 - Instructions to follow Steps 2, 4, 5, 6a, and 6b (understand, implement, self-review, mark awaiting verification, spawn verify-agent as a sub-agent for per-task verification)
+- **Wind-down instruction:** "TURN BUDGET: You have 40 turns. If you reach turn 35 without completing, stop implementation, update task notes with progress so far, and return your status. Do NOT leave the task in an inconsistent state — either mark Awaiting Verification (if implementation is complete) or leave as In Progress with detailed notes (if not)."
 - **Explicit instruction: "DO NOT regenerate dashboard. DO NOT select next task. DO NOT check parent auto-completion. Return results when verification completes."**
 - **Note:** Each parallel implement-agent will spawn its own verify-agent sub-agent (nested Task call). This is expected — verification separation applies in parallel mode too.
 

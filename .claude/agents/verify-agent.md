@@ -115,6 +115,7 @@ Detect files modified during implementation that were NOT listed in `files_affec
    - .claude/support/workspace/*
    - .claude/drift-deferrals.json
    - .claude/verification-result.json
+   - .claude/dashboard-state.json
 
 4. IF undeclared_files is non-empty:
    - Flag as scope_violation in the verification result
@@ -298,6 +299,18 @@ Task 5 verification: FAIL (attempt 2)
   Spec alignment: missing raw_game_designers upsert (task requires 4 tables, only 3 implemented)
   -> Task set back to "In Progress" for fixes (1 retry remaining)
 ```
+
+### Per-Task Timeout Handling
+
+If you are approaching the turn limit (turn 25 of 30) without having completed all steps:
+
+1. **Prioritize writing `task_verification` to the task JSON** — even with partial data
+2. For checks not yet completed, set their value to `"skipped"`
+3. Set `result` to `"fail"` with note: "Verification incomplete — {N} of 5 checks completed before turn limit"
+4. Set task status to "In Progress" (normal fail flow — recovery will retry with extended turns)
+5. Return your partial T8 report noting which checks were completed and which were skipped
+
+The `/work` recovery check will detect the timeout and retry with an extended turn limit (40 instead of 30).
 
 ---
 

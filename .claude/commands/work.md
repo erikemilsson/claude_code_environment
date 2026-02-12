@@ -27,6 +27,64 @@ For workflow concepts (phases, agent synergy, checkpoints), see `.claude/support
 
 ## Process
 
+### Step 0: Session Recovery Check
+
+Before gathering context, scan for tasks left in recoverable states by a previous session. This handles agent crashes, turn exhaustion, and session interruptions.
+
+**Scan all non-archived task-*.json files and check for:**
+
+```
+1. STATUS: "Awaiting Verification"
+   (Agent crashed after implementation, before verification completed)
+
+   → Auto-recover: spawn verify-agent for this task
+   → Log: "⚡ Recovering task {id} — spawning verification (previous session incomplete)"
+   → Continue to Step 1 after recovery spawns complete
+
+2. STATUS: "Blocked" WITH notes containing "[VERIFICATION TIMEOUT]"
+   AND verification_attempts < 3
+   (Verify-agent ran out of turns — implementation is done, verification needs retry)
+
+   → Auto-recover: set status to "Awaiting Verification", spawn verify-agent with max_turns: 40 (extended from 30)
+   → Clear the [VERIFICATION TIMEOUT] note
+   → Log: "⚡ Retrying verification for task {id} with extended turn limit"
+
+3. STATUS: "Blocked" WITH notes containing "[VERIFICATION TIMEOUT]"
+   AND verification_attempts >= 3
+   (Verify-agent failed 3 times — needs human review)
+
+   → Replace note: "[VERIFICATION ESCALATED] 3 verification attempts exhausted — requires human review"
+   → Log: "Task {id} escalated to human review after 3 failed verification attempts"
+
+4. STATUS: "Blocked" WITH notes containing "[AGENT TIMEOUT]"
+   (Parallel agent timed out — task may be too complex or need breakdown)
+
+   → Present to user:
+   │  Task {id} "{title}" timed out in a previous session.
+   │  [R] Retry (set to Pending for next dispatch)
+   │  [B] Break down (run /breakdown {id})
+   │  [S] Skip (stays Blocked)
+
+5. STATUS: "Blocked" WITH notes containing "[VERIFICATION ESCALATED]"
+   (Intentional escalation — already surfaced, no auto-action)
+
+   → Report only: "Task {id} awaiting human review (3 verification attempts exhausted)"
+
+6. STATUS: "In Progress" WITH updated_date older than 24 hours
+   AND no agent currently running for this task
+   (Abandoned by a crashed implement-agent)
+
+   → Present to user:
+   │  Task {id} "{title}" has been In Progress for {N} days without activity.
+   │  [C] Continue (keep In Progress, /work will route to implement-agent)
+   │  [P] Reset to Pending (start fresh)
+   │  [H] Put On Hold
+```
+
+**After recovery actions complete, proceed to Step 1.**
+
+**Note:** Cases 1 and 2 are auto-recovered because the implementation is already done — we only need to run verification. Cases 4 and 6 present options because the implementation state is uncertain.
+
 ### Step 1: Gather Context
 
 **Version discovery:** Determine the current spec version:
@@ -51,6 +109,14 @@ Read and analyze:
 5. If file count differs from `task_count`, fall back to full hash computation (Step 1a) and read all tasks
 
 This reconciles with Step 1a: the file count check is a lightweight gate that avoids the full O(N) hash computation in most cases. After auto-archive runs (threshold: 100), archived tasks are excluded automatically.
+
+**Malformed task file handling:** When reading task JSON files, if any file fails to parse (invalid JSON, truncated, encoding errors):
+1. Skip the file — do not abort the entire scan
+2. Report the error prominently: "Task file `task-{id}.json` could not be read: {error}. Run `/health-check` for details."
+3. Exclude the corrupted file from all calculations (progress counts, phase completion, dependency checks, dashboard)
+4. If other tasks depend on the corrupted task, treat those dependencies as unresolvable (task effectively Blocked)
+
+This prevents one bad file from halting all work while ensuring the problem is visible to the user.
 
 ### Step 1a: Dashboard Freshness Check
 
@@ -111,6 +177,15 @@ When section-level drift is detected, present a per-section UI with diff and aff
 
 **Full procedure:** `.claude/support/reference/drift-reconciliation.md` § "Granular Reconciliation UI"
 
+**Post-reconciliation In Progress warning:** After reconciliation completes, check if any "In Progress" tasks had their section fingerprints updated (i.e., their requirements changed while work was underway). If so, warn the user before continuing:
+
+```
+⚠️ Task {id} "{title}" is In Progress but its spec section changed during reconciliation.
+  Review the task's partial work against the updated requirements before continuing.
+```
+
+This is a warning, not a gate — the user can proceed or reset the task manually. The intent is visibility: don't silently dispatch an agent to continue work against changed requirements.
+
 ### Step 2: Spec Check (if request provided)
 
 When the user provides a request or task:
@@ -165,6 +240,10 @@ Check whether phases or unresolved decisions block any intended work:
    │        3. Read dashboard for phase gate marker: <!-- PHASE GATE:{P}→{next_phase} -->
    │        4. IF marker exists, check ALL checkboxes within the gate:
    │             - Parse all `- [x]` and `- [ ]` lines between gate markers
+   │             - **Normalize checkboxes before evaluation:**
+   │               - Treat `[x]`, `[X]`, `[✓]`, `[✔]` all as checked
+   │               - Treat `[ ]`, `[]` as unchecked
+   │               - Any other content inside brackets → treat as unchecked (safe default)
    │             - IF ALL checkboxes are checked [x]:
    │               → Phase transition approved.
    │               → Replace gate content with: <!-- PHASE GATE:{P}→{next_phase} APPROVED -->
@@ -456,13 +535,19 @@ Task tool call:
     Task file: .claude/tasks/task-{id}.json
     Spec file: .claude/spec_v{N}.md (section: "{spec_section}")
 
+    TURN BUDGET: You have 30 turns. If you reach turn 25 without completing:
+    - Stop new verification checks
+    - Write task_verification to the task JSON with whatever checks you completed
+    - Set result to "fail" with note: "Verification incomplete — {N} of 5 checks completed"
+    - Return your partial report immediately
+
     Verify the implementation independently. Do NOT assume correctness.
     Write your verification result to the task JSON (task_verification field).
     Update task status to "Finished" (pass) or "In Progress" (fail).
     Return your T8 report.
 ```
 
-**Timeout handling:** If verify-agent exhausts `max_turns` (30) without completing, treat as verification failure — set task to "Blocked" with note `[VERIFICATION TIMEOUT]` and report to user.
+**Timeout handling:** If verify-agent exhausts `max_turns` (30) without completing, treat as verification failure — increment `verification_attempts` on the task JSON, set task to "Blocked" with note `[VERIFICATION TIMEOUT]`, and report to user. Incrementing the counter ensures repeated timeouts eventually trigger the 3-attempt escalation limit (see verify-agent.md Step T7).
 
 **After per-task verification completes:**
 - If **pass**: Check the task's `owner` field. If `owner: "both"`, verify that `user_review_pending: true` was set by verify-agent (the task remains in "Your Tasks" until the user runs `/work complete`). Proceed to select next pending task (loop back to Execute routing).
@@ -518,6 +603,13 @@ Task tool call:
 
     Spec file: .claude/spec_v{N}.md
     Task directory: .claude/tasks/
+
+    TURN BUDGET: You have 50 turns. If you reach turn 43 without completing:
+    - Stop evaluating new criteria
+    - Write verification-result.json with results for criteria evaluated so far
+    - Set result to "fail" with note: "Verification incomplete — evaluated {N} of {M} criteria"
+    - Create a single fix task: "Complete phase-level verification"
+    - Return your partial report immediately
 
     Validate the full implementation against spec acceptance criteria.
     Required outputs:
