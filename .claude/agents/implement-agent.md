@@ -81,6 +81,8 @@ Update task status:
 }
 ```
 
+**Dashboard regeneration:** After setting "In Progress", regenerate the dashboard per `.claude/support/reference/dashboard-regeneration.md`. In parallel mode, skip this (coordinator handles it).
+
 In sequential mode: one task "In Progress" at a time. In parallel mode (dispatched by `/work`): multiple tasks allowed — `/work` manages eligibility and file conflict checks.
 
 ### Step 4: Implement
@@ -119,6 +121,8 @@ Update task with transitional status:
   "notes": "Implemented login flow. Updated configuration. Added validation."
 }
 ```
+
+**Dashboard regeneration:** After setting "Awaiting Verification", regenerate the dashboard per `.claude/support/reference/dashboard-regeneration.md`. In parallel mode, skip this (coordinator handles it).
 
 **Separation of concerns:**
 - Do NOT write `task_verification` field — that is verify-agent's exclusive responsibility

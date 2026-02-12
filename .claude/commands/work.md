@@ -430,7 +430,7 @@ Use `/work complete` for manual task completion outside of implement-agent's wor
    - Set parent status to "Finished"
 7. **Regenerate dashboard** - Follow `.claude/support/reference/dashboard-regeneration.md`
 8. **Auto-archive check** - If active task count > 100, archive old tasks
-9. **Post-dispatch validation** - Run Step 6 checks
+9. **Post-dispatch validation** - Run main `/work` Step 6 checks (task file integrity, dashboard exists, session sentinel)
 
 ### Rules
 
