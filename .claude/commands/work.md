@@ -326,9 +326,16 @@ Check whether phases or unresolved decisions block any intended work:
    │
    │  IF no tasks remain in active phase and all are "Finished":
    │    IF tasks exist in a higher phase (next_phase exists):
-   │      Log: "Phase {active_phase} complete — Phase {next_phase} tasks are now eligible"
-   │      → Execute Version Transition Procedure (see iterate.md § "Version Transition Procedure")
-   │      → Suggest running /iterate to flesh out Phase {next_phase} sections
+   │      1. Read dashboard for phase gate marker: <!-- PHASE GATE:{active_phase}→{next_phase} -->
+   │      2. IF marker contains checked box [x]:
+   │           → Phase transition approved. Clear the marker from dashboard.
+   │           → Log: "Phase {active_phase} → {next_phase} approved"
+   │           → Execute Version Transition Procedure (see iterate.md § "Version Transition Procedure")
+   │           → Suggest running /iterate to flesh out Phase {next_phase} sections
+   │      3. IF marker absent OR contains unchecked box [ ]:
+   │           → Regenerate dashboard with phase gate in Action Required (see Dashboard Regen § Phase Transitions)
+   │           → Log: "Phase {active_phase} complete. Approve transition in dashboard, then run /work."
+   │           → STOP — do not dispatch Phase {next_phase} tasks
    │    ELSE (single-phase project or final phase):
    │      → Fall through to Step 3 routing (phase-level verification → completion)
 
@@ -537,6 +544,7 @@ ELSE:
 | No spec exists, tasks exist | **Stop and warn** — tasks without a spec cannot be verified. Present options (see below). |
 | Spec incomplete | Stop — prompt user to complete spec |
 | Spec complete, no tasks | **Decompose** — create tasks from spec |
+| Phase transition pending approval (phase gate unchecked in dashboard) | **Stop** — direct user to approve phase transition in dashboard |
 | Any spec task in "Awaiting Verification" status | **Verify (per-task)** — read & follow verify-agent per-task workflow (see Step 4) |
 | Spec tasks pending (and none awaiting verification), parallel batch >= 2 | **Execute (Parallel)** — dispatch parallel batch (see Step 4 "If Executing (Parallel)") |
 | Spec tasks pending (and none awaiting verification), no parallel batch | **Execute** — read & follow implement-agent workflow (see Step 4) |
@@ -570,6 +578,10 @@ ELSE:
    → IF result == "fail" → Route to implement-agent (fix tasks were created, need implementation)
    → IF spec_fingerprint mismatch OR tasks updated after timestamp → Route to verify-agent (re-verification needed)
    → IF result == "pass" or "pass_with_issues" → Route to completion
+7b. Check for pending phase gate:
+   → IF Step 2b detected a phase transition needing approval (gate unchecked or absent):
+     → STOP — direct user to approve phase transition in dashboard
+     → Do NOT proceed to steps 8 or 9
 8. ELSE IF parallel_mode (from Step 2c):
    → Route to parallel execution (see "If Executing (Parallel)")
 9. ELSE:
@@ -686,7 +698,7 @@ Tasks            → [x] always (core section)
 Decisions        → [x] if any decision-*.md files exist, [ ] otherwise
 Notes            → [x] always (preserve mode)
 Timeline         → [x] if any task has due_date or external_dependency.expected_date, [ ] otherwise
-Sub-Dashboards   → [x] if any sub-dashboard files are referenced in spec, [ ] otherwise
+Custom Views     → [ ] always (user opts in when they want custom views)
 ```
 
 **On phase transitions:**
@@ -724,15 +736,25 @@ The checkbox UI maps to `build`/`exclude`. Users who need `maintain` mode can se
    - Save to `.claude/support/workspace/dashboard-notes-backup.md`
    - Rotate old backups (keep last 3)
 
-2b. **Backup inline feedback**
+2b. **Backup custom views instructions**
+   - Extract content between `<!-- CUSTOM VIEWS INSTRUCTIONS -->` and `<!-- END CUSTOM VIEWS INSTRUCTIONS -->` markers
+   - Save to `.claude/support/workspace/dashboard-custom-views-backup.md`
+   - Rotate old backups (keep last 3)
+
+2c. **Backup inline feedback**
    - Scan dashboard for `<!-- FEEDBACK:{id} -->` / `<!-- END FEEDBACK:{id} -->` marker pairs
    - For each pair, extract the content between the markers, keyed by task ID
-   - Store in memory alongside the user section backup (used in Step 5b)
+   - Store in memory alongside the user section backup (used in Step 5c)
+
+2d. **Backup phase gate markers**
+   - Scan dashboard for `<!-- PHASE GATE:{X}→{Y} -->` / `<!-- END PHASE GATE:{X}→{Y} -->` marker pairs
+   - For each pair, extract the content between the markers (preserves user's checkbox state)
+   - Store in memory alongside other backups (used in Step 5d)
 
 3. **Generate dashboard**
    - Follow the Section Format Reference below for all formatting rules
    - Use exact section headings: `# Dashboard`, `## 🚨 Action Required`, `## 📊 Progress`, `## 📋 Tasks`, `## 📋 Decisions`, `## 💡 Notes`
-   - Optional section heading (when enabled, placed between Decisions and Notes): `## 📑 Sub-Dashboards`
+   - Optional section heading (when enabled, placed between Decisions and Notes): `## 👁️ Custom Views`
    - **Timeline sub-section** in Progress: render when any task has `due_date` or `external_dependency.expected_date`
    - **Project Overview sub-section** in Progress: render inline Mermaid diagram when 4+ tasks remain (see § "Project Overview Diagram")
    - Read section toggles from dashboard checklist (between `<!-- SECTION TOGGLES -->` markers) and respect modes
@@ -745,6 +767,21 @@ The checkbox UI maps to `build`/`exclude`. Users who need `maintain` mode can se
      **Task {id} — Feedback:**
      [Leave feedback here, then run /work complete {id}]
      <!-- END FEEDBACK:{id} -->
+     ```
+   - **Phase Transitions sub-section:** When all tasks in Phase N are "Finished" AND Phase N+1 tasks exist, render a phase gate with checkbox between markers:
+     ```
+     <!-- PHASE GATE:{N}→{N+1} -->
+     - [ ] **Phase {N} complete** — Review results and approve transition to Phase {N+1}
+       - {M} tasks finished, {K} tasks in Phase {N+1} ready
+     <!-- END PHASE GATE:{N}→{N+1} -->
+     ```
+   - **Verification Pending sub-section:** When all spec tasks are "Finished" with passing per-task verification AND no valid `verification-result.json` exists, render:
+     ```
+     All tasks complete — phase-level verification will run on next `/work`
+     ```
+   - **Spec Drift sub-section:** When `drift-deferrals.json` exists with active deferrals, render each deferred section:
+     ```
+     - ⚠️ **{section}** — {N} tasks affected, deferred {M} days ago
      ```
 
 4. **Compute and add metadata block** (after `# Dashboard` title)
@@ -762,10 +799,20 @@ The checkbox UI maps to `build`/`exclude`. Users who need `maintain` mode can se
    - Insert backed-up content between markers
    - If markers missing, append with warning comment
 
-5b. **Restore inline feedback**
-   - For each feedback entry backed up in Step 2b:
+5b. **Restore custom views instructions**
+   - Insert backed-up custom views instructions between `<!-- CUSTOM VIEWS INSTRUCTIONS -->` and `<!-- END CUSTOM VIEWS INSTRUCTIONS -->` markers
+   - If markers missing, skip (section may be excluded via toggle)
+   - Read the restored instructions and generate appropriate rendered content below `<!-- END CUSTOM VIEWS INSTRUCTIONS -->` up to the next `---` separator
+
+5c. **Restore inline feedback**
+   - For each feedback entry backed up in Step 2c:
      - If the task still appears in "Your Tasks" (task still active with `human`/`both` owner): restore the backed-up content between its `<!-- FEEDBACK:{id} -->` markers
      - If the task is no longer in "Your Tasks" (completed or removed): write the feedback content to the task JSON `user_feedback` field (preserves feedback that would otherwise be lost)
+
+5d. **Restore phase gate markers**
+   - For each phase gate backed up in Step 2d:
+     - If the phase gate condition still applies (all Phase X tasks Finished, Phase Y tasks exist): restore the backed-up content between its `<!-- PHASE GATE:{X}→{Y} -->` markers (preserves user's checkbox state)
+     - If the phase gate no longer applies (transition was approved or phases changed): discard
 
 6. **Add footer line** (at very end)
    ```
@@ -797,7 +844,10 @@ Review items are derived, not stored. During regeneration:
 
 **Section Display Rules:**
 - Action Required sub-sections: only render when they have content (omit empty categories entirely)
-- Action Required sub-section order: Verification Debt, Decisions, Your Tasks, Reviews
+- Action Required sub-section order: Phase Transitions, Verification Pending, Verification Debt, Spec Drift, Decisions, Your Tasks, Reviews
+- Phase Transitions: only render when a phase boundary has been reached (all Phase N tasks Finished, Phase N+1 exists)
+- Verification Pending: only render when all spec tasks are Finished with passing per-task verification but no valid verification-result.json
+- Spec Drift: only render when drift-deferrals.json has active entries
 - Reviews sub-section format: `- [ ] **Item title** — what to do → [link to file](path)`
 - Reviews appear for: out_of_spec tasks without approval, draft/proposed decisions, blocking questions from `questions.md` (each linked to the file)
 - Timeline sub-section in Progress: only render when tasks have `due_date` or `external_dependency.expected_date`
@@ -812,13 +862,16 @@ Review items are derived, not stored. During regeneration:
 - Decisions: status display mapping: `approved`/`implemented` → "Decided", `draft`/`proposed` → "Pending". Decided → show selected option name; Pending → link to doc in Selected column
 - Out-of-spec tasks: prefix title with ⚠️
 - Footer: healthy = spec aligned tooltip; issues = ⚠️ with counts
-- Sub-Dashboards section: link collection to domain-specific tracking files (when enabled)
+- Custom Views section: user-defined instructions (preserved between markers) followed by Claude-generated content based on those instructions (when enabled). Multiple views are rendered as `###` sub-sections, one per bold-labeled instruction.
 
 **Per-Section Format:**
 
 | Section | Columns / Format |
 |---------|-----------------|
+| Action Required → Phase Transitions | `- [ ] **Phase N complete** — description` with `<!-- PHASE GATE -->` markers |
+| Action Required → Verification Pending | Plain text status message |
 | Action Required → Verification Debt | `Task \| Title \| Issue` |
+| Action Required → Spec Drift | `- ⚠️ **{section}** — {N} tasks affected, deferred {M} days ago` |
 | Action Required → Decisions | `Decision \| Question \| Doc` |
 | Action Required → Your Tasks | `Task \| What To Do \| Where` |
 | Action Required → Reviews | `- [ ] **Item title** — what to do → [link](path)` — derived, not stored |
@@ -827,7 +880,7 @@ Review items are derived, not stored. During regeneration:
 | Tasks → Per phase | `ID \| Title \| Status \| Diff \| Owner \| Deps` — grouped by phase headers |
 | Decisions | `ID \| Decision \| Status \| Selected` |
 | Progress → Project Overview | Inline Mermaid `graph LR` diagram — see Project Overview Diagram rules below |
-| Sub-Dashboards | Bulleted link list to domain-specific `.md` files |
+| Custom Views | Preserved instruction block between `<!-- CUSTOM VIEWS INSTRUCTIONS -->` markers + rendered `###` sub-sections generated from those instructions (one per bold-labeled view) |
 
 **Domain Agnosticism:**
 This format works for any project type — software, research, procurement, renovation, event planning. Use language appropriate to the project domain. No code-specific assumptions are built in.
@@ -1079,7 +1132,7 @@ Task tool call:
     Create fix tasks for any issues found. Do NOT implement fixes yourself.
 ```
 
-**Timeout handling:** Phase-level verification has a higher `max_turns` (50) because it covers the entire implementation. If exhausted without writing `verification-result.json`, report to user and suggest retrying or running `/health-check`.
+**Timeout handling:** Phase-level verification has a higher `max_turns` (50) because it covers the entire implementation. The verify-agent has its own timeout handling protocol (see verify-agent.md § "Timeout Handling") that prioritizes writing a partial `verification-result.json` before exhausting turns. If the agent still exits without writing the file, report to user and suggest retrying or running `/health-check`.
 
 **After phase-level verification completes:**
 
@@ -1238,7 +1291,7 @@ The critical path is rendered as a single line in the **Progress** section: owne
 - If parallel branches have different owners, show each: `[❗ Review | 🤖 Build]`
 - Branches of unequal length: show each by its first step (the branch content is what matters, not padding)
 
-**Edge cases:** No dependencies → "All tasks can start now". No incomplete → "All tasks complete!". Single task → just that task → Done. No parallelism detected → pure sequential format (no brackets).
+**Edge cases:** No dependencies → "All tasks can start now". No incomplete AND no valid verification-result.json → "🤖 Phase verification → Done" *(1 step)*. No incomplete AND valid passing verification-result.json → "All tasks complete! ✓". Single task → just that task → Done. No parallelism detected → pure sequential format (no brackets).
 
 ### Project Overview Diagram
 

@@ -124,7 +124,7 @@ Users check/uncheck items in the **Sections** checklist at the top of dashboard.
 - [ ] Decisions          # Small project, few decisions
 - [x] Notes
 - [x] Timeline
-- [ ] Sub-Dashboards
+- [ ] Custom Views
 <!-- END SECTION TOGGLES -->
 ```
 
@@ -134,7 +134,7 @@ Checked (`[x]`) → `build` mode. Unchecked (`[ ]`) → `exclude` mode. Notes al
 
 The consolidated structure handles the primary null-state problem: Action Required omits empty sub-sections. Toggles control entire sections.
 
-**Phase-aware initialization:** On first dashboard generation (replacing the template example), toggle defaults are computed from project state — Decisions is checked only if decision records exist, Timeline only if tasks have dates, Sub-Dashboards only if sub-dashboard files are referenced in spec.
+**Phase-aware initialization:** On first dashboard generation (replacing the template example), toggle defaults are computed from project state — Decisions is checked only if decision records exist, Timeline only if tasks have dates, Custom Views always defaults to unchecked (user opts in when they want custom views).
 
 **Phase transition suggestions:** When a phase transition occurs, `/work` checks whether newly relevant sections are unchecked and logs suggestions (e.g., "Phase 2 has pending decisions. Consider enabling the Decisions section."). Suggestions are never auto-applied — the user's checkbox state is authoritative.
 

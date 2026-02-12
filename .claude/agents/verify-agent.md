@@ -294,6 +294,17 @@ Follow this workflow when spawned in **phase-level** mode — all spec tasks are
 
 Each step produces a required output. The verification-result.json file (Step 7) must contain real per-criterion data from Step 3, not fabricated results.
 
+### Timeout Handling
+
+Phase-level verification runs with `max_turns: 50`. If you are approaching the turn limit without having completed all steps:
+
+1. **Prioritize writing `verification-result.json` (Step 7)** — even with partial data. A partial result (with accurate `criteria_passed`/`criteria_failed` counts for what you've verified so far) is more useful than no result.
+2. Set `result` to `"fail"` with a summary noting: "Verification incomplete — agent reached turn limit after evaluating {N} of {M} criteria."
+3. Create a single fix task: "Complete phase-level verification" with notes listing the criteria not yet evaluated.
+4. Report what you verified and what remains in your Step 8 report.
+
+The `/work` coordinator will detect the fail result and route back to verification on the next run.
+
 ### Step 1: Gather Verification Context
 
 Read and understand:

@@ -28,7 +28,7 @@ This environment is domain-agnostic. It works for software development, research
 
 **This is pragmatic, not rigid.** The dashboard is the primary communication hub during active development. Post-completion activities (testing, deployment) may involve more direct interaction. Claude should surface information through the dashboard when it makes sense, not force everything through it artificially.
 
-The dashboard has a **Sections** checklist at the top — check or uncheck items to control which sections Claude generates during `/work`. Sub-Dashboards is optional and defaults to unchecked.
+The dashboard has a **Sections** checklist at the top — check or uncheck items to control which sections Claude generates during `/work`. Custom Views is optional and defaults to unchecked.
 
 **Note:** The dashboard ships as a populated format example (a fictional renovation project). On first `/work` run after spec decomposition, it is replaced with your actual project data. The example exists so Claude can see exactly what format to produce.
 
@@ -97,7 +97,7 @@ Tasks are tracked in `.claude/tasks/` as JSON files. The **Project Dashboard** a
 - 📋 **Tasks** — full task list by phase
 - 📋 **Decisions** — decision log with status
 - 💡 **Notes** — your preserved notes section
-- Optional: **Sub-Dashboards** (toggle via Sections checklist)
+- Optional: **Custom Views** (toggle via Sections checklist)
 
 **Key rules:**
 - Break down tasks with difficulty >= 7 before starting

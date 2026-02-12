@@ -379,7 +379,8 @@ Humans are involved at:
 ### Phase Boundaries
 When transitioning between phases:
 - Spec → Execute: "Specification complete. Ready to implement?"
-- Execute → Verify: "Implementation complete. Ready to verify?"
+- **Phase N → Phase N+1** (within Execute): Surfaced as a dashboard Action Required item with a checkbox in a `<!-- PHASE GATE:{N}→{N+1} -->` marker. `/work` blocks until the user checks the box and re-runs. This ensures explicit approval before crossing user-defined phase boundaries.
+- **Execute → Verify**: When all tasks are complete, the dashboard shows a "Verification Pending" item in Action Required, and the critical path displays "🤖 Phase verification → Done" instead of "All tasks complete!". Phase-level verification runs automatically on the next `/work`.
 - Verify → Complete: "Verification passed. Ready to ship?"
 
 ### Spec Misalignment

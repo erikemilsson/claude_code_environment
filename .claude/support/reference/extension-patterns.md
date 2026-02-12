@@ -142,21 +142,54 @@ Decisions appear in the dashboard:
 
 ---
 
-## Domain-Specific Sub-Dashboards
+## Custom Views
 
-For projects with complex domain areas (workshop management, inventory, experiment logs), create separate markdown files in `.claude/support/` for domain-specific tracking.
+User-defined inline views rendered directly in the dashboard. Instead of linking to external files, you write instructions describing what content Claude should generate, and it appears right in the dashboard.
 
-**Enabling:** Check `Sub-Dashboards` in the **Sections** checklist at the top of `dashboard.md`. When enabled, a `## 📑 Sub-Dashboards` section appears in the dashboard as a link collection pointing to your domain-specific tracking files.
+**Enabling:** Check `Custom Views` in the **Sections** checklist at the top of `dashboard.md`. When enabled, a `## 👁️ Custom Views` section appears in the dashboard.
+
+**How it works:**
+
+The section has two parts:
+
+1. **Instructions area** (between `<!-- CUSTOM VIEWS INSTRUCTIONS -->` and `<!-- END CUSTOM VIEWS INSTRUCTIONS -->` markers): You write what you want Claude to render — tables, summaries, tracking views, whatever fits your project. This area is preserved across dashboard regenerations, just like the Notes user section.
+
+2. **Rendered content** (everything after `<!-- END CUSTOM VIEWS INSTRUCTIONS -->` until the next section separator): Claude reads your instructions and generates this content fresh each `/work` cycle. This part is regenerated, not preserved.
 
 **When to use:**
 - The main dashboard's Tasks/Progress sections don't capture domain-specific tracking needs
-- You need separate tables, checklists, or formats for a specific domain area
-- Examples: materials procurement tracker, experiment log, vendor contact sheet
+- You want custom tables, summaries, or views without navigating to separate files
+- Examples: materials procurement tracker, experiment status summary, vendor contact sheet, budget breakdown
 
-**Convention:**
-- Place sub-dashboard files in `.claude/support/` (e.g., `support/materials-tracking.md`)
-- Each file is self-contained — it doesn't need to follow dashboard format
-- The main dashboard links to them; it doesn't embed their content
+**Multiple views:** Define as many views as you want in the instructions area. Label each with a bold name (e.g., `**Materials:**`, `**Budget:**`). Claude renders each as a separate `### Heading` sub-section in the output. Views are independent — add, remove, or reword them anytime.
+
+**Example instructions:**
+```
+**Materials Procurement:** Track materials as a table with columns: Material, Vendor, Ordered, Delivered, Cost.
+
+**Inspection Schedule:** Show inspections as a table with columns: Inspection, Inspector, Date, Status.
+```
+
+**Marker structure:**
+```markdown
+## 👁️ Custom Views
+
+<!-- CUSTOM VIEWS INSTRUCTIONS -->
+
+**View Name:** Description of what to render, format, data sources.
+
+**Another View:** Description of the second view.
+
+<!-- END CUSTOM VIEWS INSTRUCTIONS -->
+
+### View Name
+
+[Claude-generated content for first view]
+
+### Another View
+
+[Claude-generated content for second view]
+```
 
 ---
 

@@ -67,7 +67,7 @@ Checks:
 - Sections in correct order
 - Flag missing or out-of-order
 - Sections with unchecked toggles (`[ ]`) in the dashboard's section toggle checklist (between `<!-- SECTION TOGGLES -->` and `<!-- END SECTION TOGGLES -->` markers) are allowed to be missing. Falls back to `dashboard_sections` config if no checklist exists.
-- Optional section (`## 📑 Sub-Dashboards`) may appear between Decisions and Notes when its toggle is checked — do not flag it as unexpected
+- Optional section (`## 👁️ Custom Views`) may appear between Decisions and Notes when its toggle is checked — do not flag it as unexpected
 
 ### 6. Status Rules
 

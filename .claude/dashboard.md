@@ -16,7 +16,7 @@ drift_deferrals: 0
 - [x] Decisions
 - [x] Notes
 - [x] Timeline
-- [x] Sub-Dashboards
+- [x] Custom Views
 <!-- END SECTION TOGGLES -->
 
 > **This is a format example** using a fictional renovation project. It will be replaced with your actual project data when you run `/work`.
@@ -152,9 +152,38 @@ graph LR
 
 ---
 
-## 📑 Sub-Dashboards
+## 👁️ Custom Views
 
-- [Materials & Procurement](support/materials-tracking.md) — vendor orders, delivery tracking, budget vs. actual
+<!-- CUSTOM VIEWS INSTRUCTIONS -->
+
+**Materials Procurement:** Track materials procurement status as a table with columns: Material, Vendor, Ordered, Delivered, Cost. Source data from task notes mentioning material orders.
+
+**Inspection Schedule:** Show upcoming and completed inspections as a table with columns: Inspection, Inspector, Date, Status. Include the building permit inspection from task 8 and electrical inspection from task 10.
+
+<!-- END CUSTOM VIEWS INSTRUCTIONS -->
+
+### Materials Procurement
+
+| Material | Vendor | Ordered | Delivered | Cost |
+|----------|--------|---------|-----------|------|
+| Hardwood flooring (TBD) | Pending DEC-002 | — | — | ~$12,000 |
+| Copper piping (3/4" & 1/2") | PlumbSupply Co | 2026-01-20 | 2026-01-25 | $2,340 |
+| Structural steel beams | Acme Surfaces | 2026-01-18 | 2026-01-22 | $4,800 |
+| Electrical panel (200A) | PowerGrid Dist. | 2026-01-28 | Pending | $1,650 |
+| Drywall sheets (4x8) | BuildRight Supply | 2026-02-01 | Pending | $890 |
+
+*5 materials tracked · 2 delivered · 1 pending decision · Est. total: ~$21,680*
+
+### Inspection Schedule
+
+| Inspection | Inspector | Date | Status |
+|------------|-----------|------|--------|
+| Structural reinforcement sign-off | City Building Dept. | 2026-01-24 | Passed |
+| Rough plumbing pressure test | Licensed plumber (TBD) | ~2026-02-08 | Upcoming |
+| Electrical panel & wiring | City Electrical Inspector | 2026-02-10 | Pending (Task 10) |
+| Final occupancy walkthrough | City Building Dept. | TBD | Blocked (Phase 3) |
+
+*1 of 4 inspections passed · Next: plumbing pressure test (~Feb 8)*
 
 ---
 
