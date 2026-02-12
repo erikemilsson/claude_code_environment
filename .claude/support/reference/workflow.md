@@ -77,8 +77,9 @@ To create or revise the spec, run `/iterate`. Claude will guide you through iter
 - Flag discovered issues
 
 **Exit Criteria:**
-- All tasks have status "Finished" with passing per-task verification
+- All tasks have status "Finished" with passing per-task verification (Absorbed tasks are excluded — they don't count as incomplete)
 - No blocked tasks remain
+- No "On Hold" tasks remain (user must resume, absorb, or remove them before phase exit)
 - Deliverables follow project conventions
 - Ready for phase-level verification
 

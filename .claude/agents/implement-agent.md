@@ -58,6 +58,8 @@ Before proceeding, verify the task is workable:
 | `owner` is "both" | Proceed - Claude handles implementation portion |
 | `difficulty` >= 7 | Stop - report back that task needs breakdown first (use `/breakdown`) |
 | `status` is "Broken Down" | Stop - work on subtasks instead, not this task |
+| `status` is "On Hold" | Stop - report back that task is paused (only user can resume) |
+| `status` is "Absorbed" | Stop - report back that task scope was folded into another task |
 
 If any check fails, do not proceed to Step 2.
 

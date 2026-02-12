@@ -214,6 +214,8 @@ Review items are derived, not stored. During regeneration:
 - Tasks with `conflict_note`: show status as `Pending (held: conflict with Task {id})` during parallel dispatch
 - Decisions: status display mapping: `approved`/`implemented` → "Decided", `draft`/`proposed` → "Pending". Decided → show selected option name; Pending → link to doc in Selected column
 - Out-of-spec tasks: prefix title with ⚠️
+- On Hold tasks: show status as `⏸️ On Hold` in Tasks section; exclude from Progress phase "Done" counts but include in "Total"; exclude from critical path (paused work isn't on the path)
+- Absorbed tasks: show status as `Absorbed → Task {id}` in Tasks section (dimmed/collapsed style); exclude from both "Done" and "Total" in Progress phase counts; exclude from critical path
 - Footer: healthy = spec aligned tooltip; issues = ⚠️ with counts
 - Custom Views section: user-defined instructions (preserved between markers) followed by Claude-generated content based on those instructions (when enabled). Multiple views are rendered as `###` sub-sections, one per bold-labeled instruction.
 

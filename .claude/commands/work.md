@@ -699,7 +699,7 @@ Use `/work complete` for manual task completion outside of implement-agent's wor
 
 1. **Identify task** - If no ID provided, use current "In Progress" task
 2. **Validate task is completable:**
-   - Status must be "In Progress" (not "Pending", "Broken Down", or "Finished")
+   - Status must be "In Progress" (not "Pending", "Broken Down", "On Hold", "Absorbed", or "Finished")
    - For quick tasks, first set status to "In Progress", then complete
    - Dependencies must all be "Finished"
 3. **Check work** - Review all changes made for this task
@@ -732,8 +732,8 @@ Use `/work complete` for manual task completion outside of implement-agent's wor
 
 ### Rules
 
-- Never work on "Broken Down" tasks directly - work on their subtasks
-- Parent tasks auto-complete when all subtasks finish
+- Never work on "Broken Down", "On Hold", or "Absorbed" tasks directly
+- Parent tasks auto-complete when all non-Absorbed subtasks finish
 - Always add notes about what was actually done
 
 ---

@@ -6,6 +6,8 @@ Verify that the template handles being applied to a project that already has a `
 
 This is the most common adoption path: a user has an existing project with a custom `.claude/` setup (different task schema, custom commands, project-specific settings) and wants to adopt the template. The template must detect conflicts, preserve user work, and suggest a migration path rather than silently overwriting.
 
+**Current coverage:** The setup checklist (`.claude/support/reference/setup-checklist.md`) runs during first decomposition and checks CLAUDE.md placeholders, version.json, settings paths, and .gitignore. It does **not** perform schema migration, command collision detection, or settings conflict resolution. `/health-check` Part 1 validates task schema but doesn't migrate non-conforming files.
+
 ## State
 
 - Project has existing `.claude/tasks/` with `task-1.json` through `task-29.json` in a DIFFERENT schema:
@@ -14,18 +16,18 @@ This is the most common adoption path: a user has an existing project with a cus
   - No `phase` or `decision_dependencies` fields
   - Has fields the template doesn't expect (`assignee`, `sprint`)
 - Existing `.claude/commands/` with custom commands (`plan.md`, `update-tasks.md`) that overlap with or extend template commands
-- Existing `.claude/settings.local.json` with project-specific permissions
+- Existing `settings.local.json` with project-specific permissions
 - Existing `.claude/CLAUDE.md` with project-specific instructions
 
 ## Trace 17A: Schema mismatch detection
 
-- **Path:** `/setup-check` run after template files are copied in
-- `/setup-check` reads existing task files and compares against expected schema
-- Finds missing required fields (`difficulty`, `phase`) and non-standard values (`"Finished"`)
+- **Path:** `/work` → first decomposition → setup checklist, then `/health-check` Part 1
+- Setup checklist does not inspect task file schemas — it checks configuration files only
+- `/health-check` Part 1 validates task JSON schema and would detect missing `difficulty`, non-standard `status` values, etc.
 
 ### Expected
 
-- `/setup-check` detects schema mismatches in existing task files
+- `/health-check` detects schema mismatches in existing task files
 - Reports which fields are missing, which have unexpected values
 - Does NOT attempt to auto-migrate task files
 - Suggests migration steps (add missing fields, map status values)
@@ -40,7 +42,7 @@ This is the most common adoption path: a user has an existing project with a cus
 ### Fail indicators
 
 - Task files are silently overwritten with template defaults
-- `/setup-check` reports "all good" despite schema mismatches
+- `/health-check` reports "all good" despite schema mismatches
 - Task files become unreadable after template application
 - Migration is attempted automatically without user consent
 
@@ -48,14 +50,14 @@ This is the most common adoption path: a user has an existing project with a cus
 
 ## Trace 17B: Command collision detection
 
-- **Path:** `/setup-check` → command directory scan
+- **Path:** No command currently scans for collisions
 - Existing `plan.md` overlaps conceptually with `/iterate`
 - Existing `update-tasks.md` overlaps with `/work complete`
 - Template adds `work.md`, `iterate.md`, `breakdown.md`, `health-check.md`, etc.
 
-### Expected
+### Expected (gap — not currently implemented)
 
-- `/setup-check` reports command name collisions or functional overlaps
+- Some mechanism reports command name collisions or functional overlaps
 - Warns that existing custom commands may conflict with template commands
 - Preserves existing commands (does not delete them)
 - Suggests renaming or archiving conflicting commands
@@ -70,16 +72,17 @@ This is the most common adoption path: a user has an existing project with a cus
 ### Fail indicators
 
 - Custom commands are silently replaced by template commands
-- `/setup-check` doesn't scan the commands directory at all
+- No command directory scan exists at all
 - User's custom workflow is broken without warning
 
 ---
 
 ## Trace 17C: User settings preservation
 
-- **Path:** `/setup-check` → settings file handling
+- **Path:** Setup checklist check #3 (settings.local.json paths)
 - Existing `settings.local.json` has project-specific tool permissions
 - Template may ship default settings
+- Setup checklist only checks whether paths match the current directory — it does not detect semantic conflicts between user and template permission settings
 
 ### Expected
 

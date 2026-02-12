@@ -68,9 +68,9 @@ Display the appropriate output format based on mode.
 **Current:** Task 5_3 "Add Redis caching layer" - In Progress
 
 ### Quick Numbers
-| Total | Done | In Progress | Blocked | Human Action |
-|-------|------|-------------|---------|--------------|
-| 18    | 12   | 1           | 0       | 2            |
+| Total | Done | In Progress | Blocked | On Hold | Human Action |
+|-------|------|-------------|---------|---------|--------------|
+| 18    | 12   | 1           | 0       | 1       | 2            |
 
 ### Attention Needed
 - Decision pending: Auth approach (decision-001)
@@ -102,6 +102,8 @@ Focus on task breakdown:
 - In Progress: 1 (Task 5_3)
 - Pending: 3
 - Blocked: 0
+- On Hold: 1
+- Absorbed: 0
 - Broken Down: 2
 
 **By Owner:**

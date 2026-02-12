@@ -364,6 +364,8 @@ When a task's scope is folded into another task (discovered during breakdown, ov
 | In Progress | None |
 | Awaiting Verification | Must proceed to verification immediately |
 | Blocked | None |
+| On Hold | None (paused — verification not applicable until resumed) |
+| Absorbed | None (scope folded into another task — that task carries verification) |
 | Broken Down | None (subtasks are verified individually) |
 | **Finished** | **REQUIRED:** `task_verification.result` must be `"pass"` or `"pass_with_issues"` |
 

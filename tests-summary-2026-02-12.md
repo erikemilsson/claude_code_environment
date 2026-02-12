@@ -92,9 +92,9 @@
 ### Real-World Adaptation (7/10 passing)
 
 **TEST 17 — Migration from Custom .claude/**
-- 17A: `/setup-check` has 7 checks, none involving task file reading or schema validation. Task schema validation is exclusively in `/health-check` Part 1.
-- 17B: `/setup-check` does not scan `.claude/commands/` for collisions with pre-existing custom commands.
-- 17C: Settings check only validates paths, not semantic conflicts between user and template settings.
+- 17A: Setup checklist (run during first decomposition) checks configuration files only, not task schemas. Task schema validation is exclusively in `/health-check` Part 1.
+- 17B: No command currently scans `.claude/commands/` for collisions with pre-existing custom commands.
+- 17C: Setup checklist settings check only validates paths, not semantic conflicts between user and template settings.
 
 **TEST 21 — Large Task History**
 - 21A: `/work` reads all task-*.json files with no optimization for skipping completed tasks. Auto-archive at 100 tasks provides indirect mitigation but not read optimization.
@@ -107,5 +107,5 @@
 
 1. **Core workflow and lifecycle are solid** — decision gating, phase transitions, session resumption, task lifecycle, breakdown, and dependency chains all work as designed (11/11 = 100%).
 2. **Dashboard feedback loop is improving** — inline feedback (Test 09), conflict visibility (Test 24), phase relevance (Test 12), and phase gates (Test 10D) are now working. Remaining gaps: information density (08), user review gate for "both" tasks (10A), out-of-spec rejection tracking (11), diagram color coding (13), and stale-data warnings (14).
-3. **Scale and migration remain underserved** — `/setup-check` isn't a migration tool (17), large task sets have no optimization (21), and staged approval gates are a design choice not to implement (23).
+3. **Scale and migration remain underserved** — setup checklist doesn't cover migration (17), large task sets have no optimization (21), and staged approval gates are a design choice not to implement (23).
 4. **Progress across evaluations** — 4 tests flipped to PASS (09, 12, 24, and earlier), 4 more partially improved (10, 11, 13, 14). The phase gate mechanism, Spec Drift sub-section, and Project Overview Diagram are the latest drivers of improvement.
