@@ -101,4 +101,4 @@ In this example, tasks 5_1a, 5_1b, and 5_1c can all run in parallel (no file ove
 ## Rules
 - Keep subtask difficulty <= 6
 - Subtasks should be independently completable
-- Parent auto-completes when all subtasks finish
+- Parent auto-completes when all non-Absorbed subtasks finish

@@ -25,12 +25,10 @@ Quick, read-only view of project state without starting any work.
 ### Step 1: Gather State
 
 Read (but don't modify):
-- `.claude/dashboard.md` - Current status (primary data source)
-- `.claude/tasks/task-*.json` - Task data for phase detection
+- `.claude/dashboard.md` - Current status (primary data source for task counts, progress, decisions)
+- `.claude/tasks/task-*.json` - Task data for phase detection and verification result validation
 - `.claude/support/questions/questions.md` - Check for blocking questions
-- `.claude/spec_v{N}.md` - Check phase (Spec/Execute/Verify)
-
-**Important:** Use dashboard data for display. Only read task files for phase detection and data not in dashboard.
+- `.claude/spec_v{N}.md` - Spec version and fingerprint for verification validation
 
 ### Step 2: Determine Phase
 
@@ -152,8 +150,7 @@ Focus on task breakdown:
 
 ## Notes
 
-- `/status` is purely informational - use `/work` to actually do work
-- `/status` displays data from dashboard.md - it does NOT recalculate stats
+- `/status` is purely informational — use `/work` to actually do work
+- Task counts and progress come from dashboard.md; phase detection and verification validation read task files and spec directly
 - If the dashboard seems stale (e.g., task files newer than dashboard), recommend running `/work` to refresh
 - Brief mode is ideal for quick context before starting work
-- Phase detection requires reading task files since dashboard doesn't track phase explicitly

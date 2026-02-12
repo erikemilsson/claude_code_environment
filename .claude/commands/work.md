@@ -592,30 +592,11 @@ Questions accumulate in `.claude/support/questions/questions.md` during work.
 
 ### Step 6: Lightweight Health Check
 
-Run quick validation checks after completing the main action:
+Run the Part 6 lightweight checks from `.claude/commands/health-check.md` § "Part 6: Lightweight Health Checks (Continuous)". These include 13 checks (4 critical, 3 error, 5 warning, 1 info). Critical checks — verification debt, drift budget, stale "Awaiting Verification", completion gate integrity — block further work if they fail.
 
-**Checks performed:**
-- **Workflow compliance** (new):
-  - If a task was just completed: Was it set to "In Progress" before "Finished"? (Check `updated_date` changed at least twice, or task notes reflect the workflow steps.)
-  - Is the dashboard freshly regenerated? (Dashboard timestamp should match current session.)
-- Parallel eligibility rule (multiple "In Progress" only when files don't overlap, deps satisfied, within max limit)
-- Spec fingerprint comparison (current spec vs task fingerprints)
-- Section change count (if section fingerprints exist)
-- Orphan dependency detection (references to non-existent tasks)
-- Out-of-spec task count
+**Full check list, output format, and severity levels:** See health-check.md Part 6.
 
-**Output format:**
-```
-Quick check: ✓
-```
-or
-```
-Quick check: ⚠️ 2 issues
-  - Spec changed: 2 sections modified (4 tasks affected)
-  - 3 tasks marked out-of-spec
-```
-
-**Note:** This is a lightweight subset of `/health-check`. Use `/health-check` for full validation.
+This is a lightweight subset of `/health-check`. Use `/health-check` for full validation (Parts 1-5).
 
 ---
 
