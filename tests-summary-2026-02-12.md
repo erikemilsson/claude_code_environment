@@ -94,7 +94,7 @@
 **TEST 17 — Migration from Custom .claude/**
 - 17A: Setup checklist (run during first decomposition) checks configuration files only, not task schemas. Task schema validation is exclusively in `/health-check` Part 1.
 - 17B: No command currently scans `.claude/commands/` for collisions with pre-existing custom commands.
-- 17C: Setup checklist settings check only validates paths, not semantic conflicts between user and template settings.
+- 17C: No command validates settings conflicts. Settings preservation depends on git merge behavior during template adoption.
 
 **TEST 21 — Large Task History**
 - 21A: `/work` reads all task-*.json files with no optimization for skipping completed tasks. Auto-archive at 100 tasks provides indirect mitigation but not read optimization.

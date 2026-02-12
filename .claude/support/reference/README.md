@@ -21,7 +21,7 @@ Documentation that Claude reads during workflow execution and on-demand guidance
 | `decisions.md` | Decision record template, lifecycle, choice classification (spec vs implementation) |
 | `spec-checklist.md` | Spec readiness criteria, red flags, core questions |
 | `extension-patterns.md` | Phases and decisions patterns for complex projects |
-| `setup-checklist.md` | One-time setup validation checks, run during first decomposition |
+| `setup-checklist.md` | Template configuration checks (CLAUDE.md placeholders, version.json), run during decomposition |
 | `desktop-project-prompt.md` | Instructions for Claude Desktop ideation sessions |
 
 ## Related READMEs (in sibling directories)

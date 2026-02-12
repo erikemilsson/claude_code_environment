@@ -6,7 +6,7 @@ Verify that the template handles being applied to a project that already has a `
 
 This is the most common adoption path: a user has an existing project with a custom `.claude/` setup (different task schema, custom commands, project-specific settings) and wants to adopt the template. The template must detect conflicts, preserve user work, and suggest a migration path rather than silently overwriting.
 
-**Current coverage:** The setup checklist (`.claude/support/reference/setup-checklist.md`) runs during first decomposition and checks CLAUDE.md placeholders, version.json, settings paths, and .gitignore. It does **not** perform schema migration, command collision detection, or settings conflict resolution. `/health-check` Part 1 validates task schema but doesn't migrate non-conforming files.
+**Current coverage:** The setup checklist (`.claude/support/reference/setup-checklist.md`) runs during decomposition and checks CLAUDE.md placeholders and version.json configuration. It does **not** perform schema migration, command collision detection, or settings conflict resolution. `/health-check` Part 1 validates task schema but doesn't migrate non-conforming files.
 
 ## State
 
@@ -21,9 +21,10 @@ This is the most common adoption path: a user has an existing project with a cus
 
 ## Trace 17A: Schema mismatch detection
 
-- **Path:** `/work` → first decomposition → setup checklist, then `/health-check` Part 1
+- **Path:** `/work` → first decomposition → setup checklist (automatic), then `/health-check` (user must run separately)
 - Setup checklist does not inspect task file schemas — it checks configuration files only
 - `/health-check` Part 1 validates task JSON schema and would detect missing `difficulty`, non-standard `status` values, etc.
+- The lightweight health check that runs automatically after `/work` (Part 6) does **not** include schema validation
 
 ### Expected
 
@@ -79,10 +80,10 @@ This is the most common adoption path: a user has an existing project with a cus
 
 ## Trace 17C: User settings preservation
 
-- **Path:** Setup checklist check #3 (settings.local.json paths)
+- **Path:** No command currently validates settings conflicts
 - Existing `settings.local.json` has project-specific tool permissions
-- Template may ship default settings
-- Setup checklist only checks whether paths match the current directory — it does not detect semantic conflicts between user and template permission settings
+- Template ships default permission settings
+- No setup or health check validates semantic conflicts between user and template permission settings
 
 ### Expected
 
