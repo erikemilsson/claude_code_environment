@@ -77,7 +77,7 @@ Commands defined in `.claude/commands/` for this workflow. Not Claude Code built
 ### Primary
 - `/work` - Start or continue work (checks spec alignment, decomposes tasks, checks gates, resolves decisions, routes to agents)
 - `/work complete` - Complete current in-progress task (or `/work complete {id}`)
-- `/iterate` - Structured spec review (checks gaps, asks questions, suggests content, discovers project structure)
+- `/iterate` - Structured spec review (checks gaps, asks questions, suggests content)
 - `/status` - Quick read-only view of project state (no modifications)
 
 ### Task Management

@@ -97,6 +97,31 @@ User-authored content is persisted in `.claude/dashboard-state.json` as a durabl
 
 ---
 
+## When to Regenerate
+
+Not every state change requires a full dashboard regeneration. Use this table to determine when regeneration is needed:
+
+| State Change | Regenerate? | Rationale |
+|-------------|:-----------:|-----------|
+| Task: Pending → In Progress | **No** | Transient; user doesn't need to see intermediate state |
+| Task: In Progress → Awaiting Verification | **No** | Transient; verification happens immediately after |
+| Task: Awaiting Verification → Finished (pass) | **Yes** | User-visible completion event |
+| Task: Awaiting Verification → In Progress (fail) | **Yes** | User may need to see verification failure |
+| Task: any → Blocked | **Yes** | User may need to act on blocker |
+| Task: any → On Hold | **Yes** | User-initiated status change |
+| Decomposition complete (new tasks created) | **Yes** | New tasks to display |
+| Phase transition | **Yes** | Major state change, gate conditions to show |
+| Phase-level verification complete | **Yes** | Verification results to display |
+| Parallel batch complete (post-cleanup) | **Yes** | Single regen for all parallel results |
+| `/work complete` | **Yes** | User-initiated completion |
+| Decision resolved | **Yes** | Decision status changed, tasks may unblock |
+
+**In parallel mode:** Individual agents never regenerate. The `/work` coordinator regenerates once after all agents complete.
+
+**Rule of thumb:** Regenerate when the user would benefit from seeing the change. Skip for intermediate states that resolve within the same `/work` run.
+
+---
+
 ## Regeneration Steps
 
 ### 1. Read Source Data
@@ -138,10 +163,6 @@ For each content type:
 **2d. Write merged state to `.claude/dashboard-state.json`.**
 
 This ensures user content is always persisted in a structured file before the dashboard is regenerated.
-
-**2e. Legacy backup (transitional):**
-
-Also write user notes to `.claude/support/workspace/dashboard-notes-backup.md` (keep last 3). This provides an additional safety net during the transition period and can be removed in a future template version.
 
 ### 3. Generate Dashboard
 
@@ -198,6 +219,7 @@ Add after `# Dashboard` title:
 generated: [ISO timestamp]
 task_hash: sha256:[hash of sorted task_id:status pairs]
 task_count: [number]
+spec_fingerprint: sha256:[hash of spec file content]
 verification_debt: [count of tasks needing verification]
 drift_deferrals: [count from drift-deferrals.json]
 -->

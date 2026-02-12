@@ -13,6 +13,9 @@
       ".claude/support/reference/dashboard-regeneration.md",
       ".claude/support/reference/drift-reconciliation.md",
       ".claude/support/reference/parallel-execution.md",
+      ".claude/support/reference/session-recovery.md",
+      ".claude/support/reference/phase-decision-gates.md",
+      ".claude/support/reference/decomposition.md",
       ".claude/support/reference/paths.md",
       ".claude/support/reference/setup-checklist.md",
       ".claude/support/reference/desktop-project-prompt.md",
@@ -41,7 +44,8 @@
       ".claude/support/learnings/*",
       ".claude/support/previous_specifications/*.md",
       ".claude/vision/*.md",
-      ".claude/dashboard-state.json"
+      ".claude/dashboard-state.json",
+      ".claude/tasks/.last-clean-exit.json"
     ]
   },
   "notes": "Paths relative to template root. Use glob patterns."

@@ -10,7 +10,7 @@ The reference files form a layered system. Commands (`work.md`, `health-check.md
 
 - **`shared-definitions.md` + `task-schema.md`** — Split by concern. Shared definitions owns the *rules and vocabulary*: difficulty scale, status meanings, mandatory behavioral rules, glossary of all terms. Task schema owns the *data structure*: JSON field definitions, validation rules, owner/priority values, verification fields, status flow diagram. Commands reference shared-definitions for "what does this mean?" and task-schema for "what's the correct JSON?"
 - **`workflow.md` + command files** — Workflow is the narrative overview of the full Spec→Execute→Verify process. Commands contain the procedural implementation. Workflow answers "how does the system work?" while commands answer "what do I do right now?"
-- **`dashboard-regeneration.md`, `drift-reconciliation.md`, `parallel-execution.md`** — Extracted algorithms that `work.md` delegates to rather than inlining. `work.md` uses "Full procedure:", "Full algorithm:", or "Follow ..." references to point into these files. This keeps `work.md` focused on orchestration while the detailed algorithms live in dedicated files.
+- **`dashboard-regeneration.md`, `drift-reconciliation.md`, `parallel-execution.md`, `session-recovery.md`, `phase-decision-gates.md`, `decomposition.md`** — Extracted algorithms that `work.md` delegates to rather than inlining. `work.md` uses "Full procedure:", "Full algorithm:", or "Follow ..." references to point into these files. This keeps `work.md` focused on orchestration while the detailed algorithms live in dedicated files.
 
 ## Core (read by commands/agents during execution)
 
@@ -23,6 +23,9 @@ The reference files form a layered system. Commands (`work.md`, `health-check.md
 | `dashboard-regeneration.md` | Dashboard regeneration procedure, section format, critical path, overview diagram | `work.md`, `breakdown.md`, both agents |
 | `drift-reconciliation.md` | Spec drift detection, reconciliation UI, drift budget, task migration | `work.md` (pre-execution check), `iterate.md` |
 | `parallel-execution.md` | Parallelism eligibility, file conflict algorithm, parallel dispatch | `work.md` (task routing) |
+| `session-recovery.md` | Session sentinel, crash recovery scan, stuck task detection | `work.md` (Step 0) |
+| `phase-decision-gates.md` | Phase boundary checks, decision dependencies, late decision cross-refs | `work.md` (Step 2b) |
+| `decomposition.md` | Spec-to-task breakdown, task creation guidelines, stage organization | `work.md` (Step 4 decomposition) |
 
 ## Guides (read on-demand for specific situations)
 

@@ -65,6 +65,29 @@ This agent runs as a **separate context** from the implement-agent. You are spaw
 
 Do not skip steps, write results without performing actual verification, or declare pass without checking requirements. Each step produces a required output.
 
+## Turn Budget Protocol
+
+When spawned, your caller specifies a turn limit via `max_turns`. Plan your work accordingly:
+
+**Per-task mode (default: 30 turns):**
+- If you reach turn 25 without completing all steps:
+  - Stop new verification checks
+  - Write `task_verification` to the task JSON with whatever checks you completed
+  - For checks not yet completed, set their value to `"skipped"`
+  - Set result to `"fail"` with note: "Verification incomplete — {N} of 5 checks completed before turn limit"
+  - Set task status to "In Progress" (normal fail flow — recovery will retry with extended turns)
+  - Return your partial T8 report
+
+**Phase-level mode (default: 50 turns):**
+- If you reach turn 43 without completing all steps:
+  - Stop evaluating new criteria
+  - Write `verification-result.json` with results for criteria evaluated so far
+  - Set result to `"fail"` with note: "Verification incomplete — evaluated {N} of {M} criteria"
+  - Create a single fix task: "Complete phase-level verification"
+  - Return your partial report
+
+The `/work` coordinator handles timeout detection and retry logic. Your job is to prioritize writing your result artifacts before running out of turns.
+
 ## Per-Task Verification Workflow
 
 Follow this workflow when spawned in **per-task** mode — a single task was just marked "Awaiting Verification" and needs verification before the next task begins.
@@ -300,17 +323,7 @@ Task 5 verification: FAIL (attempt 2)
   -> Task set back to "In Progress" for fixes (1 retry remaining)
 ```
 
-### Per-Task Timeout Handling
-
-If you are approaching the turn limit (turn 25 of 30) without having completed all steps:
-
-1. **Prioritize writing `task_verification` to the task JSON** — even with partial data
-2. For checks not yet completed, set their value to `"skipped"`
-3. Set `result` to `"fail"` with note: "Verification incomplete — {N} of 5 checks completed before turn limit"
-4. Set task status to "In Progress" (normal fail flow — recovery will retry with extended turns)
-5. Return your partial T8 report noting which checks were completed and which were skipped
-
-The `/work` recovery check will detect the timeout and retry with an extended turn limit (40 instead of 30).
+See the **Turn Budget Protocol** section above for wind-down behavior when approaching the turn limit.
 
 ---
 
@@ -320,16 +333,7 @@ Follow this workflow when spawned in **phase-level** mode — all spec tasks are
 
 Each step produces a required output. The verification-result.json file (Step 7) must contain real per-criterion data from Step 3, not fabricated results.
 
-### Timeout Handling
-
-Phase-level verification runs with `max_turns: 50`. If you are approaching the turn limit without having completed all steps:
-
-1. **Prioritize writing `verification-result.json` (Step 7)** — even with partial data. A partial result (with accurate `criteria_passed`/`criteria_failed` counts for what you've verified so far) is more useful than no result.
-2. Set `result` to `"fail"` with a summary noting: "Verification incomplete — agent reached turn limit after evaluating {N} of {M} criteria."
-3. Create a single fix task: "Complete phase-level verification" with notes listing the criteria not yet evaluated.
-4. Report what you verified and what remains in your Step 8 report.
-
-The `/work` coordinator will detect the fail result and route back to verification on the next run.
+See the **Turn Budget Protocol** section above for wind-down behavior when approaching the turn limit.
 
 ### Step 1: Gather Verification Context
 

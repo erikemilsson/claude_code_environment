@@ -154,24 +154,16 @@ Task tool call:
     Task file: .claude/tasks/task-{id}.json
     Spec file: .claude/spec_v{N}.md (section: "{spec_section}")
 
-    TURN BUDGET: You have 30 turns. If you reach turn 25 without completing:
-    - Write task_verification with checks completed so far
-    - Set result to "fail" with note: "Verification incomplete — reached turn limit"
-    - Return your partial report immediately
-
     Verify the implementation independently. Do NOT assume correctness.
-    Write your verification result to the task JSON (task_verification field).
-    Update task status to "Finished" (pass) or "In Progress" (fail).
-    Return your T8 report.
 ```
 
-**Timeout handling:** The `max_turns: 30` parameter limits verify-agent to 30 tool-call rounds. If the agent exhausts its turns without writing a result, treat this as a verification failure:
+The verify-agent file contains the full Turn Budget Protocol, verification steps, and result handling. The spawn prompt only needs to specify mode, task, and spec context.
+
+**Timeout handling:** If the agent exhausts `max_turns` without writing a result, treat this as verification failure:
 - Increment `verification_attempts` on the task JSON (read current value, +1, write back)
 - Set task status to "Blocked"
 - Add note: `[VERIFICATION TIMEOUT] verify-agent did not complete within max_turns limit`
 - Report to user: the task needs manual verification or a retry
-
-Incrementing `verification_attempts` on timeout ensures repeated timeouts trigger the 3-attempt escalation limit, preventing infinite retry loops.
 
 **Why a separate agent:** Reading verify-agent.md in the same context that just implemented the task creates confirmation bias — the verifier has full memory of every implementation decision. Spawning a separate agent gives genuine "fresh eyes" by starting from only the task JSON, spec, and file artifacts.
 
