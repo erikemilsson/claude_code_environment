@@ -14,7 +14,7 @@ This environment is designed for **Claude Opus 4.6** (`claude-opus-4-6`). The di
 
 ## Design Philosophy
 
-This environment is domain-agnostic. It works for software development, research, procurement, renovation, event planning, or any project describable by a specification. Dashboard language, task tracking, and verification adapt to the project domain — no code-specific assumptions are built in.
+This environment is domain-agnostic. It works for software development, research, procurement, renovation, event planning, or any spec-driven project. Dashboard language, task tracking, and verification adapt to the project domain — no code-specific assumptions are built in.
 
 ## How the Environment Works
 
@@ -30,7 +30,7 @@ For full details, see `.claude/support/reference/workflow.md` § "System Overvie
 
 The project specification lives at `.claude/spec_v{N}.md` (exactly one file; `/work` discovers N by globbing).
 
-**Do not author spec content directly.** Suggest improvements; user makes edits. You CAN perform spec infrastructure operations (archiving, version transitions, frontmatter updates). See `iterate.md` § "Suggest-Only Boundary".
+**Do not author spec content directly.** Suggest improvements; user makes edits. You CAN perform spec infrastructure operations (archiving, version transitions, frontmatter updates). See `commands/iterate.md` § "Suggest-Only Boundary".
 
 **Direct edits to the spec are always safe** — the decomposed snapshot preserves the before-state, and drift detection handles reconciliation. After a spec edit, the user runs `/work` to continue building (detects changes and reconciles affected tasks) or `/iterate` to keep refining.
 
@@ -49,7 +49,7 @@ Vision docs capture intent and philosophy; specs capture buildable scope. Both a
 
 ## Workflow: Spec → Execute → Verify
 
-Phased workflow: **Spec** (define requirements) → **Execute** (implement-agent) → **Verify** (verify-agent). Two specialist agents check each other's work.
+Phased workflow: **Spec** (define requirements) → **Execute** (implement-agent) → **Verify** (verify-agent). Specialist agents with separated concerns ensure quality through independent validation.
 
 **Primary command:** `/work` - Checks requests against spec, decomposes spec into tasks, routes to specialist agents.
 
