@@ -6,7 +6,7 @@ Single-document reference for the entire environment: lifecycle, features, desig
 
 ## What This System Is
 
-Domain-agnostic project execution environment for Claude Code: Spec → Execute → Verify. Two specialist agents check each other's work. Works for software, research, procurement, renovation, or any spec-driven project.
+Domain-agnostic project execution environment for Claude Code: Spec → Execute → Verify. Specialist agents with separated concerns — implementation, verification, and research — ensure quality through independent validation. Works for software, research, procurement, renovation, or any spec-driven project.
 
 ---
 
@@ -51,7 +51,7 @@ graph LR
 
 **Output:** `.claude/spec_v{N}.md` with frontmatter (`version`, `status: draft`)
 **Readiness:** Problem clear, users identified, acceptance criteria testable, key decisions documented, blocking questions resolved.
-**Authoritative file:** `commands/iterate.md`
+**Authoritative files:** `commands/iterate.md`, `support/reference/spec-checklist.md`
 
 ### Phase 2: Execution
 
@@ -73,7 +73,7 @@ graph LR
 **Context transfer to verify-agent:** verify-agent receives the task JSON (including implement-agent's structured completion notes), the relevant spec section, and the files_affected list. Completion notes should document what was implemented, key decisions made, and known limitations — giving verify-agent useful signal without sharing the full implementation conversation.
 
 **Output:** Completed deliverables, task JSON files with verification results
-**Authoritative files:** `commands/work.md`, `agents/implement-agent.md`, `agents/verify-agent.md`
+**Authoritative files:** `commands/work.md`, `support/reference/decomposition.md`, `agents/implement-agent.md`, `agents/verify-agent.md`
 
 ### Integration Verification (Tier 2)
 
@@ -129,7 +129,7 @@ The dashboard (`.claude/dashboard.md`) is the navigation hub between Claude and 
 
 Each feature below includes its purpose (why it exists), how it works (brief), and where the authoritative definition lives.
 
-### Two-Agent Architecture
+### Two-Agent Verification Architecture
 
 **Purpose:** Eliminate self-validation blind spots. A single agent implementing and verifying its own work has confirmation bias.
 
@@ -137,7 +137,9 @@ Each feature below includes its purpose (why it exists), how it works (brief), a
 
 **Why separate contexts matter:** If verification runs in the same conversation that just implemented the task, the verifier has full memory of every implementation decision and tends to rubber-stamp. Spawning a separate agent gives genuine "fresh eyes."
 
-**Authoritative files:** `agents/implement-agent.md`, `agents/verify-agent.md`, `support/reference/workflow.md` § "Agent Synergy"
+**Third agent — research-agent:** A separate specialist for investigating options and populating decision records. Not part of the build/verify cycle — it's invoked by `/research` (or by `/work`/`/iterate` when decisions need investigation). Populates evidence and comparison matrices but never makes selections.
+
+**Authoritative files:** `agents/implement-agent.md`, `agents/verify-agent.md`, `agents/research-agent.md`, `support/reference/workflow.md` § "Agent Synergy"
 
 ### Two-Tier Verification
 
@@ -161,7 +163,7 @@ Each feature below includes its purpose (why it exists), how it works (brief), a
 
 **No special configuration needed** — phases emerge from spec structure.
 
-**Authoritative files:** `support/reference/extension-patterns.md` § "Phases", `commands/work.md` § Step 2b
+**Authoritative files:** `support/reference/extension-patterns.md` § "Phases", `support/reference/phase-decision-gates.md`, `commands/work.md` § Step 2b
 
 ### Decisions
 
@@ -173,7 +175,7 @@ Each feature below includes its purpose (why it exists), how it works (brief), a
 - **Pick-and-go:** After resolution, dependent tasks simply unblock. Default behavior.
 - **Inflection point:** The outcome changes *what* gets built, not just how. After resolution, `/work` pauses and suggests `/iterate` to revisit the spec. Flagged with `inflection_point: true` in frontmatter. The `spec_revised` field tracks whether the spec has been updated post-decision.
 
-**Authoritative files:** `support/reference/decisions.md`, `support/reference/extension-patterns.md` § "Decisions", `commands/work.md` § Step 2b
+**Authoritative files:** `support/reference/decisions.md`, `support/reference/extension-patterns.md` § "Decisions", `support/reference/phase-decision-gates.md`, `commands/work.md` § Step 2b
 
 ### Spec Drift Detection and Reconciliation
 
@@ -238,7 +240,17 @@ Each feature below includes its purpose (why it exists), how it works (brief), a
 - "Blocked" with `[AGENT TIMEOUT]` → Present options: Retry, Break down, Skip
 - "In Progress" for > 24 hours → Present options: Continue, Reset, Hold
 
-**Authoritative file:** `commands/work.md` § Step 0
+**Authoritative files:** `support/reference/session-recovery.md`, `commands/work.md` § Step 0
+
+### Learnings
+
+**Purpose:** Accumulate project-specific patterns discovered through experience, so implement-agent avoids repeating mistakes and builds on what's worked.
+
+**How it works:** Markdown files in `.claude/support/learnings/` capture patterns by category (task strategies, API patterns, testing patterns, gotchas, etc.). implement-agent checks this directory during Step 4 before implementation begins. Learnings that mature into formal requirements graduate to the spec and are removed. Reviewed at phase completions for staleness.
+
+**Not template-synced** — each project accumulates its own learnings.
+
+**Authoritative file:** `support/learnings/README.md`
 
 ### Questions System
 
@@ -320,6 +332,8 @@ Exactly one `spec_v{N}.md` exists in `.claude/` at any time. Version transitions
 | `/status` | Quick view of project state | Read-only |
 | `/status --brief` | One-line summary | Read-only |
 | `/status --tasks` | Task-focused view | Read-only |
+| `/research` | Investigate options for decisions — spawns research-agent | Read-write |
+| `/research {DEC-NNN}` | Research options for a specific existing decision | Read-write |
 | `/breakdown {id}` | Split a complex task into subtasks | Read-write |
 | `/health-check` | Validate tasks, decisions, CLAUDE.md, archives, and template sync | Read-write (with user approval) |
 | `/health-check --report` | Show issues only, no fix prompts | Read-only |
@@ -327,6 +341,8 @@ Exactly one `spec_v{N}.md` exists in `.claude/` at any time. Version transitions
 ---
 
 ## File Map
+
+See also `support/reference/paths.md` for the canonical paths reference used by commands and agents at runtime.
 
 | File | Purpose | Managed By |
 |------|---------|------------|
@@ -337,6 +353,7 @@ Exactly one `spec_v{N}.md` exists in `.claude/` at any time. Version transitions
 | `.claude/drift-deferrals.json` | Tracked deferred reconciliations | `/work` |
 | `.claude/tasks/task-*.json` | Individual task data | `/work`, agents |
 | `.claude/tasks/archive/` | Archived completed tasks (100+ threshold) | `/work` |
+| `.claude/tasks/.last-clean-exit.json` | Session sentinel — tracks clean exit for fast recovery skip | `/work` |
 | `.claude/vision/` | Vision documents and supplementary reference docs for distillation | User |
 | `.claude/commands/*.md` | Command definitions | Template |
 | `.claude/agents/*.md` | Agent definitions | Template |
@@ -349,3 +366,5 @@ Exactly one `spec_v{N}.md` exists in `.claude/` at any time. Version transitions
 | `.claude/support/learnings/` | Project-specific patterns | Agents |
 | `.claude/sync-manifest.json` | Template sync file categories | Template |
 | `.claude/version.json` | Template version tracking | Template |
+| `.claude/settings.local.json` | Pre-approved Bash permissions for Claude Code | Template (user-customizable) |
+| `.claude/README.md` | User-facing environment guide (quick start, commands, concepts) | Template (user-customizable) |
