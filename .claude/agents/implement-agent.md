@@ -143,6 +143,7 @@ Immediately after setting "Awaiting Verification", **spawn a separate agent** fo
 Task tool call:
   subagent_type: "general-purpose"
   model: "opus"
+  max_turns: 30
   description: "Verify task {id}"
   prompt: |
     You are the verify-agent. Read `.claude/agents/verify-agent.md` and follow
@@ -157,6 +158,11 @@ Task tool call:
     Return your T8 report.
 ```
 
+**Timeout handling:** The `max_turns: 30` parameter limits verify-agent to 30 tool-call rounds. If the agent exhausts its turns without writing a result, treat this as a verification failure:
+- Set task status to "Blocked"
+- Add note: `[VERIFICATION TIMEOUT] verify-agent did not complete within max_turns limit`
+- Report to user: the task needs manual verification or a retry
+
 **Why a separate agent:** Reading verify-agent.md in the same context that just implemented the task creates confirmation bias — the verifier has full memory of every implementation decision. Spawning a separate agent gives genuine "fresh eyes" by starting from only the task JSON, spec, and file artifacts.
 
 **Handle the result:**
@@ -164,7 +170,7 @@ Task tool call:
 | Result | What Happens |
 |--------|--------------|
 | **Pass** | verify-agent sets status to "Finished" with `task_verification.result = "pass"` |
-| **Fail** | verify-agent sets status to "In Progress" with `[VERIFICATION FAIL]` notes. Return to Step 4 to fix issues, then re-verify. |
+| **Fail** | verify-agent sets status to "In Progress" with `[VERIFICATION FAIL #N]` notes (N = attempt count). Return to Step 4 to fix issues, then re-verify. After 3 total attempts, verify-agent sets status to "Blocked" instead. |
 
 **This is atomic:** implement → verify. The gap where tasks could be "Finished" without verification no longer exists.
 

@@ -81,6 +81,8 @@ Follow this workflow when spawned in **per-task** mode — a single task was jus
 
 ### Step T2: Verify File Artifacts
 
+**T2a. Check declared files:**
+
 For each file in `files_affected`:
 1. Confirm the file exists
 2. Read the file content
@@ -90,6 +92,43 @@ For each file in `files_affected`:
 - File listed in `files_affected` does not exist
 - File exists but is empty or contains only boilerplate
 - File content does not address the task requirements
+
+**T2b. Check for undeclared modifications (scope validation):**
+
+Detect files modified during implementation that were NOT listed in `files_affected`:
+
+```
+1. Determine which files were modified by this task. Use the best available method:
+   a. git status / git diff --name-only (detects uncommitted changes in the working tree)
+   b. If git is not available, skip this check and set scope_validation to "pass"
+      (scope validation is best-effort, not a hard gate)
+   Note: In parallel mode, other agents may also have uncommitted changes.
+   Focus on files that clearly relate to this task's domain (same directories
+   as files_affected) vs unrelated areas.
+
+2. Compute: undeclared_files = files_modified - files_affected
+
+3. Filter out known infrastructure writes (not implementation scope):
+   - .claude/dashboard.md
+   - .claude/tasks/*
+   - .claude/support/questions/*
+   - .claude/support/workspace/*
+   - .claude/drift-deferrals.json
+   - .claude/verification-result.json
+
+4. IF undeclared_files is non-empty:
+   - Flag as scope_violation in the verification result
+   - Severity depends on context:
+     - Files in the same directory as declared files → minor (likely related)
+     - Files in unrelated directories → major (likely scope creep)
+   - Add to issues: "Modified {N} file(s) not declared in files_affected: {list}"
+   - This does NOT auto-fail verification, but is recorded in checks.scope_validation
+
+5. IF unable to determine modified files (no git, no timestamps):
+   - Set scope_validation to "pass" with note: "Scope validation skipped — no git available"
+```
+
+**Why this matters:** Without scope validation, an agent can modify arbitrary files beyond the task boundary. This check makes undeclared modifications visible in the verification record.
 
 ### Step T3: Verify Spec Alignment
 
@@ -116,6 +155,11 @@ Compare the implementation against both:
 
 ### Step T6: Produce Verification Result
 
+**First, increment the attempt counter:**
+1. Read the current `verification_attempts` value from the task JSON (default 0 if absent)
+2. Increment by 1
+3. Write the updated count to the task JSON alongside the verification result
+
 Record the per-task verification outcome in the task JSON:
 
 **Pass example:**
@@ -128,7 +172,8 @@ Record the per-task verification outcome in the task JSON:
       "files_exist": "pass",
       "spec_alignment": "pass",
       "output_quality": "pass",
-      "integration_ready": "pass"
+      "integration_ready": "pass",
+      "scope_validation": "pass"
     },
     "notes": "All files created as specified.",
     "issues": []
@@ -146,13 +191,38 @@ Record the per-task verification outcome in the task JSON:
       "files_exist": "pass",
       "spec_alignment": "fail",
       "output_quality": "pass",
-      "integration_ready": "pass"
+      "integration_ready": "pass",
+      "scope_validation": "pass"
     },
     "notes": "Task description specifies upsert for 4 bronze tables but only 3 are implemented.",
     "issues": [
       {
         "severity": "major",
         "description": "Missing upsert for raw_game_designers table"
+      }
+    ]
+  }
+}
+```
+
+**Scope violation example:**
+```json
+{
+  "task_verification": {
+    "result": "pass_with_issues",
+    "timestamp": "2026-01-28T15:30:00Z",
+    "checks": {
+      "files_exist": "pass",
+      "spec_alignment": "pass",
+      "output_quality": "pass",
+      "integration_ready": "pass",
+      "scope_validation": "fail"
+    },
+    "notes": "Implementation correct but modified 2 files outside declared scope.",
+    "issues": [
+      {
+        "severity": "minor",
+        "description": "Modified src/utils/helpers.py (not in files_affected)"
       }
     ]
   }
@@ -179,11 +249,21 @@ The task now has both `status: "Finished"` AND `task_verification.result: "pass"
 
 **When setting task back to "In Progress" (fail):**
 - Set status to "In Progress"
-- Append verification failure notes to the task `notes` field (prepend with `[VERIFICATION FAIL]`)
+- Append verification failure notes to the task `notes` field (prepend with `[VERIFICATION FAIL #{N}]` where N = current `verification_attempts`)
 - Clear `completion_date`
 - Update `updated_date`
 
-**Re-verification limit:** Maximum 2 re-verification attempts per task. After 2 failures, set task status to "Blocked" with notes explaining the repeated failures and escalate to human review.
+**Re-verification limit using `verification_attempts` counter:**
+```
+IF verification_attempts >= 3:
+  → Do NOT set status to "In Progress"
+  → Set status to "Blocked"
+  → Add note: "[VERIFICATION ESCALATED] 3 attempts exhausted — requires human review"
+  → Return T8 report indicating escalation
+ELSE:
+  → Set status to "In Progress" (normal retry flow)
+```
+The counter is the authoritative source for attempt tracking — do not infer retry count from notes.
 
 ### Step T8: Report to User
 
@@ -191,18 +271,19 @@ Brief inline report:
 
 Pass:
 ```
-Task 5 verification: PASS
+Task 5 verification: PASS (attempt 1)
   Files: 1/1 exist
   Spec alignment: matches task description
   Output quality: no issues
   Integration: outputs match downstream expectations
+  Scope: all modifications within declared files_affected
 ```
 
 Fail:
 ```
-Task 5 verification: FAIL
+Task 5 verification: FAIL (attempt 2)
   Spec alignment: missing raw_game_designers upsert (task requires 4 tables, only 3 implemented)
-  -> Task set back to "In Progress" for fixes
+  -> Task set back to "In Progress" for fixes (1 retry remaining)
 ```
 
 ---

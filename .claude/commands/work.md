@@ -449,6 +449,39 @@ eligible = tasks where ALL of:
 ```
 
 **3. Build conflict-free batch:**
+
+**File conflict detection algorithm:**
+
+Two paths conflict if either could affect the other's output. The comparison uses **normalized paths** and **directory containment**:
+
+```
+FUNCTION paths_conflict(path_a, path_b) -> bool:
+  # 1. Normalize both paths: resolve "." and "..", lowercase on case-insensitive
+  #    filesystems (macOS), strip trailing slashes
+  a = normalize(path_a)
+  b = normalize(path_b)
+
+  # 2. Exact match
+  IF a == b: return true
+
+  # 3. Directory containment: if either path is a prefix of the other
+  #    (a directory contains a file, or vice versa)
+  #    e.g., "src/" conflicts with "src/auth.py"
+  #    e.g., "src/models/" conflicts with "src/models/user.py"
+  IF a.startswith(b + "/") OR b.startswith(a + "/"): return true
+
+  # 4. No conflict
+  return false
+```
+
+**Rules:**
+- Paths are relative to project root (no leading `./ `)
+- `src/auth.py` vs `src/auth.py` → conflict (exact match)
+- `src/` vs `src/auth.py` → conflict (directory containment)
+- `src/auth.py` vs `src/models.py` → no conflict (different files)
+- `.env` vs `.env.example` → no conflict (different files)
+- Glob patterns in `files_affected` (e.g., `src/*.py`) are expanded before comparison
+
 ```
 batch = []
 held_back = []  # tracks tasks skipped due to file conflicts
@@ -458,12 +491,13 @@ For each eligible task (sorted by priority, then ID):
   conflict_with = null
   conflict_files = []
   For each task already in batch:
-    overlap = intersection of files_affected
-    IF overlap is non-empty:
-      conflicts = true
-      conflict_with = batch_task.id
-      conflict_files = overlap
-      break
+    For each pair (file_a from task.files_affected, file_b from batch_task.files_affected):
+      IF paths_conflict(file_a, file_b):
+        conflicts = true
+        conflict_with = batch_task.id
+        conflict_files.append(file_a + " vs " + file_b)
+        break
+    IF conflicts: break
   IF task has empty files_affected AND parallel_safe != true:
     skip (unknown file impact — not safe for parallel)
   ELSE IF conflicts:
@@ -882,7 +916,7 @@ This note is surfaced in the dashboard Tasks section (appended to the task's Sta
 
 **3. Spawn parallel agents:**
 
-Use Claude Code's `Task` tool to spawn one agent per task. **Always set `model: "opus"`** to ensure agents run on Claude Opus 4.6. Each agent receives:
+Use Claude Code's `Task` tool to spawn one agent per task. **Always set `model: "opus"` and `max_turns: 40`** to ensure agents run on Claude Opus 4.6 with a bounded turn limit. Each agent receives:
 - The task JSON to execute
 - Instructions to read `.claude/agents/implement-agent.md`
 - Instructions to follow Steps 2, 4, 5, 6a, and 6b (understand, implement, self-review, mark awaiting verification, spawn verify-agent as a sub-agent for per-task verification)
@@ -896,7 +930,8 @@ All agents run concurrently via parallel `Task` tool calls with `model: "opus"`.
 Use `run_in_background: true` for each agent's `Task` call, then poll for completion:
 
 ```
-active_agents = {task_id: agent_id for each spawned agent}
+active_agents = {task_id: {agent_id, spawned_at} for each spawned agent}
+AGENT_TIMEOUT_POLLS = 60  # max poll iterations before declaring an agent timed out
 
 WHILE active_agents is non-empty:
   Check each agent for completion (read output file or use TaskOutput with block: false)
@@ -914,6 +949,14 @@ WHILE active_agents is non-empty:
          Spawn new agents for newly-eligible tasks
          Add to active_agents
        - Clear conflict_note from newly-dispatched tasks
+
+  For each agent that has exceeded AGENT_TIMEOUT_POLLS iterations without completing:
+    1. Log: "Agent for task {id} timed out after {N} poll iterations"
+    2. Read the task JSON — if still "In Progress" (agent didn't finish):
+       - Set status to "Blocked"
+       - Add note: "[AGENT TIMEOUT] Parallel agent did not complete within polling limit"
+    3. Remove from active_agents
+    4. Report to user: "Task {id} timed out — may need manual investigation or retry"
 
   Brief pause before next poll iteration (avoid busy-waiting)
 ```
@@ -954,6 +997,7 @@ Spawn a verify-agent using the `Task` tool (same pattern as implement-agent Step
 Task tool call:
   subagent_type: "general-purpose"
   model: "opus"
+  max_turns: 30
   description: "Verify task {id}"
   prompt: |
     You are the verify-agent. Read `.claude/agents/verify-agent.md` and follow
@@ -967,6 +1011,8 @@ Task tool call:
     Update task status to "Finished" (pass) or "In Progress" (fail).
     Return your T8 report.
 ```
+
+**Timeout handling:** If verify-agent exhausts `max_turns` (30) without completing, treat as verification failure — set task to "Blocked" with note `[VERIFICATION TIMEOUT]` and report to user.
 
 **After per-task verification completes:**
 - If **pass**: Proceed to select next pending task (loop back to Execute routing)
@@ -1014,6 +1060,7 @@ Spawn a verify-agent using the `Task` tool:
 Task tool call:
   subagent_type: "general-purpose"
   model: "opus"
+  max_turns: 50
   description: "Phase-level verification"
   prompt: |
     You are the verify-agent. Read `.claude/agents/verify-agent.md` and follow
@@ -1031,6 +1078,8 @@ Task tool call:
 
     Create fix tasks for any issues found. Do NOT implement fixes yourself.
 ```
+
+**Timeout handling:** Phase-level verification has a higher `max_turns` (50) because it covers the entire implementation. If exhausted without writing `verification-result.json`, report to user and suggest retrying or running `/health-check`.
 
 **After phase-level verification completes:**
 

@@ -102,10 +102,10 @@ Detects tasks that may have bypassed the implement-agent or verify-agent workflo
 
 **Per-task verification compliance checks (ERRORS, not warnings):**
 - Finished tasks MUST have a `task_verification` field with `result` of `"pass"` or `"pass_with_issues"`
-- `task_verification.checks` should have all 4 keys (`files_exist`, `spec_alignment`, `output_quality`, `integration_ready`) with pass/fail values
+- `task_verification.checks` should have all 5 keys (`files_exist`, `spec_alignment`, `output_quality`, `integration_ready`, `scope_validation`) with pass/fail values
 - If any finished task lacks `task_verification`: **ERROR** — "Verification debt: N finished tasks missing verification"
 - If any finished task has `task_verification.result == "fail"`: **ERROR** — "Verification debt: N finished tasks have failed verification"
-- If a task was sent back to "In Progress" by verification, notes should contain `[VERIFICATION FAIL]` prefix
+- If a task was sent back to "In Progress" by verification, notes should contain `[VERIFICATION FAIL #N]` prefix (where N = attempt number from `verification_attempts` field)
 
 **Verification debt calculation:**
 ```

@@ -41,6 +41,7 @@
   "spec_section": "## Authentication",
   "section_fingerprint": "sha256:e5f6g7h8...",
   "section_snapshot_ref": "spec_v1_decomposed.md",
+  "verification_attempts": 1,
   "task_verification": {
     "result": "pass",
     "timestamp": "2026-01-28T15:30:00Z",
@@ -48,7 +49,8 @@
       "files_exist": "pass",
       "spec_alignment": "pass",
       "output_quality": "pass",
-      "integration_ready": "pass"
+      "integration_ready": "pass",
+      "scope_validation": "pass"
     },
     "issues": [],
     "notes": "All files created as specified."
@@ -96,6 +98,7 @@
 | decision_dependencies | Array | Decision IDs that block this task (e.g., ["DEC-002"]). Task remains blocked until all referenced decisions are resolved. |
 | parallel_safe | Boolean | When true, task is eligible for parallel execution even with empty `files_affected`. Use for research/analysis tasks with no file side effects. |
 | conflict_note | String | **Transient.** Set during parallel dispatch when a task is held back due to file conflicts (e.g., `"Held: file conflict with Task 3 on src/models.py"`). Cleared when the task is dispatched or during post-parallel cleanup. Surfaced in the dashboard Status column. |
+| verification_attempts | Number | Count of per-task verification attempts (incremented by verify-agent on each run). Escalates to human review at >= 3 (initial + 2 retries). Default: 0 (omit until first verification). |
 | task_verification | Object | Per-task verification result recorded by verify-agent |
 
 ## Owner Values
@@ -216,7 +219,8 @@ Per-task verification result recorded by verify-agent when a task is in "Awaitin
       "files_exist": "pass",
       "spec_alignment": "pass",
       "output_quality": "pass",
-      "integration_ready": "pass"
+      "integration_ready": "pass",
+      "scope_validation": "pass"
     },
     "issues": [],
     "notes": "All files created as specified."
@@ -230,7 +234,7 @@ Per-task verification result recorded by verify-agent when a task is in "Awaitin
 |-----------|------|--------|-------------|
 | `result` | String | `"pass"`, `"fail"`, `"pass_with_issues"` | Overall per-task verification outcome |
 | `timestamp` | String | ISO 8601 | When verification completed |
-| `checks` | Object | Keys: `files_exist`, `spec_alignment`, `output_quality`, `integration_ready` | Per-check pass/fail |
+| `checks` | Object | Keys: `files_exist`, `spec_alignment`, `output_quality`, `integration_ready`, `scope_validation` | Per-check pass/fail |
 | `checks.*` | String | `"pass"` or `"fail"` | Individual check result |
 | `issues` | Array | Issue objects `{severity, description}` | Issues found during verification |
 | `notes` | String | Free text | Brief summary of verification |
@@ -244,12 +248,13 @@ A task "needs per-task verification" when:
 ### Failure Handling
 
 When per-task verification fails:
+- `verification_attempts` is incremented (verify-agent increments this before writing the result)
 - Task status is set back to "In Progress"
-- Verification failure notes are prepended with `[VERIFICATION FAIL]` in the task `notes` field
+- Verification failure notes are prepended with `[VERIFICATION FAIL #{N}]` in the task `notes` field (where N = current attempt count)
 - `completion_date` is cleared
 - `updated_date` is updated
 - Dashboard is regenerated
-- Maximum 2 re-verification attempts per task; after that, escalate to human review by setting status to "Blocked"
+- **Escalation rule:** When `verification_attempts >= 3` (initial attempt + 2 re-attempts), set status to "Blocked" with note `[VERIFICATION ESCALATED] 3 attempts exhausted — requires human review` instead of retrying
 
 ### Verification Debt
 

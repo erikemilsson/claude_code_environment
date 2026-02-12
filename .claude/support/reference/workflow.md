@@ -104,7 +104,7 @@ Verification operates in two tiers:
 
 **What happens after per-task verification:**
 - **Pass:** Task status set to "Finished" (from "Awaiting Verification"). `/work` proceeds to next pending task.
-- **Fail:** Task set back to "In Progress". implement-agent fixes, then re-verification. Maximum 2 re-verification attempts before escalation to human.
+- **Fail:** Task set back to "In Progress". implement-agent fixes, then re-verification. The `verification_attempts` counter tracks attempts; after 3 total (initial + 2 retries), the task is escalated to human review as "Blocked".
 
 #### Tier 2: Phase-Level Verification
 
@@ -213,7 +213,7 @@ Tasks with empty `files_affected` and no `parallel_safe: true` are excluded from
 ### How It Works
 
 1. **Gather candidates** — `/work` collects all eligible tasks
-2. **Build conflict-free batch** — Pairwise check of `files_affected`; add tasks to batch only if no file overlaps with any existing batch member. Tasks with conflicts are tracked in a `held_back` list with the specific conflict reason (task ID and shared files)
+2. **Build conflict-free batch** — Pairwise comparison of `files_affected` using the conflict detection algorithm (see `work.md` Step 2c for the full algorithm). Two paths conflict if they are an exact match OR one is a directory containing the other (e.g., `src/` conflicts with `src/auth.py`). Paths are normalized before comparison. Tasks with conflicts are tracked in a `held_back` list with the specific conflict reason (task ID and shared files)
 3. **Annotate held-back tasks** — Add `conflict_note` to held-back task JSONs (surfaced in the dashboard's Status column); cap batch at `max_parallel_tasks`
 4. **Dispatch** — If batch size >= 2, set all to "In Progress" and spawn parallel agents (using `run_in_background: true`) via Claude Code's `Task` tool. Each agent reads `implement-agent.md` and runs Steps 2/4/5/6a/6b independently
 5. **Incremental re-dispatch** — Poll for agent completion. When an agent finishes, re-run eligibility assessment: tasks whose file conflicts are now resolved become eligible and can be dispatched immediately (even while other agents are still running). Clear `conflict_note` from newly-dispatched tasks
