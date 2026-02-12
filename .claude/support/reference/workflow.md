@@ -238,7 +238,7 @@ Tasks with empty `files_affected` and no `parallel_safe: true` are excluded from
 ### Constraints
 
 - **Verification is still per-task** — Each agent runs its own implement → verify cycle
-- **Dashboard regeneration is coordinator-only** — Parallel agents do NOT regenerate the dashboard; the `/work` coordinator does it once after all agents finish
+- **Dashboard regeneration in parallel mode is coordinator-only** — Parallel agents do NOT regenerate the dashboard; the `/work` coordinator does a single batch regeneration after all agents finish. In sequential mode, regeneration occurs after every task change as specified in `dashboard-regeneration.md`.
 - **Parent auto-completion is deferred** — The coordinator checks parent completion after collecting all results, preventing races when siblings finish simultaneously
 - **Phase-level verification remains sequential** — Runs once when ALL tasks are done
 - **Conflict notes are transient** — `conflict_note` fields are cleaned up during post-parallel dashboard regeneration

@@ -404,12 +404,17 @@ Use `/work complete` for manual task completion outside of implement-agent's wor
    - Reject: "Pending", "Broken Down", "On Hold", "Absorbed", or "Finished" without `user_review_pending`
    - For quick tasks, first set status to "In Progress", then complete
    - Dependencies must all be "Finished"
-3. **Check work** - Review all changes made for this task
+3. **Verification enforcement:**
+   - If the task has `task_verification.result == "pass"` → proceed (already verified)
+   - If the task has `user_review_pending: true` → proceed (verification already passed, user is completing their review)
+   - If the task has NO `task_verification` or `task_verification.result != "pass"` → **spawn verify-agent (per-task)** before allowing completion. Do not mark Finished without passing verification.
+   - This ensures the structural invariant: no task reaches "Finished" without `task_verification.result == "pass"`.
+4. **Check work** - Review all changes made for this task
    - Look for bugs, edge cases, inefficiencies
    - If issues found, fix them before proceeding
-3b. **Capture inline feedback** - Read dashboard for `<!-- FEEDBACK:{id} -->` markers matching the completing task
+4b. **Capture inline feedback** - Read dashboard for `<!-- FEEDBACK:{id} -->` markers matching the completing task
    - If non-empty content found, save to task JSON `user_feedback` field
-4. **Update task file:**
+5. **Update task file:**
    ```json
    {
      "status": "Finished",
@@ -420,12 +425,12 @@ Use `/work complete` for manual task completion outside of implement-agent's wor
    }
    ```
    - If `user_review_pending` is `true`, clear it.
-5. **Check parent auto-completion:**
+6. **Check parent auto-completion:**
    - If parent_task exists and all non-Absorbed sibling subtasks are "Finished"
    - Set parent status to "Finished"
-6. **Regenerate dashboard** - Follow `.claude/support/reference/dashboard-regeneration.md`
-7. **Auto-archive check** - If active task count > 100, archive old tasks
-8. **Post-dispatch validation** - Run Step 6 checks
+7. **Regenerate dashboard** - Follow `.claude/support/reference/dashboard-regeneration.md`
+8. **Auto-archive check** - If active task count > 100, archive old tasks
+9. **Post-dispatch validation** - Run Step 6 checks
 
 ### Rules
 
