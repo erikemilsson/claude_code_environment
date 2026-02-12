@@ -33,5 +33,6 @@ The `tests/` directory contains conceptual trace tests for the command definitio
 | `.claude/` | Environment that users get | Yes |
 | `README.md` | Template documentation | No (users delete) |
 | `CLAUDE.md` | This file — template context | No (users delete) |
+| `system-overview.md` | Environment design reference — lifecycle, features, design intent | No (users delete) |
 | `tests/` | Command verification scenarios | No (users delete) |
 | `.gitignore` | Repo config | Partially (users may keep) |

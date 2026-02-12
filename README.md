@@ -25,6 +25,7 @@ The `.claude/` directory is the environment — it ships to new projects. Everyt
 ```
 ├── README.md              # Template docs (delete in projects)
 ├── CLAUDE.md              # Template maintenance context (delete in projects)
+├── system-overview.md     # Environment design reference (delete in projects)
 ├── tests/                 # Command verification scenarios (delete in projects)
 └── .claude/               # ← This is what ships to new projects
     ├── README.md          # Environment guide — how it works, essential files
