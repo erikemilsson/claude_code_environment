@@ -44,7 +44,7 @@ Read and analyze:
 - `.claude/dashboard.md` - Task status and progress (read the `<!-- DASHBOARD META -->` block)
 - `.claude/support/questions/questions.md` - Pending questions
 
-**Fast-path optimization:** If dashboard META block shows matching task_count and spec_fingerprint, skip Steps 1a/1b and jump to Step 1c. Always check drift-deferrals.json for stale deferrals even on fast-path. Full procedure: `.claude/support/reference/work-fastpath.md`.
+**Fast-path optimization:** If dashboard META block shows matching task_count and spec_fingerprint, skip Steps 1a/1b and jump to Step 1c. Always check drift-deferrals.json for stale deferrals even on fast-path.
 
 **Malformed task file handling:** When reading task JSON files, if any file fails to parse:
 1. Skip the file — do not abort the entire scan
