@@ -127,7 +127,7 @@ Enter distill mode. Extract buildable spec from a vision document.
    - Add "Deferred to Future Phases" section for items not in Phase 1
    - Format as copy-pasteable content for the user to add to the spec
 
-5. **Post-distill next steps:**
+6. **Post-distill next steps:**
    ```
    Distillation complete. Here's what to do next:
 
@@ -171,13 +171,13 @@ The answer to #4 calibrates the entire spec process - a prototype needs less rig
 
 **If spec has content and status is `active` with tasks in progress or completed:**
 
-Check whether implementation review is more appropriate than spec review:
-1. Read spec frontmatter — check `status` field
+Check whether implementation review is more appropriate than spec review — **only when no topic argument was provided** (bare `/iterate`):
+1. IF a topic argument was provided (`/iterate {topic}`) → skip auto-review, fall through to spec readiness check below (the user wants to focus on a specific spec area)
 2. Glob `.claude/tasks/task-*.json` — count tasks by status
 3. IF spec status is `active` AND at least 3 tasks have status "Finished":
    - Enter implementation review mode automatically (see "Implementation Review Mode" below)
    - Report: "Spec is active with {N} completed tasks. Entering implementation review mode."
-   - If user intended spec review, they can specify `/iterate {topic}` to force spec focus
+   - For spec review instead, use `/iterate {topic}` to focus on a specific area
 4. IF spec status is `active` but fewer than 3 Finished tasks:
    - Fall through to spec readiness check below (still building, review not yet meaningful)
 
@@ -221,11 +221,11 @@ For each implicit decision found:
    ```
    Implicit decision detected: {description}
      [C] Create decision record and research options (spawns research-agent)
-     [R] Create decision record only (you'll research later)
+     [D] Document only — create decision record (you'll research later)
      [S] Skip (not a real decision)
    ```
    If `[C]`: Create the decision record (see `support/reference/decisions.md` for the template), then delegate to the research workflow (see `.claude/commands/research.md` Steps 2-4). The research-agent will populate the comparison matrix and option details.
-   If `[R]`: Create the decision record only. Decisions need to be trackable so `/work` can gate dependent tasks.
+   If `[D]`: Create the decision record only. Decisions need to be trackable so `/work` can gate dependent tasks.
 
 ### Step 3: Ask Questions (max 4)
 
@@ -311,7 +311,7 @@ See `.claude/support/reference/spec-checklist.md` for full readiness criteria.
 | Tasks in progress, want quality check | `/iterate review` | Implementation review mode |
 | After parallel batch, check integration | `/iterate review integration` | Focused integration review |
 | At phase gate, assess phase quality | `/iterate review` | Comprehensive phase review |
-| Spec active, auto-detect mode | `/iterate` | Auto-enters review if 3+ tasks finished |
+| Spec active, no specific topic | `/iterate` | Auto-enters review if 3+ tasks finished (bare `/iterate` only) |
 
 **Note on distill questions:** The four distillation questions are intentionally fixed (core value, essential features, Phase 1 exclusions, first user path). These cover the minimum information needed to convert abstract vision into buildable scope. The answers are what vary — Claude adapts its generated content based on your responses.
 
@@ -330,7 +330,7 @@ Review the quality of completed implementation work. This mode activates when th
 | Trigger | How |
 |---------|-----|
 | Explicit | `/iterate review` or `/iterate review {area}` |
-| Auto-detect | `/iterate` when spec is `active` and 3+ tasks are "Finished" |
+| Auto-detect | Bare `/iterate` (no arguments) when spec is `active` and 3+ tasks are "Finished" |
 | Suggested by `/work` | After parallel batch completion or at phase gate boundaries |
 
 ### Review Step 1: Gather Review Context
@@ -347,9 +347,11 @@ Read (all reads, no modifications):
 - If fewer than 3 "Finished" tasks: "Not enough completed work for meaningful review. Continue with `/work`." → fall back to spec refinement mode
 - If `/iterate review {area}` was specified: narrow to tasks and files matching that area
 
-### Review Step 2: Assess Focus Areas (max 4 per run)
+### Review Step 2: Assess Focus Areas
 
-Evaluate each area and identify the weakest ones to focus on. Prioritize areas with the most signal (more completed tasks, more files to examine).
+Quickly assess all areas with a ✓/⚠/✗ indicator (shown in the Step 3 report), then deep-dive into the worst areas (max 4 per run). Prioritize areas with the most signal (more completed tasks, more files to examine).
+
+**Domain adaptation:** The focus areas below use software examples but apply to any project domain. Adapt the specific checks to the project type — for a procurement project, "Architecture Coherence" becomes vendor alignment; for a research project, "Pattern Consistency" becomes methodology consistency.
 
 #### Focus Area: Architecture Coherence
 

@@ -24,7 +24,7 @@ For each implicit decision, presents options:
 ```
 Implicit decision detected: Charting library selection ("a suitable charting library")
   [C] Create decision record and research options (spawns research-agent)
-  [R] Create decision record only (you'll research later)
+  [D] Document only — create decision record (you'll research later)
   [S] Skip (not a real decision)
 ```
 
@@ -44,7 +44,7 @@ Implicit decision detected: Charting library selection ("a suitable charting lib
 - Research-agent receives the decision record path
 - After research completes, decision has populated options and status `proposed`
 
-## Trace: User selects [R] for database
+## Trace: User selects [D] for database
 
 1. `/iterate` creates decision record:
    - `decision-002-database-choice.md`
@@ -72,9 +72,9 @@ Implicit decision detected: Charting library selection ("a suitable charting lib
 ## Pass criteria
 
 - [ ] Implicit decisions detected from vague spec language
-- [ ] Three options presented per implicit decision: [C], [R], [S]
+- [ ] Three options presented per implicit decision: [C], [D], [S]
 - [ ] [C] creates decision record THEN spawns research-agent
-- [ ] [R] creates decision record without research
+- [ ] [D] creates decision record without research
 - [ ] [S] skips without creating anything
 - [ ] Decision IDs assigned sequentially (DEC-001, DEC-002)
 - [ ] Category correctly inferred (technology for libraries/databases)

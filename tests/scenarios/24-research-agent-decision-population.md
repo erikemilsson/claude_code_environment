@@ -17,7 +17,7 @@ Verify that the research agent correctly investigates options, populates decisio
 
 - /work decision dependency check
 - DEC-001 is unresolved, blocks Tasks 3, 4, 5
-- Options presented: `[R]` Research, `[S]` Skip, `[D]` Defer
+- Options presented: `[R]` Research, `[S]` Skip
 - User selects `[R]`
 
 ### Expected

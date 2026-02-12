@@ -176,7 +176,7 @@ By separating concerns:
 - Issues caught by verify-agent become new tasks for implement-agent
 - Evidence gathered by research-agent feeds into decision records for human selection
 
-**Architectural separation:** verify-agent always runs as a **separate `Task` agent** (spawned via the Task tool), never inline in the implementation context. This ensures genuine independence — the verifier has no memory of implementation decisions, only the artifacts (task JSON, spec section, and files). This applies to both sequential and parallel execution modes.
+**Architectural separation:** verify-agent and research-agent always run as **separate `Task` agents** (spawned via the Task tool), never inline in the implementation context. This ensures genuine independence — the verifier has no memory of implementation decisions, only the artifacts (task JSON, spec section, and files); the researcher has no implementation or compliance bias, only the decision record and project context. This applies to both sequential and parallel execution modes.
 
 **The build workflow:**
 1. `/work` reads and follows implement-agent workflow for the next pending task

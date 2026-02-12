@@ -67,7 +67,7 @@ graph LR
 2. Sets task to "In Progress", implements, self-reviews
 3. Sets task to "Awaiting Verification"
 4. Spawns verify-agent as a **separate agent** (fresh context, no implementation memory)
-5. verify-agent checks: files exist, spec alignment (against the task's spec section), output quality, integration boundaries, scope validation — this is **Tier 1 verification**
+5. verify-agent checks: task fidelity (did the deliverables match the task description?), output quality, files exist, integration boundaries, scope validation — this is **Tier 1 verification**
 6. Pass → "Finished". Fail → "In Progress" (fix and re-verify, max 3 attempts then escalate)
 
 **Parallel execution:** When multiple tasks have no file conflicts and all dependencies met, `/work` dispatches them concurrently. Each parallel task runs its own implement → verify cycle independently. Coordinator handles batching, result collection, and a single dashboard regeneration.
@@ -80,11 +80,11 @@ graph LR
 ### Integration Verification (Tier 2)
 
 **Where:** Claude Code, `/work` auto-detects when all tasks in the current phase are Finished with passing Tier 1 verification
-**What happens:** verify-agent validates the phase's implementation against the spec acceptance criteria. This is **Tier 2 verification** — it catches cross-task integration issues that per-task (Tier 1) verification can't see because Tier 1 only checks each task against its own spec section.
+**What happens:** verify-agent validates the phase's implementation against the spec acceptance criteria and checks decomposition completeness. This is **Tier 2 verification** — it catches cross-task integration issues that per-task (Tier 1) verification can't see because Tier 1 only checks each task against its own task description, and it identifies spec requirements that were never decomposed into tasks.
 
 **Runs at phase boundaries, not just at the end.** In a multi-phase project, Tier 2 runs after each phase completes — before the phase gate. This catches integration problems within Phase N before Phase N+1 builds on top of them.
 
-**Scope difference:** Tier 1 asks "does this task match its spec section?" Tier 2 asks "do the phase's deliverables work together and satisfy the phase's acceptance criteria?" At the final phase boundary, Tier 2 validates the full spec end-to-end. For example, Task A's output format might not match what Task B expects — each passes Tier 1 individually, but Tier 2 catches the mismatch.
+**Scope difference:** Tier 1 asks "did the implementation agent complete this task correctly?" — checking deliverables against the task description, catching incomplete work, subtle errors, and quality issues. The spec section provides context but the task description is the primary reference. Tier 2 asks "do the phase's deliverables work together, satisfy the spec's acceptance criteria, and cover all spec requirements?" At the final phase boundary, Tier 2 validates the full spec end-to-end. Tier 2 catches two things Tier 1 can't: cross-task integration issues (e.g., Task A's output format doesn't match what Task B expects) and decomposition gaps (spec requirements that no task addressed — these become new tasks, not fix tasks).
 
 **Outcomes:**
 - `pass` (mid-project) → Phase gate presented for user approval. After approval, `/iterate` suggested to flesh out next phase, then `/work` continues.
@@ -145,9 +145,9 @@ Each feature below includes its purpose (why it exists), how it works (brief), a
 
 **Purpose:** Catch issues at two levels — per-task (immediately after each implementation) and integration-level (cross-task validation at phase boundaries).
 
-**Tier 1 (Per-Task):** Runs immediately after each task's implementation, as part of the atomic implement → verify cycle. Checks: files exist, spec alignment (against the task's spec section), output quality, integration boundaries, scope validation. Result stored in `task_verification` field on the task JSON. Each task is verified individually — no waiting for other tasks.
+**Tier 1 (Per-Task):** Runs immediately after each task's implementation, as part of the atomic implement → verify cycle. Primary question: "did the implementation agent complete this task correctly?" Checks: task fidelity (deliverables match the task description), output quality, files exist, integration boundaries, scope validation. The task description is the primary reference; the spec section provides context. Result stored in `task_verification` field on the task JSON. Each task is verified individually — no waiting for other tasks.
 
-**Tier 2 (Integration):** Runs at each phase boundary when all phase tasks are Finished with passing Tier 1 verification. Validates acceptance criteria across the spec. Catches cross-task integration issues that Tier 1 can't see (e.g., output format mismatches between tasks). Runs before the phase gate — integration problems are caught before the next phase builds on top of them. Result stored in `verification-result.json`.
+**Tier 2 (Integration):** Runs at each phase boundary when all phase tasks are Finished with passing Tier 1 verification. Primary question: "do the deliverables work together, satisfy the spec's acceptance criteria, and cover all spec requirements?" Catches two things Tier 1 can't: cross-task integration issues (e.g., output format mismatches between tasks) and decomposition gaps (spec requirements that no task addressed). Decomposition gaps become new tasks; failed acceptance criteria become fix tasks. Runs before the phase gate — integration problems are caught before the next phase builds on top of them. Result stored in `verification-result.json`.
 
 **Verification results are binary: `pass` or `fail`.** No intermediate states.
 

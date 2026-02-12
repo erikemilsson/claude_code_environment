@@ -31,6 +31,19 @@ Spec is active with 8 completed tasks. Entering implementation review mode.
 - Does NOT show spec readiness checklist
 - Proceeds to Review Step 1
 
+## Trace A2: `/iterate {topic}` bypasses auto-review
+
+- Same state as Trace A (spec `active`, 8 tasks Finished)
+- User runs `/iterate authentication` (topic argument provided)
+- iterate.md Step 2: topic argument detected → skip auto-review
+
+### Expected
+
+- Does NOT enter review mode despite 8 Finished tasks
+- Falls through to spec readiness check
+- Focuses on "authentication" area in spec review mode
+- User can still use `/iterate review` explicitly if they want implementation review
+
 ## Trace B: Explicit `/iterate review integration`
 
 - iterate.md Step 2: user specified `/iterate review integration`
@@ -161,7 +174,8 @@ Not enough completed work for meaningful review. Continue with /work.
 
 ## Pass criteria
 
-- [ ] Auto-detects review mode when spec `active` and 3+ tasks Finished
+- [ ] Auto-detects review mode when bare `/iterate` with spec `active` and 3+ tasks Finished
+- [ ] `/iterate {topic}` bypasses auto-review even when conditions are met
 - [ ] Explicit `/iterate review` enters review mode directly
 - [ ] `/iterate review {area}` narrows focus to specified area
 - [ ] All 6 focus areas assessed with ✓/⚠/✗ indicators
@@ -186,3 +200,4 @@ Not enough completed work for meaningful review. Continue with /work.
 - Review mode activated with fewer than 3 finished tasks
 - Findings lack specific task/file references
 - Suggestions assume code context not actually read from files
+- `/iterate {topic}` enters review mode (should bypass auto-review and do spec review)

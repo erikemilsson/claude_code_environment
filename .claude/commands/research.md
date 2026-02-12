@@ -142,8 +142,7 @@ When `/work` finds an unresolved decision blocking a task, it offers research as
 ```
 Decision DEC-001 is unresolved and blocks Task {id}.
   [R] Research options (spawns research-agent)
-  [S] Skip (research manually)
-  [D] Defer decision
+  [S] Skip (you'll research manually)
 ```
 
 If user selects `[R]`: `/work` delegates to this command's Step 2-4 flow (skipping Step 1 — the decision is already identified).
@@ -155,11 +154,11 @@ When `/iterate` detects vague language implying an unresolved choice, it can off
 ```
 Implicit decision detected: {description}
   [C] Create decision record and research options
-  [R] Create decision record only (research later)
+  [D] Document only — create decision record (research later)
   [S] Skip (not a real decision)
 ```
 
-If user selects `[C]`: `/iterate` creates the decision record, then delegates to this command's Step 3-4 flow.
+If user selects `[C]`: `/iterate` creates the decision record, then delegates to this command's Steps 2-4 flow (skipping Step 1 — the decision record already exists).
 
 ---
 
