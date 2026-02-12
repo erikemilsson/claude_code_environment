@@ -14,6 +14,7 @@
       ".claude/support/reference/drift-reconciliation.md",
       ".claude/support/reference/parallel-execution.md",
       ".claude/support/reference/paths.md",
+      ".claude/support/reference/setup-checklist.md",
       ".claude/support/reference/desktop-project-prompt.md",
       ".claude/support/reference/README.md",
       ".claude/support/learnings/README.md",
@@ -23,6 +24,7 @@
     ],
     "customize": [
       ".claude/CLAUDE.md",
+      ".claude/README.md",
       "README.md",
       ".claude/support/questions/questions.md",
       ".claude/support/questions/README.md",
