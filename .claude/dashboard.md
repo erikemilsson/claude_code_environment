@@ -96,8 +96,18 @@ graph LR
     T9 --> T10["❗ Electrical inspection"]
     DEC002 --> T10
     DEC002 --> T11["🤖 Install flooring"]
-    T10 --> T12["👥 Final walkthrough"]
-    T11 --> T12
+    T10 --> GATE{{"❗ Phase 2 Review"}}
+    T11 --> GATE
+    GATE --> T12["👥 Final walkthrough"]
+
+    classDef done fill:#c8e6c9,stroke:#2e7d32
+    classDef active fill:#bbdefb,stroke:#1565c0
+    classDef human fill:#fff9c4,stroke:#f57f17
+    classDef blocked fill:#f5f5f5,stroke:#9e9e9e
+    class P1 done
+    class T9 active
+    class T8,T10,GATE human
+    class T6,T11,T12 blocked
 ```
 
 **This week:** 1 completed · 1 started · 0 created

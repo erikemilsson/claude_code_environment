@@ -193,7 +193,7 @@ After verification completes (pass or fail):
   - Set the parent task status to "Finished"
 
 **Always (pass or fail):**
-- Update dashboard.md in place from source data per work.md § "Dashboard Regeneration Procedure"
+- Update dashboard.md in place from source data per `.claude/support/reference/dashboard-regeneration.md`
   - Source of truth: only tasks with corresponding task-*.json files
   - Preserve Notes section between `<!-- USER SECTION -->` markers
 

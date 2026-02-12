@@ -297,7 +297,7 @@ You can edit the spec file directly at any time. The system handles this gracefu
 - **Drift detection** in `/work` compares the current spec against the snapshot and shows exactly what changed
 - **No data loss is possible** — the "before" state is always available for comparison
 
-You never need to version before editing. If your edits turn out to be substantial enough for a new version, `/work` will suggest it (see "Substantial Change Detection" in `work.md`).
+You never need to version before editing. If your edits turn out to be substantial enough for a new version, `/work` will suggest it (see `.claude/support/reference/drift-reconciliation.md` § "Substantial Change Detection").
 
 ### Suggest-Only Boundary: Content vs Infrastructure
 
@@ -339,7 +339,7 @@ When a version bump is warranted, Claude executes this 5-step procedure:
     Edit it with your changes, then run /iterate to review or /work to continue."
 ```
 
-**After the transition:** The user edits `spec_v{N+1}.md` with their changes (or uses `/iterate` to refine). When they run `/work`, task migration handles the transition (see "Task Migration on Version Transition" in `work.md`).
+**After the transition:** The user edits `spec_v{N+1}.md` with their changes (or uses `/iterate` to refine). When they run `/work`, task migration handles the transition (see `.claude/support/reference/drift-reconciliation.md` § "Task Migration on Version Transition").
 
 ### When to Create a New Version
 
@@ -348,7 +348,7 @@ When a version bump is warranted, Claude executes this 5-step procedure:
 | Phase transition (Phase N complete → N+1) | **Yes** | New work scope, clean baseline |
 | Inflection point resolved, major scope change | **Yes** | What gets built changed fundamentally |
 | User explicitly requests it | **Yes** | User authority |
-| `/work` detects substantial changes (see work.md) | **Suggested** | System offers the choice; user decides |
+| `/work` detects substantial changes (see `drift-reconciliation.md`) | **Suggested** | System offers the choice; user decides |
 | Adding detail to existing sections | No | Same scope, more precision |
 | Minor clarifications, typos | No | Not substantive |
 | Adding a new feature section | Maybe | Claude asks user if scope expansion warrants it |

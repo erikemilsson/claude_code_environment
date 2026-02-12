@@ -84,9 +84,6 @@ Commands defined in `.claude/commands/` for this workflow. Not Claude Code built
 - `/breakdown {id}` - Split complex tasks into subtasks
 - `/health-check` - Validate tasks, decisions, CLAUDE.md health, and template sync
 
-### Setup
-- `/setup-check` - Validate template configuration (run after cloning)
-
 ## Task Rules
 
 **Important:** Always use the project's task system (`.claude/tasks/task-*.json` files) for all task management. Never use built-in TaskCreate/TaskUpdate/TaskList tools as a replacement — those are separate from this project's tracking.

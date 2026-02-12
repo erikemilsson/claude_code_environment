@@ -45,68 +45,15 @@ Read and analyze:
 
 ### Step 1a: Dashboard Freshness Check
 
-Before using dashboard data, verify it's current:
+Verify the dashboard is current before using its data. Compute a SHA-256 hash of all task IDs and statuses, compare against the dashboard's `<!-- DASHBOARD META -->` block. If the hash differs or no metadata exists, regenerate the dashboard from task JSON files before continuing.
 
-1. **Compute current task state hash:**
-   ```
-   task_hash = SHA-256(sorted list of: task_id + ":" + status for each task-*.json)
-   ```
-
-2. **Read dashboard metadata** (if present):
-   ```markdown
-   <!-- DASHBOARD META
-   generated: 2026-01-28T14:30:00Z
-   task_hash: sha256:abc123...
-   -->
-   ```
-
-3. **Compare hashes:**
-   ```
-   If dashboard has no META block OR task_hash differs:
-   ├─ Log: "Dashboard stale — regenerating"
-   ├─ Backup user section to .claude/support/workspace/dashboard-notes-backup.md
-   ├─ Regenerate dashboard from task JSON files
-   └─ Continue with fresh dashboard
-   ```
-
-**Why this matters:** Dashboard can become stale if tasks are modified outside `/work`. This check ensures you always work from accurate data.
+**Full procedure:** `.claude/support/reference/drift-reconciliation.md` § "Dashboard Freshness Check"
 
 ### Step 1b: Spec Drift Detection (Granular)
 
-After reading the spec, perform section-level drift detection:
+After reading the spec, perform section-level drift detection. Compare the current spec's SHA-256 fingerprint against task fingerprints. If different, parse both current spec and decomposition snapshot into `##` sections, compare per-section fingerprints, identify which sections changed, and group affected tasks by changed section. Tasks without fingerprints fall back to full-spec comparison.
 
-1. **Compute current spec fingerprint** - SHA-256 hash of spec file content
-2. **Check existing tasks** - Read `spec_fingerprint` and `section_fingerprint` from task files
-3. **Compare fingerprints:**
-
-```
-If tasks exist with spec_fingerprint:
-├─ Full spec fingerprint matches → Continue normally
-└─ Full spec fingerprint differs → Perform granular section analysis:
-   1. Parse current spec into sections (## level headings)
-   2. Load snapshot from section_snapshot_ref (if exists)
-   3. Parse snapshot spec into sections
-   4. For each section, compare fingerprints
-   5. Identify which sections changed
-   6. Group affected tasks by changed section
-   7. Present granular reconciliation UI
-```
-
-**Hash computation:**
-```bash
-# Use shasum (available on macOS and Linux; sha256sum is Linux-only)
-shasum -a 256 .claude/spec_v{N}.md | cut -d' ' -f1
-# Prefix with "sha256:" → "sha256:a1b2c3d4..."
-```
-
-**Section fingerprint computation:**
-```bash
-# For each ## section, hash: heading + all content until next ## or EOF
-printf '%s' "## Authentication\nContent here..." | shasum -a 256 | cut -d' ' -f1
-# Prefix with "sha256:" → "sha256:e5f6g7h8..."
-```
-
-**Note:** Tasks without `spec_fingerprint` are treated as legacy (no warning). Tasks without `section_fingerprint` fall back to full-spec comparison.
+**Full procedure:** `.claude/support/reference/drift-reconciliation.md` § "Spec Drift Detection"
 
 ### Step 1c: Spec State Summary
 
@@ -118,11 +65,11 @@ If no tasks exist:
 
 If tasks exist and spec is aligned:
   "Spec: v{N} (active) — aligned with tasks ✓"
-  "Tasks: {total} total ({finished} finished, {in_progress} in progress, {pending} pending)"
+  "Tasks: {total} total ({finished} finished, {in_progress} in progress, {pending} pending{, N on hold}{, N absorbed})"
 
 If tasks exist and spec has changed:
   "Spec: v{N} (active) — {M} sections changed since decomposition"
-  "Tasks: {total} total ({finished} finished, {in_progress} in progress, {pending} pending)"
+  "Tasks: {total} total ({finished} finished, {in_progress} in progress, {pending} pending{, N on hold}{, N absorbed})"
 
 If version transition detected (tasks reference older spec version):
   "Spec: v{N} (draft) — new version, tasks reference v{N-1}"
@@ -133,144 +80,27 @@ This runs AFTER drift detection (Step 1b) so it can accurately report section ch
 
 ### Substantial Change Detection
 
-Before showing the reconciliation UI, evaluate the magnitude of changes and respond accordingly.
+Before showing the reconciliation UI, evaluate change magnitude. Changes are "substantial" when >50% of sections changed, sections were added/deleted, or the spec has been active >7 days with >3 sections changed. Substantial changes trigger a version bump suggestion (`[V]` Create v{N+1} / `[C]` Continue as v{N}). Non-substantial changes proceed directly to reconciliation.
 
-**Heuristic — changes are "substantial" when ANY of:**
-- More than 50% of sections have changed fingerprints
-- New sections were added (scope expansion)
-- Sections were deleted (scope reduction)
-- Spec has been `active` for > 7 days AND > 3 sections changed
-
-**If changes are NOT substantial:**
-
-Proceed directly to the Granular Reconciliation UI (below). Small edits are absorbed into the current version via normal drift reconciliation.
-
-**If changes ARE substantial:**
-
-Present a version bump suggestion before reconciliation:
-
-```
-Spec has changed significantly since tasks were created:
-  - {X} of {Y} sections modified
-  - {A} new sections added / {B} sections deleted
-  - Estimated {P}% of content changed
-
-This may warrant a new spec version.
-
-[V] Create spec v{N+1} (archives current version, then reconcile)
-[C] Continue as v{N} (reconcile changes in place)
-```
-
-- **If user picks [V]:** Execute the Version Transition Procedure (see `iterate.md` § "Version Transition Procedure"), then run Task Migration (below), then proceed to reconciliation against the new version.
-- **If user picks [C]:** Proceed directly to the Granular Reconciliation UI. Changes are absorbed into the current version.
-
-Either choice preserves the user's edits. The version bump is about organizational clarity, not data safety.
+**Full procedure:** `.claude/support/reference/drift-reconciliation.md` § "Substantial Change Detection"
 
 ### Task Migration on Version Transition
 
-When `/work` detects that existing tasks reference an older spec version (tasks have `spec_version: "spec_v{M}"` but current spec is `spec_v{N}` where N > M), perform task migration:
+When tasks reference an older spec version, migrate them: finished tasks keep old provenance; pending/in-progress tasks are checked against the new spec (section exists and matches → update fingerprints; section changed → flag for reconciliation; section deleted → present options to user).
 
-```
-For each task:
-  IF status == "Finished":
-    → Leave provenance unchanged (historical record)
-    → These tasks were verified against the old spec — that's correct
-
-  IF status == "Pending" or "In Progress":
-    → Check if task's spec_section heading still exists in new spec
-    │
-    ├─ Section exists, content matches:
-    │  → Update task: spec_version, spec_fingerprint, section_fingerprint
-    │  → Task continues normally
-    │
-    ├─ Section exists, content changed:
-    │  → Update spec_version reference
-    │  → Flag for reconciliation (handled by Granular Reconciliation UI)
-    │
-    └─ Section does not exist in new spec:
-       → Present to user:
-       │
-       │  Task {id} "{title}" references section "{spec_section}"
-       │  which no longer exists in spec v{N}.
-       │
-       │  [D] Delete task
-       │  [O] Keep as out-of-spec
-       │  [R] Reassign to different section
-```
-
-**After migration:** Update the decomposed snapshot reference. Create `spec_v{N}_decomposed.md` if decomposition runs, or update `section_snapshot_ref` on migrated tasks to point to the new spec version's snapshot.
+**Full procedure:** `.claude/support/reference/drift-reconciliation.md` § "Task Migration on Version Transition"
 
 ### Drift Budget Enforcement
 
-To prevent drift from accumulating indefinitely, enforce a drift budget:
+Prevents drift from accumulating indefinitely. Deferred reconciliations are tracked in `drift-deferrals.json`. On each `/work` run, check active deferrals against limits (default: max 3 sections, max 14 days). If exceeded or expired, block all actions until reconciliation completes.
 
-**Configuration (in spec frontmatter):**
-```yaml
----
-version: 1
-status: active
-drift_policy:
-  max_deferred_sections: 3      # Max sections that can be deferred
-  max_deferral_age_days: 14     # Max days a deferral can persist
----
-```
-
-**Default values (if not configured):** `max_deferred_sections: 3`, `max_deferral_age_days: 14`
-
-**Tracking deferred reconciliations:**
-
-When user selects "Skip section" during reconciliation, record it:
-```json
-// In .claude/drift-deferrals.json
-{
-  "deferrals": [
-    {
-      "section": "## Authentication",
-      "deferred_date": "2026-01-20",
-      "affected_tasks": ["3", "4", "7"]
-    }
-  ]
-}
-```
-
-**Enforcement logic:**
-```
-On each /work run:
-1. Read drift-deferrals.json (if exists)
-2. Count active deferrals (not yet reconciled)
-3. Check for expired deferrals (older than max_deferral_age_days)
-
-IF active_deferrals > max_deferred_sections OR any deferral expired:
-  ├─ ERROR: Drift budget exceeded
-  │
-  │  You have deferred reconciliation for N sections (max: M).
-  │  [OR] Deferral for "## SectionName" has expired (deferred N days ago, max: M days).
-  │
-  │  Must reconcile at least 1 section before continuing.
-  │
-  │  [R] Reconcile now (REQUIRED)
-  │
-  └─ Block all other actions until reconciliation completes
-```
-
-**Clearing deferrals:** When a section is reconciled (user selects Apply or reviews individually and applies), remove it from `drift-deferrals.json`.
-
-**See also:**
-- `/health-check` performs the same drift detection as a validation check. Keep algorithms in sync.
-- `.claude/support/reference/workflow.md` § "Spec Change and Feature Addition Workflow" for the end-to-end process (user edits spec → detection → confirmation → task updates → implementation → verification).
+**Full procedure:** `.claude/support/reference/drift-reconciliation.md` § "Drift Budget Enforcement"
 
 ### Granular Reconciliation UI
 
-When section-level drift is detected, present a targeted UI showing:
-- Section name and number of affected tasks
-- Diff of changed content
-- Table of affected tasks with suggested actions
+When section-level drift is detected, present a per-section UI with diff and affected tasks. Options per section: `[A]` Apply, `[R]` Review individually, `[S]` Skip. Edge cases: new section → suggest new tasks; deleted section → flag tasks for out-of-spec/deletion.
 
-**Options per section:** `[A]` Apply suggestions, `[R]` Review individually, `[S]` Skip section
-
-**Individual task review options:** `[A]` Apply, `[E]` Edit, `[S]` Skip, `[O]` Mark out-of-spec
-
-**Edge cases:** New section → suggest new tasks. Section deleted → flag tasks for out-of-spec or deletion. Section renamed → detected as delete + add. No snapshot → fall back to full-spec comparison.
+**Full procedure:** `.claude/support/reference/drift-reconciliation.md` § "Granular Reconciliation UI"
 
 ### Step 2: Spec Check (if request provided)
 
@@ -313,31 +143,38 @@ Check whether phases or unresolved decisions block any intended work:
 2. Read all task-*.json files
 
 3. PHASE CHECK:
-   Determine current active phase:
+   Determine current active phase by walking phases ascending:
    ├─ Group tasks by `phase` field
-   ├─ Find lowest phase number where any task is not "Finished"
-   ├─ This is the active phase
+   ├─ Sort phases numerically (ascending)
+   │
+   │  FOR each phase P (ascending):
+   │    IF all tasks in phase P are "Finished":
+   │      IF tasks exist in a higher phase (next_phase exists):
+   │        1. Read dashboard for approved marker: <!-- PHASE GATE:{P}→{next_phase} APPROVED -->
+   │        2. IF APPROVED marker exists:
+   │             → Already approved. Continue to next phase.
+   │        3. Read dashboard for phase gate marker: <!-- PHASE GATE:{P}→{next_phase} -->
+   │        4. IF marker contains checked box [x]:
+   │             → Phase transition approved.
+   │             → Replace gate content with: <!-- PHASE GATE:{P}→{next_phase} APPROVED -->
+   │             → Log: "Phase {P} → {next_phase} approved"
+   │             → Execute Version Transition Procedure (see iterate.md § "Version Transition Procedure")
+   │             → Suggest running /iterate to flesh out Phase {next_phase} sections
+   │             → Continue to next phase
+   │        5. IF marker absent OR contains unchecked box [ ]:
+   │             → Regenerate dashboard with phase gate in Action Required (see `dashboard-regeneration.md` § "Regeneration Steps" Step 3)
+   │             → Log: "Phase {P} complete. Approve transition in dashboard, then run /work."
+   │             → STOP — do not dispatch any tasks
+   │      ELSE (final phase, all tasks Finished):
+   │        → Fall through to Step 3 routing (phase-level verification → completion)
+   │    ELSE (phase P has non-Finished tasks):
+   │      → This is the active phase
    │
    │  For target task(s):
    │  IF task.phase > active_phase:
    │    "Task {id} is in Phase {task.phase}, but Phase {active_phase} is still in progress.
    │     {N} tasks remaining in Phase {active_phase}."
    │    → Skip this task, work on active-phase tasks instead
-   │
-   │  IF no tasks remain in active phase and all are "Finished":
-   │    IF tasks exist in a higher phase (next_phase exists):
-   │      1. Read dashboard for phase gate marker: <!-- PHASE GATE:{active_phase}→{next_phase} -->
-   │      2. IF marker contains checked box [x]:
-   │           → Phase transition approved. Clear the marker from dashboard.
-   │           → Log: "Phase {active_phase} → {next_phase} approved"
-   │           → Execute Version Transition Procedure (see iterate.md § "Version Transition Procedure")
-   │           → Suggest running /iterate to flesh out Phase {next_phase} sections
-   │      3. IF marker absent OR contains unchecked box [ ]:
-   │           → Regenerate dashboard with phase gate in Action Required (see Dashboard Regen § Phase Transitions)
-   │           → Log: "Phase {active_phase} complete. Approve transition in dashboard, then run /work."
-   │           → STOP — do not dispatch Phase {next_phase} tasks
-   │    ELSE (single-phase project or final phase):
-   │      → Fall through to Step 3 routing (phase-level verification → completion)
 
 4. DECISION CHECK:
    For target task(s), check `decision_dependencies`:
@@ -432,102 +269,13 @@ IF inflection_point: true:
 
 ### Step 2c: Parallelism Eligibility Assessment
 
-After phase and decision checks, assess whether multiple tasks can be dispatched in parallel.
+After phase and decision checks, assess whether multiple tasks can be dispatched in parallel. Read `parallel_execution` from spec frontmatter (defaults: `enabled: true`, `max_parallel_tasks: 3`). If disabled, skip to Step 3.
 
-**1. Read configuration:**
-```
-Read parallel_execution from spec frontmatter:
-├─ enabled: true (default)
-├─ max_parallel_tasks: 3 (default)
-└─ If not present, use defaults
-```
+**Eligible tasks** must be: Pending (not On Hold, Absorbed, Blocked, or Broken Down), not human-owned, all deps Finished, in active phase, all decision deps resolved, difficulty < 7.
 
-If `enabled: false`, skip to Step 3 (sequential mode).
+**Batch building:** Pairwise-compare `files_affected` using the file conflict detection algorithm (exact match or directory containment). Tasks with conflicts are held back; tasks with empty `files_affected` and no `parallel_safe: true` are excluded. If batch >= 2, set `parallel_mode = true`.
 
-**2. Gather eligible tasks:**
-```
-eligible = tasks where ALL of:
-  - status == "Pending"
-  - owner != "human"
-  - all dependencies have status "Finished"
-  - task.phase <= active_phase (no phase dependency blocks the task)
-  - all decision_dependencies are resolved
-  - difficulty < 7
-```
-
-**3. Build conflict-free batch:**
-
-**File conflict detection algorithm:**
-
-Two paths conflict if either could affect the other's output. The comparison uses **normalized paths** and **directory containment**:
-
-```
-FUNCTION paths_conflict(path_a, path_b) -> bool:
-  # 1. Normalize both paths: resolve "." and "..", lowercase on case-insensitive
-  #    filesystems (macOS), strip trailing slashes
-  a = normalize(path_a)
-  b = normalize(path_b)
-
-  # 2. Exact match
-  IF a == b: return true
-
-  # 3. Directory containment: if either path is a prefix of the other
-  #    (a directory contains a file, or vice versa)
-  #    e.g., "src/" conflicts with "src/auth.py"
-  #    e.g., "src/models/" conflicts with "src/models/user.py"
-  IF a.startswith(b + "/") OR b.startswith(a + "/"): return true
-
-  # 4. No conflict
-  return false
-```
-
-**Rules:**
-- Paths are relative to project root (no leading `./ `)
-- `src/auth.py` vs `src/auth.py` → conflict (exact match)
-- `src/` vs `src/auth.py` → conflict (directory containment)
-- `src/auth.py` vs `src/models.py` → no conflict (different files)
-- `.env` vs `.env.example` → no conflict (different files)
-- Glob patterns in `files_affected` (e.g., `src/*.py`) are expanded before comparison
-
-```
-batch = []
-held_back = []  # tracks tasks skipped due to file conflicts
-
-For each eligible task (sorted by priority, then ID):
-  conflicts = false
-  conflict_with = null
-  conflict_files = []
-  For each task already in batch:
-    For each pair (file_a from task.files_affected, file_b from batch_task.files_affected):
-      IF paths_conflict(file_a, file_b):
-        conflicts = true
-        conflict_with = batch_task.id
-        conflict_files.append(file_a + " vs " + file_b)
-        break
-    IF conflicts: break
-  IF task has empty files_affected AND parallel_safe != true:
-    skip (unknown file impact — not safe for parallel)
-  ELSE IF conflicts:
-    held_back.append({
-      task_id: task.id,
-      blocked_by: conflict_with,
-      conflict_files: conflict_files
-    })
-  ELSE IF len(batch) < max_parallel_tasks:
-    add task to batch
-```
-
-**4. Determine dispatch mode:**
-```
-IF len(batch) >= 2:
-  → parallel_mode = true
-  → Log: "Parallel dispatch: {batch_size} tasks eligible"
-  → IF held_back is non-empty:
-      Log for each: "Task {id} held back — file conflict with Task {conflict_with} on: {conflict_files}"
-ELSE:
-  → parallel_mode = false
-  → Fall back to sequential execution in Step 3
-```
+**Full procedure:** `.claude/support/reference/parallel-execution.md` § "Parallelism Eligibility Assessment"
 
 ### Step 3: Determine Action
 
@@ -544,7 +292,7 @@ ELSE:
 | No spec exists, tasks exist | **Stop and warn** — tasks without a spec cannot be verified. Present options (see below). |
 | Spec incomplete | Stop — prompt user to complete spec |
 | Spec complete, no tasks | **Decompose** — create tasks from spec |
-| Phase transition pending approval (phase gate unchecked in dashboard) | **Stop** — direct user to approve phase transition in dashboard |
+| Phase transition pending approval (phase gate unchecked in dashboard) | **Stop** — direct user to approve phase transition in dashboard *(enforced by Step 2b before reaching Step 3)* |
 | Any spec task in "Awaiting Verification" status | **Verify (per-task)** — read & follow verify-agent per-task workflow (see Step 4) |
 | Spec tasks pending (and none awaiting verification), parallel batch >= 2 | **Execute (Parallel)** — dispatch parallel batch (see Step 4 "If Executing (Parallel)") |
 | Spec tasks pending (and none awaiting verification), no parallel batch | **Execute** — read & follow implement-agent workflow (see Step 4) |
@@ -562,7 +310,7 @@ ELSE:
 
 **Explicit routing algorithm:**
 ```
-1. Get all spec tasks (exclude out_of_spec: true)
+1. Get all spec tasks (exclude out_of_spec: true, exclude status "Absorbed")
 2. awaiting_verification = tasks where status == "Awaiting Verification"
 3. IF awaiting_verification is not empty:
    → Route to verify-agent (per-task) for first task in "Awaiting Verification"
@@ -578,10 +326,6 @@ ELSE:
    → IF result == "fail" → Route to implement-agent (fix tasks were created, need implementation)
    → IF spec_fingerprint mismatch OR tasks updated after timestamp → Route to verify-agent (re-verification needed)
    → IF result == "pass" or "pass_with_issues" → Route to completion
-7b. Check for pending phase gate:
-   → IF Step 2b detected a phase transition needing approval (gate unchecked or absent):
-     → STOP — direct user to approve phase transition in dashboard
-     → Do NOT proceed to steps 8 or 9
 8. ELSE IF parallel_mode (from Step 2c):
    → Route to parallel execution (see "If Executing (Parallel)")
 9. ELSE:
@@ -604,295 +348,24 @@ ELSE:
 
 Break the spec into granular tasks:
 
-1. **Read spec thoroughly** - Understand all requirements and acceptance criteria
-2. **Compute spec fingerprint** - SHA-256 hash of spec content (see Step 1b)
-3. **Save spec snapshot** - Copy current spec to `.claude/support/previous_specifications/spec_v{N}_decomposed.md`
-4. **Parse spec into sections** - Extract ## level headings and their content
-5. **Compute section fingerprints** - SHA-256 hash of each section (heading + content)
-6. **Identify work items** - Each distinct piece of functionality per section
-7. **Create task files** - One JSON per task, difficulty ≤ 6, with full provenance:
-   - `spec_fingerprint` - Hash of full spec computed in step 2
+1. **Run setup checklist** - Read `.claude/support/reference/setup-checklist.md` and run through its checks. Report any warnings inline. Continue regardless (advisory, not blocking).
+2. **Read spec thoroughly** - Understand all requirements and acceptance criteria
+3. **Compute spec fingerprint** - SHA-256 hash of spec content (see Step 1b)
+4. **Save spec snapshot** - Copy current spec to `.claude/support/previous_specifications/spec_v{N}_decomposed.md`
+5. **Parse spec into sections** - Extract ## level headings and their content
+6. **Compute section fingerprints** - SHA-256 hash of each section (heading + content)
+7. **Identify work items** - Each distinct piece of functionality per section
+8. **Create task files** - One JSON per task, difficulty ≤ 6, with full provenance:
+   - `spec_fingerprint` - Hash of full spec computed in step 3
    - `spec_version` - Filename of spec (e.g., "spec_v1")
    - `spec_section` - Originating section heading (e.g., "## Authentication")
-   - `section_fingerprint` - Hash of specific section computed in step 5
+   - `section_fingerprint` - Hash of specific section computed in step 6
    - `section_snapshot_ref` - Snapshot filename (e.g., "spec_v1_decomposed.md")
    - **Important:** Create all task JSON files before regenerating the dashboard. Every task must have a `task-*.json` file — the dashboard is generated from these files, never the other way around.
-8. **Map dependencies** - What must complete before what
-9. **Regenerate dashboard** - Read all task-*.json files and regenerate dashboard.md
-   - **Follow the Dashboard Regeneration Procedure** below — use exact section headings, emojis, and the Section Format Reference for all formatting rules
-   - **Check section toggles** — read the dashboard checklist (between `<!-- SECTION TOGGLES -->` markers) and respect `build`/`exclude` modes per section. Falls back to spec frontmatter `dashboard_sections` if no checklist exists.
-   - **Atomicity rules:**
-     - Tasks: Only include tasks that have corresponding `task-*.json` files. Never add a task to the dashboard without creating its JSON file first.
-     - Decisions: Only include decisions that have corresponding `decision-*.md` files in `.claude/support/decisions/`. If a decision is significant enough for the dashboard, create the file first.
-   - **User section backup** (see below)
-   - Preserve the Notes section between `<!-- USER SECTION -->` markers
-   - Update the **header lines** with project name from spec, current phase, and overall completion percentage
-   - Group tasks by phase in **Tasks** section with per-phase progress lines
-   - Show **Decisions** with `ID | Decision | Status | Selected` format (selected option name for decided, link for pending)
-   - Generate **Progress** section: phase breakdown table, critical path one-liner, and "This week" activity line
-   - Populate **Action Required** sub-sections — only show sub-sections that have content (omit empty categories entirely)
-   - **Add dashboard metadata** (see below)
+9. **Map dependencies** - What must complete before what
+10. **Regenerate dashboard** - Follow `.claude/support/reference/dashboard-regeneration.md` in full (backup, generate, restore, metadata, footer)
 
-**User section backup process:**
-```
-1. Before regenerating, extract user section:
-   - Find content between <!-- USER SECTION --> and <!-- END USER SECTION --> markers
-   - Save to .claude/support/workspace/dashboard-notes-backup.md
-   - Include timestamp: "# Dashboard Notes Backup\n*Backed up: YYYY-MM-DD HH:MM*\n\n{content}"
-
-2. Regenerate dashboard from task JSON
-
-3. Restore user section:
-   - Insert saved content between markers
-   - If markers were missing in old dashboard, append backup content with warning comment
-
-4. Cleanup: Keep last 3 backups (dashboard-notes-backup.md, dashboard-notes-backup-1.md, dashboard-notes-backup-2.md)
-```
-
-**Dashboard metadata block:**
-
-Add at the very top of dashboard.md (after title):
-```markdown
-<!-- DASHBOARD META
-generated: 2026-01-28T14:30:00Z
-task_hash: sha256:abc123...
-task_count: 15
-verification_debt: 0
-drift_deferrals: 0
--->
-```
-
-This enables staleness detection in Step 1a.
-
-**Footer line:**
-
-Add at the very bottom of dashboard.md:
-```markdown
----
-*2026-01-28 14:30 UTC · 15 tasks · [Spec aligned](# "0 drift deferrals, 0 verification debt")*
-```
-
-#### Dashboard Regeneration Procedure
-
-Every dashboard regeneration MUST follow this procedure. All commands and agents reference this section for consistency.
-
-**Section Toggle Configuration:**
-
-The primary source for section toggles is the **dashboard.md section toggle checklist** — a visible, editable checklist near the top of the dashboard between `<!-- SECTION TOGGLES -->` and `<!-- END SECTION TOGGLES -->` markers.
-
-**Reading logic:**
-1. Parse the checklist between the markers
-2. `- [x] Section Name` → `build` mode (actively generate)
-3. `- [ ] Section Name` → `exclude` mode (skip during regeneration)
-4. Notes section: always `preserve` regardless of checkbox state (enforced)
-5. Fallback: if no checklist exists, check spec frontmatter `dashboard_sections` or `.claude/CLAUDE.md`
-
-**First regeneration (replacing template example):**
-
-Detection: the dashboard is still the template example if it contains the line `> **This is a format example**`. On first regeneration, compute toggle defaults from project state instead of using static defaults:
-
-```
-Action Required  → [x] always (core section)
-Progress         → [x] always (core section)
-Tasks            → [x] always (core section)
-Decisions        → [x] if any decision-*.md files exist, [ ] otherwise
-Notes            → [x] always (preserve mode)
-Timeline         → [x] if any task has due_date or external_dependency.expected_date, [ ] otherwise
-Custom Views     → [ ] always (user opts in when they want custom views)
-```
-
-**On phase transitions:**
-
-When `/work` detects a phase transition (all Phase N tasks "Finished", Phase N+1 becoming active), check whether toggle suggestions are warranted:
-- If Phase N+1 introduces decision dependencies and Decisions is unchecked → suggest: "Phase {N+1} has pending decisions. Consider enabling the Decisions section in the dashboard."
-- If Phase N+1 tasks have due dates and Timeline is unchecked → suggest: "Phase {N+1} has deadlines. Consider enabling the Timeline section."
-- Suggestions are logged, never auto-toggled. The user's checkbox state is always authoritative.
-
-**During regeneration (all subsequent):**
-- Preserve the toggle checklist between its markers (never overwrite user's checkbox state)
-- Only generate sections that are checked (`[x]`)
-- The Notes section is always preserved regardless of toggle state
-
-| Mode | Behavior |
-|------|----------|
-| `build` | Actively generate from source data on every regeneration (default, `[x]`) |
-| `maintain` | Keep existing content, only update if data changes significantly (via spec frontmatter override only) |
-| `exclude` | Skip this section entirely during regeneration (`[ ]`) |
-| `preserve` | Never modify (Notes always uses this) |
-
-The checkbox UI maps to `build`/`exclude`. Users who need `maintain` mode can set it via spec frontmatter `dashboard_sections` override, which takes precedence over the checklist for that section.
-
-**Regeneration Steps:**
-
-1. **Read source data**
-   - All `task-*.json` files (tasks)
-   - All `decision-*.md` files in `.claude/support/decisions/` (decisions)
-   - `drift-deferrals.json` (if exists)
-   - `verification-result.json` (if exists)
-   - `.claude/support/questions/questions.md` (scan for blocking questions)
-
-2. **Backup user section**
-   - Extract content between `<!-- USER SECTION -->` and `<!-- END USER SECTION -->`
-   - Save to `.claude/support/workspace/dashboard-notes-backup.md`
-   - Rotate old backups (keep last 3)
-
-2b. **Backup custom views instructions**
-   - Extract content between `<!-- CUSTOM VIEWS INSTRUCTIONS -->` and `<!-- END CUSTOM VIEWS INSTRUCTIONS -->` markers
-   - Save to `.claude/support/workspace/dashboard-custom-views-backup.md`
-   - Rotate old backups (keep last 3)
-
-2c. **Backup inline feedback**
-   - Scan dashboard for `<!-- FEEDBACK:{id} -->` / `<!-- END FEEDBACK:{id} -->` marker pairs
-   - For each pair, extract the content between the markers, keyed by task ID
-   - Store in memory alongside the user section backup (used in Step 5c)
-
-2d. **Backup phase gate markers**
-   - Scan dashboard for `<!-- PHASE GATE:{X}→{Y} -->` / `<!-- END PHASE GATE:{X}→{Y} -->` marker pairs
-   - For each pair, extract the content between the markers (preserves user's checkbox state)
-   - Store in memory alongside other backups (used in Step 5d)
-
-3. **Generate dashboard**
-   - Follow the Section Format Reference below for all formatting rules
-   - Use exact section headings: `# Dashboard`, `## 🚨 Action Required`, `## 📊 Progress`, `## 📋 Tasks`, `## 📋 Decisions`, `## 💡 Notes`
-   - Optional section heading (when enabled, placed between Decisions and Notes): `## 👁️ Custom Views`
-   - **Timeline sub-section** in Progress: render when any task has `due_date` or `external_dependency.expected_date`
-   - **Project Overview sub-section** in Progress: render inline Mermaid diagram when 4+ tasks remain (see § "Project Overview Diagram")
-   - Read section toggles from dashboard checklist (between `<!-- SECTION TOGGLES -->` markers) and respect modes
-   - Preserve the section toggle checklist between its markers during regeneration
-   - Enforce atomicity: only tasks with JSON files, only decisions with MD files
-   - On first regeneration (detected by `> **This is a format example**` line): replace the template example with actual project data and compute toggle defaults per the "First regeneration" section above
-   - **Inline feedback areas:** When generating "Your Tasks", add feedback markers for each `human`/`both`-owned task:
-     ```
-     <!-- FEEDBACK:{id} -->
-     **Task {id} — Feedback:**
-     [Leave feedback here, then run /work complete {id}]
-     <!-- END FEEDBACK:{id} -->
-     ```
-   - **Phase Transitions sub-section:** When all tasks in Phase N are "Finished" AND Phase N+1 tasks exist, render a phase gate with checkbox between markers:
-     ```
-     <!-- PHASE GATE:{N}→{N+1} -->
-     - [ ] **Phase {N} complete** — Review results and approve transition to Phase {N+1}
-       - {M} tasks finished, {K} tasks in Phase {N+1} ready
-     <!-- END PHASE GATE:{N}→{N+1} -->
-     ```
-   - **Verification Pending sub-section:** When all spec tasks are "Finished" with passing per-task verification AND no valid `verification-result.json` exists, render:
-     ```
-     All tasks complete — phase-level verification will run on next `/work`
-     ```
-   - **Spec Drift sub-section:** When `drift-deferrals.json` exists with active deferrals, render each deferred section:
-     ```
-     - ⚠️ **{section}** — {N} tasks affected, deferred {M} days ago
-     ```
-
-4. **Compute and add metadata block** (after `# Dashboard` title)
-   ```
-   <!-- DASHBOARD META
-   generated: [ISO timestamp]
-   task_hash: sha256:[hash of sorted task_id:status pairs]
-   task_count: [number]
-   verification_debt: [count of tasks needing verification]
-   drift_deferrals: [count from drift-deferrals.json]
-   -->
-   ```
-
-5. **Restore user section**
-   - Insert backed-up content between markers
-   - If markers missing, append with warning comment
-
-5b. **Restore custom views instructions**
-   - Insert backed-up custom views instructions between `<!-- CUSTOM VIEWS INSTRUCTIONS -->` and `<!-- END CUSTOM VIEWS INSTRUCTIONS -->` markers
-   - If markers missing, skip (section may be excluded via toggle)
-   - Read the restored instructions and generate appropriate rendered content below `<!-- END CUSTOM VIEWS INSTRUCTIONS -->` up to the next `---` separator
-
-5c. **Restore inline feedback**
-   - For each feedback entry backed up in Step 2c:
-     - If the task still appears in "Your Tasks" (task still active with `human`/`both` owner): restore the backed-up content between its `<!-- FEEDBACK:{id} -->` markers
-     - If the task is no longer in "Your Tasks" (completed or removed): write the feedback content to the task JSON `user_feedback` field (preserves feedback that would otherwise be lost)
-
-5d. **Restore phase gate markers**
-   - For each phase gate backed up in Step 2d:
-     - If the phase gate condition still applies (all Phase X tasks Finished, Phase Y tasks exist): restore the backed-up content between its `<!-- PHASE GATE:{X}→{Y} -->` markers (preserves user's checkbox state)
-     - If the phase gate no longer applies (transition was approved or phases changed): discard
-
-6. **Add footer line** (at very end)
-   ```
-   ---
-   *[timestamp] · N tasks · [status indicator]*
-   ```
-   - Healthy: `[Spec aligned](# "0 drift deferrals, 0 verification debt")`
-   - Issues: `⚠️ N drift deferrals, M verification debt`
-
-**Section Format Reference:**
-
-All dashboard formatting rules are documented here. This is the single authoritative source — do not add format comments to the regenerated dashboard.
-
-**Action Item Contract:**
-Every item in "Action Required" must be:
-1. Actionable — the user can see what to do without guessing
-2. Linked — if the action involves a file, include a relative path link
-3. Completable — include a checkbox, command, or clear completion signal
-4. Contextual — if feedback is needed, provide a feedback area or link
-
-**Review Item Derivation:**
-Review items are derived, not stored. During regeneration:
-1. Scan for unresolved items — out_of_spec without approval, draft/proposed decisions, blocking questions from `questions.md`
-2. Populate Reviews sub-section from current data
-3. Never carry forward stale entries — resolved items disappear on next regeneration
-4. No dangling references — every item must link to a concrete file
-5. Blocking questions: scan `questions.md` for `[BLOCKING]` entries, render each as a review item linking to [questions.md](support/questions/questions.md)
-6. Non-blocking unanswered questions: if count > 0, add summary line to Reviews: `- [ ] **N pending questions** → [questions.md](support/questions/questions.md)`
-
-**Section Display Rules:**
-- Action Required sub-sections: only render when they have content (omit empty categories entirely)
-- Action Required sub-section order: Phase Transitions, Verification Pending, Verification Debt, Spec Drift, Decisions, Your Tasks, Reviews
-- Phase Transitions: only render when a phase boundary has been reached (all Phase N tasks Finished, Phase N+1 exists)
-- Verification Pending: only render when all spec tasks are Finished with passing per-task verification but no valid verification-result.json
-- Spec Drift: only render when drift-deferrals.json has active entries
-- Reviews sub-section format: `- [ ] **Item title** — what to do → [link to file](path)`
-- Reviews appear for: out_of_spec tasks without approval, draft/proposed decisions, blocking questions from `questions.md` (each linked to the file)
-- Timeline sub-section in Progress: only render when tasks have `due_date` or `external_dependency.expected_date`
-- Timeline has its own toggle in the section checklist (independent of Progress)
-- Phase table in Progress: always show ALL phases (including blocked/future)
-- Critical path owners: ❗ (human), 🤖 (Claude), 👥 (both)
-- Critical path parallel branches: `[step A | step B]` notation for fork/join points; max 3 branches per group
-- Critical path >5 steps (after collapsing parallel branches): show first 3 + "... N more → Done"
-- "This week" line: omit when all counts are zero
-- Tasks grouped by phase with per-phase progress lines
-- Tasks with `conflict_note`: show status as `Pending (held: conflict with Task {id})` during parallel dispatch
-- Decisions: status display mapping: `approved`/`implemented` → "Decided", `draft`/`proposed` → "Pending". Decided → show selected option name; Pending → link to doc in Selected column
-- Out-of-spec tasks: prefix title with ⚠️
-- Footer: healthy = spec aligned tooltip; issues = ⚠️ with counts
-- Custom Views section: user-defined instructions (preserved between markers) followed by Claude-generated content based on those instructions (when enabled). Multiple views are rendered as `###` sub-sections, one per bold-labeled instruction.
-
-**Per-Section Format:**
-
-| Section | Columns / Format |
-|---------|-----------------|
-| Action Required → Phase Transitions | `- [ ] **Phase N complete** — description` with `<!-- PHASE GATE -->` markers |
-| Action Required → Verification Pending | Plain text status message |
-| Action Required → Verification Debt | `Task \| Title \| Issue` |
-| Action Required → Spec Drift | `- ⚠️ **{section}** — {N} tasks affected, deferred {M} days ago` |
-| Action Required → Decisions | `Decision \| Question \| Doc` |
-| Action Required → Your Tasks | `Task \| What To Do \| Where` |
-| Action Required → Reviews | `- [ ] **Item title** — what to do → [link](path)` — derived, not stored |
-| Progress → Phase table | `Phase \| Done \| Total \| Status` — status: Complete, Active, Blocked (reason) |
-| Progress → Timeline | `Date \| Item \| Status \| Notes` — sorted chronologically, overdue: strikethrough date + ⚠️ OVERDUE prefix, external deps with contact info, human tasks marked with ❗ |
-| Tasks → Per phase | `ID \| Title \| Status \| Diff \| Owner \| Deps` — grouped by phase headers |
-| Decisions | `ID \| Decision \| Status \| Selected` |
-| Progress → Project Overview | Inline Mermaid `graph LR` diagram — see Project Overview Diagram rules below |
-| Custom Views | Preserved instruction block between `<!-- CUSTOM VIEWS INSTRUCTIONS -->` markers + rendered `###` sub-sections generated from those instructions (one per bold-labeled view) |
-
-**Domain Agnosticism:**
-This format works for any project type — software, research, procurement, renovation, event planning. Use language appropriate to the project domain. No code-specific assumptions are built in.
-
-**Spec snapshot process:**
-```
-1. Create directory if needed: .claude/support/previous_specifications/
-2. Copy: .claude/spec_v{N}.md → .claude/support/previous_specifications/spec_v{N}_decomposed.md
-3. This snapshot is used later for generating diffs when sections change
-```
-
-Task creation guidelines:
+**Task creation guidelines:**
 - Clear, actionable titles ("Add user validation" not "Backend stuff")
 - Difficulty 1-6 (break down anything larger)
 - Explicit dependencies
@@ -933,112 +406,15 @@ Execute these steps in order:
 
 #### If Executing (Parallel)
 
-When Step 2c produces a parallel batch of >= 2 tasks, execute them concurrently:
+When Step 2c produces a parallel batch of >= 2 tasks, execute them concurrently. Log the dispatch, set all batch tasks to "In Progress", annotate held-back tasks with `conflict_note`, spawn one `Task` agent per task (`model: "opus"`, `max_turns: 40`), and poll for completion with incremental re-dispatch (newly-unblocked tasks start as earlier ones finish). After all agents complete: final parent auto-completion check, single dashboard regeneration, lightweight health check, then loop back to Step 2c.
 
-**1. Log the parallel dispatch:**
-```
-Dispatching N tasks in parallel:
-  - Task {id}: "{title}" → files: [{files_affected}]
-  - Task {id}: "{title}" → files: [{files_affected}]
-  ...
-  File conflicts: none between batch members (verified in Step 2c)
+**Key rules:**
+- Each parallel agent reads `implement-agent.md` and runs Steps 2/4/5/6a/6b independently
+- Agents must NOT regenerate dashboard, select next task, or check parent auto-completion
+- Passed tasks stay "Finished"; failed tasks return to "In Progress" for next batch
+- Timed-out agents (60 poll iterations) → task set to "Blocked"
 
-Held back (file conflicts):
-  - Task {id}: "{title}" — conflict with Task {conflict_with} on [{conflict_files}]
-  (Or: "None" if held_back is empty)
-```
-
-**2. Set ALL batch tasks to "In Progress" and annotate held-back tasks:**
-
-Before spawning agents, update every task in the batch:
-```json
-{
-  "status": "In Progress",
-  "updated_date": "YYYY-MM-DD"
-}
-```
-
-For each held-back task, add a temporary `conflict_note` to the task JSON:
-```json
-{
-  "conflict_note": "Held: file conflict with Task {id} on {files}. Auto-clears when conflict resolves."
-}
-```
-
-This note is surfaced in the dashboard Tasks section (appended to the task's Status column as a tooltip or parenthetical) and removed when the task is dispatched.
-
-**3. Spawn parallel agents:**
-
-Use Claude Code's `Task` tool to spawn one agent per task. **Always set `model: "opus"` and `max_turns: 40`** to ensure agents run on Claude Opus 4.6 with a bounded turn limit. Each agent receives:
-- The task JSON to execute
-- Instructions to read `.claude/agents/implement-agent.md`
-- Instructions to follow Steps 2, 4, 5, 6a, and 6b (understand, implement, self-review, mark awaiting verification, spawn verify-agent as a sub-agent for per-task verification)
-- **Explicit instruction: "DO NOT regenerate dashboard. DO NOT select next task. DO NOT check parent auto-completion. Return results when verification completes."**
-- **Note:** Each parallel implement-agent will spawn its own verify-agent sub-agent (nested Task call). This is expected — verification separation applies in parallel mode too.
-
-All agents run concurrently via parallel `Task` tool calls with `model: "opus"`.
-
-**4. Collect results with incremental re-dispatch:**
-
-Use `run_in_background: true` for each agent's `Task` call, then poll for completion:
-
-```
-active_agents = {task_id: {agent_id, spawned_at} for each spawned agent}
-AGENT_TIMEOUT_POLLS = 60  # max poll iterations before declaring an agent timed out
-
-WHILE active_agents is non-empty:
-  Check each agent for completion (read output file or use TaskOutput with block: false)
-
-  For each completed agent:
-    1. Record result (task ID, status, verification result, files modified, issues)
-    2. Remove from active_agents
-    3. Check parent auto-completion for finished tasks
-    4. INCREMENTAL RE-DISPATCH:
-       - Re-run Step 2c eligibility assessment with current state
-         (completed tasks are now "Finished", their files are released)
-       - Any previously held-back tasks whose conflicts are now resolved
-         become eligible
-       - If new eligible tasks found AND len(active_agents) < max_parallel_tasks:
-         Spawn new agents for newly-eligible tasks
-         Add to active_agents
-       - Clear conflict_note from newly-dispatched tasks
-
-  For each agent that has exceeded AGENT_TIMEOUT_POLLS iterations without completing:
-    1. Log: "Agent for task {id} timed out after {N} poll iterations"
-    2. Read the task JSON — if still "In Progress" (agent didn't finish):
-       - Set status to "Blocked"
-       - Add note: "[AGENT TIMEOUT] Parallel agent did not complete within polling limit"
-    3. Remove from active_agents
-    4. Report to user: "Task {id} timed out — may need manual investigation or retry"
-
-  Brief pause before next poll iteration (avoid busy-waiting)
-```
-
-This enables **incremental re-dispatch**: when Task A completes and releases its files, Task C (which was held back due to conflict with A) can start immediately — even while Tasks B and D are still running.
-
-**5. Post-parallel cleanup:**
-
-After all agents complete (active_agents is empty):
-
-```
-1. Final parent auto-completion check
-
-2. Single dashboard regeneration:
-   Regenerate dashboard.md per the Dashboard Regeneration Procedure in Step 4
-   - Remove all conflict_note fields from task JSONs (cleanup)
-
-3. Lightweight health check (Step 6)
-
-4. Loop back to Step 2c:
-   Reassess remaining tasks for next parallel batch or phase transition
-```
-
-**6. Handling mixed results:**
-
-When some tasks pass and others fail verification:
-- Passed tasks remain "Finished" — they are done
-- Failed tasks are set back to "In Progress" by verify-agent within their thread
-- On the next loop iteration, failed tasks are re-eligible for dispatch (potentially in a new parallel batch)
+**Full procedure:** `.claude/support/reference/parallel-execution.md` § "Parallel Dispatch"
 
 #### If Verifying (Per-Task)
 
@@ -1070,7 +446,7 @@ Task tool call:
 **After per-task verification completes:**
 - If **pass**: Proceed to select next pending task (loop back to Execute routing)
 - If **fail**: Task is set back to "In Progress". Route to implement-agent to fix the issues. After fix, route back to verify-agent for re-verification. This loop continues until pass.
-- Regenerate dashboard after any status change, per the Dashboard Regeneration Procedure in Step 4.
+- Regenerate dashboard after any status change, per `.claude/support/reference/dashboard-regeneration.md`.
 
 **Fail → Fix → Re-Verify Loop:**
 ```
@@ -1266,50 +642,15 @@ For the difficulty scale, see `.claude/support/reference/shared-definitions.md`.
 
 ### Critical Path Generation
 
-The critical path is rendered as a single line in the **Progress** section: owner-tagged steps joined by `→`, with parallel branches shown in `[ | ]` notation.
+Renders the critical path as a one-liner in the Progress section. Owners: `❗` (human), `🤖` (Claude), `👥` (both). Parallel branches use `[step A | step B]` notation. >5 steps → show first 3 + "... N more → Done".
 
-1. **Build dependency graph** — include all incomplete tasks and their dependencies (both task deps and decision deps). Unresolved decisions appear as nodes (e.g., `❗ Resolve DEC-001`)
-2. **Compute longest path** — walk the graph to find the longest chain from any current entry point to "Done". This is the critical path (determines project duration)
-3. **Detect parallel branches** — find fork/join points along the critical path:
-   - A **fork** is a node whose completion enables 2+ independent successors
-   - A **join** is a node with 2+ predecessors that must all complete before it starts
-   - Show parallel branches when they share the same fork and join nodes (the branches reconverge)
-   - Branches that don't reconverge are separate sequential paths — pick the longest
-4. **Format as one-liner:**
-   - Sequential: `❗ Resolve DEC-001 → 🤖 Build API → Done`
-   - Parallel branches: `[🤖 Rough plumbing | ❗ Resolve DEC-002] → [❗ Inspection | 🤖 Install] → 👥 Walkthrough → Done`
-   - Owners: `❗` (human), `🤖` (Claude), `👥` (both)
-   - **Step count** = total unique nodes in the rendered path (each branch member counts as 1): `*(N steps)*`
-   - For complex paths (>5 steps after collapsing parallel branches), show first 3 + "... N more → Done"
-5. **Prioritize human-owned steps** — surfaces blockers the user can act on
-
-**Decision dependencies as path nodes:** Unresolved decisions appear on the critical path as `❗ Resolve {DEC-ID}` steps. Once resolved, they are removed and their successor tasks become direct successors of the decision's predecessors.
-
-**Parallel branch rules:**
-- Max 3 branches in a single `[ | ]` group (more than 3 → collapse to `[🤖 3 parallel tasks]`)
-- Nested parallelism: don't nest `[ ]` — flatten to separate `[ | ]` groups joined by `→`
-- If parallel branches have different owners, show each: `[❗ Review | 🤖 Build]`
-- Branches of unequal length: show each by its first step (the branch content is what matters, not padding)
-
-**Edge cases:** No dependencies → "All tasks can start now". No incomplete AND no valid verification-result.json → "🤖 Phase verification → Done" *(1 step)*. No incomplete AND valid passing verification-result.json → "All tasks complete! ✓". Single task → just that task → Done. No parallelism detected → pure sequential format (no brackets).
+**Full algorithm:** `.claude/support/reference/dashboard-regeneration.md` § "Critical Path Generation"
 
 ### Project Overview Diagram
 
-An inline Mermaid diagram in the Progress section showing the project's dependency structure at a glance. Placed after the critical path one-liner, before the "This week" activity line, under a `### Project Overview` sub-heading.
+Inline Mermaid `graph LR` diagram in the Progress section when 4+ tasks remain. Completed phases collapse to single nodes; active tasks show individually with ownership prefixes. >15 nodes → clump by phase/area. Phase gates use hexagon nodes (`{{}}`). Nodes styled with `classDef`: done (green), active (blue), human-owned (yellow), blocked (grey).
 
-**Generation rules:**
-
-1. **Completed phases** → Collapse into a single node: `["✅ Phase Name (N/N)"]`
-2. **Completed tasks in active phases** → Fold away. Reroute their connections: connect their predecessors directly to their incomplete successors. This keeps the diagram focused on remaining work.
-3. **Active/pending tasks** → Show individually with ownership prefix: `🤖` (claude), `❗` (human), `👥` (both)
-4. **Decisions** → Diamond nodes: `{"❓ Decision title"}`
-5. **Dependencies** → Arrows between nodes following task dependency data
-6. **Date constraints** → Annotate nodes with deadlines when present: `["🤖 Task title<br/><small>Due: 2026-02-15</small>"]`
-7. **Clumping** → When >15 active nodes would result, group related tasks into subgraph clusters by phase or functional area to reduce visual noise
-8. **Direction** → Always `graph LR` (left to right)
-9. **Labels** → Keep short: ownership emoji + task title. No status text in labels.
-
-**Edge cases:** No tasks → omit diagram. All tasks complete → omit diagram (project done). Single task → omit diagram (one-liner is sufficient). Fewer than 4 remaining tasks → omit diagram (one-liner covers it).
+**Full rules:** `.claude/support/reference/dashboard-regeneration.md` § "Project Overview Diagram"
 
 ---
 
@@ -1378,9 +719,9 @@ Use `/work complete` for manual task completion outside of implement-agent's wor
    }
    ```
 5. **Check parent auto-completion:**
-   - If parent_task exists and all sibling subtasks are "Finished"
+   - If parent_task exists and all non-Absorbed sibling subtasks are "Finished"
    - Set parent status to "Finished"
-6. **Regenerate dashboard** - Follow the Dashboard Regeneration Procedure in Step 4
+6. **Regenerate dashboard** - Follow `.claude/support/reference/dashboard-regeneration.md`
    - Additional completion requirements:
      - Update overall completion percentage
      - Recalculate critical path line in Progress section with remaining incomplete tasks

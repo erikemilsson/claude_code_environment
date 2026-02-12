@@ -10,6 +10,9 @@ Documentation that Claude reads during workflow execution and on-demand guidance
 | `task-schema.md` | JSON schema for task files |
 | `workflow.md` | Spec→Execute→Verify process, parallel execution, verification tiers, system overview, project structure |
 | `paths.md` | Canonical file locations — prevents Claude from inventing paths |
+| `dashboard-regeneration.md` | Dashboard regeneration procedure, section format reference, critical path, project overview diagram |
+| `drift-reconciliation.md` | Spec drift detection, reconciliation UI, drift budget, task migration |
+| `parallel-execution.md` | Parallelism eligibility, file conflict algorithm, parallel dispatch |
 
 ## Guides (read on-demand for specific situations)
 
@@ -18,6 +21,7 @@ Documentation that Claude reads during workflow execution and on-demand guidance
 | `decisions.md` | Decision record template, lifecycle, choice classification (spec vs implementation) |
 | `spec-checklist.md` | Spec readiness criteria, red flags, core questions |
 | `extension-patterns.md` | Phases and decisions patterns for complex projects |
+| `setup-checklist.md` | One-time setup validation checks, run during first decomposition |
 | `desktop-project-prompt.md` | Instructions for Claude Desktop ideation sessions |
 
 ## Related READMEs (in sibling directories)

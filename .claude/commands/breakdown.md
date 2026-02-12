@@ -41,7 +41,7 @@ Split a complex task into smaller subtasks.
      "notes": "Broken down into 3 subtasks"
    }
    ```
-5. **Regenerate dashboard** - Follow work.md § "Dashboard Regeneration Procedure"
+5. **Regenerate dashboard** - Follow `.claude/support/reference/dashboard-regeneration.md`
    - This ensures metadata block, footer, user section backup, and section toggles are handled consistently
 
 ## Examples

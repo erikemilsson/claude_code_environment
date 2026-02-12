@@ -37,7 +37,6 @@ This environment is domain-agnostic. While many examples reference software conc
 | `/status` | Quick read-only view of project state |
 | `/breakdown {id}` | Split complex tasks into subtasks |
 | `/health-check` | Validate system health and check for template updates |
-| `/setup-check` | Validate template configuration (run after cloning) |
 
 ## Core Concepts
 

@@ -213,7 +213,7 @@ Tasks with empty `files_affected` and no `parallel_safe: true` are excluded from
 ### How It Works
 
 1. **Gather candidates** — `/work` collects all eligible tasks
-2. **Build conflict-free batch** — Pairwise comparison of `files_affected` using the conflict detection algorithm (see `work.md` Step 2c for the full algorithm). Two paths conflict if they are an exact match OR one is a directory containing the other (e.g., `src/` conflicts with `src/auth.py`). Paths are normalized before comparison. Tasks with conflicts are tracked in a `held_back` list with the specific conflict reason (task ID and shared files)
+2. **Build conflict-free batch** — Pairwise comparison of `files_affected` using the file conflict detection algorithm (see `.claude/support/reference/parallel-execution.md` § "File Conflict Detection Algorithm"). Two paths conflict if they are an exact match OR one is a directory containing the other (e.g., `src/` conflicts with `src/auth.py`). Paths are normalized before comparison. Tasks with conflicts are tracked in a `held_back` list with the specific conflict reason (task ID and shared files)
 3. **Annotate held-back tasks** — Add `conflict_note` to held-back task JSONs (surfaced in the dashboard's Status column); cap batch at `max_parallel_tasks`
 4. **Dispatch** — If batch size >= 2, set all to "In Progress" and spawn parallel agents (using `run_in_background: true`) via Claude Code's `Task` tool. Each agent reads `implement-agent.md` and runs Steps 2/4/5/6a/6b independently
 5. **Incremental re-dispatch** — Poll for agent completion. When an agent finishes, re-run eligibility assessment: tasks whose file conflicts are now resolved become eligible and can be dispatched immediately (even while other agents are still running). Clear `conflict_note` from newly-dispatched tasks
@@ -379,7 +379,7 @@ Humans are involved at:
 ### Phase Boundaries
 When transitioning between phases:
 - Spec → Execute: "Specification complete. Ready to implement?"
-- **Phase N → Phase N+1** (within Execute): Surfaced as a dashboard Action Required item with a checkbox in a `<!-- PHASE GATE:{N}→{N+1} -->` marker. `/work` blocks until the user checks the box and re-runs. This ensures explicit approval before crossing user-defined phase boundaries.
+- **Phase N → Phase N+1** (within Execute): Surfaced as a dashboard Action Required item with a checkbox in a `<!-- PHASE GATE:{N}→{N+1} -->` marker. `/work` blocks until the user checks the box and re-runs. Once approved, the marker becomes `<!-- PHASE GATE:{N}→{N+1} APPROVED -->` so it won't re-trigger on subsequent runs.
 - **Execute → Verify**: When all tasks are complete, the dashboard shows a "Verification Pending" item in Action Required, and the critical path displays "🤖 Phase verification → Done" instead of "All tasks complete!". Phase-level verification runs automatically on the next `/work`.
 - Verify → Complete: "Verification passed. Ready to ship?"
 
@@ -456,7 +456,7 @@ When you need to add features or change requirements after initial decomposition
 
 1. **User edits the spec** — Update `.claude/spec_v{N}.md` directly (add sections, modify requirements, change acceptance criteria)
 2. **User runs `/work`** — Auto-detect mode picks up the change
-3. **`/work` detects drift** — Compares spec fingerprint against task fingerprints (see Step 1b in work.md)
+3. **`/work` detects drift** — Compares spec fingerprint against task fingerprints (see `.claude/support/reference/drift-reconciliation.md` § "Spec Drift Detection")
 4. **`/work` shows what changed** — Granular section diffs showing added, modified, and removed content
 5. **User confirms** — Per-section options: apply suggestions, review individually, or skip
 6. **Tasks are created/updated** — Only for changed sections (unchanged tasks are preserved)
@@ -498,7 +498,7 @@ When you need to add features or change requirements after initial decomposition
 - **Version bumps** are for major transitions (phase completion, inflection points, major pivots) — not for routine edits
 - **Substantial change detection**: `/work` evaluates change magnitude and suggests a version bump when edits are large enough
 - **Version Transition Procedure**: Archive → Copy → Bump frontmatter → Remove old (see `iterate.md` § "Version Transition Procedure")
-- **Task migration**: Finished tasks keep old provenance; pending/in-progress tasks are migrated (see `work.md` § "Task Migration on Version Transition")
+- **Task migration**: Finished tasks keep old provenance; pending/in-progress tasks are migrated (see `.claude/support/reference/drift-reconciliation.md` § "Task Migration on Version Transition")
 - Each decomposition saves a snapshot to `.claude/support/previous_specifications/`
 
 ---
@@ -653,6 +653,9 @@ Two files control template behavior:
 │   │   ├── decisions.md
 │   │   ├── spec-checklist.md
 │   │   ├── extension-patterns.md
+│   │   ├── dashboard-regeneration.md
+│   │   ├── drift-reconciliation.md
+│   │   ├── parallel-execution.md
 │   │   └── desktop-project-prompt.md
 │   ├── decisions/            # Decision documentation
 │   │   ├── decision-*.md     # Individual decision records

@@ -77,6 +77,8 @@ Checks:
 | `In Progress` | Multiple allowed only when parallel-eligible: `files_affected` don't overlap, all deps satisfied, within `max_parallel_tasks` limit. **ERROR** if parallel conditions violated (overlapping files, unsatisfied deps). |
 | `Awaiting Verification` | Transitional only — must proceed to verification immediately. **ERROR** if task has been in this status for > 1 hour |
 | `Blocked` | Should have `notes` explaining the blocker |
+| `On Hold` | Should have `notes` explaining why paused. Not auto-routed by `/work`. Warning if on hold > 30 days (may be forgotten). |
+| `Absorbed` | Must have `absorbed_into` field referencing a valid task ID. The referenced task must exist. Warning if `absorbed_into` references a non-existent task. |
 | `Broken Down` | Must have non-empty `subtasks` array |
 | `Finished` | MUST have `task_verification.result` of "pass" or "pass_with_issues". If has subtasks, all subtasks must also be `Finished` |
 
@@ -156,7 +158,7 @@ These checks detect drift and staleness in large collaborative projects:
 
 Detects when the specification has changed since tasks were decomposed, with section-level granularity.
 
-**Algorithm:** Uses the same drift detection as `/work` Step 1b. See that section for full implementation details (hash computation, section parsing, comparison logic).
+**Algorithm:** Uses the same drift detection as `/work` Step 1b. See `.claude/support/reference/drift-reconciliation.md` § "Spec Drift Detection" for full implementation details (hash computation, section parsing, comparison logic).
 
 **Report includes:**
 - Per-section change status (CHANGED/unchanged)
@@ -298,7 +300,7 @@ Validates that the dashboard is current with task state:
 | Parent missing subtask in array | Add subtask ID to parent's subtasks array |
 | Subtask missing parent_task field | Add parent_task field |
 | "Broken Down" with empty subtasks | Change status to "Pending" |
-| All subtasks Finished but parent not | Set parent status to "Finished" |
+| All subtasks Finished or Absorbed but parent not | Set parent status to "Finished" (Absorbed subtasks excluded from check) |
 | Missing created_date | Add current date |
 | Multiple "In Progress" tasks (parallel-ineligible) | Check parallelism eligibility first — if files overlap or deps unsatisfied, ask which to keep, set others to "Pending". If all parallel conditions are met, no fix needed. |
 | Nested `.claude/.claude/` directory | Flag as error, recommend deletion |
@@ -318,7 +320,9 @@ Validates that the dashboard is current with task state:
 
 | Issue | Auto-Fix |
 |-------|----------|
-| Stale "In Progress" (> 7 days) | Ask user: mark Pending, Blocked, or keep In Progress |
+| Stale "In Progress" (> 7 days) | Ask user: mark Pending, On Hold, Blocked, or keep In Progress |
+| Stale "On Hold" (> 30 days) | Ask user: resume (→ Pending), absorb into another task, or keep On Hold |
+| Absorbed without `absorbed_into` | Ask user: provide absorbing task ID, or change status |
 | Owner-capability mismatch | Suggest changing owner to "human" (requires confirmation) |
 | Stale questions (> 14 days) | List questions, ask user to answer or mark as no longer relevant |
 | Stale workspace files (> 30 days) | List files, ask user: graduate to final location, or delete |
@@ -331,7 +335,7 @@ Validates that the dashboard is current with task state:
 | Invalid JSON syntax | Need to examine file |
 | Circular dependencies | Need to understand intent |
 | Duplicate task IDs | Need to decide which to keep |
-| Unknown status value | Need to determine correct status |
+| Unknown status value | Need to determine correct status (valid values: Pending, In Progress, Awaiting Verification, Blocked, On Hold, Absorbed, Broken Down, Finished) |
 
 ---
 

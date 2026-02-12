@@ -66,7 +66,7 @@
 |-------|------|-------------|
 | id | String | Number for top-level ("1"), underscore for subtasks ("1_1") |
 | title | String | Brief description of what needs to be done |
-| status | String | Pending, In Progress, Awaiting Verification, Blocked, Broken Down, Finished |
+| status | String | Pending, In Progress, Awaiting Verification, Blocked, On Hold, Absorbed, Broken Down, Finished |
 | difficulty | Number | 1-10 scale (see shared-definitions.md) |
 
 ### Optional Fields
@@ -94,6 +94,7 @@
 | section_fingerprint | String | SHA-256 hash of the specific section content at decomposition |
 | section_snapshot_ref | String | Reference to snapshot file for generating diffs (e.g., "spec_v1_decomposed.md") |
 | out_of_spec | Boolean | Task not aligned with spec (user chose "proceed anyway") |
+| absorbed_into | String | Task ID this task was absorbed into (required when status is "Absorbed") |
 | phase | String | Phase this task belongs to (e.g., "1" or "Data Pipeline"). Tasks in Phase N+1 are blocked until all Phase N tasks complete. |
 | decision_dependencies | Array | Decision IDs that block this task (e.g., ["DEC-002"]). Task remains blocked until all referenced decisions are resolved. |
 | parallel_safe | Boolean | When true, task is eligible for parallel execution even with empty `files_affected`. Use for research/analysis tasks with no file side effects. |
@@ -294,23 +295,64 @@ For tasks blocked by external factors (not other tasks):
 ## Status Rules
 
 1. Only work on tasks with status "Pending" or "In Progress"
-2. Never work directly on "Broken Down" tasks - work on subtasks
+2. Never work directly on "Broken Down", "On Hold", or "Absorbed" tasks
 3. "Broken Down" tasks auto-complete when all subtasks are "Finished"
 4. Document blockers when setting status to "Blocked"
-5. "Awaiting Verification" is a transitional status — tasks must proceed to verification immediately
+5. Document reason when setting status to "On Hold"
+6. "Awaiting Verification" is a transitional status — tasks must proceed to verification immediately
+7. "Absorbed" requires the `absorbed_into` field referencing the absorbing task
+8. "On Hold" tasks are excluded from auto-routing — only a user can move them back to "Pending"
 
 ### Status Flow
 
 ```
 Pending → In Progress → Awaiting Verification → [verify-agent] → Finished
-                    ↓                              ↓ (fail)
-                 Blocked                      In Progress (fix & retry)
+  ↕             ↓                                  ↓ (fail)
+On Hold      Blocked                          In Progress (fix & retry)
+
+Any non-Finished status → Absorbed (when scope is folded into another task)
 ```
 
 **"Awaiting Verification"** is the transitional status between implementation completion and verification. Tasks in this status:
 - Have completed implementation but not yet been verified
 - Must proceed to verify-agent immediately (cannot remain in this status)
 - Are set automatically by implement-agent Step 6a
+
+### On Hold
+
+Tasks placed on hold are excluded from all routing. Only a user can resume them.
+
+```json
+{
+  "id": "7",
+  "status": "On Hold",
+  "notes": "Deferring until Q2 budget approval"
+}
+```
+
+- `/work` skips On Hold tasks entirely (not counted as pending, blocked, or actionable)
+- On Hold tasks still appear in the dashboard Tasks section with ⏸️ prefix
+- Health check warns if On Hold > 30 days (may be forgotten)
+- To resume: user sets status back to "Pending" (or "In Progress" if partially done)
+
+### Absorbed
+
+When a task's scope is folded into another task (discovered during breakdown, overlap found, or reorganization):
+
+```json
+{
+  "id": "4",
+  "status": "Absorbed",
+  "absorbed_into": "3",
+  "notes": "Scope covered by task 3 after breakdown"
+}
+```
+
+- Requires `absorbed_into` field with the absorbing task's ID
+- Absorbed tasks are excluded from routing, completion checks, and phase progress
+- Absorbed subtasks don't block parent auto-completion
+- Preserves audit trail (vs deletion, which loses history)
+- Dashboard shows absorbed tasks in a collapsed/dimmed style or omits them from active counts
 
 ### Verification Requirement for Finished Status
 

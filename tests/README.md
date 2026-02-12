@@ -64,7 +64,7 @@ Tests grounded in patterns observed across real projects. All previous scenarios
 |---|------|-------|-------------------|
 | 15 | Tech Stack Discovery | `/iterate` detects project tech from existing files | iterate.md Step 1 |
 | 16 | Existing Test Suite | verify-agent discovers and uses existing pytest setup | verify-agent.md |
-| 17 | Migration from Custom .claude/ | Template applied to project with incompatible existing `.claude/` dir | setup-check |
+| 17 | Migration from Custom .claude/ | Template applied to project with incompatible existing `.claude/` dir | setup-checklist, health-check Part 1 |
 | 18 | Non-Software Project | Template works for spec-only / docs-only projects | implement-agent.md, verify-agent.md |
 | 19 | Nested Project Structure | Agents find code in subdirectories, run builds from correct location | implement-agent.md, verify-agent.md |
 | 20 | External Service Dependencies | Task decomposition surfaces API keys / DB setup as prerequisites | work.md Step 3 |
@@ -90,13 +90,16 @@ Tests for core lifecycle operations that were previously uncovered: task breakdo
 | 26 | Work Complete Flow | `/work complete` validates, completes, auto-completes parents, regenerates dashboard | work.md § Task Completion |
 | 27 | Verification Failure and Rework | Fail → fix → re-verify loop, 2-attempt limit, phase-level fix tasks | verify-agent.md Steps T6-T7, implement-agent.md |
 | 28 | Task Dependency Chains | Linear chains, multi-blocker convergence, circular detection, critical path | work.md Step 2c, Step 3 |
+| 29 | On Hold and Absorbed Statuses | On Hold/Absorbed excluded from routing, phase completion, parent auto-completion | work.md Step 3, health-check.md Check 6, shared-definitions.md |
 
-**Key behaviors surfaced by 25-28:**
+**Key behaviors surfaced by 25-29:**
 - `/breakdown` is the only path for difficulty >= 7 tasks — implement-agent rejects them
 - `/work complete` is the primary human action signal — parent auto-completion depends on it
 - Verification failure is not terminal — the rework loop has a 2-attempt limit before human escalation
 - Dependency resolution must use AND logic (all deps satisfied), not OR
 - Circular dependencies must be detected and reported, not cause infinite loops
+- On Hold is a user-owned transition — Claude never auto-resumes paused tasks
+- Absorbed preserves audit trail while removing tasks from active work
 
 ## Example Project
 

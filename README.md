@@ -15,7 +15,7 @@ rm -rf .git && git init
 # Customize
 # 1. Fill in the placeholder sections in .claude/CLAUDE.md (Project Overview, Tech Stack, Conventions)
 # 2. Delete this README.md, tests/, and root CLAUDE.md (template maintenance files)
-# 3. Run /setup-check, then /iterate in Claude Code to create your spec
+# 3. Run /iterate in Claude Code to create your spec
 ```
 
 ## What Ships vs. What Doesn't

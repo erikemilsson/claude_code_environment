@@ -39,9 +39,18 @@ Ask: "Can Opus 4.6 complete this reliably in one focused session, with changes t
 | Pending | Not started | Ready to work on |
 | In Progress | Currently working | Multiple allowed when parallel-eligible (see below) |
 | Awaiting Verification | Implementation done, needs verification | Must proceed to verify-agent immediately |
-| Blocked | Cannot proceed | Document blocker in notes |
+| Blocked | Cannot proceed due to specific blocker | Document blocker in notes |
+| On Hold | Intentionally paused | Document reason in notes; not auto-routed by `/work` |
+| Absorbed | Scope folded into another task | Set `absorbed_into` field; preserves audit trail |
 | Broken Down | Split into subtasks | Work on subtasks, not this |
 | Finished | Complete and verified | Requires `task_verification.result` of "pass" or "pass_with_issues" |
+
+### Blocked vs On Hold
+
+These statuses represent different situations:
+
+- **Blocked** — A specific, identifiable impediment prevents progress (unresolved dependency, failed verification, missing prerequisite). The task will resume once the blocker is cleared. `/work` tracks and surfaces blockers.
+- **On Hold** — The task is intentionally paused for reasons that aren't a direct blocker: user chose to defer it, waiting on an external timeline, lower priority than current focus, seasonal or calendar constraint. The task will resume when the user explicitly moves it back to Pending.
 
 ## Priority Values
 
@@ -106,7 +115,7 @@ Spec files are parsed into sections for fingerprinting: each `##` heading starts
 **ALWAYS:**
 1. Break down tasks with difficulty >= 7 before starting
 2. Dashboard regenerates automatically after task changes
-3. Parent tasks auto-complete when all subtasks finish
+3. Parent tasks auto-complete when all subtasks finish (Absorbed subtasks are excluded from this check — they don't block parent completion)
 
 **Parallel Execution Rules:**
 Multiple "In Progress" tasks are allowed when ALL of these conditions are met:
@@ -119,9 +128,10 @@ Multiple "In Progress" tasks are allowed when ALL of these conditions are met:
 When conditions are not met, fall back to sequential execution (one "In Progress" at a time).
 
 **NEVER:**
-- Work on "Broken Down" tasks directly (work on subtasks instead)
+- Work on "Broken Down", "On Hold", or "Absorbed" tasks directly
 - Skip status updates
 - Dispatch parallel tasks without checking file conflicts
+- Move "On Hold" tasks back to "Pending" without user approval
 
 ## Owner Field
 

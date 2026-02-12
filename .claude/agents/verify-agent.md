@@ -392,7 +392,7 @@ For issues found that need fixing:
    }
    ```
    Out-of-spec tasks require explicit user approval before `/work` will execute them. See the out-of-spec consent flow in `work.md`.
-4. **Regenerate dashboard.md** - Follow work.md § "Dashboard Regeneration Procedure"
+4. **Regenerate dashboard.md** - Follow `.claude/support/reference/dashboard-regeneration.md`
    - Additional verify-agent requirements:
      - Populate Verification Debt sub-section in Action Required (only if debt exists)
      - Show out-of-spec tasks with ⚠️ prefix in Tasks section
