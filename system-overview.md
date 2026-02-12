@@ -101,7 +101,7 @@ graph LR
 
 ## Communication: The Dashboard
 
-The dashboard (`.claude/dashboard.md`) is the primary channel between Claude and the user during the build phase.
+The dashboard (`.claude/dashboard.md`) is the navigation hub between Claude and the user during the build phase.
 
 **Purpose:** Acts as a navigation hub — everything the user needs to know or do is surfaced here with links to the specific files (decision records, task files, deliverables) that need attention. The user clicks through to those files when needed, but the dashboard tells them *which* files to look at and *why*, rather than requiring them to hunt through `.claude/` on their own.
 

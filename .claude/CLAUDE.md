@@ -18,7 +18,7 @@ This environment is domain-agnostic. It works for software development, research
 
 ## How the Environment Works
 
-**The dashboard is your communication channel with Claude** (`.claude/dashboard.md`). During the build phase, everything Claude needs from you is surfaced there: decisions to make, files to review, actions to take. The dashboard is the primary hub during active development; post-completion activities may involve more direct interaction.
+**The dashboard is your navigation hub** (`.claude/dashboard.md`). During the build phase, Claude surfaces what needs your attention — decisions to make, files to review, actions to take — with links to the specific files that need it. You click through to inspect files directly, but the dashboard guides you there so you don't need to browse `.claude/` on your own. The dashboard is the primary hub during active development; post-completion activities may involve more direct interaction.
 
 The dashboard has a **Sections** checklist at the top — check or uncheck items to control which sections Claude generates during `/work`. Custom Views is optional and defaults to unchecked.
 
@@ -31,6 +31,8 @@ For full details, see `.claude/support/reference/workflow.md` § "System Overvie
 The project specification lives at `.claude/spec_v{N}.md` (exactly one file; `/work` discovers N by globbing).
 
 **Do not author spec content directly.** Suggest improvements; user makes edits. You CAN perform spec infrastructure operations (archiving, version transitions, frontmatter updates). See `iterate.md` § "Suggest-Only Boundary".
+
+**Direct edits to the spec are always safe** — the decomposed snapshot preserves the before-state, and drift detection handles reconciliation. After a spec edit, the user runs `/work` to continue building (detects changes and reconciles affected tasks) or `/iterate` to keep refining.
 
 To create or revise specifications, run `/iterate`.
 
@@ -76,7 +78,7 @@ Commands defined in `.claude/commands/` for this workflow. Not Claude Code built
 
 **Important:** Always use the project's task system (`.claude/tasks/task-*.json` files) for all task management. Never use built-in TaskCreate/TaskUpdate/TaskList tools as a replacement — those are separate from this project's tracking.
 
-Tasks are tracked in `.claude/tasks/` as JSON files. The **Project Dashboard** at `.claude/dashboard.md` is your communication channel with Claude during the build phase:
+Tasks are tracked in `.claude/tasks/` as JSON files. The **Project Dashboard** at `.claude/dashboard.md` is your navigation hub during the build phase — it surfaces what needs attention with links to specific files:
 - 🚨 **Action Required** — everything Claude needs from you: decisions, tasks, reviews — with links and completion signals
 - 📊 **Progress** — phase breakdown, critical path, timeline, and recent activity
 - 📋 **Tasks** — full task list by phase
