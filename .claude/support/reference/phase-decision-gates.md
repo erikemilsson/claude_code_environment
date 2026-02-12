@@ -62,10 +62,20 @@ For target task(s), check `decision_dependencies`:
 2. Check if decision has a checked box in "## Select an Option"
 
    IF any decision is unresolved (no checked box):
-     📋 Decision {id} ({title}) blocks {N} task(s).
-     Open the decision doc to review options and check your selection:
-     → [decision doc link]
-     Then run `/work` again.
+     📋 Decision {DEC-NNN}: "{title}" is unresolved and blocks {N} task(s).
+       [R] Research options (spawns research-agent to populate the decision record — see `.claude/commands/research.md`)
+       [S] Skip (you'll research manually — open the decision doc and check your selection, then run /work)
+
+     IF user selects [R]:
+       → Gather context (decision record, spec, related tasks/decisions)
+       → Spawn research-agent (see research.md Steps 2-4)
+       → After research completes, re-present the decision for user selection
+       → If user selects via checkbox, fall through to the auto-update logic below
+
+     IF user selects [S]:
+       → Skip this decision for now
+       → Continue checking remaining decisions
+       → Non-blocked tasks still dispatch normally
 
    IF decision has a checked box AND frontmatter status is NOT "approved"/"implemented":
      → AUTO-UPDATE FRONTMATTER:

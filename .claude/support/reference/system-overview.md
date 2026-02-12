@@ -18,7 +18,7 @@ The system works for software, research, procurement, renovation, or any project
 graph LR
     A["Ideation<br><i>Claude Desktop</i>"] -->|/iterate distill| B["Specification<br><i>/iterate</i>"]
     B -->|/work| C["Execution<br><i>Tier 1: per-task verify</i>"]
-    C -->|phase tasks done| D["Integration Verification<br><i>Tier 2: full-spec verify</i>"]
+    C -->|phase tasks done| D["Integration Verification<br><i>Tier 2: cross-task verify</i>"]
     D -->|fail → fix tasks| C
     D -->|pass, next phase| B
     D -->|pass, final phase| E[Complete]
@@ -84,7 +84,7 @@ graph LR
 
 **Runs at phase boundaries, not just at the end.** In a multi-phase project, Tier 2 runs after each phase completes — before the phase gate. This catches integration problems within Phase N before Phase N+1 builds on top of them.
 
-**Scope difference:** Tier 1 asks "does this task match its spec section?" Tier 2 asks "does the assembled whole satisfy the full spec?" For example, Task A's output format might not match what Task B expects — each passes Tier 1 individually, but Tier 2 catches the mismatch.
+**Scope difference:** Tier 1 asks "does this task match its spec section?" Tier 2 asks "do the phase's deliverables work together and satisfy the phase's acceptance criteria?" At the final phase boundary, Tier 2 validates the full spec end-to-end. For example, Task A's output format might not match what Task B expects — each passes Tier 1 individually, but Tier 2 catches the mismatch.
 
 **Outcomes:**
 - `pass` (mid-project) → Phase gate presented for user approval. After approval, `/iterate` suggested to flesh out next phase, then `/work` continues.
@@ -143,7 +143,7 @@ Each feature below includes its purpose (why it exists), how it works (brief), a
 
 ### Two-Tier Verification
 
-**Purpose:** Catch issues at two levels — per-task (immediately after each implementation) and integration-level (end-to-end validation against the full spec).
+**Purpose:** Catch issues at two levels — per-task (immediately after each implementation) and integration-level (cross-task validation at phase boundaries).
 
 **Tier 1 (Per-Task):** Runs immediately after each task's implementation, as part of the atomic implement → verify cycle. Checks: files exist, spec alignment (against the task's spec section), output quality, integration boundaries, scope validation. Result stored in `task_verification` field on the task JSON. Each task is verified individually — no waiting for other tasks.
 
@@ -157,7 +157,7 @@ Each feature below includes its purpose (why it exists), how it works (brief), a
 
 **Purpose:** Enforce natural project boundaries (e.g., "build prototype first, then production"). Phase N+1 work cannot begin until Phase N is complete and approved.
 
-**How it works:** Spec sections define phases implicitly. During decomposition, tasks get a `phase` field. Dashboard groups tasks by phase. When all Phase N tasks finish, a phase gate appears in the dashboard with checkboxes — auto-conditions (task counts, verification status) plus a manual approval checkbox. All must be checked before Phase N+1 unlocks.
+**How it works:** Spec sections define phases implicitly. During decomposition, tasks get a `phase` field. Dashboard groups tasks by phase. When all Phase N tasks finish, integration verification (Tier 2) runs first. After Tier 2 passes, a phase gate appears in the dashboard with checkboxes — auto-conditions (task counts, verification status) plus a manual approval checkbox. All must be checked before Phase N+1 unlocks.
 
 **Phase transitions trigger a spec version bump** (archive current → create v{N+1} → suggest `/iterate` to flesh out next phase sections).
 
