@@ -144,7 +144,11 @@ For each marker type, check that both open and close markers exist:
 
 For each type:
 - If both markers present → extract content (marker is intact)
-- If only one marker or neither → log warning, skip extraction for this type (marker is damaged)
+- If neither marker present → skip extraction for this type (section not present, which is normal)
+- **Single-marker types** (Phase gate approved) are exempt — they have no close marker by design
+- **If only ONE marker of a paired type is present** (open without close, or close without open):
+  - **Critical markers** (User notes, Section toggles, Custom views instructions): **ABORT regeneration.** Log: `"⚠️ Dashboard regeneration aborted: incomplete marker pair for {type}. Found {open|close} marker but not its counterpart. Fix the markers in dashboard.md or run /health-check."` Do NOT proceed to Step 3. Do NOT overwrite dashboard.md or dashboard-state.json. The existing dashboard remains as-is until the user fixes the unpaired marker.
+  - **Per-instance markers** (Feedback, Phase gates): Log warning `"⚠️ Incomplete marker pair for {type} — skipping extraction, using sidecar fallback."` Skip extraction for this instance only and continue. Content for this instance falls back to dashboard-state.json (Step 2c).
 
 **2b. Read `.claude/dashboard-state.json`** (if it exists). This is the previous known-good state.
 
@@ -152,7 +156,7 @@ For each type:
 
 For each content type:
 - If marker extraction succeeded: use extracted content (user may have edited the dashboard since last regen)
-- If marker extraction failed: use dashboard-state.json value (fallback — no data loss)
+- If marker extraction was skipped (neither marker): use dashboard-state.json value if available, otherwise use defaults
 - If dashboard-state.json doesn't exist: use extracted content or defaults
 
 **2d. Write merged state to `.claude/dashboard-state.json`.**
@@ -212,7 +216,7 @@ Add after `# Dashboard` title:
 ```markdown
 <!-- DASHBOARD META
 generated: [ISO timestamp]
-task_hash: sha256:[hash of sorted task_id:status pairs]
+task_hash: sha256:[hash of sorted task_id:status:difficulty:owner tuples]
 task_count: [number]
 spec_fingerprint: sha256:[hash of spec file content]
 verification_debt: [count of tasks needing verification]

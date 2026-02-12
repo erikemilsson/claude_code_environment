@@ -10,7 +10,7 @@ Before using dashboard data, verify it's current (runs as `/work` Step 1a):
 
 1. **Compute current task state hash:**
    ```
-   task_hash = SHA-256(sorted list of: task_id + ":" + status for each task-*.json)
+   task_hash = SHA-256(sorted list of: task_id + ":" + status + ":" + difficulty + ":" + owner for each task-*.json)
    ```
 
 2. **Read dashboard metadata** (if present):
@@ -186,17 +186,30 @@ On each /work run:
 2. Count active deferrals (not yet reconciled)
 3. Check for expired deferrals (older than max_deferral_age_days)
 
-IF active_deferrals > max_deferred_sections OR any deferral expired:
-  ├─ ERROR: Drift budget exceeded
+IF active_deferrals > max_deferred_sections:
+  ├─ ERROR: Too many deferred sections
   │
   │  You have deferred reconciliation for N sections (max: M).
-  │  [OR] Deferral for "## SectionName" has expired (deferred N days ago, max: M days).
+  │  Must reconcile at least {N - M} section(s) before continuing.
   │
-  │  Must reconcile at least 1 section before continuing.
+  │  [R] Reconcile now (required)
   │
-  │  [R] Reconcile now (REQUIRED)
+  └─ Proceed to Granular Reconciliation UI (pre-filtered to deferred sections)
+
+IF any deferral expired (and count is within budget):
+  ├─ WARNING: Deferral expired
   │
-  └─ Block all other actions until reconciliation completes
+  │  Deferral for "## SectionName" has expired (deferred N days ago, max: M days).
+  │
+  │  [R] Reconcile now (recommended)
+  │  [X] Reset deferral timers (acknowledges drift risk)
+  │
+  ├─ If user selects [R]: proceed to Granular Reconciliation UI
+  └─ If user selects [X]:
+     1. Update each expired deferral's deferred_date to today in drift-deferrals.json
+        (deferrals will expire again after max_deferral_age_days)
+     2. Log: "⚠️ Drift deferrals reset — {N} sections remain unreconciled. Tasks in these sections may not match the current spec."
+     3. Continue with /work (unblock)
 ```
 
 **Clearing deferrals:** When a section is reconciled (user selects Apply or reviews individually and applies), remove it from `drift-deferrals.json`.
@@ -216,5 +229,23 @@ When section-level drift is detected, present a targeted UI showing:
 **Options per section:** `[A]` Apply suggestions, `[R]` Review individually, `[S]` Skip section
 
 **Individual task review options:** `[A]` Apply, `[E]` Edit, `[S]` Skip, `[O]` Mark out-of-spec
+
+**Applying changes to Finished tasks:** When reconciliation applies to a task with `status: "Finished"`, the spec section it was verified against has changed. The existing `task_verification` is stale — it validated against the old acceptance criteria.
+
+**Warning before applying:** When a section contains Finished tasks, warn before applying:
+```
+⚠️ Section "{section}" contains {N} Finished task(s) that will be reset to Pending:
+  - Task {id}: "{title}"
+Apply changes? [Y] Yes, reset and re-verify  [N] No, review individually instead
+```
+If the user selects `[N]`, fall through to `[R] Review individually` for that section (allows per-task decisions).
+
+**On apply (confirmed):**
+1. Update `spec_fingerprint` and `section_fingerprint` to current values
+2. Clear `task_verification` (remove the field)
+3. Set `status` back to `"Pending"`
+4. Add note: `"Reset to Pending — spec section changed after verification. Needs re-implementation and re-verification."`
+
+This ensures the structural invariant holds: no Finished task has a verification result that was computed against a different spec version than its current fingerprints.
 
 **Edge cases:** New section → suggest new tasks. Section deleted → flag tasks for out-of-spec or deletion. Section renamed → detected as delete + add. No snapshot → fall back to full-spec comparison.

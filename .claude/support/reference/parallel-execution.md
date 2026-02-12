@@ -147,6 +147,22 @@ For each held-back task, add a temporary `conflict_note` to the task JSON:
 
 This note is surfaced in the dashboard Tasks section (appended to the task's Status column as a tooltip or parenthetical) and removed when the task is dispatched.
 
+### Write Ownership Rules
+
+During parallel execution, strict write ownership prevents file corruption. The rules apply **while agents are running** (between spawning in Step 3 and result collection in Step 4):
+
+| Writer | May write to | Must NOT write to |
+|--------|-------------|-------------------|
+| Each parallel agent | Its own `task-{id}.json` only | Any other task JSON, parent task JSON, dashboard.md, verification-result.json, dashboard-state.json |
+| `/work` orchestrator | Nothing (waits for agents) | Any task JSON file owned by a running agent |
+
+Before agents spawn (Step 2) and after they complete (Step 5), only the orchestrator writes — it sets `conflict_note` fields, performs parent auto-completion, and regenerates the dashboard. No agents are running during these windows.
+
+**Key invariants:**
+- **One writer per file:** Each agent writes only to its own task JSON file. No two agents share a task file because each is dispatched for a distinct task.
+- **Parent auto-completion is orchestrator-only:** Agents are instructed "DO NOT check parent auto-completion." The orchestrator performs parent checks sequentially in the collect loop (Step 4), so concurrent writes to a parent task file cannot occur.
+- **Sequential result processing:** When multiple agents complete in the same poll cycle, the orchestrator processes them one at a time (the `For each completed agent` loop is sequential), preventing race conditions on shared state like parent task files.
+
 ### 3. Spawn Parallel Agents
 
 Use Claude Code's `Task` tool to spawn one agent per task. **Always set `model: "opus"` and `max_turns: 40`** to ensure agents run on Claude Opus 4.6 with a bounded turn limit. Each agent receives:
