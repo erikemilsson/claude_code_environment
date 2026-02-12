@@ -23,7 +23,7 @@ This environment is domain-agnostic. While many examples reference software conc
 | `dashboard.md` | Your communication channel with Claude — decisions, tasks, progress |
 | `tasks/` | Task data (JSON files managed by `/work`) |
 | `commands/` | Slash commands (`/work`, `/iterate`, `/status`, etc.) |
-| `agents/` | Specialist agents (implement-agent builds, verify-agent validates) |
+| `agents/` | Specialist agents (implement-agent builds, verify-agent validates, research-agent investigates) |
 | `support/` | Reference docs, decisions, workspace, archived specs |
 | `vision/` | Vision/design documents from ideation (optional) |
 
@@ -35,6 +35,7 @@ This environment is domain-agnostic. While many examples reference software conc
 | `/work complete` | Complete current in-progress task (or `/work complete {id}`) |
 | `/iterate` | Structured spec review (checks gaps, asks questions, suggests content) |
 | `/status` | Quick read-only view of project state |
+| `/research` | Investigate options for decisions (spawns research-agent) |
 | `/breakdown {id}` | Split complex tasks into subtasks |
 | `/health-check` | Validate system health and check for template updates |
 
@@ -55,9 +56,10 @@ The dashboard (`.claude/dashboard.md`) is your primary interface during developm
 - When Claude needs your input, it appears in the dashboard — with links to relevant files, checkboxes to confirm actions, and space for feedback
 - You click through to files when needed, then signal completion back through the dashboard
 
-Two specialist agents check each other's work:
+Specialist agents with separated concerns ensure quality:
 - **implement-agent** executes tasks and produces deliverables
-- **verify-agent** validates the implementation independently
+- **verify-agent** validates the implementation independently (separate context, no implementation memory)
+- **research-agent** investigates options and populates decision records
 
 This eliminates the blind spots of self-validation.
 
