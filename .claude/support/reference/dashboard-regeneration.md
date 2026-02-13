@@ -205,6 +205,15 @@ This ensures user content is always persisted in a structured file before the da
   ```
   All tasks complete — phase-level verification will run on next `/work`
   ```
+- **Acceptance Criteria sub-section (Progress section):** When `verification-result.json` exists and has a `criteria` array, render a compact checklist as a sub-section under `## 📊 Progress` (after the phase table, before the critical path one-liner):
+  ```
+  ### Acceptance Criteria
+  - [x] User can log in — *Tested with valid credentials*
+  - [x] Invalid login shows error — *Error message displays correctly*
+  - [ ] Session expires after 1h — *Currently no expiration*
+  **4/5 criteria passed**
+  ```
+  Rules: `status: "pass"` renders as `[x]`, `status: "fail"` renders as `[ ]`. Notes are italicized and truncated at 60 characters. The summary count line uses `criteria_passed` / (`criteria_passed` + `criteria_failed`). When the `criteria` array is absent (backward compatibility), fall back to summary-only: `**{criteria_passed}/{criteria_passed + criteria_failed} criteria passed**`.
 - **Spec Drift sub-section:** When `drift-deferrals.json` exists with active deferrals, render each deferred section:
   ```
   - ⚠️ **{section}** — {N} tasks affected, deferred {M} days ago
@@ -331,6 +340,7 @@ The user selects an option when prompted, and `/work` updates the task according
 - Critical path >5 steps (after collapsing parallel branches): show first 3 + "... N more → Done"
 - "This week" line: omit when all counts are zero
 - Tasks grouped by phase with per-phase progress lines
+- **Repair indicator:** When a Finished task has `verification_history` with more than 1 entry, show status as `Finished (N retries)` in the Tasks section Status column (where N = number of entries minus 1). This surfaces the repair trail without requiring users to open task JSON files.
 - **Completed task summarization (scale):** When a phase has more than 10 finished tasks, render a summary line (`✅ {N} tasks finished`) instead of listing each individually. Only list active tasks (Pending, In Progress, Awaiting Verification, Blocked, On Hold) with full detail rows. This keeps the dashboard navigable for large projects (50+ tasks).
 - Tasks with `conflict_note`: show status as `Pending (held: conflict with Task {id})` during parallel dispatch
 - Decisions: status display mapping: `approved`/`implemented` → "Decided", `draft`/`proposed` → "Pending". Selected column always links to the decision document regardless of status — Decided shows the selected option name as link text; Pending shows "Pending" as link text
@@ -354,6 +364,7 @@ The user selects an option when prompted, and `/work` updates the task according
 | Action Required → Your Tasks | `Task \| What To Do \| Where` |
 | Action Required → Reviews | `- [ ] **Item title** — what to do → [link](path)` — derived, not stored |
 | Progress → Phase table | `Phase \| Done \| Total \| Status` — status: Complete, Active, Blocked (reason) |
+| Progress → Acceptance Criteria | `- [x]/[ ] Criterion — *notes*` checklist + `**N/M criteria passed**` summary. Only when `verification-result.json` has `criteria` array; falls back to summary-only when absent. |
 | Progress → Timeline | `Date \| Item \| Status \| Notes` — sorted chronologically, overdue: strikethrough date + ⚠️ OVERDUE prefix, external deps with contact info, human tasks marked with ❗ |
 | Tasks → Per phase | `ID \| Title \| Status \| Diff \| Owner \| Deps` — grouped by phase headers |
 | Decisions | `ID \| Decision \| Status \| Selected` |

@@ -131,7 +131,7 @@ Before the user runs `/work complete`, something triggers a dashboard regenerati
 
 ### State
 
-- Session 1: User writes feedback for a task in a durable location (dashboard notes, questions.md, decision doc)
+- Session 1: User writes feedback for a task in a durable location (dashboard notes, decision doc)
 - Session ends
 - Session 2: User runs `/work`
 

@@ -235,7 +235,7 @@ Tasks with empty `files_affected` and no `parallel_safe: true` are excluded from
 3. **Annotate held-back tasks** — Add `conflict_note` to held-back task JSONs (surfaced in the dashboard's Status column); cap batch at `max_parallel_tasks`
 4. **Dispatch** — If batch size >= 2, set all to "In Progress" and spawn parallel agents (using `run_in_background: true`) via Claude Code's `Task` tool. Each agent reads `implement-agent.md` and runs Steps 2/4/5/6a/6b independently
 5. **Incremental re-dispatch** — Poll for agent completion. When an agent finishes, re-run eligibility assessment: tasks whose file conflicts are now resolved become eligible and can be dispatched immediately (even while other agents are still running). Clear `conflict_note` from newly-dispatched tasks
-6. **Post-parallel cleanup** — After all agents finish: final parent auto-completion check, single dashboard regeneration (clears remaining `conflict_note` fields), operational checks (see `/work` Step 6)
+6. **Post-parallel cleanup** — After all agents finish: final parent auto-completion check, single dashboard regeneration (clears remaining `conflict_note` fields), operational checks (see `/work` Step 5)
 
 ### Constraints
 
@@ -310,7 +310,7 @@ User → /work → Specialist Agent → /work → User
 
 ### /work → Specialist
 
-Provides: current phase, spec summary, recent activity, task to do, constraints (already-asked questions, scope limits).
+Provides: current phase, spec summary, recent activity, task to do, constraints (scope limits, prior decisions).
 
 ### Specialist → /work
 
@@ -366,6 +366,7 @@ Returns: what was completed, files modified, status updates, recommendations, is
 - Update spec `status` from `active` to `complete`
 - Update dashboard with completion summary
 - Present final checkpoint to human
+- Offer project-level learning capture prompt (skippable) — if shared, append to `.claude/support/learnings/project-learnings.md`
 - Project complete (or loop back if issues)
 
 **Verification result validity:** The result is valid when `result` is `"pass"`, `spec_fingerprint` matches the current spec, and no tasks changed since the verification `timestamp`. If the spec changes or new tasks appear, the result is automatically invalidated and `/work` re-routes to verification.
@@ -398,7 +399,7 @@ Checkpoint types:
 ### Phase Boundaries
 When transitioning between phases:
 - Spec → Execute: "Specification complete. Ready to implement?"
-- **Phase N → Phase N+1** (within Execute): Surfaced as a dashboard Action Required item with a checkbox in a `<!-- PHASE GATE:{N}→{N+1} -->` marker. `/work` blocks until the user checks the box and re-runs. Once approved, the marker becomes `<!-- PHASE GATE:{N}→{N+1} APPROVED -->` so it won't re-trigger on subsequent runs.
+- **Phase N → Phase N+1** (within Execute): Surfaced as a dashboard Action Required item with a checkbox in a `<!-- PHASE GATE:{N}→{N+1} -->` marker. `/work` blocks until the user checks the box and re-runs. Once approved, the marker becomes `<!-- PHASE GATE:{N}→{N+1} APPROVED -->` so it won't re-trigger on subsequent runs. After approval, a lightweight learning capture prompt is offered (skippable).
 - **Execute → Verify**: When all tasks are complete, the dashboard shows a "Verification Pending" item in Action Required, and the critical path displays "🤖 Phase verification → Done" instead of "All tasks complete!". Phase-level verification runs automatically on the next `/work`.
 - Verify → Complete: "Verification passed. Ready to ship?"
 

@@ -129,14 +129,14 @@ implement-agent for Task 1 created 2 of 3 required files, then hit a blocking is
 
 1. Task 1 status: "Blocked" (set by agent)
 2. Task 1 notes contain the blocker description
-3. Question added to `questions.md` with date prefix
+3. Blocker flagged for human clarification (asked directly via conversation)
 4. Partial files remain on disk (not reverted — they represent real work)
-5. Dashboard attention section shows: blocked task, blocker reason, link to questions.md
+5. Dashboard attention section shows: blocked task, blocker reason
 6. Next `/work` run does NOT re-dispatch Task 1 until blocker resolved
 
 ### Pass criteria
 
-- [ ] Blocker documented in task notes AND questions.md
+- [ ] Blocker documented in task notes
 - [ ] Partial work preserved (not silently deleted)
 - [ ] Dashboard surfaces the blocker with enough context to act on it
 - [ ] `/work` routing skips Blocked tasks

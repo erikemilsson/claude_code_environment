@@ -523,7 +523,7 @@ Document results:
 
 ### Step 3: Validate Against Spec
 
-**Required artifact:** A per-criterion pass/fail table. Every acceptance criterion from the spec must appear in this table with an explicit PASS or FAIL status and a note explaining how it was verified. This table feeds into verification-result.json (Step 7) — the `criteria_passed` and `criteria_failed` counts must match this table.
+**Required artifact:** A per-criterion pass/fail table. Every acceptance criterion from the spec must appear in this table with an explicit PASS or FAIL status and a note explaining how it was verified. This table feeds into both the summary counts (`criteria_passed`, `criteria_failed`) AND the `criteria` array in verification-result.json (Step 7).
 
 For each acceptance criterion:
 
@@ -604,6 +604,13 @@ Write the verification outcome to `.claude/verification-result.json` so other co
   "summary": "All acceptance criteria passed. 1 minor issue noted.",
   "criteria_passed": 5,
   "criteria_failed": 0,
+  "criteria": [
+    {"name": "User can log in", "status": "pass", "notes": "Tested with valid credentials"},
+    {"name": "Invalid login shows error", "status": "pass", "notes": "Error message displays correctly"},
+    {"name": "Session expires after 1h", "status": "pass", "notes": "Verified with time mock"},
+    {"name": "Password reset flow", "status": "pass", "notes": "Email sent and link works"},
+    {"name": "Rate limiting on login", "status": "pass", "notes": "Blocks after 5 attempts"}
+  ],
   "issues": {
     "critical": 0,
     "major": 0,
@@ -624,6 +631,7 @@ Write the verification outcome to `.claude/verification-result.json` so other co
 | `summary` | Free text | Human-readable summary of findings |
 | `criteria_passed` | Number | Count of acceptance criteria that passed |
 | `criteria_failed` | Number | Count of acceptance criteria that failed |
+| `criteria` | Array | Per-criterion results. Each entry: `{"name": "Criterion text", "status": "pass"|"fail", "notes": "How verified"}`. Feeds dashboard acceptance criteria checklist. |
 | `issues` | Object | Count of issues by severity |
 | `tasks_created` | Array of task IDs | Tasks created for issues found |
 

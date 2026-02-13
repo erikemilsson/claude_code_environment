@@ -70,7 +70,6 @@ All phases, tasks, and decisions visible with blocking context.
   - Task with missing verification (verification debt)
   - Pending decision blocking tasks
   - Human-owned task needing action
-  - Blocking question in questions.md
 
 ### Expected
 
@@ -85,7 +84,6 @@ Every item in Action Required is fully actionable from the dashboard:
 - [ ] Verification debt lists affected tasks with instruction to run `/work`
 - [ ] Pending decisions link to decision doc with question summary
 - [ ] Human tasks have action descriptions and file links
-- [ ] Blocking questions surfaced with links to questions.md
 - [ ] No item requires browsing the file tree to figure out what to do
 
 ### Fail indicators

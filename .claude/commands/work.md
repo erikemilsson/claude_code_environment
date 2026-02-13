@@ -265,7 +265,7 @@ When Step 2c produces a parallel batch of >= 2 tasks, execute them concurrently.
 **Key rules:**
 - Each parallel agent reads `implement-agent.md` and runs Steps 2/4/5/6a/6b independently
 - Agents must NOT regenerate dashboard, select next task, or check parent auto-completion
-- After all agents complete: final parent auto-completion, single dashboard regeneration, Step 6
+- After all agents complete: final parent auto-completion, single dashboard regeneration, Step 5
 
 #### If Verifying (Per-Task)
 
@@ -390,7 +390,8 @@ When all tasks are finished and verification conditions are met:
 1. **Update spec status** to `complete` (set `status: complete`, `updated: YYYY-MM-DD` in frontmatter)
 2. **Regenerate dashboard** with completion summary
 3. **Present final checkpoint** — report completion with verification summary
-4. **Stop** — do not route to any agent. The project is done.
+4. **Learning capture prompt** — "Project complete. Any patterns or learnings to capture? [L] Share  [S] Skip". If [L]: append to `.claude/support/learnings/project-learnings.md`. If [S]: continue silently.
+5. **Stop** — do not route to any agent. The project is done.
 
 ### Step 5: Post-Dispatch Validation
 

@@ -292,12 +292,72 @@ A task "needs per-task verification" when:
 
 When per-task verification fails:
 - `verification_attempts` is incremented (verify-agent increments this before writing the result)
+- The attempt is appended to `verification_history` (structured record of all attempts, including passes — see Verification History section)
 - Task status is set back to "In Progress"
 - Verification failure notes are prepended with `[VERIFICATION FAIL #{N}]` in the task `notes` field (where N = current attempt count)
 - `completion_date` is cleared
 - `updated_date` is updated
 - Dashboard is regenerated
 - **Escalation rule:** When `verification_attempts >= 3` (initial attempt + 2 re-attempts), set status to "Blocked" with note `[VERIFICATION ESCALATED] 3 attempts exhausted — requires human review` instead of retrying
+
+### Verification History
+
+Append-only log of every verification attempt (pass and fail). Provides a full repair trail when tasks require multiple verification cycles.
+
+```json
+{
+  "verification_history": [
+    {
+      "attempt": 1,
+      "result": "fail",
+      "timestamp": "2026-01-28T14:00:00Z",
+      "checks": {
+        "files_exist": "pass",
+        "spec_alignment": "fail",
+        "output_quality": "pass",
+        "runtime_validation": "not_applicable",
+        "integration_ready": "pass",
+        "scope_validation": "pass"
+      },
+      "issues": [{"severity": "major", "description": "Missing upsert for raw_game_designers table"}],
+      "notes": "3 of 4 tables implemented"
+    },
+    {
+      "attempt": 2,
+      "result": "pass",
+      "timestamp": "2026-01-28T15:30:00Z",
+      "checks": {
+        "files_exist": "pass",
+        "spec_alignment": "pass",
+        "output_quality": "pass",
+        "runtime_validation": "not_applicable",
+        "integration_ready": "pass",
+        "scope_validation": "pass"
+      },
+      "issues": [],
+      "notes": "All 4 tables implemented correctly"
+    }
+  ]
+}
+```
+
+#### Sub-fields
+
+| Sub-field | Type | Description |
+|-----------|------|-------------|
+| `attempt` | Number | Attempt number (matches `verification_attempts` at time of recording) |
+| `result` | String | `"pass"` or `"fail"` |
+| `timestamp` | String | ISO 8601 timestamp of when this attempt completed |
+| `checks` | Object | Per-check pass/fail (same keys as `task_verification.checks`) |
+| `issues` | Array | Issues found during this attempt |
+| `notes` | String | Brief summary of this attempt's findings |
+
+#### Behavior Rules
+
+- **Append-only** — never modify or remove previous entries
+- **Includes passing result** — the final passing attempt is recorded in both `verification_history` and `task_verification`
+- **Coexists with `task_verification`** — `task_verification` remains the latest result for quick status checks; `verification_history` provides the full trail
+- **Created on first verification** — array is created when verify-agent runs Step T6 for the first time on a task
 
 ### Verification Debt
 
