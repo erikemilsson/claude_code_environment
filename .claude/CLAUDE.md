@@ -38,12 +38,13 @@ To create or revise specifications, run `/iterate`.
 
 ## Vision Documents
 
-If you have a vision/design document from ideation (e.g., Claude Desktop brainstorming):
+Every project starts with ideation. A vision document is required before spec creation.
 
-1. Save it to `.claude/vision/`
-2. Run `/iterate distill` to extract a buildable spec
+1. Brainstorm in Claude Desktop (or any tool) — explore features, phases, key decisions, constraints
+2. Save the result to `.claude/vision/`
+3. Run `/iterate distill` to extract a buildable spec
 
-Vision docs capture intent and philosophy; specs capture buildable scope. Both are preserved.
+Vision docs capture intent and philosophy; specs capture buildable scope. Both are preserved. Vision docs can be added throughout the project lifecycle — the vision folder is a living input, not a one-time artifact.
 
 **Starting from Claude Desktop?** See `support/reference/desktop-project-prompt.md` for project instructions that guide ideation sessions to produce well-structured vision documents aligned with this workflow.
 
@@ -69,6 +70,7 @@ Commands defined in `.claude/commands/` for this workflow. Not Claude Code built
 - `/iterate` - Structured spec review and implementation review (checks gaps, asks questions, suggests content)
 - `/status` - Quick read-only view of project state (no modifications)
 - `/research` - Investigate options for decisions (populates comparison matrices, writes research archives)
+- `/feedback` - Capture and manage project improvement ideas (quick capture, review, triage)
 
 ### Task Management
 - `/breakdown {id}` - Split complex tasks into subtasks
@@ -103,6 +105,16 @@ Major decisions are documented in `.claude/support/decisions/`.
 - **Reference:** `.claude/support/reference/decisions.md`
 
 When facing significant choices, create a decision record rather than deciding inline.
+
+## Feedback
+
+Fleeting ideas and improvement thoughts go in `.claude/support/feedback/`.
+
+- **Quick capture:** `/feedback [text]` — save an idea without losing context
+- **Review:** `/feedback review` — triage unreviewed items interactively
+- **Spec integration:** Refined feedback surfaces in `/iterate` for incorporation
+- **Archive:** Items that aren't relevant are archived with reasons in `archive.md`
+- **Reference:** `.claude/support/feedback/README.md`
 
 ## Workspace
 

@@ -6,9 +6,10 @@ A structured development environment for Claude Code using the **Spec → Execut
 
 ## Quick Start
 
-1. **Create your spec:** Run `/iterate` in Claude Code to define what you're building
-2. **Build:** Run `/work` to decompose tasks and start implementation
-3. **Track progress:** Open `.claude/dashboard.md` to see what needs your attention
+1. **Ideate:** Brainstorm your project in Claude Desktop (or any tool), save the result to `.claude/vision/`
+2. **Create your spec:** Run `/iterate distill` in Claude Code to extract a buildable spec from your vision document
+3. **Build:** Run `/work` to decompose tasks and start implementation
+4. **Track progress:** Open `.claude/dashboard.md` to see what needs your attention
 
 ## Design Philosophy
 
@@ -25,7 +26,7 @@ This environment is domain-agnostic. While many examples reference software conc
 | `commands/` | Slash commands (`/work`, `/iterate`, `/status`, etc.) |
 | `agents/` | Specialist agents (implement-agent builds, verify-agent validates, research-agent investigates) |
 | `support/` | Reference docs, decisions, workspace, archived specs |
-| `vision/` | Vision/design documents from ideation (optional) |
+| `vision/` | Vision/design documents from ideation (required before spec creation) |
 
 ## Commands
 
@@ -36,6 +37,7 @@ This environment is domain-agnostic. While many examples reference software conc
 | `/iterate` | Structured spec review (checks gaps, asks questions, suggests content) |
 | `/status` | Quick read-only view of project state |
 | `/research` | Investigate options for decisions (spawns research-agent) |
+| `/feedback` | Capture and review project improvement ideas |
 | `/breakdown {id}` | Split complex tasks into subtasks |
 | `/health-check` | Validate system health and check for template updates |
 
@@ -131,4 +133,5 @@ flowchart TD
 | Decision records | `support/decisions/decision-*.md` |
 | Reference documentation | `support/reference/` |
 | Scratch/draft documents | `support/workspace/` |
+| Feedback and ideas | `support/feedback/` |
 | Previous spec versions | `support/previous_specifications/` |

@@ -126,6 +126,7 @@ The dashboard is regenerated automatically after every task change. This ensures
 - `drift-deferrals.json` (if exists)
 - `verification-result.json` (if exists)
 - `.claude/support/questions/questions.md` (scan for blocking questions)
+- `.claude/support/feedback/feedback.md` (scan for unhandled feedback items)
 
 ### 2. Extract and Persist User Content
 
@@ -319,10 +320,11 @@ The user selects an option when prompted, and `/work` updates the task according
 ### Section Display Rules
 
 - Action Required sub-sections: only render when they have content (omit empty categories entirely)
-- Action Required sub-section order: Phase Transitions, Verification Pending, Verification Debt, Spec Drift, Decisions, Your Tasks, Reviews
+- Action Required sub-section order: Phase Transitions, Verification Pending, Verification Debt, Spec Drift, Feedback, Decisions, Your Tasks, Reviews
 - Phase Transitions: only render when a phase boundary has been reached (all Phase N tasks Finished, Phase N+1 exists) AND no APPROVED marker exists for that transition
 - Verification Pending: only render when all spec tasks are Finished with passing per-task verification but no valid verification-result.json
 - Spec Drift: only render when drift-deferrals.json has active entries
+- Feedback: only render when `feedback.md` has entries with status `new` or `refined` — render as: `- 📝 **{N} feedback items** awaiting attention ({X} new, {Y} refined) → /feedback review`
 - Reviews sub-section format: `- [ ] **Item title** — what to do → [link to file](path)`
 - Reviews appear for: out_of_spec tasks without approval, draft/proposed decisions, blocking questions from `questions.md` (each linked to the file)
 - Timeline sub-section in Progress: only render when tasks have `due_date` or `external_dependency.expected_date` (part of Progress, not an independent toggle)
@@ -349,6 +351,7 @@ The user selects an option when prompted, and `/work` updates the task according
 | Action Required → Verification Pending | Plain text status message |
 | Action Required → Verification Debt | `Task \| Title \| Issue` |
 | Action Required → Spec Drift | `- ⚠️ **{section}** — {N} tasks affected, deferred {M} days ago` |
+| Action Required → Feedback | `- 📝 **{N} feedback items** awaiting attention ({X} new, {Y} refined) → /feedback review` |
 | Action Required → Decisions | `Decision \| Question \| Doc` |
 | Action Required → Your Tasks | `Task \| What To Do \| Where` |
 | Action Required → Reviews | `- [ ] **Item title** — what to do → [link](path)` — derived, not stored |

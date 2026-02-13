@@ -154,3 +154,4 @@ Canonical definitions for terms used across the environment. Terms already defin
 | **Dashboard Freshness** | Whether dashboard reflects current state. Detected by comparing `task_hash` (SHA-256 of sorted task_id:status pairs) against current computed hash. |
 | **Workspace** | Temporary documents at `.claude/support/workspace/`. Subdirs: scratch, research, drafts. May be deleted between sessions. |
 | **Vision Document** | Ideation document in `.claude/vision/`. Captures intent and philosophy. Run `/iterate distill` to extract a buildable spec. |
+| **Feedback** | Project-level ideas and improvement thoughts captured via `/feedback` and stored in `.claude/support/feedback/`. Items flow through statuses: `new` → `refined` → `promoted` (into spec via `/iterate`) or `new` → `archived` (not relevant). Uses `FB-NNN` IDs. Distinct from per-task inline `FEEDBACK:{id}` markers in the dashboard. |

@@ -23,7 +23,8 @@
       ".claude/support/learnings/README.md",
       ".claude/support/workspace/README.md",
       ".claude/support/previous_specifications/README.md",
-      ".claude/vision/README.md"
+      ".claude/vision/README.md",
+      ".claude/support/feedback/README.md"
     ],
     "customize": [
       ".claude/CLAUDE.md",
@@ -45,7 +46,9 @@
       ".claude/support/previous_specifications/*.md",
       ".claude/vision/*.md",
       ".claude/dashboard-state.json",
-      ".claude/tasks/.last-clean-exit.json"
+      ".claude/tasks/.last-clean-exit.json",
+      ".claude/support/feedback/feedback.md",
+      ".claude/support/feedback/archive.md"
     ]
   },
   "notes": "Paths relative to template root. Use glob patterns."

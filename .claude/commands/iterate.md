@@ -28,6 +28,19 @@ Determines mode based on spec state, asks focused questions (max 4), generates s
 
 Determine the current spec version using the same version discovery as `/work`: glob for `.claude/spec_v*.md`, use the highest N. Read `.claude/spec_v{N}.md` and assess its current state.
 
+### Step 1b: Check Feedback Items
+
+Read `.claude/support/feedback/feedback.md` if it exists. Count items by status.
+
+IF `new` count > 0 OR `refined` count > 0:
+  Surface: "📝 {N} feedback items awaiting attention ({X} new, {Y} refined)"
+  Options:
+  - `[I]` Include refined items as context — load refined entries as context for Step 4 suggestions. After incorporation, mark items as `promoted` with date.
+  - `[R]` Run `/feedback review` first — hand off to `/feedback review`, then return to `/iterate`.
+  - `[S]` Skip — continue normally without feedback context.
+
+IF no feedback items exist or file doesn't exist: continue silently.
+
 ### Step 2: Determine Mode
 
 **If user specified `/iterate review` or `/iterate review {area}`:**
@@ -117,22 +130,21 @@ Enter distill mode. Extract buildable spec from a vision document.
 
 **If spec is empty or only has placeholders:**
 
-Enter bootstrap mode. Start with foundational questions:
+A vision document is required before spec creation. Do not bootstrap a spec from scratch. Direct the user to brainstorm first:
 
 ```
-The spec is empty. Let's build it from the ground up.
+The spec is empty. Before building a spec, you need a vision document.
 
-1. In one sentence, what does this project do?
+1. Brainstorm your project in Claude Desktop (or any tool) — explore features,
+   phases, key decisions, and constraints
+2. Save the result to .claude/vision/
+3. Run /iterate distill to extract a buildable spec from it
 
-2. Who will use this? (Be specific - role or persona, not just "users")
-
-3. What's the core problem this solves?
-
-4. How serious/complete does this project need to be?
-   (Quick prototype, MVP for real users, production-grade system, etc.)
+See .claude/support/reference/desktop-project-prompt.md for project instructions
+that guide ideation sessions to produce well-structured vision documents.
 ```
 
-The answer to #4 calibrates the entire spec process - a prototype needs less rigor than a production system.
+If `.claude/vision/` already contains documents, suggest `/iterate distill` directly.
 
 **If spec has content and status is `active` with tasks in progress or completed:**
 
@@ -164,6 +176,7 @@ Current state:
   - Unresolved inflection points: N 🔴 (spec sections may be premature)
 - Acceptance criteria defined: ✓ / ✗
 - Blocking questions resolved: ✓ / ✗
+- Feedback items pending: N new, M refined
 - Phase boundaries clear: ✓ / ✗ / N/A
   - Phase dependencies make sense: ✓ / ✗
   - No Phase 2 content mixed into Phase 1: ✓ / ✗
@@ -267,7 +280,7 @@ See `.claude/support/reference/spec-checklist.md` for full readiness criteria.
 
 | Situation | Command | Why |
 |-----------|---------|-----|
-| Starting from scratch, no docs | `/iterate` | Bootstrap mode asks foundational questions |
+| Starting from scratch, no docs | Brainstorm first, then `/iterate distill` | Vision document required before spec creation |
 | Have a vision/design document | `/iterate distill` | Extracts buildable scope from abstract ideas |
 | Spec exists, want to improve | `/iterate` | Auto-detects weakest area |
 | Spec exists, specific gap known | `/iterate {topic}` | Focuses on that area |

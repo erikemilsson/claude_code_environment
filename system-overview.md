@@ -260,6 +260,16 @@ Each feature below includes its purpose (why it exists), how it works (brief), a
 
 **Authoritative file:** `commands/work.md` § Step 5
 
+### Feedback System
+
+**Purpose:** Let users capture fleeting ideas and improvement thoughts during project work without losing context, then triage them into actionable spec improvements or archive them.
+
+**How it works:** `/feedback [text]` appends a new entry (ID format: `FB-NNN`) to `.claude/support/feedback/feedback.md` with status `new`. `/feedback review` walks through unreviewed items interactively — each can be refined (distilled to a core insight), archived (moved to `archive.md` with reason), skipped, or edited. Refined items surface in `/iterate` Step 1b for optional incorporation into the spec, completing the path from idea to specification.
+
+**Dashboard integration:** A single derived line in Action Required when unhandled items exist: `📝 {N} feedback items awaiting attention ({X} new, {Y} refined) → /feedback review`. Computed during regeneration, not stored.
+
+**Authoritative file:** `commands/feedback.md`
+
 ### Out-of-Spec Tasks
 
 **Purpose:** Allow work beyond the spec without breaking verification integrity.
@@ -334,6 +344,10 @@ Exactly one `spec_v{N}.md` exists in `.claude/` at any time. Version transitions
 | `/status --tasks` | Task-focused view | Read-only |
 | `/research` | Investigate options for decisions — spawns research-agent | Read-write |
 | `/research {DEC-NNN}` | Research options for a specific existing decision | Read-write |
+| `/feedback` | Quick capture an idea | Read-write |
+| `/feedback list` | Show feedback summary and items | Read-only |
+| `/feedback review` | Batch triage unreviewed feedback | Read-write |
+| `/feedback review {id}` | Triage a single feedback item | Read-write |
 | `/breakdown {id}` | Split a complex task into subtasks | Read-write |
 | `/health-check` | Validate tasks, decisions, CLAUDE.md, archives, and template sync | Read-write (with user approval) |
 | `/health-check --report` | Show issues only, no fix prompts | Read-only |
@@ -361,6 +375,8 @@ See also `support/reference/paths.md` for the canonical paths reference used by 
 | `.claude/support/decisions/decision-*.md` | Decision records | `/work`, user |
 | `.claude/support/previous_specifications/` | Archived spec versions and decomposition snapshots | `/work`, `/iterate` |
 | `.claude/support/questions/questions.md` | Questions for human input | Agents, `/work` |
+| `.claude/support/feedback/feedback.md` | Active feedback items (ideas, improvements) | `/feedback`, `/iterate` |
+| `.claude/support/feedback/archive.md` | Archived feedback (not relevant, with reasons) | `/feedback review` |
 | `.claude/support/workspace/` | Temporary working documents | Agents (ephemeral) |
 | `.claude/support/documents/` | User-provided reference files | User |
 | `.claude/support/learnings/` | Project-specific patterns | Agents |

@@ -18,6 +18,8 @@
 | Dashboard state sidecar | `.claude/dashboard-state.json` |
 | Session sentinel | `.claude/tasks/.last-clean-exit.json` |
 | Questions | `.claude/support/questions/questions.md` |
+| Feedback (active) | `.claude/support/feedback/feedback.md` |
+| Feedback (archived) | `.claude/support/feedback/archive.md` |
 | Documents | `.claude/support/documents/` |
 | Vision documents | `.claude/vision/` |
 | Reference docs | `.claude/support/reference/` (see `README.md` for index) |
