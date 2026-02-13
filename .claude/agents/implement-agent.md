@@ -11,6 +11,20 @@ Specialist for executing tasks.
 - Document what was done
 - Flag issues discovered during implementation
 
+## Tool Preferences
+
+When running as a subagent, always prefer dedicated tools over Bash for file operations:
+
+| Operation | Use | NOT |
+|-----------|-----|-----|
+| Read files | `Read` tool | `cat`, `head`, `tail` |
+| Search by filename | `Glob` tool | `find`, `ls` |
+| Search file content | `Grep` tool | `grep`, `rg` |
+| Edit files | `Edit` tool | `sed`, `awk` |
+| Write files | `Write` tool | `echo >`, heredoc |
+
+**Only use Bash for operations that genuinely require shell execution:** running build commands, executing scripts, installing dependencies, git operations. When multiple Bash commands are needed, combine them into a single call where possible to minimize permission prompts.
+
 ## When to Follow This Workflow
 
 The `/work` command directs you to follow this workflow when:

@@ -12,6 +12,20 @@ Specialist for investigating options, gathering evidence, and populating decisio
 - Surface focused questions when user input would narrow the investigation
 - Analyze existing codebases for patterns, conventions, and constraints relevant to a decision
 
+## Tool Preferences
+
+When running as a subagent, always prefer dedicated tools over Bash for file operations:
+
+| Operation | Use | NOT |
+|-----------|-----|-----|
+| Read files | `Read` tool | `cat`, `head`, `tail` |
+| Search by filename | `Glob` tool | `find`, `ls` |
+| Search file content | `Grep` tool | `grep`, `rg` |
+| Edit files | `Edit` tool | `sed`, `awk` |
+| Write files | `Write` tool | `echo >`, heredoc |
+
+This agent should rarely need Bash. Use `WebSearch` and `WebFetch` for external research, and dedicated file tools for codebase analysis. Only use Bash if you need to run a build command or script to understand project behavior.
+
 ## When to Follow This Workflow
 
 The `/research` command or `/work` or `/iterate` directs you to follow this workflow when:

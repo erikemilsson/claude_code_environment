@@ -65,8 +65,9 @@ graph LR
 2. Sets task to "In Progress", implements, self-reviews
 3. Sets task to "Awaiting Verification"
 4. Spawns verify-agent as a **separate agent** (fresh context, no implementation memory)
-5. verify-agent checks: task fidelity (did the deliverables match the task description?), output quality, files exist, integration boundaries, scope validation — this is **Tier 1 verification**
-6. Pass → "Finished". Fail → "In Progress" (fix and re-verify, max 3 attempts then escalate)
+5. verify-agent checks: task fidelity (did the deliverables match the task description?), output quality, files exist, runtime validation (self-tests runnable outputs like CLIs, APIs, web UIs), integration boundaries, scope validation — this is **Tier 1 verification**
+6. If runtime validation is partial (some checks need human eyes), verify-agent writes a `test_protocol` and `interaction_hint` to guide human testing
+7. Pass → "Finished". Fail → "In Progress" (fix and re-verify, max 3 attempts then escalate)
 
 **Auto-continuation within phases:** After a task finishes (passes verification), `/work` automatically routes to the next eligible task — no user prompt, no pause. This continues until a natural stopping point: phase boundary (requires gate approval), blocking decision, blocking question, or verification failure requiring human escalation. The value of front-loaded decomposition and structured verification is that work flows autonomously between these stops. This applies equally to sequential and parallel modes.
 
@@ -101,11 +102,17 @@ graph LR
 
 ---
 
-## Communication: The Dashboard
+## Communication: Dashboard and CLI-Direct
 
-The dashboard (`.claude/dashboard.md`) is the navigation hub between Claude and the user during the build phase.
+The dashboard (`.claude/dashboard.md`) is the primary navigation hub, but not all human interaction routes through it. Claude selects the interaction channel per-task based on what minimizes friction.
 
-**Purpose:** Acts as a navigation hub — everything the user needs to know or do is surfaced here with links to the specific files (decision records, task files, deliverables) that need attention. The user clicks through to those files when needed, but the dashboard tells them *which* files to look at and *why*, rather than requiring them to hunt through `.claude/` on their own.
+**Two channels:**
+- **Dashboard-mediated** — Async tasks: extended reading, batch review, design decisions, phase gate approvals. The dashboard surfaces what needs attention with links to specific files.
+- **CLI-direct** — Synchronous tasks: testing a CLI/TUI, quick confirmations, command-guided walkthroughs. Presented immediately in the Claude Code conversation. Driven by `interaction_hint` and `test_protocol` fields on task JSON.
+
+The dashboard remains the default. CLI-direct is used when the task is synchronous, terminal-oriented, and the user is already in the CLI — forcing them to open a separate file would add friction without value.
+
+**Dashboard purpose:** Acts as a navigation hub — everything the user needs to know or do (for async tasks) is surfaced here with links to the specific files (decision records, task files, deliverables) that need attention. The user clicks through to those files when needed, but the dashboard tells them *which* files to look at and *why*, rather than requiring them to hunt through `.claude/` on their own.
 
 **Sections (toggleable via checklist at top):**
 | Section | Content |
@@ -139,6 +146,8 @@ Each feature below includes its purpose (why it exists), how it works (brief), a
 
 **Why separate contexts matter:** If verification runs in the same conversation that just implemented the task, the verifier has full memory of every implementation decision and tends to rubber-stamp. Spawning a separate agent gives genuine "fresh eyes."
 
+**Tool preferences:** All three agents follow explicit tool preference guidelines — using dedicated tools (Read, Glob, Grep, Edit, Write) for file operations and reserving Bash for operations that genuinely require shell execution (git commands, running tests, executing deliverables, network requests). This reduces permission friction when agents run as subagents, since dedicated tools don't require per-invocation approval.
+
 **Third agent — research-agent:** A separate specialist for investigating options and populating decision records. Not part of the build/verify cycle — it's invoked by `/research` (or by `/work`/`/iterate` when decisions need investigation). Populates evidence and comparison matrices but never makes selections.
 
 **Authoritative files:** `agents/implement-agent.md`, `agents/verify-agent.md`, `agents/research-agent.md`, `support/reference/workflow.md` § "Agent Synergy"
@@ -147,13 +156,31 @@ Each feature below includes its purpose (why it exists), how it works (brief), a
 
 **Purpose:** Catch issues at two levels — per-task (immediately after each implementation) and integration-level (cross-task validation at phase boundaries).
 
-**Tier 1 (Per-Task):** Runs immediately after each task's implementation, as part of the atomic implement → verify cycle. Primary question: "did the implementation agent complete this task correctly?" Checks: task fidelity (deliverables match the task description), output quality, files exist, integration boundaries, scope validation. The task description is the primary reference; the spec section provides context. Result stored in `task_verification` field on the task JSON. Each task is verified individually — no waiting for other tasks.
+**Tier 1 (Per-Task):** Runs immediately after each task's implementation, as part of the atomic implement → verify cycle. Primary question: "did the implementation agent complete this task correctly?" Checks: task fidelity (deliverables match the task description), output quality, files exist, runtime validation (self-tests runnable outputs), integration boundaries, scope validation. The task description is the primary reference; the spec section provides context. Result stored in `task_verification` field on the task JSON. Each task is verified individually — no waiting for other tasks. When runtime validation is partial (some checks need human confirmation), verify-agent writes a `test_protocol` for guided testing.
 
 **Tier 2 (Integration):** Runs at each phase boundary when all phase tasks are Finished with passing Tier 1 verification. Primary question: "do the deliverables work together, satisfy the spec's acceptance criteria, and cover all spec requirements?" Catches two things Tier 1 can't: cross-task integration issues (e.g., output format mismatches between tasks) and decomposition gaps (spec requirements that no task addressed). Decomposition gaps become new tasks; failed acceptance criteria become fix tasks. Runs before the phase gate — integration problems are caught before the next phase builds on top of them. Result stored in `verification-result.json`.
 
 **Verification results are binary: `pass` or `fail`.** No intermediate states.
 
 **Authoritative files:** `agents/verify-agent.md`, `support/reference/workflow.md` § "Verify Phase"
+
+### Runtime Validation and Guided Testing
+
+**Purpose:** Self-test runnable outputs before involving humans, and minimize interaction friction by choosing the right channel (dashboard vs CLI) per-task.
+
+**Runtime validation (Step T4b):** When a task produces something runnable (CLI, TUI, web UI, API, data pipeline), verify-agent executes it and checks the output against expected behavior from the spec. Results: `pass` (all checks automated), `fail` (defects found), `partial` (some checks need human eyes — visual layout, interactive flows), `not_applicable` (non-runnable output like documents or config). This is best-effort and additive — `not_applicable` doesn't affect verification; only `fail` contributes to failure.
+
+**Interaction modes:** When a task needs human involvement, Claude selects the channel that minimizes friction:
+- **Dashboard-mediated** (default) — async review, extended reading, design decisions, phase gates
+- **CLI-direct** — synchronous testing, quick confirmations, command-guided walkthroughs
+
+The `interaction_hint` field on the task JSON drives routing. When absent, defaults to dashboard (preserving current behavior).
+
+**Guided testing:** When runtime validation is `partial`, verify-agent writes a `test_protocol` — structured steps with instructions, expected outcomes, and step types (`command` for Claude to run, `interactive` for user to test, `visual` for user to inspect). Combined with `interaction_hint: "cli_direct"`, `/work` walks the user through the steps directly in the CLI conversation instead of routing to the dashboard.
+
+**Key principle:** Self-test first, then ask humans only for what Claude genuinely can't evaluate. Provide exact commands, not vague instructions. Consider switching cost — keep the user in one place.
+
+**Authoritative files:** `agents/verify-agent.md` § Step T4b, `commands/work.md` § "Interaction Mode Selection" and "Guided Testing Flow", `support/reference/workflow.md` § "Interaction Modes and Runtime Validation"
 
 ### Phases
 
@@ -324,8 +351,11 @@ A task cannot reach "Finished" without `task_verification.result == "pass"`. Thi
 ### Context Separation Between Agents
 verify-agent always runs as a separate Task agent, never inline in the implementation conversation. This applies to both sequential and parallel execution modes.
 
-### The Dashboard Is the Navigation Hub
-During the build phase, the dashboard surfaces what needs attention and links to the specific files that require review. The user follows these links to inspect files directly — but the dashboard guides them there, so they don't need to browse `.claude/` on their own to figure out what's happening or what to do next.
+### The Dashboard Is the Navigation Hub (With CLI-Direct Escape Hatch)
+During the build phase, the dashboard surfaces what needs attention and links to the specific files that require review. The user follows these links to inspect files directly — but the dashboard guides them there, so they don't need to browse `.claude/` on their own to figure out what's happening or what to do next. However, not all human interaction routes through the dashboard: synchronous tasks like testing a CLI, confirming output, or quick yes/no questions are presented directly in the CLI conversation to minimize context-switching friction. The dashboard remains the default; CLI-direct is the escape hatch for tasks where the dashboard adds unnecessary intermediation.
+
+### Agents Minimize Shell Execution
+Agents use dedicated tools (Read, Glob, Grep, Edit, Write) for all file operations and reserve Bash exclusively for operations requiring shell execution: git commands, running test suites, executing deliverables, and network requests. When Bash is necessary, agents consolidate related commands into single invocations and degrade gracefully if permission is denied (e.g., scope validation skips rather than blocks). This minimizes permission prompts when agents run as subagents.
 
 ### Domain Agnosticism
 Nothing in the system assumes software development. Dashboard language, task tracking, verification, and all features adapt to whatever domain the project is in.

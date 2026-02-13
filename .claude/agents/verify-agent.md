@@ -22,6 +22,20 @@ This agent operates in two modes, determined by `/work` routing:
 
 When `/work` invokes this agent, it specifies the mode. Follow the corresponding workflow below.
 
+## Tool Preferences
+
+When running as a subagent, always prefer dedicated tools over Bash for file operations:
+
+| Operation | Use | NOT |
+|-----------|-----|-----|
+| Read files | `Read` tool | `cat`, `head`, `tail` |
+| Search by filename | `Glob` tool | `find`, `ls` |
+| Search file content | `Grep` tool | `grep`, `rg` |
+| Edit files | `Edit` tool | `sed`, `awk` |
+| Write files | `Write` tool | `echo >`, heredoc |
+
+**Only use Bash for operations that genuinely require shell execution:** git commands, running test suites, running CLI/script deliverables, `curl` for API testing. When a Bash call is needed, combine related commands into a single call (e.g., `git diff --name-only && git status --short`) to minimize permission prompts.
+
 ## When to Follow This Workflow
 
 The `/work` command directs you to follow this workflow when:
@@ -70,8 +84,8 @@ When spawned, your caller specifies a turn limit via `max_turns`. Plan your work
 - If you reach turn 25 without completing all steps:
   - Stop new verification checks
   - Write `task_verification` to the task JSON with whatever checks you completed
-  - For checks not yet completed, set their value to `"skipped"`
-  - Set result to `"fail"` with note: "Verification incomplete — {N} of 5 checks completed before turn limit"
+  - For checks not yet completed, set their value to `"skipped"` (including `runtime_validation` if not reached)
+  - Set result to `"fail"` with note: "Verification incomplete — {N} of 6 checks completed before turn limit"
   - Set task status to "In Progress" (normal fail flow — recovery will retry with extended turns)
   - Return your partial T8 report
 
@@ -115,10 +129,11 @@ For each file in `files_affected`:
 Detect files modified during implementation that were NOT listed in `files_affected`:
 
 ```
-1. Determine which files were modified by this task. Use the best available method:
-   a. git status / git diff --name-only (detects uncommitted changes in the working tree)
-   b. If git is not available, skip this check and set scope_validation to "pass"
-      (scope validation is best-effort, not a hard gate)
+1. Determine which files were modified by this task using a SINGLE Bash call:
+   a. Run: git diff --name-only 2>/dev/null; echo "---"; git diff --name-only --cached 2>/dev/null
+      (combines unstaged and staged changes in one invocation)
+   b. If Bash permission is denied or git is not available, skip this check
+      and set scope_validation to "pass" (scope validation is best-effort, not a hard gate)
    Note: In parallel mode, other agents may also have uncommitted changes.
    Focus on files that clearly relate to this task's domain (same directories
    as files_affected) vs unrelated areas.
@@ -135,15 +150,15 @@ Detect files modified during implementation that were NOT listed in `files_affec
    - .claude/dashboard-state.json
 
 4. IF undeclared_files is non-empty:
-   - Flag as scope_violation in the verification result
    - Severity depends on context:
      - Files in the same directory as declared files → minor (likely related)
      - Files in unrelated directories → major (likely scope creep)
    - Add to issues: "Modified {N} file(s) not declared in files_affected: {list}"
-   - This does NOT auto-fail verification, but is recorded in checks.scope_validation
+   - Minor violations: set scope_validation to "pass", record in issues/notes as informational
+   - Major violations: set scope_validation to "fail" (this fails the overall result)
 
-5. IF unable to determine modified files (no git, no timestamps):
-   - Set scope_validation to "pass" with note: "Scope validation skipped — no git available"
+5. IF unable to determine modified files (no git, permission denied, no timestamps):
+   - Set scope_validation to "pass" with note: "Scope validation skipped — no git available or permission denied"
 ```
 
 
@@ -163,6 +178,92 @@ Compare the implementation against both:
 - Check for TODOs, FIXMEs, placeholders, or incomplete implementations
 - If earlier tasks established patterns (naming conventions, structure, formatting), verify this task follows them
 - Check for obvious issues: missing error handling, incomplete sections, hardcoded values that should be configurable
+
+### Step T4b: Runtime Validation
+
+Attempt to execute and validate the task's output when it produces something runnable. This is a best-effort, additive step — it provides evidence but does not gate verification on its own.
+
+**1. Determine if runtime validation applies:**
+
+Examine the task's `description`, `files_affected`, `spec_section`, and the project's technology stack (from CLAUDE.md). The output is runtime-testable if it produces any of:
+- A CLI tool, script, or executable
+- A TUI or interactive terminal application
+- A web UI, page, or component with a dev server
+- An API endpoint or server
+- A data pipeline with observable output
+
+**Skip gracefully** (set `runtime_validation: "not_applicable"`) when:
+- The task produces non-software deliverables (documents, research, decisions, config files)
+- Running the output would cause side effects (database migrations, external API calls, payments)
+- The task is infrastructure-only with no runnable endpoint (CI config, dependency updates)
+- No safe execution method exists
+
+**2. Execute the appropriate validation approach:**
+
+| Output Type | Approach |
+|-------------|----------|
+| **CLI/script** | Run via Bash with test inputs, validate stdout/stderr against expected behavior from spec |
+| **TUI** | Run with `--help`, `--version`, or non-interactive flags; validate output structure |
+| **Web UI** | Use Playwright MCP (`browser_navigate`, `browser_snapshot`, `browser_take_screenshot`) to load the page, check structure, validate key elements |
+| **API** | Make HTTP requests via Bash (`curl`), validate response status codes and body structure |
+| **Data pipeline** | Run pipeline, check output files/tables exist with expected structure |
+
+**3. Record the result** in `task_verification.checks.runtime_validation`:
+
+| Value | Meaning |
+|-------|---------|
+| `"pass"` | All runtime checks passed — output behaves as specified |
+| `"fail"` | Runtime checks found defects (wrong output, crashes, missing elements) |
+| `"partial"` | Some checks passed automatically, others need human eyes (visual layout, interactive flows) |
+| `"not_applicable"` | Task output is not runtime-testable (default when field is absent) |
+
+**4. When result is `"partial"` or task is `owner: "both"`:**
+
+Write a `test_protocol` to the task JSON — a structured guide for human-assisted testing:
+
+```json
+{
+  "test_protocol": {
+    "summary": "Test the TUI navigation and visual layout",
+    "steps": [
+      {
+        "instruction": "Run the TUI application",
+        "expected": "Menu with options: Dashboard, Settings, Help",
+        "type": "command",
+        "command": "python src/tui.py"
+      },
+      {
+        "instruction": "Select 'Dashboard' from the menu",
+        "expected": "A table showing project status with columns: Task, Status, Owner",
+        "type": "interactive"
+      },
+      {
+        "instruction": "Press 'q' to quit",
+        "expected": "Application exits cleanly to terminal",
+        "type": "interactive"
+      }
+    ],
+    "automated_results": "Runtime validation passed 3/5 checks. Remaining 2 require visual/interactive confirmation.",
+    "estimated_time": "2 minutes"
+  }
+}
+```
+
+**Step types:**
+- `"command"` — Claude can run it for the user and show output
+- `"interactive"` — User needs to interact (Claude provides instruction)
+- `"visual"` — User needs to look at something (screenshot, layout, aesthetics)
+
+Also set `interaction_hint` on the task JSON:
+- `"cli_direct"` — when testing is synchronous and terminal-based (CLI, TUI, API, quick confirmations)
+- `"dashboard"` — when review is async and benefits from extended reading time (documents, design decisions, phase gates)
+
+Default when absent: `"dashboard"` (preserves current behavior).
+
+**Impact on overall verification:**
+- `"pass"` or `"not_applicable"` — no impact on overall result
+- `"partial"` — no impact on overall result (human testing will confirm remaining items)
+- `"fail"` — contributes to overall verification failure (task has observable defects)
 
 ### Step T5: Verify Integration Boundaries
 
@@ -189,10 +290,31 @@ Record the per-task verification outcome in the task JSON:
       "files_exist": "pass",
       "spec_alignment": "pass",
       "output_quality": "pass",
+      "runtime_validation": "pass",
       "integration_ready": "pass",
       "scope_validation": "pass"
     },
-    "notes": "All files created as specified.",
+    "notes": "All files created as specified. CLI runs and produces expected output.",
+    "issues": []
+  }
+}
+```
+
+**Pass with partial runtime validation (human testing needed):**
+```json
+{
+  "task_verification": {
+    "result": "pass",
+    "timestamp": "2026-01-28T15:30:00Z",
+    "checks": {
+      "files_exist": "pass",
+      "spec_alignment": "pass",
+      "output_quality": "pass",
+      "runtime_validation": "partial",
+      "integration_ready": "pass",
+      "scope_validation": "pass"
+    },
+    "notes": "Implementation correct. Runtime validation passed 3/5 checks; 2 require interactive/visual confirmation. Test protocol written.",
     "issues": []
   }
 }
@@ -208,6 +330,7 @@ Record the per-task verification outcome in the task JSON:
       "files_exist": "pass",
       "spec_alignment": "fail",
       "output_quality": "pass",
+      "runtime_validation": "not_applicable",
       "integration_ready": "pass",
       "scope_validation": "pass"
     },
@@ -222,7 +345,7 @@ Record the per-task verification outcome in the task JSON:
 }
 ```
 
-**Scope violation example:**
+**Minor scope violation example (passes — violation recorded but does not fail):**
 ```json
 {
   "task_verification": {
@@ -232,14 +355,40 @@ Record the per-task verification outcome in the task JSON:
       "files_exist": "pass",
       "spec_alignment": "pass",
       "output_quality": "pass",
+      "runtime_validation": "not_applicable",
       "integration_ready": "pass",
-      "scope_validation": "fail"
+      "scope_validation": "pass"
     },
-    "notes": "Implementation correct but modified 2 files outside declared scope. Scope violation recorded but does not block verification.",
+    "notes": "Implementation correct. Minor scope note: modified 1 file outside declared scope (same directory, likely related).",
     "issues": [
       {
         "severity": "minor",
-        "description": "Modified src/utils/helpers.py (not in files_affected)"
+        "description": "Modified src/utils/helpers.py (not in files_affected, same directory as declared files)"
+      }
+    ]
+  }
+}
+```
+
+**Major scope violation example (fails — unrelated files modified):**
+```json
+{
+  "task_verification": {
+    "result": "fail",
+    "timestamp": "2026-01-28T15:30:00Z",
+    "checks": {
+      "files_exist": "pass",
+      "spec_alignment": "pass",
+      "output_quality": "pass",
+      "runtime_validation": "not_applicable",
+      "integration_ready": "pass",
+      "scope_validation": "fail"
+    },
+    "notes": "Implementation correct but modified 2 files in unrelated directories outside declared scope.",
+    "issues": [
+      {
+        "severity": "major",
+        "description": "Modified config/settings.yaml and docs/api.md (not in files_affected, unrelated directories)"
       }
     ]
   }
@@ -252,12 +401,12 @@ Update the task JSON based on the result. **Do NOT regenerate the dashboard or s
 
 | Result | Action |
 |--------|--------|
-| `pass` | Set task status to "Finished". If `owner: "both"`, also set `user_review_pending: true`. Return your T8 report. |
+| `pass` | Set task status to "Finished". If `owner: "both"`, also set `user_review_pending: true`. Write `test_protocol` and `interaction_hint` if applicable. Return your T8 report. |
 | `fail` | Set task status back to "In Progress". Return your T8 report with issues. |
 
 **When verification passes (status: "Awaiting Verification" → "Finished"):**
 
-For `claude`-owned tasks:
+For `claude`-owned tasks (no human testing needed):
 ```json
 {
   "status": "Finished",
@@ -265,7 +414,7 @@ For `claude`-owned tasks:
 }
 ```
 
-For `both`-owned tasks (user review gate):
+For `both`-owned tasks, OR any task with a `test_protocol` (user review/testing gate):
 ```json
 {
   "status": "Finished",
@@ -273,7 +422,18 @@ For `both`-owned tasks (user review gate):
   "user_review_pending": true
 }
 ```
-The `user_review_pending` flag keeps the task visible in the dashboard "Your Tasks" section so the user can review the implementation and provide feedback. The flag is cleared when the user runs `/work complete {id}`.
+The `user_review_pending` flag keeps the task visible for user action. For `both`-owned tasks, the user reviews the implementation. For tasks with a `test_protocol` (even claude-owned), the user walks through guided testing. The flag is cleared when the user runs `/work complete {id}` or completes guided testing.
+
+**When test_protocol and interaction_hint apply:**
+
+If Step T4b produced a `test_protocol` (runtime validation was `"partial"`, or task is `owner: "both"` with testable output), write both fields to the task JSON alongside the verification result:
+```json
+{
+  "test_protocol": { "...see T4b..." },
+  "interaction_hint": "cli_direct"
+}
+```
+The `/work` coordinator reads these fields to determine how to present the task to the user — via guided CLI testing or dashboard review. See `work.md` for the interaction mode routing logic.
 
 In both cases, the task now has `status: "Finished"` AND `task_verification.result: "pass"`, satisfying the verification requirement.
 
@@ -305,8 +465,21 @@ Task 5 verification: PASS (attempt 1)
   Files: 1/1 exist
   Spec alignment: matches task description
   Output quality: no issues
+  Runtime validation: CLI runs correctly, output matches spec
   Integration: outputs match downstream expectations
   Scope: all modifications within declared files_affected
+```
+
+Pass with guided testing:
+```
+Task 5 verification: PASS (attempt 1)
+  Files: 3/3 exist
+  Spec alignment: matches task description
+  Output quality: no issues
+  Runtime validation: partial (3/5 automated, 2 need human confirmation)
+  Integration: outputs match downstream expectations
+  Scope: all modifications within declared files_affected
+  → Test protocol written (2 steps, ~2 min) — interaction: cli_direct
 ```
 
 Fail:
@@ -340,16 +513,12 @@ Read and understand:
 
 ### Step 2: Run Existing Tests
 
-If tests exist:
-```bash
-# Run project's test suite
-npm test  # or appropriate command
-```
+If tests exist, run the project's test suite via a single Bash call (e.g., `npm test`, `pytest`, `cargo test` — use whatever is appropriate for the project). If Bash permission is denied, document "Tests skipped — Bash permission not available" and continue with manual verification in subsequent steps.
 
 Document results:
 - Tests passed
 - Tests failed (with details)
-- Tests skipped
+- Tests skipped (including reason)
 
 ### Step 3: Validate Against Spec
 
@@ -363,12 +532,13 @@ For each acceptance criterion:
 | Invalid login shows error | PASS | Error message displays correctly |
 | Session expires after 1h | FAIL | Currently no expiration |
 
-### Step 4: Manual Verification
+### Step 4: Manual Verification and Runtime Validation
 
 For criteria not covered by tests:
-- Review deliverables manually
+- **Self-test first:** Attempt runtime validation of any runnable deliverables using the same approach as per-task Step T4b (CLI, TUI, Web UI, API). Record what passed automatically.
+- Review deliverables manually for criteria that can't be runtime-tested
 - Validate deliverables directly
-- Document findings
+- Document findings, noting which were verified by runtime testing vs manual review
 
 ### Step 5: Identify Issues
 
