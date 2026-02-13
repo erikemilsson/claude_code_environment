@@ -42,7 +42,6 @@ Check for tasks left in recoverable states by a previous session. Read `.claude/
 Read and analyze:
 - `.claude/spec_v{N}.md` - The specification (source of truth)
 - `.claude/dashboard.md` - Task status and progress (read the `<!-- DASHBOARD META -->` block)
-- `.claude/support/questions/questions.md` - Pending questions
 
 **Fast-path optimization:** If dashboard META block shows matching task_count and spec_fingerprint, skip Steps 1a/1b and jump to Step 1c. Always check drift-deferrals.json for stale deferrals even on fast-path.
 
@@ -158,7 +157,7 @@ After phase and decision checks, assess whether multiple tasks can be dispatched
 **If a specific request was provided** (and passed spec check):
 1. Create a task for the request (or find existing matching task)
 2. Route to the "If Executing" section in Step 4
-3. Continue to Step 5 (questions) and Step 6 (validation)
+3. Continue to Step 5 (validation)
 
 **If no request provided** (auto-detect mode):
 
@@ -203,7 +202,7 @@ After phase and decision checks, assess whether multiple tasks can be dispatched
    → Route to implement-agent for next pending task
 ```
 
-**Auto-continuation within phases:** After a task finishes (passes per-task verification), `/work` loops back to Step 3 to determine the next action — no user prompt, no pause. This continues automatically until a natural stopping point: phase boundary (gate approval needed), blocking decision, blocking question, or verification failure requiring human escalation. The value of front-loaded decomposition and structured verification is that work flows autonomously between these stops.
+**Auto-continuation within phases:** After a task finishes (passes per-task verification), `/work` loops back to Step 3 to determine the next action — no user prompt, no pause. This continues automatically until a natural stopping point: phase boundary (gate approval needed), blocking decision, or verification failure requiring human escalation. The value of front-loaded decomposition and structured verification is that work flows autonomously between these stops.
 
 **Important — spec tasks vs out-of-spec tasks:** Phase routing is based on spec tasks only (excluding `out_of_spec: true`). Out-of-spec tasks are excluded from **phase detection** (determining whether a phase is complete, triggering phase-level verification, or reaching project completion) to prevent a verify → execute → verify infinite loop. However, out-of-spec tasks still run the **full implement → verify cycle** — they are not exempt from per-task verification. The structural invariant applies universally: no task (spec or out-of-spec) can reach "Finished" without `task_verification.result == "pass"`.
 
@@ -214,6 +213,29 @@ After phase and decision checks, assess whether multiple tasks can be dispatched
 2. Set `out_of_spec_rejected: true` and `rejection_reason` (if provided) on task JSON
 3. Move task file to `.claude/tasks/archive/`
 4. Task preserved for audit trail but excluded from active processing and dashboard
+
+### Interaction Mode Selection
+
+When a task involves human action (owner `"human"` or `"both"`, or `user_review_pending`), Claude should select the interaction channel that minimizes friction. This is a judgment call, not a rigid rule.
+
+| Factor | Dashboard-mediated | CLI-direct |
+|--------|-------------------|------------|
+| Timing | User will do it later (async) | User should do it now (synchronous) |
+| Duration | Extended (reading docs, thinking through decisions) | Quick (run a command, confirm output, yes/no) |
+| Terminal needed? | No | Yes — commands to run, output to check |
+| Multiple items | Batch of unrelated items | Single focused task |
+| Interaction type | Passive review (read, think, decide) | Active testing (run, observe, respond) |
+
+**Scenario examples:**
+- Test a CLI/TUI → `cli_direct` (run commands, observe output)
+- Test a web UI → `cli_direct` (Playwright screenshots, visual confirmation)
+- Review a long document → `dashboard` (user needs reading time)
+- Make a design decision → `dashboard` (user weighs options)
+- Configure API keys → `cli_direct` (Claude guides step by step)
+- Phase gate approval → `dashboard` (user reviews overall progress)
+- Quick confirmation → `cli_direct` (2-second yes/no)
+
+The `interaction_hint` is set by verify-agent during Step T4b/T7. `/work` respects the hint but users can always override by using `/work complete {id}` from the dashboard flow.
 
 ### Step 4: Execute Action
 
@@ -268,9 +290,61 @@ Task tool call:
 **Timeout handling:** If verify-agent exhausts `max_turns` without completing, treat as verification failure — increment `verification_attempts`, set task to "Blocked" with `[VERIFICATION TIMEOUT]` note, report to user.
 
 **After per-task verification completes:**
-- **Pass**: If `owner: "both"`, verify `user_review_pending: true` was set. Regenerate dashboard, then loop back to Step 3 (auto-continuation — find and dispatch the next eligible task).
+- **Pass**: If `owner: "both"` or task has `test_protocol`, verify `user_review_pending: true` was set. Check for interaction mode routing (see below). Regenerate dashboard, then loop back to Step 3 (auto-continuation — find and dispatch the next eligible task).
 - **Fail**: Task set to "In Progress". Route to implement-agent to fix, then re-verify. Loop until pass.
 - Regenerate dashboard after status changes (per `dashboard-regeneration.md` § "When to Regenerate").
+
+**Interaction mode routing (after per-task verification pass):**
+
+When a task passes verification and has `user_review_pending: true` (set for `owner: "both"` tasks AND any task with a `test_protocol`), check for an `interaction_hint` field:
+
+| `interaction_hint` | Routing |
+|--------------------|---------|
+| `"cli_direct"` | Present the task for guided testing or confirmation directly in the CLI conversation (see Guided Testing Flow below). Do NOT wait for the user to discover it in the dashboard. |
+| `"dashboard"` or absent | Existing flow — task appears in dashboard "Your Tasks" / "Action Required". User reviews asynchronously. |
+
+**Guided Testing Flow (CLI-direct with test_protocol):**
+
+When a task has `interaction_hint: "cli_direct"` AND a `test_protocol`, present the testing flow immediately:
+
+```
+Task {id}: "{title}" — guided testing ({estimated_time})
+
+{automated_results}
+
+Step 1/{N}: {instruction}
+  Expected: {expected}
+  [R] Run command  [S] Skip  [P] Pass  [F] Fail
+  (Available options depend on step type — "command" shows [R], others show [P]/[F])
+
+Step 2/{N}: {instruction}
+  Expected: {expected}
+  [P] Pass  [S] Skip  [F] Fail
+
+Guided testing complete: {passed}/{total} passed
+```
+
+**Step type handling:**
+- `"command"` steps: Offer `[R]` Run — execute the command via Bash and show output. Then ask `[P]` Pass / `[F]` Fail based on the output.
+- `"interactive"` steps: Show instruction and expected result. User tests manually, then signals `[P]` Pass / `[F]` Fail.
+- `"visual"` steps: If a screenshot is available (e.g., from Playwright), show it. Otherwise, show instruction. User confirms `[P]` Pass / `[F]` Fail.
+
+**After guided testing:**
+- All steps passed or skipped → clear `user_review_pending`, continue auto-continuation
+- Any step failed → record failure in task's `user_feedback` field, set task back to "In Progress" for fixes, route to implement-agent
+- User can also provide freeform feedback at the end of the guided testing flow
+
+**CLI-direct without test_protocol:**
+
+When a task has `interaction_hint: "cli_direct"` but NO `test_protocol` (e.g., a quick confirmation), present the task inline:
+
+```
+Task {id}: "{title}" — ready for your review
+
+{task description / notes summary}
+
+[C] Complete  [F] Needs fixes (provide feedback)
+```
 
 #### If Verifying (Phase-Level)
 
@@ -318,27 +392,7 @@ When all tasks are finished and verification conditions are met:
 3. **Present final checkpoint** — report completion with verification summary
 4. **Stop** — do not route to any agent. The project is done.
 
-### Step 5: Handle Questions
-
-Questions accumulate in `.claude/support/questions/questions.md` during work.
-
-**Check for questions at these points:**
-- At phase boundaries (Execute → Verify, Verify → Complete)
-- When a `[BLOCKING]` question is added (halts auto-continuation immediately)
-- When quality gate fails (tests fail, spec violation)
-
-**Interaction with auto-continuation:** Non-blocking questions accumulate during auto-continuation and are surfaced at the next natural stopping point (phase boundary, blocking decision, etc.). Only `[BLOCKING]` questions interrupt auto-continuation between tasks.
-
-**Process:**
-
-1. **Read `.claude/support/questions/questions.md`** — check for unresolved questions
-2. **If questions exist, present them** grouped by category. Include `[S]` Skip option.
-3. **After user answers:** Move to "Answered Questions" table, update affected spec/task notes
-4. **If no questions or user skips:** Continue to Step 6.
-
-**Blocking questions** prefixed with `[BLOCKING]` halt work until answered.
-
-### Step 6: Post-Dispatch Validation
+### Step 5: Post-Dispatch Validation
 
 Run quick validation after task dispatch to catch issues early:
 
@@ -363,7 +417,6 @@ For full maintenance validation (schema checks, decision integrity, template syn
 Reports:
 - Current phase and what was done
 - Any spec misalignments surfaced
-- Questions requiring human input
 - Next steps or blockers
 
 ## Examples
@@ -384,8 +437,6 @@ Reports:
 # Complete a specific task
 /work complete 5
 
-# After answering questions, continue
-/work
 ```
 
 ---
@@ -443,12 +494,13 @@ Use `/work complete` for manual task completion outside of implement-agent's wor
    }
    ```
    - If `user_review_pending` is `true`, clear it.
+   - If `test_protocol` exists and guided testing was completed, record results in `user_feedback`.
 6. **Check parent auto-completion:**
    - If parent_task exists and all non-Absorbed sibling subtasks are "Finished"
    - Set parent status to "Finished"
 7. **Regenerate dashboard** - Follow `.claude/support/reference/dashboard-regeneration.md`
 8. **Auto-archive check** - If active task count > 100, archive old tasks
-9. **Post-dispatch validation** - Run main `/work` Step 6 checks (task file integrity, dashboard exists, session sentinel)
+9. **Post-dispatch validation** - Run main `/work` Step 5 checks (task file integrity, dashboard exists, session sentinel)
 
 ### Rules
 

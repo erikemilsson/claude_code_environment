@@ -63,11 +63,6 @@ drift_deferrals: 0
 Applied in person on 2026-01-25. Expect 2-week processing time.
 <!-- END FEEDBACK:8 -->
 
-### Reviews
-
-- [ ] **Plumbing code compliance?** — blocking question needs answer before Phase 3 → [questions.md](support/questions/questions.md)
-- [ ] **2 pending questions** → [questions.md](support/questions/questions.md)
-
 ---
 
 ## 📊 Progress
@@ -203,10 +198,6 @@ graph LR
 ---
 
 ## 💡 Notes
-
-**Quick links:**
-- **Questions** — blocking & unresolved items from work sessions → [questions.md](support/questions/questions.md)
-- **Decisions** — comparison records and research → [decisions/](support/decisions/)
 
 <!-- USER SECTION -->
 

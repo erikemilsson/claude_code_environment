@@ -140,9 +140,18 @@ Canonical definitions for terms used across the environment. Terms already defin
 
 | Term | Definition |
 |------|------------|
-| **Per-Task Verification (Tier 1)** | Runs after each task implementation. Checks: files exist, spec alignment, output quality, integration readiness. Pass → Finished. Fail → back to In Progress (max 2 retries). |
+| **Per-Task Verification (Tier 1)** | Runs after each task implementation. Checks: files exist, spec alignment, output quality, runtime validation, integration readiness, scope validation. Pass → Finished. Fail → back to In Progress (max 2 retries). |
 | **Phase-Level Verification (Tier 2)** | Runs once when all tasks Finished. Validates full implementation against spec acceptance criteria. Result: `pass` or `fail`. Written to `.claude/verification-result.json`. |
 | **Verification Debt** | Tasks that bypassed or failed verification: status "Awaiting Verification", "Finished" without `task_verification`, or `task_verification.result` is "fail". Blocks project completion. |
+
+### Runtime Validation & Interaction
+
+| Term | Definition |
+|------|------------|
+| **Runtime Validation** | Self-testing step (T4b) where verify-agent executes the built output to check correctness before involving a human. Applies to CLIs, TUIs, web UIs, APIs, and data pipelines. Result: `"pass"`, `"fail"`, `"partial"`, or `"not_applicable"`. |
+| **Test Protocol** | Structured testing steps written to the task JSON when runtime validation is partial or human testing is needed. Contains step-by-step instructions with expected outcomes, step types (`command`, `interactive`, `visual`), and an estimated time. |
+| **Interaction Mode** | Channel selection for human-involved tasks. `"dashboard"` (default) routes to dashboard "Your Tasks" for async review. `"cli_direct"` presents the task immediately in the CLI conversation for synchronous testing or confirmation. Set via `interaction_hint` field in task JSON. |
+| **Guided Testing** | Interactive in-CLI testing flow where `/work` walks the user through test protocol steps one at a time. For `command` steps, Claude runs the command and shows output. For `interactive` and `visual` steps, the user tests and signals pass/fail. |
 
 ### Agents & Infrastructure
 

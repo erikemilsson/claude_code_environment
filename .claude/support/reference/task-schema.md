@@ -49,12 +49,32 @@
       "files_exist": "pass",
       "spec_alignment": "pass",
       "output_quality": "pass",
+      "runtime_validation": "partial",
       "integration_ready": "pass",
       "scope_validation": "pass"
     },
     "issues": [],
-    "notes": "All files created as specified."
-  }
+    "notes": "All files created as specified. Runtime validation passed 3/5 checks; 2 require interactive confirmation."
+  },
+  "test_protocol": {
+    "summary": "Test the TUI navigation and visual layout",
+    "steps": [
+      {
+        "instruction": "Run the TUI application",
+        "expected": "Menu with options: Dashboard, Settings, Help",
+        "type": "command",
+        "command": "python src/tui.py"
+      },
+      {
+        "instruction": "Select 'Dashboard' from the menu",
+        "expected": "A table showing project status with columns: Task, Status, Owner",
+        "type": "interactive"
+      }
+    ],
+    "automated_results": "Runtime validation passed 3/5 checks. Remaining 2 require visual/interactive confirmation.",
+    "estimated_time": "2 minutes"
+  },
+  "interaction_hint": "cli_direct"
 }
 ```
 
@@ -102,9 +122,12 @@
 | parallel_safe | Boolean | When true, task is eligible for parallel execution even with empty `files_affected`. Use for research/analysis tasks with no file side effects. |
 | conflict_note | String | **Transient.** Set during parallel dispatch when a task is held back due to file conflicts (e.g., `"Held: file conflict with Task 3 on src/models.py"`). Cleared when the task is dispatched or during post-parallel cleanup. Surfaced in the dashboard Status column. |
 | recovery_state | String | **Transient.** Set by `/work` Step 0 when auto-recovering a stuck task. Values: `"verification_retry"` (respawning verify-agent), `"agent_retry"` (user chose to retry after timeout). Cleared after recovery completes. Prevents double-recovery if `/work` runs again before recovery finishes. |
-| user_review_pending | Boolean | Set to `true` by verify-agent when a `both`-owned task passes verification. Keeps the task visible in "Your Tasks" until the user runs `/work complete {id}`. Cleared by `/work complete`. |
+| user_review_pending | Boolean | Set to `true` by verify-agent when a `both`-owned task passes verification, OR when any task has a `test_protocol` (runtime validation was partial, human testing needed). Keeps the task visible for user action until the user runs `/work complete {id}` or completes guided testing. Cleared by `/work complete`. |
 | verification_attempts | Number | Count of per-task verification attempts (incremented by verify-agent on each run). Escalates to human review at >= 3 (initial + 2 retries). Default: 0 (omit until first verification). |
+| verification_history | Array | Append-only log of all verification attempts (pass and fail). Each entry records attempt number, result, checks, issues, and notes. Coexists with `task_verification` (which stays as the latest result for quick checks). See Verification History section below. |
 | task_verification | Object | Per-task verification result recorded by verify-agent |
+| test_protocol | Object | Structured testing steps for human-guided verification. Written by verify-agent when runtime validation is `"partial"` or task needs human testing. See Test Protocol section below. |
+| interaction_hint | String | `"cli_direct"` or `"dashboard"`. Determines how `/work` presents the task to the user. CLI-direct tasks are presented immediately in the conversation; dashboard tasks appear in "Your Tasks". Default when absent: `"dashboard"`. |
 
 ## Owner Values
 
@@ -238,6 +261,7 @@ Per-task verification result recorded by verify-agent when a task is in "Awaitin
       "files_exist": "pass",
       "spec_alignment": "pass",
       "output_quality": "pass",
+      "runtime_validation": "not_applicable",
       "integration_ready": "pass",
       "scope_validation": "pass"
     },
@@ -253,8 +277,8 @@ Per-task verification result recorded by verify-agent when a task is in "Awaitin
 |-----------|------|--------|-------------|
 | `result` | String | `"pass"`, `"fail"` | Overall per-task verification outcome |
 | `timestamp` | String | ISO 8601 | When verification completed |
-| `checks` | Object | Keys: `files_exist`, `spec_alignment`, `output_quality`, `integration_ready`, `scope_validation` | Per-check pass/fail |
-| `checks.*` | String | `"pass"` or `"fail"` | Individual check result |
+| `checks` | Object | Keys: `files_exist`, `spec_alignment`, `output_quality`, `runtime_validation`, `integration_ready`, `scope_validation` | Per-check pass/fail |
+| `checks.*` | String | `"pass"`, `"fail"`, `"partial"`, `"not_applicable"`, or `"skipped"` | Individual check result. Most checks use `"pass"`/`"fail"`. `runtime_validation` additionally uses `"partial"` (some checks need human eyes), `"not_applicable"` (non-runnable output), and `"skipped"` (turn budget exceeded). |
 | `issues` | Array | Issue objects `{severity, description}` | Issues found during verification |
 | `notes` | String | Free text | Brief summary of verification |
 
@@ -298,6 +322,73 @@ Tasks that bypass verification create "verification debt":
 - If debt count > 0, `/work` routes to verify-agent (per-task) for the first unverified task instead of proceeding to phase-level verification
 - The completion gate (work.md § Step 4 "If Completing") enforces mandatory verification checks before updating spec status to `complete`
 - `/health-check` treats missing or failed verification on Finished tasks as an ERROR
+
+## Test Protocol Field
+
+Written by verify-agent when runtime validation is `"partial"` or the task needs human-guided testing. Provides structured steps for the user to walk through, typically presented via the guided testing flow in `/work` when `interaction_hint` is `"cli_direct"`.
+
+```json
+{
+  "test_protocol": {
+    "summary": "Brief description of what needs testing",
+    "steps": [
+      {
+        "instruction": "What to do",
+        "expected": "What should happen",
+        "type": "command",
+        "command": "python src/app.py"
+      },
+      {
+        "instruction": "Verify the output table",
+        "expected": "Table with 3 columns: Name, Status, Date",
+        "type": "visual"
+      }
+    ],
+    "automated_results": "What runtime validation already confirmed",
+    "estimated_time": "2 minutes"
+  }
+}
+```
+
+### Sub-fields
+
+| Sub-field | Type | Description |
+|-----------|------|-------------|
+| `summary` | String | Brief description of what needs testing |
+| `steps` | Array | Ordered list of test step objects |
+| `steps[].instruction` | String | What the user should do |
+| `steps[].expected` | String | What correct behavior looks like |
+| `steps[].type` | String | `"command"` (Claude runs it), `"interactive"` (user interacts), or `"visual"` (user inspects output) |
+| `steps[].command` | String | Optional. The command to execute (only for `"command"` type steps) |
+| `automated_results` | String | Summary of what runtime validation already confirmed automatically |
+| `estimated_time` | String | Human-readable time estimate for completing the test protocol |
+
+### When Present
+
+- Runtime validation returned `"partial"` — some checks passed, others need human confirmation
+- Task is `owner: "both"` with runnable output — human review is part of the workflow
+- Verify-agent determined the output needs visual or interactive confirmation
+
+### When Absent
+
+- Runtime validation returned `"pass"`, `"fail"`, or `"not_applicable"` — no human testing needed
+- Task produces non-runnable output (documents, config, research)
+- Existing tasks without this field follow the current flow unchanged
+
+## Interaction Hint Field
+
+Determines how `/work` presents human-involved tasks. Set by verify-agent during Step T7 based on the nature of the required interaction.
+
+| Value | Behavior |
+|-------|----------|
+| `"cli_direct"` | Task presented immediately in the CLI conversation. Used for synchronous testing, quick confirmations, command-guided walkthroughs. |
+| `"dashboard"` | Task appears in dashboard "Your Tasks" / Action Required. Used for async review, extended reading, batch decisions. |
+
+**Default:** When absent, defaults to `"dashboard"` (preserves current behavior). Existing tasks without this field are unaffected.
+
+**Set by:** Verify-agent Step T7, based on Step T4b runtime validation results and task characteristics.
+
+**Overridable:** Users can always use `/work complete {id}` from the dashboard flow regardless of the hint.
 
 ## Completion Notes Contract
 

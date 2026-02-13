@@ -143,7 +143,6 @@ Detect files modified during implementation that were NOT listed in `files_affec
 3. Filter out known infrastructure writes (not implementation scope):
    - .claude/dashboard.md
    - .claude/tasks/*
-   - .claude/support/questions/*
    - .claude/support/workspace/*
    - .claude/drift-deferrals.json
    - .claude/verification-result.json
@@ -217,9 +216,9 @@ Examine the task's `description`, `files_affected`, `spec_section`, and the proj
 | `"partial"` | Some checks passed automatically, others need human eyes (visual layout, interactive flows) |
 | `"not_applicable"` | Task output is not runtime-testable (default when field is absent) |
 
-**4. When result is `"partial"` or task is `owner: "both"`:**
+**4. When result is `"partial"`, or when task is `owner: "both"` AND runtime_validation is `"pass"` or `"partial"` (the task has runnable output):**
 
-Write a `test_protocol` to the task JSON — a structured guide for human-assisted testing:
+Write a `test_protocol` to the task JSON — a structured guide for human-assisted testing. For `both`-owned tasks without runnable output, skip the test_protocol — the dashboard path with `user_review_pending: true` handles the human review.
 
 ```json
 {
@@ -273,10 +272,12 @@ Default when absent: `"dashboard"` (preserves current behavior).
 
 ### Step T6: Produce Verification Result
 
-**First, increment the attempt counter:**
+**First, increment the attempt counter and append to verification history:**
 1. Read the current `verification_attempts` value from the task JSON (default 0 if absent)
 2. Increment by 1
-3. Write the updated count to the task JSON alongside the verification result
+3. Build a history entry: `{"attempt": N, "result": "pass"|"fail", "timestamp": "ISO 8601", "checks": {same as task_verification.checks}, "issues": [...], "notes": "summary"}`
+4. Append the entry to the `verification_history` array (create array if absent)
+5. Write the updated count, history, and verification result to the task JSON
 
 Record the per-task verification outcome in the task JSON:
 
@@ -401,7 +402,7 @@ Update the task JSON based on the result. **Do NOT regenerate the dashboard or s
 
 | Result | Action |
 |--------|--------|
-| `pass` | Set task status to "Finished". If `owner: "both"`, also set `user_review_pending: true`. Write `test_protocol` and `interaction_hint` if applicable. Return your T8 report. |
+| `pass` | Set task status to "Finished". If `owner: "both"` or task has a `test_protocol`, also set `user_review_pending: true`. Write `test_protocol` and `interaction_hint` if applicable (see T4b). Return your T8 report. |
 | `fail` | Set task status back to "In Progress". Return your T8 report with issues. |
 
 **When verification passes (status: "Awaiting Verification" → "Finished"):**
@@ -439,7 +440,7 @@ In both cases, the task now has `status: "Finished"` AND `task_verification.resu
 
 **When setting task back to "In Progress" (fail):**
 - Set status to "In Progress"
-- Append verification failure notes to the task `notes` field (prepend with `[VERIFICATION FAIL #{N}]` where N = current `verification_attempts`)
+- Append verification failure notes to the task `notes` field (prepend with `[VERIFICATION FAIL #{N}]` where N = current `verification_attempts`). These inline notes are a human-readable convenience; the structured data is in `verification_history`.
 - Clear `completion_date`
 - Update `updated_date`
 
@@ -668,9 +669,8 @@ If acceptance criteria lack tests:
 ### Spec Ambiguity
 
 If unsure what correct behavior is:
-1. Add question to questions.md with today's date prefix: `- [YYYY-MM-DD] Question text`
-2. Note ambiguity in report
-3. Flag for human clarification
+1. Note ambiguity in verification report
+2. Flag for human clarification (ask directly via conversation)
 
 ## Handoff Criteria
 

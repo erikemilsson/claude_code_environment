@@ -100,7 +100,8 @@ Detects tasks that may have bypassed the implement-agent or verify-agent workflo
 
 **Verification debt (ERRORS):**
 - Finished tasks MUST have a `task_verification` field with `result` of `"pass"`
-- `task_verification.checks` should have all 5 keys (`files_exist`, `spec_alignment`, `output_quality`, `integration_ready`, `scope_validation`) with pass/fail values
+- `task_verification.checks` should have all 5 keys (`files_exist`, `spec_alignment`, `output_quality`, `integration_ready`, `scope_validation`) with pass/fail values (or `"skipped"` only when result is `"fail"` due to timeout)
+- If any check is `"fail"`, the overall `result` must also be `"fail"` — a check-level fail with a result-level pass is invalid
 - If any finished task lacks `task_verification`: **ERROR** — "Verification debt: N finished tasks missing verification"
 - If any finished task has `task_verification.result == "fail"`: **ERROR**
 
@@ -127,11 +128,7 @@ verification_debt = count of tasks where:
 
 **Note:** Workflow bypass warnings are informational. Some tasks may legitimately have brief notes. The intent is to surface patterns, not block individual tasks.
 
-#### 8. Questions and Workspace Staleness
-
-**Stale Questions:**
-- Questions in `.claude/support/questions/questions.md` older than 14 days
-- Warning: "N questions have been pending for over 14 days"
+#### 8. Workspace Staleness
 
 **Stale Workspace Files:**
 - Files in `.claude/support/workspace/` older than 30 days
@@ -183,7 +180,6 @@ Reports tasks with `"out_of_spec": true` in a separate section of the report. In
 | Absorbed referencing another Absorbed task (chain) | Suggest the non-Absorbed end of the chain; ask user to confirm or change |
 | Missing snapshot file | Informational only — drift detection degrades gracefully |
 | Malformed decision dependency format | Ask user: correct or remove the entry |
-| Stale questions (> 14 days) | List questions, ask user to answer or remove |
 | Stale workspace files (> 30 days) | List files, ask user: graduate to final location, or delete |
 | Dashboard state sidecar missing | Create from current dashboard markers (or defaults if markers broken) |
 | Sidecar/dashboard toggle mismatch | Update sidecar from dashboard markers (dashboard is more recent) |
@@ -528,7 +524,6 @@ READ all .claude/support/decisions/decision-*.md files
 READ .claude/version.json (template version info)
 READ .claude/sync-manifest.json (file categories)
 SCAN .claude/support/previous_specifications/ for archived specs
-SCAN .claude/support/questions/questions.md for stale questions
 SCAN .claude/support/workspace/ for stale files
 SCAN for misplaced spec files in non-canonical locations
 CHECK template repo for updates (skip if offline)
@@ -549,7 +544,7 @@ CHECK template repo for updates (skip if offline)
 - Task System — Verification Debt (check 7)
 - Task System — Dashboard Freshness (check 10)
 - Task System — Out-of-Spec Tasks (check 9, if any exist)
-- Questions & Workspace (check 8)
+- Workspace (check 8)
 - `.claude/CLAUDE.md` Audit (Part 2)
 - Decision System (Part 3)
 - Archive Validation (Part 4)

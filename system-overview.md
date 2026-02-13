@@ -66,7 +66,7 @@ graph LR
 3. Sets task to "Awaiting Verification"
 4. Spawns verify-agent as a **separate agent** (fresh context, no implementation memory)
 5. verify-agent checks: task fidelity (did the deliverables match the task description?), output quality, files exist, runtime validation (self-tests runnable outputs like CLIs, APIs, web UIs), integration boundaries, scope validation — this is **Tier 1 verification**
-6. If runtime validation is partial (some checks need human eyes), verify-agent writes a `test_protocol` and `interaction_hint` to guide human testing
+6. If runtime validation is partial (some checks need human eyes), or for `both`-owned tasks with runnable output, verify-agent writes a `test_protocol` and `interaction_hint` to guide human testing
 7. Pass → "Finished". Fail → "In Progress" (fix and re-verify, max 3 attempts then escalate)
 
 **Auto-continuation within phases:** After a task finishes (passes verification), `/work` automatically routes to the next eligible task — no user prompt, no pause. This continues until a natural stopping point: phase boundary (requires gate approval), blocking decision, blocking question, or verification failure requiring human escalation. The value of front-loaded decomposition and structured verification is that work flows autonomously between these stops. This applies equally to sequential and parallel modes.

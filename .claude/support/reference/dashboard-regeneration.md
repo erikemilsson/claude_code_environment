@@ -125,7 +125,6 @@ The dashboard is regenerated automatically after every task change. This ensures
 - All `decision-*.md` files in `.claude/support/decisions/` (decisions)
 - `drift-deferrals.json` (if exists)
 - `verification-result.json` (if exists)
-- `.claude/support/questions/questions.md` (scan for blocking questions)
 - `.claude/support/feedback/feedback.md` (scan for unhandled feedback items)
 
 ### 2. Extract and Persist User Content
@@ -284,12 +283,10 @@ Every item in "Action Required" must be:
 ### Review Item Derivation
 
 Review items are derived, not stored. During regeneration:
-1. Scan for unresolved items — out_of_spec without approval, draft/proposed decisions, blocking questions from `questions.md`
+1. Scan for unresolved items — out_of_spec without approval, draft/proposed decisions
 2. Populate Reviews sub-section from current data
 3. Never carry forward stale entries — resolved items disappear on next regeneration
 4. No dangling references — every item must link to a concrete file
-5. Blocking questions: scan `questions.md` for `[BLOCKING]` entries, render each as a review item linking to [questions.md](support/questions/questions.md)
-6. Non-blocking unanswered questions: if count > 0, add summary line to Reviews: `- [ ] **N pending questions** → [questions.md](support/questions/questions.md)
 
 ### Out-of-Spec Task Approval UI
 
@@ -326,7 +323,7 @@ The user selects an option when prompted, and `/work` updates the task according
 - Spec Drift: only render when drift-deferrals.json has active entries
 - Feedback: only render when `feedback.md` has entries with status `new` or `refined` — render as: `- 📝 **{N} feedback items** awaiting attention ({X} new, {Y} refined) → /feedback review`
 - Reviews sub-section format: `- [ ] **Item title** — what to do → [link to file](path)`
-- Reviews appear for: out_of_spec tasks without approval, draft/proposed decisions, blocking questions from `questions.md` (each linked to the file)
+- Reviews appear for: out_of_spec tasks without approval, draft/proposed decisions
 - Timeline sub-section in Progress: only render when tasks have `due_date` or `external_dependency.expected_date` (part of Progress, not an independent toggle)
 - Phase table in Progress: always show ALL phases (including blocked/future)
 - Critical path owners: ❗ (human), 🤖 (Claude), 👥 (both)
@@ -340,7 +337,7 @@ The user selects an option when prompted, and `/work` updates the task according
 - Out-of-spec tasks: prefix title with ⚠️
 - On Hold tasks: show status as `⏸️ On Hold` in Tasks section; exclude from Progress phase "Done" counts but include in "Total"; exclude from critical path (paused work isn't on the path)
 - Absorbed tasks: show status as `Absorbed → Task {id}` in Tasks section (dimmed/collapsed style); exclude from both "Done" and "Total" in Progress phase counts; exclude from critical path
-- Notes generated content: minimal — a single inline link to [questions.md](support/questions/questions.md) when unresolved questions exist, placed before the `<!-- USER SECTION -->` markers. No "Quick links" header, no decisions link (decisions have their own section with persistent links). When no unresolved questions exist, the Notes section contains only the user section markers.
+- Notes generated content: minimal — the Notes section contains only the user section markers. No "Quick links" header, no decisions link (decisions have their own section with persistent links).
 - Footer: healthy = spec aligned tooltip; issues = ⚠️ with counts
 - Custom Views section: user-defined instructions (preserved between markers) followed by Claude-generated content based on those instructions (when enabled). Multiple views are rendered as `###` sub-sections, one per bold-labeled instruction.
 

@@ -24,6 +24,8 @@ The dashboard has a **Sections** checklist at the top — check or uncheck items
 
 **Note:** The dashboard ships as a populated format example (a fictional renovation project). On first `/work` run after spec decomposition, it is replaced with your actual project data. The example exists so Claude can see exactly what format to produce.
 
+**Interaction modes:** Not everything routes through the dashboard. For synchronous tasks (testing a CLI, confirming output, quick yes/no), Claude presents them directly in the CLI conversation. For async tasks (document review, design decisions, phase gates), the dashboard remains the hub. Verify-agent also self-tests runnable outputs (CLIs, APIs, web UIs) before asking you to test — you only verify what Claude genuinely can't evaluate on its own. See `.claude/support/reference/workflow.md` § "Interaction Modes and Runtime Validation".
+
 For full details, see `.claude/support/reference/workflow.md` § "System Overview".
 
 ## Specification

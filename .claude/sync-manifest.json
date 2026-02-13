@@ -30,8 +30,6 @@
       ".claude/CLAUDE.md",
       ".claude/README.md",
       "README.md",
-      ".claude/support/questions/questions.md",
-      ".claude/support/questions/README.md",
       ".claude/support/documents/README.md"
     ],
     "ignore": [

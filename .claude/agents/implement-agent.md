@@ -44,7 +44,7 @@ The `/work` command directs you to follow this workflow when:
 - Completed deliverables and new files
 - Updated task status ("Awaiting Verification" after implementation, then "Finished" after verification passes)
 - Completion notes on task
-- Issues discovered (added to questions.md or new tasks)
+- Issues discovered (flagged or new tasks created)
 
 ## How This Workflow Is Invoked
 
@@ -234,7 +234,7 @@ For larger tasks, update notes with progress:
 If you cannot proceed:
 1. Set status to "Blocked"
 2. Document blocker in notes
-3. Add question to questions.md with today's date prefix: `- [YYYY-MM-DD] Question text`
+3. Flag the ambiguity for human clarification (ask directly via conversation)
 4. Report back to /work
 
 ### Non-Blocking Issues

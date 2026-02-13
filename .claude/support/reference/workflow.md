@@ -95,11 +95,13 @@ Verification operates in two tiers:
 
 **Activities:**
 - Verify file artifacts exist and match task description
+- Check for undeclared modifications (scope validation)
 - Check spec alignment against task description and spec section
 - Validate output quality (no incomplete items, follows patterns)
+- Runtime validation — self-test runnable outputs (CLIs, APIs, web UIs) before involving humans
 - Check integration boundaries (dependencies consumed correctly, outputs match downstream expectations)
 
-**Output:** `task_verification` field written to task JSON with per-check pass/fail
+**Output:** `task_verification` field written to task JSON with per-check pass/fail. When runtime validation is partial, also writes `test_protocol` and `interaction_hint` for guided testing.
 
 **What happens after per-task verification:**
 - **Pass:** Task status set to "Finished" (from "Awaiting Verification"). `/work` proceeds to next pending task.
@@ -298,7 +300,6 @@ User → /work → Specialist Agent → /work → User
 - Complete tasks (`/work complete`)
 - Select appropriate agent
 - Pass context to agent
-- Collect questions
 - Trigger checkpoints
 - Report progress
 - Auto-sync dashboard after changes
@@ -313,7 +314,7 @@ Provides: current phase, spec summary, recent activity, task to do, constraints 
 
 ### Specialist → /work
 
-Returns: what was completed, files modified, status updates, questions generated, recommendations, issues encountered.
+Returns: what was completed, files modified, status updates, recommendations, issues encountered.
 
 ---
 
@@ -390,7 +391,9 @@ The spec metadata `status` field tracks the project lifecycle:
 
 ## Human Checkpoints
 
-Humans are involved at:
+Humans are involved at specific points, with the interaction channel chosen per-task to minimize friction. See **Interaction Modes and Runtime Validation** below for how `/work` selects between dashboard-mediated and CLI-direct interaction.
+
+Checkpoint types:
 
 ### Phase Boundaries
 When transitioning between phases:
@@ -419,33 +422,98 @@ When something goes wrong:
 - Specification violations found
 - Critical issues discovered
 
-### Question Batches
-When questions accumulate:
-- Non-trivial questions need human input
-- Blocking questions prevent progress
-
 ---
 
-## Questions System
+## Interaction Modes and Runtime Validation
 
-During execution, when implement-agent or verify-agent encounter something they can't resolve autonomously — a spec ambiguity, a technical choice needing user input, a dependency question — they write it to `.claude/support/questions/questions.md` under categories: Requirements, Technical, Scope, Dependencies. Questions are surfaced to the user in the dashboard's Action Required section at natural checkpoints.
+Not all human involvement benefits from the dashboard. When a task needs human input, Claude selects the interaction channel that minimizes friction — sometimes the dashboard, sometimes direct CLI conversation.
 
-**Blocking vs Non-Blocking:**
-- `[BLOCKING]` prefix → cannot proceed, triggers immediate checkpoint
-- Non-blocking → note assumption, present at next phase boundary
+### Interaction Mode Selection
 
-**Checkpoints where questions are surfaced:**
+| Mode | Channel | Best For |
+|------|---------|----------|
+| **Dashboard-mediated** | Dashboard "Your Tasks" / Action Required | Async tasks, extended reading, batch review, decisions needing think-time |
+| **CLI-direct** | Claude Code conversation | Real-time testing, quick confirmations, command-guided walkthroughs, interactive feedback |
 
-| Checkpoint | Trigger Condition | Question Type Presented |
-|------------|-------------------|-------------------------|
-| **Immediate** | `[BLOCKING]` question added | Blocking only — work halts until answered |
-| **After task completion** | Task transitions to "Finished" | All unanswered questions (blocking + non-blocking) |
-| **Phase boundary (Execute → Verify phase-level)** | All tasks in phase finished | All unanswered questions |
-| **Phase boundary (Verify phase-level → Complete)** | Phase-level verification passes | All unanswered questions |
-| **Quality gate failure** | Tests fail, spec violation detected | All unanswered questions |
-| **Manual checkpoint** | User runs `/work` after answering questions in questions.md | All unanswered questions (validation that answers were captured) |
+**Decision guidelines:**
 
-**At checkpoints:** Group by category, prioritize blocking first, present to human, clear answered questions to "Answered Questions" table when resolved.
+| Factor | Dashboard-mediated | CLI-direct |
+|--------|-------------------|------------|
+| Timing | User will do it later (async) | User should do it now (synchronous) |
+| Duration | Extended (reading docs, thinking through decisions) | Quick (run a command, confirm output, yes/no) |
+| Terminal needed? | No | Yes — commands to run, output to check |
+| User's current context | Not necessarily in CLI | Already in CLI conversation |
+| Multiple items | Batch of unrelated items → dashboard | Single focused task → CLI |
+| Interaction type | Passive review (read, think, decide) | Active testing (run, observe, respond) |
+
+**How it integrates:**
+- Verify-agent writes an `interaction_hint` field (`"cli_direct"` or `"dashboard"`) to the task JSON when it determines human involvement is needed
+- `/work` respects the hint when routing human tasks — CLI-direct tasks are presented immediately in the conversation rather than only appearing in dashboard "Your Tasks"
+- The hint is a suggestion, not a gate — users can always override by running `/work complete {id}` from the dashboard flow
+- When absent, defaults to `"dashboard"` (preserves current behavior)
+
+### Runtime Validation
+
+Verify-agent can self-test runnable outputs before escalating to human testing. This happens in per-task verification Step T4b (between Output Quality and Integration Boundaries).
+
+**What it tests:**
+
+| Output Type | Approach |
+|-------------|----------|
+| CLI/script | Run via Bash, validate stdout/stderr |
+| TUI | Run with `--help`/non-interactive flags, validate output |
+| Web UI | Playwright (`browser_navigate`, `browser_snapshot`) to check structure |
+| API | HTTP requests via curl, validate response status/body |
+| Data pipeline | Run pipeline, check output structure |
+
+**Results:** `"pass"`, `"fail"`, `"partial"` (some need human eyes), or `"not_applicable"` (non-runnable output).
+
+**Key principle:** Runtime validation is best-effort and additive. A `"not_applicable"` result doesn't affect verification. Only `"fail"` contributes to verification failure.
+
+### Guided Testing
+
+When runtime validation is `"partial"`, or when an `owner: "both"` task has runnable output, verify-agent writes a **test protocol** — a structured set of testing steps. Combined with `interaction_hint: "cli_direct"`, this enables guided testing directly in the CLI conversation.
+
+**Test protocol schema:**
+
+```json
+{
+  "test_protocol": {
+    "summary": "Brief description of what to test",
+    "steps": [
+      {
+        "instruction": "What to do",
+        "expected": "What should happen",
+        "type": "command|interactive|visual",
+        "command": "optional — the command to run (for 'command' type)"
+      }
+    ],
+    "automated_results": "What runtime validation already confirmed",
+    "estimated_time": "Human-readable estimate"
+  }
+}
+```
+
+**Step types:**
+- `"command"` — Claude runs it and shows output; user confirms pass/fail
+- `"interactive"` — User interacts with the running application; signals pass/fail
+- `"visual"` — User inspects a screenshot or visual output; confirms appearance
+
+**The flow in `/work`:**
+1. Task passes per-task verification with `runtime_validation: "partial"`
+2. Verify-agent writes `test_protocol` + `interaction_hint: "cli_direct"`
+3. `/work` presents guided testing immediately in the CLI conversation
+4. User walks through steps, signaling pass/fail for each
+5. All passed → task complete, auto-continuation resumes
+6. Any failed → task back to "In Progress" for fixes
+
+### UX Principles for Human Involvement
+
+- **Choose the right channel**: Dashboard for async review, CLI for synchronous interaction. Don't force everything through the dashboard.
+- **Self-test first**: Always attempt runtime validation before escalating to human testing. Only ask humans for what Claude genuinely can't evaluate.
+- **Provide exact commands**: Never say "test the application" — say "run `python src/tui.py` and verify the menu appears."
+- **Consider switching cost**: Each additional app/tab/screen the user must open adds friction. The best interaction keeps the user in one place.
+- **Batch async, stream sync**: Group dashboard items together. Walk through CLI-direct items one at a time with immediate feedback.
 
 ---
 
@@ -648,7 +716,7 @@ Two files control template behavior:
 | Category | Purpose | Examples |
 |----------|---------|----------|
 | `sync` | Updated from template | Commands, agents, reference docs |
-| `customize` | User-editable, template provides defaults | `.claude/CLAUDE.md`, README.md, questions/questions.md, documents/README.md |
+| `customize` | User-editable, template provides defaults | `.claude/CLAUDE.md`, README.md, documents/README.md |
 | `ignore` | Project-specific data, never synced | Tasks, dashboard, decision records, learnings |
 
 **settings.local.json** — Pre-approved permissions for consistent Claude Code behavior. Ensures the template works the same way for everyone using it.
@@ -696,9 +764,6 @@ Two files control template behavior:
 │   │   ├── scratch/          # Temporary notes, quick analysis
 │   │   ├── research/         # Web search results, reference material
 │   │   └── drafts/           # WIP docs before final location
-│   ├── questions/            # Questions for human input
-│   │   ├── README.md         # Workflow and categories
-│   │   └── questions.md      # Active questions and archive
 │   └── documents/            # User-provided reference files (PDFs, contracts, etc.)
 │       └── README.md         # Conventions and file placement
 ├── sync-manifest.json
