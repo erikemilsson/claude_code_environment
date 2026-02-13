@@ -12,13 +12,13 @@ Spec review and implementation quality assessment. Identifies gaps, asks questio
 /iterate review {area}      # Focus implementation review on a specific area
 ```
 
-Determines mode based on spec state, asks focused questions (max 4), generates suggestions. User makes all edits.
+Determines mode based on spec state, asks focused questions (max 4), proposes changes for user approval.
 
 ---
 
 ## Rules
 
-**Spec editing policy:** `suggest_only` — Claude suggests content, user decides what goes in. Claude does NOT author requirements, criteria, scope, or architecture directly. Claude CAN perform infrastructure operations: archiving, version transitions, frontmatter updates. See "Suggest-Only Boundary" below for full distinction.
+**Spec editing policy:** `propose_approve_apply` — Claude proposes spec changes as explicit change declarations; the user reviews and approves before Claude applies them. Claude handles the mechanics (versioning, archiving, applying edits) but never modifies spec content without presenting the declaration and receiving approval first. The user can modify, reject, or redirect any proposed change. See "Propose-Approve-Apply Boundary" below for full distinction.
 
 ---
 
@@ -35,7 +35,7 @@ Read `.claude/support/feedback/feedback.md` if it exists. Count items by status.
 IF `new` count > 0 OR `refined` count > 0:
   Surface: "📝 {N} feedback items awaiting attention ({X} new, {Y} refined)"
   Options:
-  - `[I]` Include refined items as context — load refined entries as context for Step 4 suggestions. After incorporation, mark items as `promoted` with date.
+  - `[I]` Include refined items as context — load refined entries as context for Step 4 change proposals. After incorporation, mark items as `promoted` with date.
   - `[R]` Run `/feedback review` first — hand off to `/feedback review`, then return to `/iterate`.
   - `[S]` Skip — continue normally without feedback context.
 
@@ -97,34 +97,34 @@ Enter distill mode. Extract buildable spec from a vision document.
      - Whether it's an **inflection point** (outcome changes what gets built) — if so, don't add premature detail for dependent work
    - **Human Dependencies:** If the vision identifies things only the user can do (set up accounts, configure hosting, get API keys), flag these as human tasks in the spec.
 
-5. **Generate spec content:**
+5. **Present spec change declaration:**
+   Present the proposed spec content as a change declaration (same format as Step 4):
    - Include `vision_source:` in frontmatter linking to the vision doc
    - Extract concrete requirements from vision's abstract concepts
    - Structure spec sections by phase when phases were identified
    - Add decision placeholders where unresolved choices block work
    - Add "Deferred to Future Phases" section for items not in Phase 1
-   - Format as copy-pasteable content for the user to add to the spec
+   - Keep the spec high-level enough to remain a readable project overview, while precise enough for decomposition
 
-6. **Post-distill next steps:**
+6. **Apply on approval:**
+   On user approval (`[Y]`, `[M]`, or `[P]`), create or update the spec file:
+   - If no spec exists: create `.claude/spec_v1.md` with the approved content
+   - If a spec exists: apply changes per the standard Step 5 flow (archive if warranted, then edit)
    ```
-   Distillation complete. Here's what to do next:
+   Spec v{N} created/updated. Next steps:
 
-   1. Review the suggested content above
-   2. Copy it into your spec file (.claude/spec_v{N}.md)
-   3. Edit to match your intent — the suggestions are a starting point
-   4. Run /iterate to refine specific sections
-   5. When the spec passes readiness checks, run /work
+   1. Review the spec file directly — edit anything that doesn't match your intent
+   2. Run /iterate to refine specific sections
+   3. When the spec passes readiness checks, run /work
    ```
-
-**Output handling:** Distill generates suggested content for you to paste into the spec. It does not auto-create or edit spec files (respects `spec_editing: suggest_only`).
 
 **Re-running distill:** If the vision document is updated:
 - Run `/iterate distill` again
-- Claude reads the updated vision doc and generates new suggestions
-- You merge the new suggestions into the existing spec manually
-- No automatic replacement or versioning occurs — you stay in control
+- Claude reads the updated vision doc and proposes changes as a declaration
+- On approval, Claude applies the changes to the existing spec (with versioning if warranted)
+- The user can modify or reject any proposed change before it's applied
 
-**Multiple vision documents:** If `.claude/vision/` contains multiple files, Claude lists them and asks which to use. To combine multiple vision docs, run distill once per document and merge the suggestions.
+**Multiple vision documents:** If `.claude/vision/` contains multiple files, Claude lists them and asks which to use. To combine multiple vision docs, run distill once per document and merge the changes into the spec.
 
 ---
 
@@ -215,32 +215,57 @@ Generate focused questions for the target area. Questions should:
 
 **Wait for user responses before proceeding.**
 
-### Step 4: Generate Suggestions
+### Step 4: Propose Changes (Change Declaration)
 
-Based on answers, generate spec-ready content:
+Based on answers, present an explicit change declaration — not copy-pasteable blocks, but a structured proposal the user can review and approve:
 
 ```
-## Suggested Content
+## Proposed Spec Changes
 
-Based on your answers, here's what to add to the spec:
+Based on your answers, here's what I'd change:
+
+### Change 1: [Section name] — [add | modify | remove]
+
+**Location:** spec_v{N}.md § [section path]
+**What changes:** [Brief description of the change and why]
+**Proposed text:**
+
+> [The proposed new/modified section content]
+
+### Change 2: [Section name] — [add | modify | remove]
+
+**Location:** spec_v{N}.md § [section path]
+**What changes:** [Brief description]
+**Proposed text:**
+
+> [The proposed content]
 
 ---
 
-[Copy-pasteable content formatted for the spec]
-
----
-
-Copy the above into your spec, then modify as needed.
+Approve these changes? [Y] Apply all | [M] Modify (tell me what to adjust) | [P] Partial (pick which changes) | [N] Skip
 ```
 
-### Step 5: Continue or Finish
+**Declaration principles:**
+- State what changes and where — the user should understand the full impact before approving
+- Show the proposed text so the user can judge tone and detail level
+- Keep the spec high-level enough to remain readable as a project overview, while precise enough for decomposition and decision-making
+- When modifying existing content, briefly note what's being replaced
 
-After presenting suggestions:
+### Step 5: Apply or Continue
+
+Based on user response:
+
+- **[Y] Apply all:** Execute the changes — archive current spec if warranted (see Spec Versioning below), then apply edits to the spec file. Report what was changed.
+- **[M] Modify:** User describes adjustments. Revise the declaration and re-present.
+- **[P] Partial:** User indicates which changes to apply. Apply selected, skip others.
+- **[N] Skip:** No changes applied.
+
+After applying (or skipping):
 
 ```
-Edit the spec with these suggestions (modify as needed).
+Changes applied to spec_v{N}.md.
 
-When ready, run /iterate again to continue, or focus on a specific area.
+Run /iterate again to continue refining, or /work to start building.
 ```
 
 ---
@@ -469,22 +494,26 @@ You can edit the spec file directly at any time. The system handles this gracefu
 
 You never need to version before editing. If your edits turn out to be substantial enough for a new version, `/work` will suggest it (see `.claude/support/reference/drift-reconciliation.md` § "Substantial Change Detection").
 
-### Suggest-Only Boundary: Content vs Infrastructure
+### Propose-Approve-Apply Boundary
 
-The `suggest_only` policy applies to **spec content authorship** — Claude does not decide what to build.
+The `propose_approve_apply` policy means Claude proposes spec changes but never applies them without explicit user approval.
 
-**Claude CAN perform structural file operations:**
+**Claude CAN do autonomously (infrastructure):**
 - Copy a spec to the archive (preserving content the user wrote)
 - Create a new version file as a copy of the current one
 - Update the frontmatter version number and dates
 - Delete the old version file after archiving
 
-**Claude CANNOT:**
-- Write new spec sections or requirements
+**Claude CAN do after user approval (content):**
+- Add new spec sections or requirements
 - Modify acceptance criteria, scope, or architecture decisions
-- Remove sections the user wrote
+- Remove sections
 
-This is the distinction between **infrastructure** (moving files, updating metadata) and **authorship** (deciding what gets built). The user controls what the spec says; Claude manages the filing system.
+**Claude CANNOT do:**
+- Apply any content change without first presenting it as a change declaration and receiving user approval
+- Skip the declaration step, even for "obvious" changes
+
+This is the distinction between **infrastructure** (autonomous file operations) and **authorship** (requires declaration → approval → apply). The user controls what the spec says; Claude proposes and executes on approval.
 
 ### Version Transition Procedure
 
@@ -506,7 +535,7 @@ When a version bump is warranted, Claude executes this 5-step procedure:
 5. REPORT:
    "spec_v{N} archived → previous_specifications/spec_v{N}.md
     spec_v{N+1} is now the active spec (status: draft).
-    Edit it with your changes, then run /iterate to review or /work to continue."
+    Run /iterate to propose changes, or edit directly and run /work to continue."
 ```
 
 **After the transition:** The user edits `spec_v{N+1}.md` with their changes (or uses `/iterate` to refine). When they run `/work`, task migration handles the transition (see `.claude/support/reference/drift-reconciliation.md` § "Task Migration on Version Transition").
@@ -565,10 +594,9 @@ When `/iterate` runs, it automatically checks for recently resolved inflection p
    │  - {section 1} — {how it's affected}
    │  - {section 2} — {how it's affected}
    │
-   │  Suggested adjustments:
-   │  [Copy-pasteable content reflecting the decision outcome]
+   │  [Presents change declaration per Step 4 format — user approves before changes are applied]
 
-4. After presenting spec suggestions, also suggest updating the decision record:
+4. After presenting the change declaration, also include updating the decision record:
    │
    │  Also update the decision record frontmatter:
    │  Add `spec_revised: true` and `spec_revised_date: YYYY-MM-DD`
@@ -596,5 +624,5 @@ When Phase 1 completes and Phase 2 begins, Claude executes the Version Transitio
 1. `/work` detects Phase 1 completion → executes Version Transition Procedure → suggests running `/iterate`
 2. `/iterate` reads the new spec version, focuses on Phase 2 sections
 3. Asks targeted questions about Phase 2 scope (now informed by Phase 1 results)
-4. Suggests spec content for the user to add to `spec_v{N+1}.md`
-5. User edits spec, then runs `/work` to decompose Phase 2 and continue
+4. Presents change declaration for Phase 2 sections
+5. On user approval, applies changes to `spec_v{N+1}.md`, then user runs `/work` to decompose Phase 2 and continue

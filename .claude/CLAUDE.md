@@ -30,7 +30,7 @@ For full details, see `.claude/support/reference/workflow.md` § "System Overvie
 
 The project specification lives at `.claude/spec_v{N}.md` (exactly one file; `/work` discovers N by globbing).
 
-**Do not author spec content directly.** Suggest improvements; user makes edits. You CAN perform spec infrastructure operations (archiving, version transitions, frontmatter updates). See `commands/iterate.md` § "Suggest-Only Boundary".
+**Propose-approve-apply for spec changes.** Present changes as explicit declarations (what changes, where, proposed text); apply only after user approval. You CAN perform infrastructure operations autonomously (archiving, version transitions, frontmatter updates). See `commands/iterate.md` § "Propose-Approve-Apply Boundary".
 
 **Direct edits to the spec are always safe** — the decomposed snapshot preserves the before-state, and drift detection handles reconciliation. After a spec edit, the user runs `/work` to continue building (detects changes and reconciles affected tasks) or `/iterate` to keep refining.
 
@@ -67,7 +67,7 @@ Commands defined in `.claude/commands/` for this workflow. Not Claude Code built
 ### Primary
 - `/work` - Start or continue work (checks spec alignment, decomposes tasks, checks gates, resolves decisions, routes to agents)
 - `/work complete` - Complete current in-progress task (or `/work complete {id}`)
-- `/iterate` - Structured spec review and implementation review (checks gaps, asks questions, suggests content)
+- `/iterate` - Structured spec review and implementation review (checks gaps, asks questions, proposes changes)
 - `/status` - Quick read-only view of project state (no modifications)
 - `/research` - Investigate options for decisions (populates comparison matrices, writes research archives)
 - `/feedback` - Capture and manage project improvement ideas (quick capture, review, triage)

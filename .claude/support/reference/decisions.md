@@ -34,6 +34,15 @@ blocks: []
 
 # [Title]
 
+## Select an Option
+
+Mark your selection by checking one box:
+
+- [ ] Option A: [Name]
+- [ ] Option B: [Name]
+
+*Check one box above, then fill in the Decision section below.*
+
 ## Background
 
 [Why does this decision need to be made? What problem are we solving?
@@ -77,15 +86,6 @@ Include enough context for someone unfamiliar to understand.]
 - [Drawback 2]
 
 **Research Notes:** [Links, experiments, spike findings]
-
-## Select an Option
-
-Mark your selection by checking one box:
-
-- [ ] Option A: [Name]
-- [ ] Option B: [Name]
-
-*Check one box above, then fill in the Decision section below.*
 
 ## Your Notes & Constraints
 
@@ -149,8 +149,8 @@ Mark your selection by checking one box:
 3. Write Background section
 4. Add options to comparison table
 5. Fill in Option Details
-6. Once decided, complete Decision, Trade-offs, Impact
-7. Check your selection in "## Select an Option" — `/work` auto-updates status to `approved` and sets the `decided` date
+6. Check your selection in "## Select an Option" (at the top of the doc) — `/work` auto-updates status to `approved` and sets the `decided` date
+7. Complete Decision, Trade-offs, Impact sections
 8. Regenerate the dashboard to include the new decision
 
 **"Your Notes & Constraints" section:** This section in the template is user-owned. Claude reads it when processing the decision but never overwrites it. Use it to record constraints, preferences, or questions that should inform the choice. Content here persists across decision doc updates and dashboard regenerations.

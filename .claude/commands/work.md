@@ -164,7 +164,7 @@ After phase and decision checks, assess whether multiple tasks can be dispatched
 
 | Condition | Action |
 |-----------|--------|
-| No spec exists, no tasks | Stop — direct user to create spec via `/iterate` |
+| No spec exists, no tasks | Stop — direct user to create a vision document in `.claude/vision/` and run `/iterate distill` |
 | No spec exists, tasks exist | **Stop and warn** — tasks without a spec cannot be verified. Options: `[S]` Create spec, `[M]` Mark all out-of-spec, `[X]` Stop. |
 | Spec incomplete | Stop — prompt user to complete spec |
 | Spec complete, no tasks | **Decompose** — read and follow `decomposition.md` |
@@ -202,6 +202,8 @@ After phase and decision checks, assess whether multiple tasks can be dispatched
 9. ELSE:
    → Route to implement-agent for next pending task
 ```
+
+**Auto-continuation within phases:** After a task finishes (passes per-task verification), `/work` loops back to Step 3 to determine the next action — no user prompt, no pause. This continues automatically until a natural stopping point: phase boundary (gate approval needed), blocking decision, blocking question, or verification failure requiring human escalation. The value of front-loaded decomposition and structured verification is that work flows autonomously between these stops.
 
 **Important — spec tasks vs out-of-spec tasks:** Phase routing is based on spec tasks only (excluding `out_of_spec: true`). Out-of-spec tasks are excluded from **phase detection** (determining whether a phase is complete, triggering phase-level verification, or reaching project completion) to prevent a verify → execute → verify infinite loop. However, out-of-spec tasks still run the **full implement → verify cycle** — they are not exempt from per-task verification. The structural invariant applies universally: no task (spec or out-of-spec) can reach "Finished" without `task_verification.result == "pass"`.
 
@@ -266,7 +268,7 @@ Task tool call:
 **Timeout handling:** If verify-agent exhausts `max_turns` without completing, treat as verification failure — increment `verification_attempts`, set task to "Blocked" with `[VERIFICATION TIMEOUT]` note, report to user.
 
 **After per-task verification completes:**
-- **Pass**: If `owner: "both"`, verify `user_review_pending: true` was set. Proceed to next pending task.
+- **Pass**: If `owner: "both"`, verify `user_review_pending: true` was set. Regenerate dashboard, then loop back to Step 3 (auto-continuation — find and dispatch the next eligible task).
 - **Fail**: Task set to "In Progress". Route to implement-agent to fix, then re-verify. Loop until pass.
 - Regenerate dashboard after status changes (per `dashboard-regeneration.md` § "When to Regenerate").
 
@@ -321,10 +323,11 @@ When all tasks are finished and verification conditions are met:
 Questions accumulate in `.claude/support/questions/questions.md` during work.
 
 **Check for questions at these points:**
-- After completing a task (before selecting the next one)
 - At phase boundaries (Execute → Verify, Verify → Complete)
-- When a `[BLOCKING]` question is added
+- When a `[BLOCKING]` question is added (halts auto-continuation immediately)
 - When quality gate fails (tests fail, spec violation)
+
+**Interaction with auto-continuation:** Non-blocking questions accumulate during auto-continuation and are surfaced at the next natural stopping point (phase boundary, blocking decision, etc.). Only `[BLOCKING]` questions interrupt auto-continuation between tasks.
 
 **Process:**
 
@@ -409,6 +412,21 @@ Use `/work complete` for manual task completion outside of implement-agent's wor
    - If the task has `user_review_pending: true` → proceed (verification already passed, user is completing their review)
    - If the task has NO `task_verification` or `task_verification.result != "pass"` → **spawn verify-agent (per-task)** before allowing completion. Do not mark Finished without passing verification.
    - This ensures the structural invariant: no task reaches "Finished" without `task_verification.result == "pass"`.
+3b. **Human deliverable validation** (for `human` and `both`-owned tasks):
+   When the user completes a task that required them to provide deliverables (files, documents, configuration, credentials setup, etc.), validate before continuing:
+   - **Check quantity:** Does what was provided match what the task expected? (e.g., task said "provide 2-3 CSV files" but user provided 1, or 5)
+   - **Check usability:** Are the deliverables in a usable state? (e.g., files parse correctly, headers contain expected fields, format matches what downstream tasks need)
+   - **Check plan validity:** Given what was actually provided, do dependent tasks still make sense as written, or do they need adjustment?
+   - If any mismatch: surface the discrepancy and assess impact on dependent tasks. Options:
+     ```
+     Deliverable check for Task {id}:
+     [issue description — e.g., "Expected 2-3 CSV files, received 1"]
+
+     [A] Adjust — update dependent tasks to work with what was provided
+     [P] Proceed — continue as-is (deliverables are sufficient despite the difference)
+     [W] Wait — task stays in progress until deliverables are corrected
+     ```
+   - If deliverables pass validation: proceed silently to step 4
 4. **Check work** - Review all changes made for this task
    - Look for bugs, edge cases, inefficiencies
    - If issues found, fix them before proceeding

@@ -336,10 +336,11 @@ The user selects an option when prompted, and `/work` updates the task according
 - Tasks grouped by phase with per-phase progress lines
 - **Completed task summarization (scale):** When a phase has more than 10 finished tasks, render a summary line (`✅ {N} tasks finished`) instead of listing each individually. Only list active tasks (Pending, In Progress, Awaiting Verification, Blocked, On Hold) with full detail rows. This keeps the dashboard navigable for large projects (50+ tasks).
 - Tasks with `conflict_note`: show status as `Pending (held: conflict with Task {id})` during parallel dispatch
-- Decisions: status display mapping: `approved`/`implemented` → "Decided", `draft`/`proposed` → "Pending". Decided → show selected option name; Pending → link to doc in Selected column
+- Decisions: status display mapping: `approved`/`implemented` → "Decided", `draft`/`proposed` → "Pending". Selected column always links to the decision document regardless of status — Decided shows the selected option name as link text; Pending shows "Pending" as link text
 - Out-of-spec tasks: prefix title with ⚠️
 - On Hold tasks: show status as `⏸️ On Hold` in Tasks section; exclude from Progress phase "Done" counts but include in "Total"; exclude from critical path (paused work isn't on the path)
 - Absorbed tasks: show status as `Absorbed → Task {id}` in Tasks section (dimmed/collapsed style); exclude from both "Done" and "Total" in Progress phase counts; exclude from critical path
+- Notes generated content: minimal — a single inline link to [questions.md](support/questions/questions.md) when unresolved questions exist, placed before the `<!-- USER SECTION -->` markers. No "Quick links" header, no decisions link (decisions have their own section with persistent links). When no unresolved questions exist, the Notes section contains only the user section markers.
 - Footer: healthy = spec aligned tooltip; issues = ⚠️ with counts
 - Custom Views section: user-defined instructions (preserved between markers) followed by Claude-generated content based on those instructions (when enabled). Multiple views are rendered as `###` sub-sections, one per bold-labeled instruction.
 

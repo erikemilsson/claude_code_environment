@@ -47,7 +47,7 @@ graph LR
 
 **If the spec is empty and no vision document exists**, Claude does not bootstrap a spec from scratch. It directs the user to brainstorm in Claude Desktop first (see Phase 0).
 
-**Key rule — suggest only:** Claude suggests spec content; the user decides what goes in. Claude never authors requirements, acceptance criteria, or scope. This keeps the user in control of what gets built.
+**Key rule — propose, approve, apply:** Claude proposes spec changes as an explicit change declaration — stating what will change, where in the document, and how the updated sections should read. The user reviews this declaration (in the CLI conversation, not a separate file) and approves or adjusts. On approval, Claude applies the changes with proper versioning (archive current → create new version → apply edits). Claude never makes spec changes without presenting the declaration first, and the user can modify or reject any part. This keeps the user in control of what gets built while eliminating copy-paste friction. The spec should stay high-level enough to remain readable as a project overview, while being precise enough for decomposition and decision-making.
 
 **Output:** `.claude/spec_v{N}.md` with frontmatter (`version`, `status: draft`)
 **Readiness:** Problem clear, users identified, acceptance criteria testable, key decisions documented, blocking questions resolved.
@@ -67,6 +67,8 @@ graph LR
 4. Spawns verify-agent as a **separate agent** (fresh context, no implementation memory)
 5. verify-agent checks: task fidelity (did the deliverables match the task description?), output quality, files exist, integration boundaries, scope validation — this is **Tier 1 verification**
 6. Pass → "Finished". Fail → "In Progress" (fix and re-verify, max 3 attempts then escalate)
+
+**Auto-continuation within phases:** After a task finishes (passes verification), `/work` automatically routes to the next eligible task — no user prompt, no pause. This continues until a natural stopping point: phase boundary (requires gate approval), blocking decision, blocking question, or verification failure requiring human escalation. The value of front-loaded decomposition and structured verification is that work flows autonomously between these stops. This applies equally to sequential and parallel modes.
 
 **Parallel execution:** When multiple tasks have no file conflicts and all dependencies met, `/work` dispatches them concurrently. Each parallel task runs its own implement → verify cycle independently. Coordinator handles batching, result collection, and a single dashboard regeneration.
 
@@ -111,8 +113,8 @@ The dashboard (`.claude/dashboard.md`) is the navigation hub between Claude and 
 | Action Required | Phase gates, verification status, pending decisions, user tasks, reviews |
 | Progress | Phase breakdown, critical path, project overview diagram, timeline |
 | Tasks | Full task list grouped by phase |
-| Decisions | Decision log with status and selections |
-| Notes | User's preserved section (never overwritten) |
+| Decisions | Decision log with status and selections — links to decision documents always shown regardless of resolution status |
+| Notes | User's preserved section (never overwritten). Generated content is minimal: a single inline link to the questions file (when questions exist), no wrapper headings |
 | Custom Views | User-defined inline views (optional, opt-in) |
 
 **Key behaviors:**
@@ -169,7 +171,7 @@ Each feature below includes its purpose (why it exists), how it works (brief), a
 
 **Purpose:** Track choices that block downstream work, with structured evaluation and a clear selection mechanism.
 
-**How it works:** Decision records live in `.claude/support/decisions/decision-*.md`. Each has a comparison matrix, option details, optional weighted scoring, and a "Select an Option" section with checkboxes. The user checks a box; `/work` auto-updates status to `approved` and unblocks dependent tasks.
+**How it works:** Decision records live in `.claude/support/decisions/decision-*.md`. Each has a comparison matrix, option details, optional weighted scoring, and a "Select an Option" section with checkboxes. The selection checkboxes appear at the top of the document (immediately after frontmatter), before any analysis — so the human action is immediately visible when opening the file. The user checks a box; `/work` auto-updates status to `approved` and unblocks dependent tasks.
 
 **Two types:**
 - **Pick-and-go:** After resolution, dependent tasks simply unblock. Default behavior.
@@ -226,6 +228,8 @@ Each feature below includes its purpose (why it exists), how it works (brief), a
 - Parent tasks auto-complete when all non-Absorbed subtasks finish
 
 **3 owner values:** `claude` (autonomous), `human` (requires user action), `both` (collaborative — user reviews after Claude implements)
+
+**Human deliverable validation:** When a human-owned task completes (or the user provides deliverables for a task — files, documents, configuration), `/work` runs a validation gate before continuing: check that the deliverables meet the task's stated requirements (expected quantity, format, content), verify they're usable by downstream tasks, and flag mismatches. If deliverables differ from what was planned (e.g., the task expected 2-3 CSV files but the user provided 1, or files have unexpected structure), `/work` surfaces the discrepancy and assesses whether dependent tasks need adjustment before proceeding.
 
 **Authoritative files:** `support/reference/task-schema.md`, `support/reference/shared-definitions.md`
 
@@ -311,8 +315,8 @@ These are the invariants and rules that should hold true across all implementati
 ### The Spec Is the Source of Truth
 All work aligns with the spec, or the spec is updated intentionally. Tasks follow the spec, not the other way around.
 
-### Suggest Only (Spec Authorship)
-Claude suggests content; the user decides what goes in the spec. Claude can perform infrastructure operations (archiving, version transitions, frontmatter updates) but never authors requirements or acceptance criteria.
+### Propose-Approve-Apply (Spec Authorship)
+Claude proposes spec changes via explicit change declarations; the user reviews and approves before Claude applies them. Claude handles the mechanics (versioning, archiving, applying edits) but never modifies spec content without presenting the declaration and receiving approval first. The user can modify, reject, or redirect any proposed change.
 
 ### Verification Is Structurally Enforced
 A task cannot reach "Finished" without `task_verification.result == "pass"`. This is checked by `/work`, `/health-check`, and the task schema. There is no way to bypass verification by marking tasks Finished directly.
@@ -337,8 +341,8 @@ Exactly one `spec_v{N}.md` exists in `.claude/` at any time. Version transitions
 |---------|---------|------|
 | `/work` | Main entry point — state detection, spec checking, decomposition, agent routing, completion | Read-write |
 | `/work complete` | Complete a task (human/both-owned tasks, or tasks worked outside normal flow) | Read-write |
-| `/iterate` | Spec review — improve existing spec or distill from vision | Read-write (suggests only) |
-| `/iterate distill` | Extract buildable spec from a vision document | Read-write (suggests only) |
+| `/iterate` | Spec review — improve existing spec or distill from vision | Read-write (proposes, applies on approval) |
+| `/iterate distill` | Extract buildable spec from a vision document | Read-write (proposes, applies on approval) |
 | `/status` | Quick view of project state | Read-only |
 | `/status --brief` | One-line summary | Read-only |
 | `/status --tasks` | Task-focused view | Read-only |
