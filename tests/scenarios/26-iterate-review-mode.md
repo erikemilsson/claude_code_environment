@@ -1,6 +1,6 @@
-# Scenario 26: /iterate Review Mode — Implementation Quality Assessment
+# Scenario 26: /review Command — Implementation Quality Assessment
 
-Verify that `/iterate` correctly enters implementation review mode, assesses quality across completed tasks, and produces purely advisory suggestions without modifying any project state.
+Verify that `/review` correctly assesses quality across completed tasks and produces purely advisory suggestions without modifying any project state. Also verify that `/iterate` stays in spec review mode regardless of task completion count.
 
 ## State
 
@@ -16,46 +16,39 @@ Verify that `/iterate` correctly enters implementation review mode, assesses qua
 - DEC-002: status `approved`, no `implementation_anchors` (not yet implemented)
 - `.claude/support/learnings/` contains `patterns.md` with "Use async/await with try/catch for error handling"
 
-## Trace A: Auto-detection via `/iterate`
+## Trace A: `/review` enters review mode
 
-- iterate.md Step 2: spec has content
-- Check: status is `active`, 8 tasks are `Finished` (≥ 3 threshold)
-- Auto-enters review mode
-
-### Expected
-
-```
-Spec is active with 8 completed tasks. Entering implementation review mode.
-```
-
-- Does NOT show spec readiness checklist
-- Proceeds to Review Step 1
-
-## Trace A2: `/iterate {topic}` bypasses auto-review
-
-- Same state as Trace A (spec `active`, 8 tasks Finished)
-- User runs `/iterate authentication` (topic argument provided)
-- iterate.md Step 2: topic argument detected → skip auto-review
+- review.md Step 1: gather context
+- Reads all task files, spec, decisions, learnings
+- 8 tasks Finished (≥ 3 threshold) → proceeds
 
 ### Expected
 
-- Does NOT enter review mode despite 8 Finished tasks
-- Falls through to spec readiness check
-- Focuses on "authentication" area in spec review mode
-- User can still use `/iterate review` explicitly if they want implementation review
+- Shows implementation review report (not spec readiness checklist)
+- Proceeds to Step 2 focus area assessment
 
-## Trace B: Explicit `/iterate review integration`
+## Trace A2: `/iterate` stays in spec mode despite many finished tasks
 
-- iterate.md Step 2: user specified `/iterate review integration`
-- Enters review mode with focus narrowed to integration quality
+- Same state (spec `active`, 8 tasks Finished)
+- User runs `/iterate` (bare, no arguments)
 
 ### Expected
 
-- Skips auto-detection
-- Goes directly to review mode
+- Does NOT enter implementation review mode
+- Shows spec readiness checklist
+- Stays in spec review mode — proposes spec changes, not implementation changes
+
+## Trace A3: `/review integration` narrows focus
+
+- review.md Step 1: user specified `/review integration`
+- Enters review with focus narrowed to integration quality
+
+### Expected
+
+- Goes directly to review
 - Focus area restricted to integration quality
 
-## Trace C: Review Step 2 — Focus Area Assessment
+## Trace B: Review Step 2 — Focus Area Assessment
 
 ### Architecture Coherence
 - Tasks 1-8 mostly consistent
@@ -97,7 +90,7 @@ Decision implementation:     ⚠ 1 drift
 Focusing on: Pattern consistency
 ```
 
-## Trace D: Review Step 3-5 — Findings and Suggestions
+## Trace C: Review Step 3-5 — Findings and Suggestions
 
 ### Findings
 
@@ -144,9 +137,9 @@ These are suggestions — apply what makes sense for your project.
 - No files modified
 - No status changes to any task or decision
 
-## Trace E: Advisory boundary enforcement
+## Trace D: Advisory boundary enforcement
 
-Verify review mode does NOT:
+Verify `/review` does NOT:
 1. Create any new task files
 2. Modify any existing task JSON
 3. Modify any decision record
@@ -159,10 +152,10 @@ Verify review mode does NOT:
 - After review completes, all files are identical to before review started
 - Only output is the review report displayed to user
 
-## Trace F: Insufficient completed work
+## Trace E: Insufficient completed work
 
 - Modified state: Only 2 tasks are `Finished`
-- User runs `/iterate review`
+- User runs `/review`
 
 ### Expected
 
@@ -170,15 +163,14 @@ Verify review mode does NOT:
 Not enough completed work for meaningful review. Continue with /work.
 ```
 
-- Falls back to spec refinement mode
+- Does not proceed to focus area assessment
 
 ## Pass criteria
 
-- [ ] Auto-detects review mode when bare `/iterate` with spec `active` and 3+ tasks Finished
-- [ ] `/iterate {topic}` bypasses auto-review even when conditions are met
-- [ ] Explicit `/iterate review` enters review mode directly
-- [ ] `/iterate review {area}` narrows focus to specified area
-- [ ] All 6 focus areas assessed with ✓/⚠/✗ indicators
+- [ ] `/review` enters review mode and assesses completed work
+- [ ] `/review {area}` narrows focus to specified area
+- [ ] `/iterate` (bare) stays in spec review mode even with 8 Finished tasks
+- [ ] All 6 focus areas assessed with indicators
 - [ ] Pattern inconsistency detected (Task 3 vs Task 7 error handling)
 - [ ] Decision anchor drift detected (DEC-002 approved but no anchors)
 - [ ] Technical debt detected from task completion notes
@@ -188,16 +180,14 @@ Not enough completed work for meaningful review. Continue with /work.
 - [ ] NO tasks created (purely advisory)
 - [ ] NO files modified (purely advisory)
 - [ ] NO status changes to tasks or decisions
-- [ ] Falls back to spec mode when < 3 Finished tasks
+- [ ] Stops when < 3 Finished tasks
 - [ ] Report format includes phase context and task completion ratio
 
 ## Fail indicators
 
-- Review mode creates task files (violates advisory boundary)
-- Review mode modifies task JSON or decision records
-- Review mode regenerates the dashboard
-- Spec readiness checklist shown instead of review report
-- Review mode activated with fewer than 3 finished tasks
+- `/review` creates task files (violates advisory boundary)
+- `/review` modifies task JSON or decision records
+- `/review` regenerates the dashboard
+- `/iterate` enters implementation review mode (should always stay in spec mode)
 - Findings lack specific task/file references
 - Suggestions assume code context not actually read from files
-- `/iterate {topic}` enters review mode (should bypass auto-review and do spec review)

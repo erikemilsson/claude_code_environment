@@ -197,8 +197,8 @@ By separating concerns:
 5. research-agent: updates decision status to `proposed` (ready for user selection)
 6. User selects option via checkbox → `/work` auto-updates status to `approved` → dependent tasks unblock
 
-**The review workflow** (via `/iterate review`):
-1. `/iterate` detects active spec with completed tasks (or user explicitly requests review)
+**The review workflow** (via `/review`):
+1. User runs `/review` (or `/review {area}`) to assess implementation quality
 2. Reviews implementation artifacts across completed tasks for quality patterns
 3. Assesses: architecture coherence, integration quality, pattern consistency, cross-cutting concerns, technical debt, decision alignment
 4. Presents findings and suggestions — purely advisory, no state changes

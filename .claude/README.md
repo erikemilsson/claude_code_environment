@@ -34,7 +34,8 @@ This environment is domain-agnostic. While many examples reference software conc
 |---------|-------------|
 | `/work` | Main entry point — checks spec, decomposes tasks, routes to agents |
 | `/work complete` | Complete current in-progress task (or `/work complete {id}`) |
-| `/iterate` | Structured spec review (checks gaps, asks questions, proposes changes) |
+| `/iterate` | Structured spec review and refinement (checks gaps, asks questions, proposes spec changes) |
+| `/review` | Implementation quality review (architecture, integration, patterns — advisory) |
 | `/status` | Quick read-only view of project state |
 | `/research` | Investigate options for decisions (spawns research-agent) |
 | `/feedback` | Capture and review project improvement ideas |

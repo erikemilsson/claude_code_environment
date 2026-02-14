@@ -86,7 +86,7 @@ No fixture files or project setup needed. The state description in each scenario
 |---|------|-------|
 | 24 | Research Agent Decision Population | `/research` populates decision options, respects authority boundary |
 | 25 | Research from Iterate | `/iterate` implicit decision detection triggers research workflow |
-| 26 | Iterate Review Mode | `/iterate review` assesses implementation quality, stays advisory |
+| 26 | Review Command | `/review` assesses implementation quality, stays advisory |
 
 ## Example Project
 
