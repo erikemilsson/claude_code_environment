@@ -373,6 +373,8 @@ Exactly one `spec_v{N}.md` exists in `.claude/` at any time. Version transitions
 | `/work complete` | Complete a task (human/both-owned tasks, or tasks worked outside normal flow) | Read-write |
 | `/iterate` | Spec review — improve existing spec or distill from vision | Read-write (proposes, applies on approval) |
 | `/iterate distill` | Extract buildable spec from a vision document | Read-write (proposes, applies on approval) |
+| `/review` | Implementation quality review — advisory assessment of completed work | Read-only |
+| `/review {area}` | Focused implementation review on a specific area | Read-only |
 | `/status` | Quick view of project state | Read-only |
 | `/status --brief` | One-line summary | Read-only |
 | `/status --tasks` | Task-focused view | Read-only |
