@@ -13,7 +13,40 @@ For workflow concepts (phases, agent synergy, checkpoints), see `.claude/support
 /work complete {id}      # Complete specific task
 ```
 
-**Dashboard regeneration:** After significant state changes, dashboard.md is regenerated per `.claude/support/reference/dashboard-regeneration.md` § "When to Regenerate".
+## User Communication Strategy
+
+Communication uses two tiers to keep the user informed without wasteful file I/O:
+
+### Tier 1: Dashboard Regeneration (strategic moments)
+
+Regenerate `dashboard.md` per `.claude/support/reference/dashboard-regeneration.md` only at moments when the user needs it current:
+
+| Trigger | Rationale |
+|---------|-----------|
+| After decomposition | User needs to see the full task list |
+| After parallel batch completes | Many changes at once, single regen |
+| At session boundaries (before presenting final results) | User will check the dashboard |
+| At project completion | Final state matters |
+| When routing async work to dashboard (phase gates, decision reviews) | User will go read the dashboard |
+| `/work complete` (user-initiated) | User explicitly interacting with task state |
+| After decision resolution | May unblock tasks, dashboard needs to reflect new state |
+| Step 1a freshness check | Catch-up on entry |
+
+### Tier 2: Inline CLI Communication (routine status changes)
+
+Brief, contextual messages in the CLI conversation — no file I/O, no full regen:
+
+| Event | Inline message |
+|-------|---------------|
+| Task starts (In Progress) | `Starting task {id}: "{title}"` |
+| Per-task verification passes | `Task {id} verified` + what's next |
+| Per-task verification fails | `Task {id} verification failed: {summary}` |
+| Human task becomes unblocked | `Note: Task {id} ("{title}") is now available for you — {brief description}` |
+| Auto-continuation step | `Moving to task {id}: "{title}"` |
+
+### Proactive Surfacing
+
+When implementation work unblocks a human-owned or both-owned task, mention it inline during auto-continuation. Don't wait for the user to discover it on the dashboard — surface it conversationally.
 
 ---
 
@@ -202,7 +235,7 @@ After phase and decision checks, assess whether multiple tasks can be dispatched
    → Route to implement-agent for next pending task
 ```
 
-**Auto-continuation within phases:** After a task finishes (passes per-task verification), `/work` loops back to Step 3 to determine the next action — no user prompt, no pause. This continues automatically until a natural stopping point: phase boundary (gate approval needed), blocking decision, or verification failure requiring human escalation. The value of front-loaded decomposition and structured verification is that work flows autonomously between these stops.
+**Auto-continuation within phases:** After a task finishes (passes per-task verification), `/work` loops back to Step 3 to determine the next action — no user prompt, no pause. Each iteration starts with an inline announcement: `Moving to task {id}: "{title}"`. Before dispatching the next task, check if any human-owned or both-owned tasks just became unblocked — if so, mention them inline: `Note: Task {id} ("{title}") is now available for you — {brief description}`. This continues automatically until a natural stopping point: phase boundary (gate approval needed), blocking decision, or verification failure requiring human escalation. The value of front-loaded decomposition and structured verification is that work flows autonomously between these stops.
 
 **Important — spec tasks vs out-of-spec tasks:** Phase routing is based on spec tasks only (excluding `out_of_spec: true`). Out-of-spec tasks are excluded from **phase detection** (determining whether a phase is complete, triggering phase-level verification, or reaching project completion) to prevent a verify → execute → verify infinite loop. However, out-of-spec tasks still run the **full implement → verify cycle** — they are not exempt from per-task verification. The structural invariant applies universally: no task (spec or out-of-spec) can reach "Finished" without `task_verification.result == "pass"`.
 
@@ -253,7 +286,7 @@ Read `.claude/agents/implement-agent.md` and follow Steps 1-6. Required artifact
    - Step 5: Self-review completed
    - Step 6a: Task JSON updated to `"Awaiting Verification"`
    - Step 6b: verify-agent **spawned as a separate Task agent** (fresh context)
-   - Step 6c: Dashboard regenerated
+   - Step 6c: Inline status update (tier 2) — e.g., `Starting task {id}: "{title}"` when beginning, status announcement after verify-agent completes. Dashboard regen deferred to next strategic moment (session boundary, parallel batch end, or async routing to dashboard).
 3. **Context to provide:** Current task, relevant spec sections, constraints/notes
 
 #### If Executing (Parallel)
@@ -290,9 +323,8 @@ Task tool call:
 **Timeout handling:** If verify-agent exhausts `max_turns` without completing, treat as verification failure — increment `verification_attempts`, set task to "Blocked" with `[VERIFICATION TIMEOUT]` note, report to user.
 
 **After per-task verification completes:**
-- **Pass**: If `owner: "both"` or task has `test_protocol`, verify `user_review_pending: true` was set. Check for interaction mode routing (see below). Regenerate dashboard, then loop back to Step 3 (auto-continuation — find and dispatch the next eligible task).
-- **Fail**: Task set to "In Progress". Route to implement-agent to fix, then re-verify. Loop until pass.
-- Regenerate dashboard after status changes (per `dashboard-regeneration.md` § "When to Regenerate").
+- **Pass**: Announce inline: `Task {id} verified`. If `owner: "both"` or task has `test_protocol`, verify `user_review_pending: true` was set. Check for interaction mode routing (see below). Before looping, check if any human-owned or both-owned tasks just became unblocked by this completion — if so, surface them inline: `Note: Task {id} ("{title}") is now available for you — {brief description}`. Then loop back to Step 3 (auto-continuation). Dashboard regen deferred to next strategic moment.
+- **Fail**: Announce inline: `Task {id} verification failed: {summary}`. Task set to "In Progress". Route to implement-agent to fix, then re-verify. No dashboard regen needed (Claude is fixing it immediately).
 
 **Interaction mode routing (after per-task verification pass):**
 
@@ -400,6 +432,7 @@ Run quick validation after task dispatch to catch issues early:
 1. **Task file integrity** — Verify the task JSON that was just modified is valid JSON and parseable
 2. **Dashboard exists** — Confirm `.claude/dashboard.md` exists and has a `<!-- DASHBOARD META -->` block
 3. **Session sentinel** — Write `.claude/tasks/.last-clean-exit.json` with current timestamp and in-progress task list (enables fast-path recovery check on next `/work` run)
+4. **Session boundary dashboard freshness** — When the main work loop has reached a natural stopping point (phase boundary, blocking decision, verification failure needing human escalation, or no more eligible tasks), verify dashboard freshness against actual task state. Compute a hash of all task IDs/statuses/owners and compare against the `<!-- DASHBOARD META -->` block. If stale, regenerate now — the user should never see a stale dashboard as the final state of a work session.
 
 For full maintenance validation (schema checks, decision integrity, template sync), use `/health-check`.
 
@@ -499,9 +532,10 @@ Use `/work complete` for manual task completion outside of implement-agent's wor
 6. **Check parent auto-completion:**
    - If parent_task exists and all non-Absorbed sibling subtasks are "Finished"
    - Set parent status to "Finished"
-7. **Regenerate dashboard** - Follow `.claude/support/reference/dashboard-regeneration.md`
-8. **Auto-archive check** - If active task count > 100, archive old tasks
-9. **Post-dispatch validation** - Run main `/work` Step 5 checks (task file integrity, dashboard exists, session sentinel)
+7. **Regenerate dashboard** - Follow `.claude/support/reference/dashboard-regeneration.md` (this is user-initiated, so the dashboard should be current when they're done)
+8. **Surface unblocked tasks** - After regen, check if this completion unblocked any human-owned or both-owned tasks. If so, announce inline: `Note: Task {id} ("{title}") is now available for you — {brief description}`.
+9. **Auto-archive check** - If active task count > 100, archive old tasks
+10. **Post-dispatch validation** - Run main `/work` Step 5 checks (task file integrity, dashboard exists, session sentinel)
 
 ### Rules
 

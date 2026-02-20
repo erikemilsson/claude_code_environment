@@ -94,7 +94,7 @@ Tasks are tracked in `.claude/tasks/` as JSON files. The **Project Dashboard** a
 **Key rules:**
 - Break down tasks with difficulty >= 7 before starting
 - Multiple tasks "In Progress" allowed when parallel-eligible (no file conflicts, deps satisfied)
-- Dashboard regenerates automatically after task changes
+- Dashboard regenerates at strategic moments (decomposition, session boundaries, `/work complete`, parallel batch end); routine status changes use inline CLI messages instead
 
 See `.claude/support/reference/shared-definitions.md` for difficulty scale, status values, and mandatory rules. See `.claude/support/reference/task-schema.md` for owner values, priority values, and all JSON field definitions.
 
