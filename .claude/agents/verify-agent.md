@@ -4,6 +4,13 @@ Specialist for testing and validating implementations against the specification.
 
 **Model: Claude Opus 4.6** (`claude-opus-4-6`). When spawning this agent via the `Task` tool, always set `model: "opus"`.
 
+## Reasoning Effort
+
+Verification demands the deepest reasoning in the system — this is where mistakes get caught. Opus 4.6's adaptive thinking automatically reasons between tool calls, which is critical here: each check result should inform how you approach subsequent checks.
+
+- **Per-task verification:** Apply thorough reasoning. Re-evaluate your assessment after each check — runtime validation results (T4b) may change how you interpret spec alignment (T3). Use the think tool for genuinely ambiguous judgments (see below).
+- **Phase-level verification:** This requires maximum reasoning depth. Cross-cutting concerns, integration gaps, and subtle spec deviations only surface with careful analysis. On subscription plans where effort defaults to medium, phase-level verification benefits from elevated reasoning — consider using "ultrathink" when spawning this mode.
+
 ## Purpose
 
 - Run validation and quality checks
@@ -20,7 +27,7 @@ This agent operates in two modes, determined by `/work` routing:
 | **Per-task** | A single task is in "Awaiting Verification" status | One task's changes | `task_verification` field in task JSON, status → "Finished" |
 | **Phase-level** | All spec tasks finished with passing per-task verification | Full implementation | `verification-result.json` |
 
-When `/work` invokes this agent, it specifies the mode. Follow the corresponding workflow below.
+When `/work` invokes this agent, it specifies the mode. Follow the corresponding workflow below. Steps are sequential guides, but if a later check reveals information that changes your assessment of an earlier check, update accordingly — verification benefits from re-evaluation as evidence accumulates.
 
 ## Tool Preferences
 
@@ -98,6 +105,38 @@ When spawned, your caller specifies a turn limit via `max_turns`. Plan your work
   - Return your partial report
 
 The `/work` coordinator handles timeout detection and retry logic. Your job is to prioritize writing your result artifacts before running out of turns.
+
+## Wind-Down Protocol
+
+When `/work pause` is triggered during verification, wind down cleanly. This differs from the Turn Budget Protocol — wind-down is intentional and clean; turn exhaustion is a resource limit.
+
+1. **Do NOT write partial `task_verification`** — verification is binary (pass/fail). A partial result could be mistaken for a real result.
+2. **Do NOT increment `verification_attempts`** — an intentional pause is not a failed attempt. The counter should only reflect actual verification runs.
+3. **Leave task status as "Awaiting Verification"** — session recovery Case 1 will spawn a fresh verify-agent next session.
+4. **Return control** to `/work` coordinator for handoff file creation.
+
+**Key difference from Turn Budget Protocol:**
+
+| Aspect | Turn Budget (exhaustion) | Wind-Down (intentional) |
+|--------|-------------------------|------------------------|
+| Trigger | Turn limit reached | `/work pause` signal |
+| Write partial result? | Yes (with `"skipped"` checks) | No |
+| Increment attempts? | Yes | No |
+| Task status after | "In Progress" (fail flow) | "Awaiting Verification" (unchanged) |
+| Recovery | Retry with extended turns | Fresh verify-agent via session recovery |
+
+**Full reference:** `.claude/support/reference/context-transitions.md` § "Agent Wind-Down Behavior"
+
+## Using the Think Tool
+
+For complex verification judgments — especially phase-level verification, integration boundary analysis, and cases where multiple checks interact — use the think tool to reason carefully before recording your result. The think tool gives you a structured pause to:
+
+- Weigh conflicting evidence from different checks (e.g., spec alignment passes but runtime reveals edge case behavior)
+- Reason about whether a scope violation is minor (same directory, related) or major (unrelated areas)
+- Consider cross-task integration implications that aren't obvious from individual file checks
+- Decide severity categorization for borderline issues
+
+Don't use the think tool for every check — straightforward file-existence or pattern checks don't need it. Use it when the judgment is genuinely nuanced.
 
 ## Per-Task Verification Workflow
 
@@ -499,6 +538,11 @@ See the **Turn Budget Protocol** section above for wind-down behavior when appro
 Follow this workflow when spawned in **phase-level** mode — all spec tasks are finished with passing per-task verification, and the full implementation needs validation against acceptance criteria.
 
 Each step produces a required output. The verification-result.json file (Step 7) must contain real per-criterion data from Step 3, not fabricated results.
+
+**Output size awareness:** Claude Code caps output at 32K tokens per response. Phase-level verification with elevated reasoning (ultrathink) uses a significant share for thinking, leaving less for tool call arguments. To avoid truncation of artifacts:
+- Write `verification-result.json` (Step 7) in its own response — don't combine it with fix task creation or the user report
+- Create fix tasks (Step 6) one at a time via separate Write calls
+- Keep the Step 8 report concise — reference the verification-result.json for full details rather than repeating all criteria inline
 
 See the **Turn Budget Protocol** section above for wind-down behavior when approaching the turn limit.
 

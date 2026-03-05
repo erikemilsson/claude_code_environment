@@ -4,7 +4,16 @@ Instructions for Claude Code when working in this project.
 
 ## Model Requirement
 
-This environment is designed for **Claude Opus 4.6** (`claude-opus-4-6`). The difficulty scale, task breakdown thresholds, and agent workflows are calibrated for Opus-level reasoning. All agents (implement-agent, verify-agent, research-agent) must run on Opus 4.6.
+This environment is designed for **Claude Opus 4.6** (`claude-opus-4-6`). The difficulty scale, task breakdown thresholds, and agent workflows are calibrated for Opus 4.6 capabilities. All agents (implement-agent, verify-agent, research-agent) must run on Opus 4.6.
+
+**Opus 4.6 capabilities this environment leverages:**
+- **Adaptive thinking** — agents match reasoning depth to task complexity (see Reasoning Effort sections in agent definitions)
+- **Interleaved thinking** — agents re-reason between tool calls, enabling mid-execution course correction rather than plan-once-execute-blind
+- **Think tool** — verify-agent uses structured reasoning pauses for nuanced judgments (scope violations, integration analysis, severity categorization)
+- **Sustained agentic execution** — turn budgets of 30-50 turns per agent assume Opus 4.6's ability to maintain context and follow process across long tool chains
+- **Effort defaults** — Max/Team subscriptions default to medium effort; use "ultrathink" in prompts when deeper reasoning is needed (phase-level verification, complex design decisions)
+
+**Output token constraint:** Claude Code subscription caps output at 32K tokens per response (thinking + text + tool arguments share this budget). Agents should avoid writing large artifacts and reasoning deeply in the same response. Specific guidance is in dashboard-regeneration.md (Step 7), verify-agent.md (phase-level workflow), and research-agent.md (Step R4).
 
 ## Project Overview
 
@@ -68,6 +77,7 @@ Commands defined in `.claude/commands/` for this workflow. Not Claude Code built
 
 ### Primary
 - `/work` - Start or continue work (checks spec alignment, decomposes tasks, checks gates, resolves decisions, routes to agents)
+- `/work pause` - Graceful wind-down (preserve context for next session before compaction)
 - `/work complete` - Complete current in-progress task (or `/work complete {id}`)
 - `/iterate` - Structured spec review and refinement (checks gaps, asks questions, proposes spec changes)
 - `/review` - Implementation quality review (architecture, integration, patterns — purely advisory)

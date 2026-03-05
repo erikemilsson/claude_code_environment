@@ -11,6 +11,7 @@ For workflow concepts (phases, agent synergy, checkpoints), see `.claude/support
 /work {request}          # Handle ad-hoc request
 /work complete           # Complete current in-progress task
 /work complete {id}      # Complete specific task
+/work pause              # Graceful wind-down — preserve context for next session
 ```
 
 ## User Communication Strategy
@@ -52,7 +53,39 @@ When implementation work unblocks a human-owned or both-owned task, mention it i
 
 ## Process
 
-### Step 0: Session Recovery Check
+### Step 0: Context Restoration and Session Recovery
+
+#### Step 0a: Handoff Detection
+
+Check for a context transition handoff from a previous session before anything else.
+
+```
+1. Check for .claude/tasks/.handoff.json
+   IF not found → skip to Step 0b
+
+2. Read and validate handoff file
+   IF invalid JSON or missing required fields → warn, delete, skip to Step 0b
+
+3. Check staleness
+   IF timestamp > 7 days old:
+     → "Handoff from {date} — project state may have changed. Reference only."
+     → Delete handoff, skip to Step 0b (don't use for routing)
+
+4. Present summary (2-4 lines):
+   "Resuming from previous session ({trigger}, {relative time}):
+    {task titles + progress from position/active_work}"
+
+5. Load session_knowledge into working context
+   (Available for routing and implement-agent enrichment. NOT passed to verify-agent.)
+
+6. Delete .handoff.json
+
+7. Proceed to Step 0b
+```
+
+**Full procedure:** `.claude/support/reference/context-transitions.md` § "Restoration"
+
+#### Step 0b: Session Recovery Check
 
 Check for tasks left in recoverable states by a previous session. Read `.claude/support/reference/session-recovery.md` and follow its procedure:
 1. **Check session sentinel** (`.claude/tasks/.last-clean-exit.json`) — if clean exit, skip full scan
@@ -391,6 +424,8 @@ Task tool call:
   max_turns: 50
   description: "Phase-level verification"
   prompt: |
+    ultrathink
+
     You are the verify-agent. Read `.claude/agents/verify-agent.md` and follow
     the Phase-Level Verification Workflow (Steps 1-8).
 
@@ -571,3 +606,40 @@ When a task ID is referenced but not found in active tasks:
 - Check `.claude/tasks/archive/` for context
 - Read archived task for reference (provides historical context)
 - Archived tasks are read-only reference material
+
+---
+
+## Context Transition (`/work pause`)
+
+Graceful wind-down that preserves reasoning context before compaction clears the context window. Use when a session is getting long and you want to ensure continuity.
+
+**Full procedure:** `.claude/support/reference/context-transitions.md`
+
+### Process
+
+1. **Stop accepting new work** — do not start the next task or agent dispatch
+2. **Reach nearest clean boundary** in current agent step:
+   - Mid-implementation (Step 4): finish current logical unit if close, otherwise stop
+   - At self-review (Step 5): complete the review and write completion notes
+   - At mark Awaiting Verification (Step 6a): complete the status update
+   - Verify-agent running: do NOT write partial `task_verification`; leave task as "Awaiting Verification"
+3. **Update task JSON** (for each in-flight task):
+   - Add `[PARTIAL]` prefix to notes with progress summary
+   - Update `updated_date`
+   - Keep status as "In Progress" (or "Awaiting Verification" if verify was running)
+4. **Write handoff file** (`.claude/tasks/.handoff.json`):
+   - `trigger: "user_pause"`
+   - `position`: current phase, recently completed tasks, next planned
+   - `active_work`: per-task agent state, partial notes, ready-for-verify flag
+   - `parallel_state`: batch context if parallel execution was in progress
+   - `session_knowledge`: user preferences, informal decisions, patterns — things from conversation not persisted elsewhere
+   - `recovery_action`: explicit instructions for next session
+5. **Write session sentinel** (`.claude/tasks/.last-clean-exit.json`) — this is a clean exit
+6. **Report to user**: "Session paused. Context preserved in handoff file. Run `/work` to resume."
+
+### Key Rules
+
+- Do NOT change task status to Blocked or On Hold — pause is not a failure state
+- Do NOT increment `verification_attempts` if verify-agent was interrupted — intentional pause is not a failed attempt
+- Do NOT skip the handoff file — that's the whole point
+- `session_knowledge` captures what would otherwise be lost: user preferences stated in conversation, informal decisions, discovered patterns

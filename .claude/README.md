@@ -33,6 +33,7 @@ This environment is domain-agnostic. While many examples reference software conc
 | Command | Description |
 |---------|-------------|
 | `/work` | Main entry point — checks spec, decomposes tasks, routes to agents |
+| `/work pause` | Graceful wind-down — preserve context for next session |
 | `/work complete` | Complete current in-progress task (or `/work complete {id}`) |
 | `/iterate` | Structured spec review and refinement (checks gaps, asks questions, proposes spec changes) |
 | `/review` | Implementation quality review (architecture, integration, patterns — advisory) |
@@ -123,6 +124,15 @@ flowchart TD
     class PHASE phase
     class DONE done
 ```
+
+## Known Constraints
+
+**Output token cap:** Claude Code subscription (Max/Team) caps output at 32K tokens per response. Thinking and tool call arguments share this budget. The environment handles this internally — agents split large artifacts across multiple responses — but if you see truncated files (incomplete dashboard, partial JSON), this is likely why.
+
+- Set `MAX_THINKING_TOKENS=8000` (or similar) if output truncation is frequent — this reserves more of the 32K budget for actual output
+- Large projects (50+ tasks) may see dashboard truncation during regeneration; the environment falls back to a two-pass write
+
+**Effort defaults:** Max/Team subscriptions default to medium reasoning effort. The environment uses "ultrathink" for phase-level verification where deep reasoning matters most. If you want elevated reasoning more broadly, you can say "ultrathink" in your prompt.
 
 ## Where to Find Things
 

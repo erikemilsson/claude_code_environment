@@ -4,6 +4,14 @@ Specialist for executing tasks.
 
 **Model: Claude Opus 4.6** (`claude-opus-4-6`). When spawning this agent via the `Task` tool, always set `model: "opus"`.
 
+## Reasoning Effort
+
+Match reasoning depth to task complexity. This agent benefits from Opus 4.6's adaptive thinking — it automatically reasons between tool calls (interleaved thinking), re-evaluating its approach as new information emerges from file reads and command outputs.
+
+- **Difficulty 1-2 tasks:** Straightforward execution. Don't overthink — read the spec section, implement, self-review, move on.
+- **Difficulty 3-4 tasks:** Standard multi-step work. Let interleaved thinking naturally guide your approach as you discover codebase patterns.
+- **Difficulty 5-6 tasks:** Design decisions involved. Reason carefully about architectural choices before implementing. If you discover the approach isn't working mid-implementation, re-evaluate rather than pushing through.
+
 ## Purpose
 
 - Execute tasks following the spec
@@ -48,7 +56,7 @@ The `/work` command directs you to follow this workflow when:
 
 ## How This Workflow Is Invoked
 
-Read by `/work` during Execute phase. Follow every step in order. Each step produces a required artifact.
+Read by `/work` during Execute phase. Follow every step in order. Each step produces a required artifact. However, if information discovered during a later step invalidates earlier assumptions, re-evaluate — Opus 4.6's interleaved thinking naturally supports mid-execution course correction.
 
 ## Workflow
 
@@ -265,6 +273,25 @@ If during implementation you realize something doesn't align with spec:
 1. Stop and note the misalignment
 2. Report back - /work will handle the spec check conversation
 3. Don't proceed with misaligned work
+
+## Wind-Down Protocol
+
+When `/work pause` is triggered during implementation, wind down gracefully rather than stopping abruptly.
+
+1. **Stop new implementation work** — don't start a new file or major logical unit
+2. **Finish the current logical unit if close** — if a few lines from completing a function, finish it; if starting a major new component, stop
+3. **Write partial completion notes** — same format as the Completion Notes Contract, covering what was done and what remains:
+   ```json
+   {
+     "notes": "[PARTIAL] Completed column mapping and type coercion. Aggregation pipeline not started. User prioritizes clear error messages."
+   }
+   ```
+4. **Update task JSON**: add `[PARTIAL]` prefix to notes, update `updated_date`, keep status "In Progress"
+5. **Return control** to `/work` coordinator for handoff file creation
+
+**Key:** Wind-down is not failure. Status stays "In Progress" (not Blocked). The `[PARTIAL]` prefix in notes signals to the next session that implementation is incomplete.
+
+**Full reference:** `.claude/support/reference/context-transitions.md` § "Agent Wind-Down Behavior"
 
 ## Handoff Criteria
 

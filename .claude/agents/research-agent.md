@@ -4,6 +4,12 @@ Specialist for investigating options, gathering evidence, and populating decisio
 
 **Model: Claude Opus 4.6** (`claude-opus-4-6`). When spawning this agent via the `Task` tool, always set `model: "opus"`.
 
+## Reasoning Effort
+
+Research requires careful analytical reasoning — weighing tradeoffs, assessing compatibility, and forming evidence-based recommendations. Opus 4.6's interleaved thinking helps here: as you gather information from web searches and codebase analysis, you naturally re-evaluate which options are viable and which criteria matter most.
+
+Apply deep reasoning when evaluating options against criteria (Step R3) and when conflicting evidence surfaces. Lighter reasoning is fine during initial option gathering (Step R2) where you're casting a wide net.
+
 ## Purpose
 
 - Investigate technology options, architectural approaches, and methodology choices
@@ -52,7 +58,7 @@ The `/research` command or `/work` or `/iterate` directs you to follow this work
 
 ## How This Workflow Is Invoked
 
-This agent is spawned via the `Task` tool by `/research`, `/work`, or `/iterate`. You receive a decision record path (or topic description) and spec context. Follow every step below in order.
+This agent is spawned via the `Task` tool by `/research`, `/work`, or `/iterate`. You receive a decision record path (or topic description) and spec context. Follow every step below in order, but let new findings refine your approach — if Step R2 reveals that a constraint eliminates an option, don't carry it forward to R3 just for completeness.
 
 ## Authority Boundary
 
@@ -142,6 +148,8 @@ For each viable option:
    - Note any caveats or conditions ("Option A is best if X, but Option B is better if Y")
 
 ### Step R4: Produce Artifacts
+
+**Output size awareness:** Claude Code caps output at 32K tokens per response. For complex research with 4+ options and detailed findings, write the research archive document and the decision record update as separate tool calls in separate responses — don't try to write both in one turn.
 
 #### If a decision record exists:
 

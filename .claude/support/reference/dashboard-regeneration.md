@@ -270,7 +270,21 @@ At very end:
 - Healthy: `[Spec aligned](# "0 drift deferrals, 0 verification debt")`
 - Issues: `⚠️ N drift deferrals, M verification debt`
 
-### 7. Post-Regeneration Validation
+### 7. Output Size Awareness
+
+Claude Code caps output at 32K tokens per response (thinking + tool arguments + text). Dashboard content is written via the Write tool in a single call — if the dashboard is very large, the response could hit this limit and truncate the file.
+
+**Mitigations built into the format:**
+- Completed task summarization (>10 finished per phase → summary line instead of individual rows)
+- Action Required sub-sections only render when they have content
+- Project Overview diagram omitted when <4 tasks remain
+- Critical path truncation (>5 steps → first 3 + "... N more → Done")
+
+**If the dashboard still risks exceeding the limit** (50+ active tasks, complex parallel structure, many phases):
+- Write the dashboard in two passes: first the structural sections (metadata, action required, progress), then the data-heavy sections (tasks, decisions) as an Edit append
+- Prioritize Action Required and Progress sections — these are what the user checks first
+
+### 8. Post-Regeneration Validation
 
 After writing the new dashboard.md, verify structural integrity:
 
