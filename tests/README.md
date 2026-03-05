@@ -88,6 +88,16 @@ No fixture files or project setup needed. The state description in each scenario
 | 25 | Research from Iterate | `/iterate` implicit decision detection triggers research workflow |
 | 26 | Review Command | `/review` assesses implementation quality, stays advisory |
 
+### Context Transitions (27-31)
+
+| # | Name | Tests |
+|---|------|-------|
+| 27 | Proactive Handoff (User-Initiated) | `/work pause` wind-down, handoff file creation, next-session restoration |
+| 28 | PreCompact Hook Handoff | Auto-compaction safety net, hook-only handoff, equivalent restoration path |
+| 29 | Handoff During Verification | Wind-down mid-verify, no partial verification written, fresh verify-agent on resume |
+| 30 | Handoff During Parallel Batch | Multi-agent wind-down, batch state preservation, correct parallel resumption |
+| 31 | Handoff at Phase Boundary | Cross-phase knowledge preservation, strategic context bridging phases |
+
 ## Example Project
 
 All scenarios use a "data analysis pipeline" with:

@@ -542,6 +542,17 @@ If work isn't progressing:
 2. Present situation to human
 3. Get explicit direction
 
+### Context Window Exhaustion
+
+When a long session approaches compaction:
+- **Proactive (preferred):** User runs `/work pause` — graceful wind-down, writes handoff file with reasoning context, task JSON updated with partial notes
+- **Automatic (safety net):** PreCompact hook writes handoff file before compaction clears context
+- **Reactive (fallback):** Session recovery (Step 0) detects stuck tasks and recovers from task file state alone
+
+The handoff file (`.claude/tasks/.handoff.json`) captures environment-specific context that compaction can't preserve: agent step position, session knowledge, strategic reasoning. `/work` Step 0 detects and restores it before the session recovery scan.
+
+**Full reference:** `.claude/support/reference/context-transitions.md`
+
 ---
 
 ## Spec Change and Feature Addition Workflow

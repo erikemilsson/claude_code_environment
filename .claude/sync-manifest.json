@@ -14,6 +14,7 @@
       ".claude/support/reference/drift-reconciliation.md",
       ".claude/support/reference/parallel-execution.md",
       ".claude/support/reference/session-recovery.md",
+      ".claude/support/reference/context-transitions.md",
       ".claude/support/reference/phase-decision-gates.md",
       ".claude/support/reference/decomposition.md",
       ".claude/support/reference/paths.md",
@@ -24,7 +25,8 @@
       ".claude/support/workspace/README.md",
       ".claude/support/previous_specifications/README.md",
       ".claude/vision/README.md",
-      ".claude/support/feedback/README.md"
+      ".claude/support/feedback/README.md",
+      ".claude/hooks/pre-compact-handoff.sh"
     ],
     "customize": [
       ".claude/CLAUDE.md",
@@ -45,6 +47,7 @@
       ".claude/vision/*.md",
       ".claude/dashboard-state.json",
       ".claude/tasks/.last-clean-exit.json",
+      ".claude/tasks/.handoff.json",
       ".claude/support/feedback/feedback.md",
       ".claude/support/feedback/archive.md"
     ]

@@ -304,6 +304,33 @@ The `interaction_hint` field on the task JSON drives routing. When absent, defau
 
 **Authoritative files:** `support/reference/session-recovery.md`, `commands/work.md` § Step 0
 
+### Proactive Context Transitions
+
+**Purpose:** Work with Claude Code's compaction and plan-mode cycle rather than just recovering from interruptions. Session Recovery is reactive (fixes stuck tasks after crashes). Context Transitions are proactive (preserves reasoning and strategic context before compaction clears it).
+
+**The problem:** When a long `/work` session approaches the context window limit, Claude Code auto-compacts — summarizing conversation to free space. This preserves the general thread but loses environment-specific context: which agent step was active, what the user said in conversation that shaped approach, informal decisions not yet in records, and the strategic reasoning behind current work. Task JSON statuses survive (they're on disk), but the "why" and "what was I thinking" layer disappears.
+
+**How it works:** A structured handoff file (`.claude/tasks/.handoff.json`) captures the reasoning layer before context is cleared. Two paths produce it:
+
+- **User-initiated** (`/work pause`) — Graceful wind-down. Claude reaches the nearest clean boundary (finishes self-review, writes completion notes), updates task JSON with `[PARTIAL]` notes, writes the handoff file. Preferred path.
+- **Automatic** (PreCompact hook) — Safety net. When auto-compaction triggers, the hook writes the handoff file with whatever context is available. Lighter-touch than the user path — writes the handoff only, doesn't modify task JSON (avoids risk of corrupting state from a constrained hook environment).
+
+On next `/work` run, Step 0 detects the handoff file before the existing session recovery scan. It presents a brief summary, uses the strategic context for smarter routing, and deletes the file after restoration.
+
+**What the handoff captures that existing state doesn't:**
+
+| Existing state | Already on disk | Handoff adds |
+|----------------|----------------|--------------|
+| Task status | Yes (task JSON) | Which agent step within that status |
+| Completion notes | Yes (when task finishes) | Partial notes when task is mid-implementation |
+| Project position | Derivable from task statuses | Phase context, what prior phases established |
+| User preferences | Only if in CLAUDE.md or spec | Preferences stated in conversation |
+| Next action | Derivable from routing logic | Explicit recovery instructions from current session |
+
+**Design principle:** Don't fight compaction, complement it. The handoff file is authoritative environment state; Claude Code's compact summary is best-effort conversation context. Together they give the next session both the structured state and the narrative thread.
+
+**Authoritative files:** `support/reference/context-transitions.md`, `commands/work.md` § Step 0
+
 ### Learnings
 
 **Purpose:** Accumulate project-specific patterns discovered through experience, so implement-agent avoids repeating mistakes and builds on what's worked.
@@ -366,11 +393,13 @@ The `interaction_hint` field on the task JSON drives routing. When absent, defau
 
 **Purpose:** Keep project workflow files up to date with upstream template improvements.
 
-**How it works:** `sync-manifest.json` defines which files sync (commands, agents, reference docs) vs. stay user-owned (CLAUDE.md, dashboard, tasks). `/health-check` compares local files against the template repo and presents changes grouped by workflow area.
+**How it works:** The template repo is tracked as a git remote (`template`). `/health-check` fetches from this remote and uses git diff to compare local sync files against the upstream versions — no API calls, no file-by-file fetching. `sync-manifest.json` defines which files are compared: `sync` (commands, agents, reference docs), `customize` (user-owned, never touched), and `ignore` (project data like tasks and dashboard). `version.json` stores the `template_repo` URL and the last-synced `template_version`.
 
-**Note:** `/health-check` also validates beyond template sync — workspace staleness (files in `.claude/support/workspace/` older than 30 days), verification debt, decision anchors, and other structural health checks.
+**Update flow:** When upstream changes exist, `/health-check` presents them grouped by workflow area (e.g., "verification pipeline update" when multiple related files changed). The user accepts all, selects individually, or skips. Accepted changes are applied and the local version is updated. Local-only files (project-specific additions) are never flagged.
 
-**Authoritative file:** `commands/health-check.md`
+**Note:** `/health-check` also validates beyond template sync — workspace staleness, verification debt, decision anchors, and other structural health checks.
+
+**Authoritative file:** `commands/health-check.md` Part 5
 
 ---
 
@@ -409,6 +438,7 @@ Exactly one `spec_v{N}.md` exists in `.claude/` at any time. Version transitions
 | Command | Purpose | Mode |
 |---------|---------|------|
 | `/work` | Main entry point — state detection, spec checking, decomposition, agent routing, completion | Read-write |
+| `/work pause` | Graceful wind-down — write handoff context, reach nearest clean boundary, prepare for compaction | Read-write |
 | `/work complete` | Complete a task (human/both-owned tasks, or tasks worked outside normal flow) | Read-write |
 | `/iterate` | Spec review — improve existing spec or distill from vision | Read-write (proposes, applies on approval) |
 | `/iterate distill` | Extract buildable spec from a vision document | Read-write (proposes, applies on approval) |
@@ -443,6 +473,7 @@ See also `support/reference/paths.md` for the canonical paths reference used by 
 | `.claude/tasks/task-*.json` | Individual task data | `/work`, agents |
 | `.claude/tasks/archive/` | Archived completed tasks (100+ threshold) | `/work` |
 | `.claude/tasks/.last-clean-exit.json` | Session sentinel — tracks clean exit for fast recovery skip | `/work` |
+| `.claude/tasks/.handoff.json` | Context transition handoff — reasoning and strategic context preserved before compaction | `/work pause`, PreCompact hook |
 | `.claude/vision/` | Vision documents and supplementary reference docs for distillation | User |
 | `.claude/commands/*.md` | Command definitions | Template |
 | `.claude/agents/*.md` | Agent definitions | Template |
@@ -455,6 +486,7 @@ See also `support/reference/paths.md` for the canonical paths reference used by 
 | `.claude/support/workspace/` | Temporary working documents | Agents (ephemeral) |
 | `.claude/support/documents/` | User-provided reference files | User |
 | `.claude/support/learnings/` | Project-specific patterns | Agents |
+| `.claude/hooks/pre-compact-handoff.sh` | PreCompact hook script — writes structural handoff from disk state | Template |
 | `.claude/sync-manifest.json` | Template sync file categories | Template |
 | `.claude/version.json` | Template version tracking | Template |
 | `.claude/settings.local.json` | Pre-approved Bash permissions for Claude Code | Template (user-customizable) |

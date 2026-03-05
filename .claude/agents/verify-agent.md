@@ -108,22 +108,12 @@ The `/work` coordinator handles timeout detection and retry logic. Your job is t
 
 ## Wind-Down Protocol
 
-When `/work pause` is triggered during verification, wind down cleanly. This differs from the Turn Budget Protocol — wind-down is intentional and clean; turn exhaustion is a resource limit.
+When `/work pause` is triggered during verification, wind down cleanly — do NOT follow Turn Budget Protocol (that's for turn exhaustion, not intentional pause).
 
-1. **Do NOT write partial `task_verification`** — verification is binary (pass/fail). A partial result could be mistaken for a real result.
-2. **Do NOT increment `verification_attempts`** — an intentional pause is not a failed attempt. The counter should only reflect actual verification runs.
-3. **Leave task status as "Awaiting Verification"** — session recovery Case 1 will spawn a fresh verify-agent next session.
-4. **Return control** to `/work` coordinator for handoff file creation.
-
-**Key difference from Turn Budget Protocol:**
-
-| Aspect | Turn Budget (exhaustion) | Wind-Down (intentional) |
-|--------|-------------------------|------------------------|
-| Trigger | Turn limit reached | `/work pause` signal |
-| Write partial result? | Yes (with `"skipped"` checks) | No |
-| Increment attempts? | Yes | No |
-| Task status after | "In Progress" (fail flow) | "Awaiting Verification" (unchanged) |
-| Recovery | Retry with extended turns | Fresh verify-agent via session recovery |
+1. **Do NOT write partial `task_verification`** — verification is binary (pass/fail)
+2. **Do NOT increment `verification_attempts`** — intentional pause is not a failed attempt
+3. **Leave task status as "Awaiting Verification"** — session recovery Case 1 handles re-spawn
+4. **Return control** to `/work` coordinator for handoff file creation
 
 **Full reference:** `.claude/support/reference/context-transitions.md` § "Agent Wind-Down Behavior"
 

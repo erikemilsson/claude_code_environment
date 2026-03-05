@@ -276,22 +276,9 @@ If during implementation you realize something doesn't align with spec:
 
 ## Wind-Down Protocol
 
-When `/work pause` is triggered during implementation, wind down gracefully rather than stopping abruptly.
+When `/work pause` is triggered during implementation, wind down gracefully. Finish the current logical unit if close, otherwise stop. Write `[PARTIAL]`-prefixed completion notes (what's done, what remains), keep status "In Progress", and return control to `/work` for handoff.
 
-1. **Stop new implementation work** — don't start a new file or major logical unit
-2. **Finish the current logical unit if close** — if a few lines from completing a function, finish it; if starting a major new component, stop
-3. **Write partial completion notes** — same format as the Completion Notes Contract, covering what was done and what remains:
-   ```json
-   {
-     "notes": "[PARTIAL] Completed column mapping and type coercion. Aggregation pipeline not started. User prioritizes clear error messages."
-   }
-   ```
-4. **Update task JSON**: add `[PARTIAL]` prefix to notes, update `updated_date`, keep status "In Progress"
-5. **Return control** to `/work` coordinator for handoff file creation
-
-**Key:** Wind-down is not failure. Status stays "In Progress" (not Blocked). The `[PARTIAL]` prefix in notes signals to the next session that implementation is incomplete.
-
-**Full reference:** `.claude/support/reference/context-transitions.md` § "Agent Wind-Down Behavior"
+**Full procedure:** `.claude/support/reference/context-transitions.md` § "Implement-Agent Wind-Down"
 
 ## Handoff Criteria
 
