@@ -125,10 +125,24 @@ The dashboard remains the default. CLI-direct is used when the task is synchrono
 | Custom Views | User-defined inline views (optional, opt-in) |
 
 **Key behaviors:**
-- Regenerated automatically after every task change
-- User content preserved via marker pairs and a sidecar file (`dashboard-state.json`)
+- **Tiered communication strategy** — dashboard does NOT regenerate on every task change:
+  - *Tier 1 (Strategic Dashboard Regen):* Only at key moments — decomposition complete, parallel batch end, session boundaries, `/work complete`, phase gates, decision resolution, freshness check (Step 1a)
+  - *Tier 2 (Inline CLI Messages):* Brief contextual updates for routine changes — task starts, verification passes/fails, human tasks unblock
+- Freshness timestamp shown after completion % line: `*Updated [YYYY-MM-DD HH:MM] — may not reflect changes made outside /work*`
+- Hidden metadata block tracks `task_hash`, `spec_fingerprint`, `verification_debt`, `drift_deferrals` for freshness detection
+- User content preserved via marker pairs and a sidecar file (`dashboard-state.json`) with fields: `user_notes`, `section_toggles`, `phase_gates`, `inline_feedback`, `custom_views_instructions`, `updated`
 - Section toggles let the user control what's shown
 - Ships as a populated example (fictional renovation project) — replaced on first `/work` run
+
+**Dashboard visualization features:**
+- **Critical path** — computed from dependency graph: longest path with parallel branches shown in `[ | ]` notation, owner tags (`❗` human, `🤖` claude, `👥` both), decision nodes included
+- **Project overview diagram** — inline Mermaid diagram: completed phases collapsed into single nodes, completed tasks folded away, active/pending tasks with ownership prefix, decisions as diamond nodes, clumping when >15 active nodes
+- **Completed task summarization** — phases with 10+ finished tasks render as a summary line (`N tasks finished`) instead of listing each individually
+- **Repair indicator** — Finished tasks with multiple verification attempts show as `Finished (N retries)` in the Tasks section
+- **Acceptance criteria checklist** — when `verification-result.json` has a `criteria` array, renders pass/fail checklist with notes and summary count
+- **Spec drift surfacing** — when `drift-deferrals.json` has active entries, renders warnings in Action Required with affected task count and deferral age
+- **Out-of-spec task approval UI** — unapproved tasks appear in Action Required with `[A]` Accept, `[R]` Reject, `[D]` Defer, `[AA]` Accept all actions; rejected tasks are archived
+- **Conditional phase gates** — auto-conditions (task counts, verification status) render as pre-checked boxes; manual approval checkbox required; custom gate conditions from spec ("Gate Conditions" / "Transition Criteria" sections) become additional checkboxes
 
 **Authoritative file:** `support/reference/dashboard-regeneration.md`
 
@@ -176,17 +190,25 @@ Each feature below includes its purpose (why it exists), how it works (brief), a
 
 The `interaction_hint` field on the task JSON drives routing. When absent, defaults to dashboard (preserving current behavior).
 
-**Guided testing:** When runtime validation is `partial`, verify-agent writes a `test_protocol` — structured steps with instructions, expected outcomes, and step types (`command` for Claude to run, `interactive` for user to test, `visual` for user to inspect). Combined with `interaction_hint: "cli_direct"`, `/work` walks the user through the steps directly in the CLI conversation instead of routing to the dashboard.
+**Guided testing:** When runtime validation is `partial`, verify-agent writes a `test_protocol` — structured steps with instructions, expected outcomes, and step types (`command` for Claude to run, `interactive` for user to test, `visual` for user to inspect). Combined with `interaction_hint: "cli_direct"`, `/work` walks the user through the steps directly in the CLI conversation instead of routing to the dashboard. Protocol flow: each step is presented with its instruction and expected outcome; `command` steps show `[R]` to run, others show `[P]` pass / `[F]` fail; freeform feedback is captured at the end; results are recorded in the task's `user_feedback` field.
 
 **Key principle:** Self-test first, then ask humans only for what Claude genuinely can't evaluate. Provide exact commands, not vague instructions. Consider switching cost — keep the user in one place.
 
 **Authoritative files:** `agents/verify-agent.md` § Step T4b, `commands/work.md` § "Interaction Mode Selection" and "Guided Testing Flow", `support/reference/workflow.md` § "Interaction Modes and Runtime Validation"
 
+### Implementation Review (`/review`)
+
+**Purpose:** Fill the gap between per-task verification (Tier 1) and integration verification (Tier 2). Provides an advisory quality assessment of completed work — purely read-only, no modifications.
+
+**How it works:** `/review` scans completed work across six focus areas: Architecture Coherence (structural patterns, layering violations), Integration Quality (cross-component contracts, data flow), Pattern Consistency (naming, error handling, conventions), Cross-Cutting Concerns (logging, security, configuration), Technical Debt (complexity, duplication, missing abstractions), and Decision Implementation Audit (anchor validation, decision-implementation alignment). `/review {area}` runs a focused review on a specific area. Output is advisory: findings are presented but no tasks are created or files modified.
+
+**Authoritative file:** `commands/review.md`
+
 ### Phases
 
 **Purpose:** Enforce natural project boundaries (e.g., "build prototype first, then production"). Phase N+1 work cannot begin until Phase N is complete and approved.
 
-**How it works:** Spec sections define phases implicitly. During decomposition, tasks get a `phase` field. Dashboard groups tasks by phase. When all Phase N tasks finish, integration verification (Tier 2) runs first. After Tier 2 passes, a phase gate appears in the dashboard with checkboxes — auto-conditions (task counts, verification status) plus a manual approval checkbox. All must be checked before Phase N+1 unlocks.
+**How it works:** Spec sections define phases implicitly. During decomposition, tasks get a `phase` field. Dashboard groups tasks by phase. When all Phase N tasks finish, integration verification (Tier 2) runs first. After Tier 2 passes, a phase gate appears in the dashboard with checkboxes — auto-conditions (task counts, verification status) rendered as pre-checked `[x]` boxes that cannot be unchecked, plus a manual approval checkbox the user must check. Custom gate conditions from spec sections ("Gate Conditions" or "Transition Criteria" headings) become additional checkboxes. If auto-conditions are NOT met, they render with detail (e.g., `All verifications passed (8/10 — 2 tasks have verification debt)`). All must be satisfied before Phase N+1 unlocks.
 
 **Phase transitions trigger a spec version bump** (archive current → create v{N+1} → suggest `/iterate` to flesh out next phase sections).
 
@@ -203,6 +225,8 @@ The `interaction_hint` field on the task JSON drives routing. When absent, defau
 **Two types:**
 - **Pick-and-go:** After resolution, dependent tasks simply unblock. Default behavior.
 - **Inflection point:** The outcome changes *what* gets built, not just how. After resolution, `/work` pauses and suggests `/iterate` to revisit the spec. Flagged with `inflection_point: true` in frontmatter. The `spec_revised` field tracks whether the spec has been updated post-decision.
+
+**Implementation anchors:** When a decision reaches `implemented` status, it gains `implementation_anchors` — references linking the decision to where it was realized (fields: `file`, `line` (optional), `description`). `/health-check` and `/review` validate that anchors are still valid (files exist, content matches).
 
 **Authoritative files:** `support/reference/decisions.md`, `support/reference/extension-patterns.md` § "Decisions", `support/reference/phase-decision-gates.md`, `commands/work.md` § Step 2b
 
@@ -256,7 +280,11 @@ The `interaction_hint` field on the task JSON drives routing. When absent, defau
 
 **3 owner values:** `claude` (autonomous), `human` (requires user action), `both` (collaborative — user reviews after Claude implements)
 
-**Human deliverable validation:** When a human-owned task completes (or the user provides deliverables for a task — files, documents, configuration), `/work` runs a validation gate before continuing: check that the deliverables meet the task's stated requirements (expected quantity, format, content), verify they're usable by downstream tasks, and flag mismatches. If deliverables differ from what was planned (e.g., the task expected 2-3 CSV files but the user provided 1, or files have unexpected structure), `/work` surfaces the discrepancy and assesses whether dependent tasks need adjustment before proceeding.
+**Human deliverable validation:** When a human-owned task completes (or the user provides deliverables for a task — files, documents, configuration), `/work` runs a validation gate before continuing: check quantity (expected vs provided), usability (files parse, headers match, format correct), and plan validity (does downstream work still make sense?). If deliverables differ from what was planned, `/work` surfaces the discrepancy and offers: `[A]` Adjust dependent tasks, `[P]` Proceed as-is, `[W]` Wait for corrected deliverables.
+
+**Verification debt:** Tasks that bypassed or failed verification — status "Awaiting Verification", "Finished" without `task_verification`, or `task_verification.result` is "fail". Verification debt blocks project completion and is surfaced by `/health-check`, `/status`, and the dashboard metadata block.
+
+**Auto-archive:** When active task count exceeds 100, `/work` identifies finished tasks older than 7 days, moves them to `.claude/tasks/archive/`, updates `archive-index.json` with summaries, and regenerates the dashboard.
 
 **Authoritative files:** `support/reference/task-schema.md`, `support/reference/shared-definitions.md`
 
@@ -264,12 +292,15 @@ The `interaction_hint` field on the task JSON drives routing. When absent, defau
 
 **Purpose:** Handle agent crashes, turn exhaustion, and session interruptions gracefully.
 
-**How it works:** `/work` Step 0 scans all tasks for recoverable states before doing anything else:
+**How it works:** `/work` Step 0 scans all tasks for recoverable states before doing anything else. A session sentinel file (`.claude/tasks/.last-clean-exit.json`) enables fast-path recovery skip — if the last session exited cleanly with no recoverable states, the scan is skipped.
+
+**Six recovery cases:**
 - "Awaiting Verification" → Auto-recover: spawn verify-agent
 - "Blocked" with `[VERIFICATION TIMEOUT]` and < 3 attempts → Retry with extended turns
 - "Blocked" with `[VERIFICATION TIMEOUT]` and >= 3 attempts → Escalate to human review
 - "Blocked" with `[AGENT TIMEOUT]` → Present options: Retry, Break down, Skip
 - "In Progress" for > 24 hours → Present options: Continue, Reset, Hold
+- Malformed task files → Flag and skip (don't crash the scan)
 
 **Authoritative files:** `support/reference/session-recovery.md`, `commands/work.md` § Step 0
 
@@ -278,6 +309,8 @@ The `interaction_hint` field on the task JSON drives routing. When absent, defau
 **Purpose:** Accumulate project-specific patterns discovered through experience, so implement-agent avoids repeating mistakes and builds on what's worked.
 
 **How it works:** Markdown files in `.claude/support/learnings/` capture patterns by category (task strategies, API patterns, testing patterns, gotchas, etc.). implement-agent checks this directory during Step 4 before implementation begins. Learnings that mature into formal requirements graduate to the spec and are removed. Reviewed at phase completions for staleness.
+
+**Capture at completion:** When the project completes, `/work` prompts: `"Project complete. Any patterns or learnings to capture? [L] Share [S] Skip"`. If the user selects `[L]`, input is appended to `.claude/support/learnings/project-learnings.md`.
 
 **Not template-synced** — each project accumulates its own learnings.
 
@@ -288,6 +321,8 @@ The `interaction_hint` field on the task JSON drives routing. When absent, defau
 **Purpose:** Let agents accumulate questions for the user during execution and surface them at natural checkpoints.
 
 **How it works:** During execution, when implement-agent or verify-agent encounter something they can't resolve autonomously — a spec ambiguity, a technical choice needing user input, a dependency question — they write it to `.claude/support/questions/questions.md` under categories (Requirements, Technical, Scope, Dependencies). Questions marked with `[BLOCKING]` halt work until answered. Non-blocking questions accumulate and are surfaced to the user in the dashboard's Action Required section at natural checkpoints (after a task completes or at a phase boundary).
+
+**Note:** The questions system handles execution-time blockers (spec ambiguities, dependency questions). For capturing user ideas and improvement suggestions, the feedback system (`/feedback`) is the primary mechanism — it provides a full lifecycle from capture through triage to spec incorporation.
 
 **Authoritative file:** `commands/work.md` § Step 5
 
@@ -305,7 +340,9 @@ The `interaction_hint` field on the task JSON drives routing. When absent, defau
 
 **Purpose:** Allow work beyond the spec without breaking verification integrity.
 
-**How it works:** When a request doesn't align with the spec, `/work` offers: add to spec, proceed anyway (creates `out_of_spec: true` task), or skip. verify-agent can also create recommendation tasks with `out_of_spec: true`. Out-of-spec tasks are excluded from phase routing and completion conditions. They require explicit user approval (Accept/Reject/Defer) before execution.
+**How it works:** When a request doesn't align with the spec, `/work` offers: add to spec, proceed anyway (creates `out_of_spec: true` task), or skip. verify-agent can also create recommendation tasks with `out_of_spec: true`. Out-of-spec tasks are excluded from phase routing and completion conditions. They require explicit user approval before execution.
+
+**Dashboard presentation:** Unapproved out-of-spec tasks appear in both "Action Required > Reviews" and "Tasks" section with a warning prefix. User actions: `[A]` Accept (approve for execution), `[R]` Reject (archived), `[D]` Defer (remains visible but not routed), `[AA]` Accept all. Approved tasks retain the warning prefix only in the Tasks section to indicate their out-of-spec origin.
 
 **Authoritative file:** `commands/work.md` § "Out-of-spec task handling", `support/reference/workflow.md` § "Out-of-Spec Task Handling"
 
@@ -331,7 +368,9 @@ The `interaction_hint` field on the task JSON drives routing. When absent, defau
 
 **How it works:** `sync-manifest.json` defines which files sync (commands, agents, reference docs) vs. stay user-owned (CLAUDE.md, dashboard, tasks). `/health-check` compares local files against the template repo and presents changes grouped by workflow area.
 
-**Authoritative file:** `commands/health-check.md` § Part 5
+**Note:** `/health-check` also validates beyond template sync — workspace staleness (files in `.claude/support/workspace/` older than 30 days), verification debt, decision anchors, and other structural health checks.
+
+**Authoritative file:** `commands/health-check.md`
 
 ---
 
@@ -373,8 +412,8 @@ Exactly one `spec_v{N}.md` exists in `.claude/` at any time. Version transitions
 | `/work complete` | Complete a task (human/both-owned tasks, or tasks worked outside normal flow) | Read-write |
 | `/iterate` | Spec review — improve existing spec or distill from vision | Read-write (proposes, applies on approval) |
 | `/iterate distill` | Extract buildable spec from a vision document | Read-write (proposes, applies on approval) |
-| `/review` | Implementation quality review — advisory assessment of completed work | Read-only |
-| `/review {area}` | Focused implementation review on a specific area | Read-only |
+| `/review` | Implementation quality review — 6 focus areas (architecture, integration, patterns, cross-cutting, tech debt, decision audit) | Read-only |
+| `/review {area}` | Focused review on a specific area (e.g., `/review integration`, `/review architecture`) | Read-only |
 | `/status` | Quick view of project state | Read-only |
 | `/status --brief` | One-line summary | Read-only |
 | `/status --tasks` | Task-focused view | Read-only |

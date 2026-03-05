@@ -96,22 +96,30 @@ User-authored content is persisted in `.claude/dashboard-state.json` as a durabl
 
 ## When to Regenerate
 
-The dashboard is regenerated automatically after every task change. This ensures the user always sees current state.
+Dashboard regeneration follows a **tiered communication strategy** (see `commands/work.md` § "User Communication Strategy"). Not every task change triggers a full regen — routine status updates use inline CLI messages instead.
 
-| State Change | Regenerate? | Rationale |
-|-------------|:-----------:|-----------|
-| Task: Pending → In Progress | **Yes** | Reflects work starting |
-| Task: In Progress → Awaiting Verification | **Yes** | Reflects implementation complete |
-| Task: Awaiting Verification → Finished (pass) | **Yes** | User-visible completion event |
-| Task: Awaiting Verification → In Progress (fail) | **Yes** | User may need to see verification failure |
-| Task: any → Blocked | **Yes** | User may need to act on blocker |
-| Task: any → On Hold | **Yes** | User-initiated status change |
-| Decomposition complete (new tasks created) | **Yes** | New tasks to display |
-| Phase transition | **Yes** | Major state change, gate conditions to show |
-| Phase-level verification complete | **Yes** | Verification results to display |
-| Parallel batch complete (post-cleanup) | **Yes** | Single regen for all parallel results |
-| `/work complete` | **Yes** | User-initiated completion |
-| Decision resolved | **Yes** | Decision status changed, tasks may unblock |
+**Tier 1 — Strategic Dashboard Regeneration (full regen):**
+
+| Trigger | Rationale |
+|---------|-----------|
+| After decomposition (new tasks created) | User needs to see the full task list |
+| After parallel batch completes | Many changes at once, single regen |
+| At session boundaries (before presenting final results) | User will check the dashboard |
+| At project completion | Final state matters |
+| When routing async work to dashboard (phase gates, decision reviews) | User will go read the dashboard |
+| `/work complete` (user-initiated) | User explicitly interacting with task state |
+| After decision resolution | May unblock tasks, dashboard needs to reflect new state |
+| Step 1a freshness check | Catch-up on entry |
+
+**Tier 2 — Inline CLI Messages (no regen):**
+
+| Event | Inline message |
+|-------|---------------|
+| Task starts (In Progress) | `Starting task {id}: "{title}"` |
+| Per-task verification passes | `Task {id} verified` + what's next |
+| Per-task verification fails | `Task {id} verification failed: {summary}` |
+| Human task becomes unblocked | `Note: Task {id} ("{title}") is now available for you` |
+| Auto-continuation step | `Moving to task {id}: "{title}"` |
 
 **In parallel mode:** Individual agents never regenerate. The `/work` coordinator regenerates once after all agents complete.
 
