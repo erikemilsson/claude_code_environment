@@ -318,14 +318,3 @@ Turn Budget Protocol already handles writing partial `verification-result.json`.
 ### Empty session (no work done)
 If `/work pause` is triggered but no work was in flight, write a minimal handoff with only `position` and empty `active_work`. Or skip the handoff entirely — if nothing is in flight, session recovery handles everything.
 
----
-
-## What Gets Written to Task JSON at Wind-Down
-
-Only on the **user-initiated path** (`/work pause`), not the PreCompact hook:
-
-1. Update `notes` field with `[PARTIAL]` prefix
-2. Update `updated_date`
-3. Keep `status` as "In Progress"
-
-This ensures session recovery still works even if the handoff file is somehow lost. The handoff adds richness but isn't a single point of failure.

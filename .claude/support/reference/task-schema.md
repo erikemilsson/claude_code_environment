@@ -171,82 +171,11 @@ Only critical and high show emoji prefixes in the dashboard to reduce visual noi
 
 ## Drift Prevention Fields
 
-These fields track spec-to-task alignment and detect when specs evolve after tasks are created:
+These fields track spec-to-task alignment. All are set during decomposition (see `decomposition.md`) and used by `/work` for drift detection (see `drift-reconciliation.md`).
 
-### spec_fingerprint
+The fields `spec_fingerprint`, `spec_version`, `spec_section`, `section_fingerprint`, and `section_snapshot_ref` are defined in the Field Definitions table above. Together they enable granular per-section drift detection: when `/work` runs, it compares current section hashes against task fingerprints and only flags tasks from changed sections.
 
-SHA-256 hash of the spec file content when tasks were decomposed:
-
-```json
-{
-  "spec_fingerprint": "sha256:a1b2c3d4..."
-}
-```
-
-When `/work` runs, it compares the current spec hash against task fingerprints. If different, the spec has changed since decomposition.
-
-### spec_version and spec_section
-
-Track which spec and section a task originated from:
-
-```json
-{
-  "spec_version": "spec_v1",
-  "spec_section": "## Authentication"
-}
-```
-
-Enables tracking which tasks need review when specific sections change.
-
-### section_fingerprint and section_snapshot_ref
-
-Enable granular per-section drift detection:
-
-```json
-{
-  "section_fingerprint": "sha256:abc123...",
-  "section_snapshot_ref": "spec_v1_decomposed.md"
-}
-```
-
-| Field | Purpose |
-|-------|---------|
-| `section_fingerprint` | SHA-256 hash of the specific section content at decomposition time. Allows detecting changes to individual sections without triggering alerts for unrelated changes. |
-| `section_snapshot_ref` | Reference to the snapshot file in `.claude/support/previous_specifications/`. Used to generate diffs showing exactly what changed in a section. |
-
-**How it works:**
-1. When tasks are decomposed from spec, each task's originating section is hashed
-2. The full spec is saved as a snapshot (e.g., `spec_v1_decomposed.md`)
-3. When `/work` runs, it compares current section fingerprints against task fingerprints
-4. Only tasks from changed sections are flagged for review
-
-This provides more targeted drift detection than full-spec fingerprinting alone.
-
-### out_of_spec
-
-Marks tasks that don't align with the spec but were created anyway:
-
-```json
-{
-  "out_of_spec": true
-}
-```
-
-Set when user selects "proceed anyway" on spec misalignment. Dashboard shows ⚠️ prefix for these tasks. Health check reports them separately.
-
-### out_of_spec_rejected
-
-Marks tasks that were rejected by the user during out-of-spec review. Task is archived to `.claude/tasks/archive/` but preserved for audit trail.
-
-```json
-{
-  "out_of_spec": true,
-  "out_of_spec_rejected": true,
-  "rejection_reason": "Not needed — existing validation covers this case"
-}
-```
-
-Set when user selects `[R]` Reject during out-of-spec task review. The `rejection_reason` field is optional — captures user rationale when provided.
+The `out_of_spec` and `out_of_spec_rejected` fields mark tasks outside the spec scope. See `workflow.md` § "Out-of-Spec Task Handling" for behavior rules.
 
 ## Task Verification Field
 
@@ -361,27 +290,7 @@ Append-only log of every verification attempt (pass and fail). Provides a full r
 
 ### Verification Debt
 
-Tasks that bypass verification create "verification debt":
-
-| Debt Condition | Description |
-|----------------|-------------|
-| Finished without `task_verification` | Task marked complete but never verified |
-| Finished with `task_verification.result == "fail"` | Verification failed, not re-verified |
-| Finished with critical issues in `task_verification.issues` | Passed verification but has critical issues that should block |
-
-**Debt is tracked in the dashboard** under "Action Required" → "Verification Debt" and **blocks project completion**.
-
-**How verification debt is computed:**
-1. Scan all tasks with `status: "Finished"` (excluding `out_of_spec: true` tasks)
-2. Count tasks meeting any debt condition above
-3. Display count in dashboard footer: `⚠️ N verification debt`
-4. Surface each debt item in "Action Required" → "Verification Debt" with task ID, title, and specific issue
-
-**How it blocks completion (structural enforcement):**
-- `/work` Step 3 routing algorithm checks for verification debt before routing to phase-level verification or completion
-- If debt count > 0, `/work` routes to verify-agent (per-task) for the first unverified task instead of proceeding to phase-level verification
-- The completion gate (work.md § Step 4 "If Completing") enforces mandatory verification checks before updating spec status to `complete`
-- `/health-check` treats missing or failed verification on Finished tasks as an ERROR
+Tasks that bypass verification create "verification debt" — Finished tasks without `task_verification`, with a failing result, or with critical issues. Debt is tracked in the dashboard under "Action Required" → "Verification Debt", blocks project completion, and is enforced by both `/work` (routing) and `/health-check` (ERROR level).
 
 ## Test Protocol Field
 

@@ -365,48 +365,48 @@ For archived specs where tasks reference that version, check if `spec_v{i}_decom
 
 ## Part 5: Template Sync Check
 
-Checks whether the project's `.claude/` workflow files are up to date with the template repository.
+Checks whether the project's `.claude/` workflow files are up to date with the template repository using git-based comparison.
 
 ### Purpose
 
-The upstream template may improve commands, agents, and reference docs. This check compares your project's `.claude/` files against the template repo and suggests updates.
+The upstream template may improve commands, agents, and reference docs. This check uses the template repo as a git remote to compare sync files and present updates.
 
 ### Requirements
 
-- `.claude/version.json` — contains `template_repo` and `template_version`
-- `.claude/sync-manifest.json` — defines `sync` (updatable) vs `customize` (user-owned) file categories
-- `gh` CLI installed and authenticated
+- `.claude/version.json` — contains `template_repo` (git URL) and `template_version`
+- `.claude/sync-manifest.json` — defines `sync` (updatable) vs `customize` (user-owned) vs `ignore` (project data) file categories
+- `git` available (no `gh` CLI dependency)
 
 ### Process
 
-#### 1. Check for Updates
+#### 1. Setup Remote
 
-Read local `.claude/version.json` for `template_repo` and `template_version`.
+Ensure the template repo is configured as a git remote named `template`:
 
-Check remote version:
-```bash
-gh api repos/{owner}/{repo}/contents/.claude/version.json
+```
+IF "template" remote doesn't exist → git remote add template {template_repo}
+IF "template" remote exists but URL differs from version.json → warn, ask to update
 ```
 
-If remote `template_version` matches local → report up to date, done.
+Fetch latest: `git fetch template` (fetch only, never merge or pull).
 
-If versions differ → fetch the `.claude/` folder contents for comparison.
+If fetch fails (offline, invalid URL) → report as informational, skip remaining sync checks.
 
-If offline or fetch fails → report as informational, skip remaining checks.
+#### 2. Compare Sync Files
 
-#### 2. Compare Files
+Determine the template's default branch via `git remote show template` (typically `main`). For each file matching `sync` category patterns in `sync-manifest.json`, use `git diff` to compare the local version against `template/{default_branch}:.claude/...`.
 
-Only compare files matching `sync` category patterns in `sync-manifest.json`. Never touch `customize` or `ignore` category files.
-
-For each sync file, determine status:
-- **Up to date** — local matches template
-- **Modified** — template has changes
-- **New in template** — doesn't exist locally
+Per-file status:
+- **Up to date** — no diff
+- **Modified upstream** — template has changes the local copy doesn't
+- **New in template** — file exists upstream but not locally
 - **Local only** — exists locally but not in template (kept, never flagged)
+
+Never compare `customize` or `ignore` category files.
 
 #### 3. Present Changes
 
-**Small changes** (single-file edits, minor updates) — present as a simple list:
+**Small changes** (few files, minor edits) — simple list with diff stats:
 
 ```
 Template updates available (v1.5.0 → v1.6.0):
@@ -421,7 +421,7 @@ Template updates available (v1.5.0 → v1.6.0):
 Apply these changes? [Y/N]
 ```
 
-**Bigger changes** (structural changes, multi-file updates) — aggregate related changes and explain impact:
+**Bigger changes** (structural, multi-file) — group related changes and explain impact:
 
 ```
 Template updates available (v1.5.0 → v1.6.0):
@@ -432,7 +432,6 @@ Template updates available (v1.5.0 → v1.6.0):
    - .claude/support/reference/workflow.md — updated process docs
 
    Impact: Adds scope validation to the verification process.
-   Tasks in "Awaiting Verification" would use the new criteria.
 
 2. New reference file
    - .claude/support/reference/new-feature.md
@@ -442,13 +441,15 @@ Template updates available (v1.5.0 → v1.6.0):
 Apply all / Select individually / Skip?
 ```
 
-**Grouping heuristic:** Changes are "related" when they touch the same workflow area (e.g., multiple files in the verification pipeline, or a command and its referenced reference doc).
+**Grouping heuristic:** Changes are "related" when they touch the same workflow area (e.g., a command and the reference docs it depends on, or multiple files in the verification pipeline).
 
 #### 4. Apply Updates
 
+Read the upstream `template_version` from `template/{default_branch}:.claude/version.json`.
+
 For accepted changes:
-- Update the local files
-- Update `template_version` in `.claude/version.json`
+- Check out the accepted files from `template/{default_branch}` into the working tree
+- Update `template_version` in local `.claude/version.json` to match the upstream version
 - Report what was changed
 
 ### Key Rules
@@ -456,21 +457,22 @@ For accepted changes:
 - **Sync category only** — never touch `customize` or `ignore` category files
 - **Local-only files are kept** — never suggest removing files that aren't in the template
 - **No silent changes** — always present changes and get confirmation before applying
+- **Fetch only** — never merge, pull, or rebase from the template remote
 
 ### Report Format
 
-**Up to date:**
+**Up to date (no diffs in sync files):**
 ```
 ### Template Sync
 
 ✓ Template up to date (v1.5.0)
 ```
 
-**Offline:**
+**Offline / fetch failed:**
 ```
 ### Template Sync
 
-⚠️ Cannot reach template repository — skipping template checks
+⚠️ Cannot reach template repository — skipping template sync
 ```
 
 **Missing config:**
@@ -478,6 +480,13 @@ For accepted changes:
 ### Template Sync
 
 ℹ️ Template sync not configured (missing version.json or sync-manifest.json)
+```
+
+**Remote not configured (first run):**
+```
+### Template Sync
+
+ℹ️ Adding template remote: {template_repo}
 ```
 
 ---
@@ -488,7 +497,7 @@ Detects when custom commands in `.claude/commands/` overlap with template comman
 
 ### Process
 
-1. **Identify template commands** — known set: `work.md`, `iterate.md`, `breakdown.md`, `health-check.md`, `status.md`
+1. **Identify template commands** — known set: `work.md`, `iterate.md`, `breakdown.md`, `health-check.md`, `status.md`, `research.md`, `feedback.md`, `review.md`
 2. **Scan `.claude/commands/`** for all `.md` files not in the template set
 3. **Detect collisions:**
    - **Name collision:** custom file has same name as template command
@@ -526,7 +535,7 @@ READ .claude/sync-manifest.json (file categories)
 SCAN .claude/support/previous_specifications/ for archived specs
 SCAN .claude/support/workspace/ for stale files
 SCAN for misplaced spec files in non-canonical locations
-CHECK template repo for updates (skip if offline)
+FETCH template remote and diff sync files (skip if offline)
 ```
 
 ### Step 2: Run Checks
