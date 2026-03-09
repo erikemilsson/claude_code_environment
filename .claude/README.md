@@ -15,11 +15,29 @@ A structured development environment for Claude Code using the **Spec → Execut
 
 This environment is domain-agnostic. While many examples reference software concepts, the workflow applies equally to research projects, procurement, renovation, event planning, or any spec-driven work. The dashboard, task tracking, decisions, and verification adapt to whatever you are building.
 
+## Instruction Files
+
+Your project uses three instruction sources. Understanding the split is important:
+
+| File | Purpose | Who Edits |
+|------|---------|-----------|
+| `.claude/CLAUDE.md` | Environment workflow instructions (how the system works) | Template only — do not edit |
+| `./CLAUDE.md` (project root) | Project-specific instructions (tech stack, conventions, gotchas) | You or Claude |
+| `.claude/rules/*.md` | Modular workflow rules (task management, spec workflow, etc.) | Template only — do not edit |
+
+**`.claude/CLAUDE.md`** — Contains the minimal core: model requirements, navigation pointers, and critical invariants. Updated automatically when you sync with the template. Don't edit this file; if you need project-specific instructions, put them in the root `./CLAUDE.md`.
+
+**`./CLAUDE.md` (root)** — Your project-specific instructions for Claude. Add your tech stack, naming conventions, build commands, and gotchas here. Keep it under 100 lines (warning) / 200 lines (hard limit). If sections get verbose, extract them to `.claude/support/reference/project-{name}.md` and link from the root file.
+
+**`.claude/rules/*.md`** — Environment workflow rules broken into topic files. Template-owned rules (like `task-management.md`) update with the template. You can add project-specific rule files with the `project-` prefix (e.g., `project-api-rules.md`) — these are never touched by template sync.
+
 ## Essential Files
 
 | File / Directory | What It Does |
 |-----------------|--------------|
-| `CLAUDE.md` | Instructions for Claude Code — how it should behave in your project |
+| `./CLAUDE.md` | Your project-specific instructions for Claude |
+| `.claude/CLAUDE.md` | Environment instructions (template-owned, do not edit) |
+| `.claude/rules/` | Modular workflow rules (template-owned + project-specific) |
 | `spec_v{N}.md` | Your project specification — the source of truth for what gets built |
 | `dashboard.md` | Your communication channel with Claude — decisions, tasks, progress |
 | `tasks/` | Task data (JSON files managed by `/work`) |
@@ -27,6 +45,22 @@ This environment is domain-agnostic. While many examples reference software conc
 | `agents/` | Specialist agents (implement-agent builds, verify-agent validates, research-agent investigates) |
 | `support/` | Reference docs, decisions, workspace, archived specs |
 | `vision/` | Vision/design documents from ideation (required before spec creation) |
+
+## File Ownership
+
+Understanding which files are yours to edit vs. which are managed by the template:
+
+**Template-owned** (updated via template sync, don't edit):
+- `.claude/CLAUDE.md`, `.claude/rules/{template-rules}.md`
+- `.claude/commands/*.md`, `.claude/agents/*.md`
+- `.claude/support/reference/*.md` (except `project-*.md`)
+
+**Project-owned** (yours, created during project work):
+- `./CLAUDE.md` (root), `.claude/rules/project-*.md`
+- `.claude/spec_v{N}.md`, `.claude/tasks/`, `.claude/dashboard.md`
+- `.claude/support/decisions/`, `.claude/support/workspace/`
+- `.claude/support/reference/project-*.md` (extracted from root CLAUDE.md)
+- `.claude/vision/*.md`, `.claude/support/feedback/`
 
 ## Commands
 

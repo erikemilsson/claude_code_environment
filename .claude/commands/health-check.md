@@ -1,6 +1,6 @@
 # Health Check
 
-Combined system health check for tasks, decisions, `.claude/CLAUDE.md`, and template sync.
+Combined system health check for tasks, decisions, instruction files, rules, and template sync.
 
 ## Usage
 ```
@@ -10,7 +10,7 @@ Combined system health check for tasks, decisions, `.claude/CLAUDE.md`, and temp
 
 ## Purpose
 
-Manual maintenance tool that validates tasks, decisions, CLAUDE.md, and template sync. Operational checks for `/work` are defined inline in `work.md`.
+Manual maintenance tool that validates tasks, decisions, instruction files (`.claude/CLAUDE.md`, `./CLAUDE.md`, `.claude/rules/`), and template sync. Operational checks for `/work` are defined inline in `work.md`.
 
 ---
 
@@ -197,38 +197,87 @@ Reports tasks with `"out_of_spec": true` in a separate section of the report. In
 
 ---
 
-## Part 2: .claude/CLAUDE.md Audit
+## Part 2: Instruction Files Audit
 
-Detects bloat and offers guided cleanup.
+Two separate checks: environment CLAUDE.md template alignment, and project root CLAUDE.md bloat detection.
 
-### Thresholds
+### Part 2a: `.claude/CLAUDE.md` Template Alignment
 
-| Metric | Warning | Error |
-|--------|---------|-------|
-| Total lines | 80 | 120 |
+`.claude/CLAUDE.md` is template-owned and should not be modified by users. This check compares the local file against the template version.
+
+**Process:**
+1. If template remote is configured (Part 5), diff `.claude/CLAUDE.md` against `template/{default_branch}:.claude/CLAUDE.md`
+2. If no template remote, compare against a known hash stored in `.claude/version.json` (field: `claude_md_hash`)
+3. If the file has been modified locally, present the deviations and ask the user:
+   - **Revert** — restore template version
+   - **Keep** — acknowledge deviation (record in `version.json` as `claude_md_override: true`)
+   - **Merge** — show diff, let user decide line by line
+
+**What to report:**
+- ✓ if `.claude/CLAUDE.md` matches template
+- ⚠️ if deviations found (with diff summary)
+- ℹ️ if template remote not configured (skip check)
+
+### Part 2b: Root `./CLAUDE.md` Audit
+
+The root `./CLAUDE.md` contains project-specific instructions and is user-owned.
+
+#### Missing File Detection
+
+If `./CLAUDE.md` does not exist at the project root:
+1. Report: ℹ️ "No root CLAUDE.md found — this file holds project-specific instructions for Claude"
+2. Offer to create one from the template at `.claude/support/reference/root-claude-md-template.md`
+3. If the user accepts, copy the template to `./CLAUDE.md`
+4. If the user declines, note as informational and continue
+
+#### Bloat Thresholds
+
+| Metric | Warning (soft limit) | Error (hard limit) |
+|--------|---------------------|-------------------|
+| Total lines | 100 | 200 |
 | Section lines | 15 | 25 |
 | Code blocks | 10 | 20 |
 | Inline schemas | 8 | Always flag |
 
-### Audit Checks
+#### Audit Checks
 
-1. **Total lines** - Compare against thresholds
-2. **Section sizes** - Check each ## section for line count
-3. **Code blocks** - Check each code block for length
-4. **Inline schemas** - Flag JSON schemas >8 lines
+1. **Total lines** — compare against soft/hard limits
+2. **Section sizes** — check each `##` section for line count
+3. **Code blocks** — check each code block for length
+4. **Inline schemas** — flag JSON schemas >8 lines
+5. **Reference validation** — check that all file paths referenced in the root CLAUDE.md (links, `@` imports) actually exist and are in the correct location (`.claude/support/reference/` for extracted docs)
 
-### Fix Options (per issue)
+#### Condensation Guidance
 
-1. **Move** - Create `.claude/support/reference/{section-slug}.md`, replace with link
-2. **Keep** - Mark as explicitly kept
-3. **Condense** - Rewrite to fewer lines
-4. **Skip** - No changes
+When a section exceeds the soft limit, offer these options:
 
-### What Belongs Where
+1. **Extract** — Move verbose content to `.claude/support/reference/project-{section-slug}.md`, replace with a link. Project reference docs use the `project-` prefix to distinguish from template-owned reference docs.
+2. **Condense** — Rewrite to fewer lines. Apply the "would removing this cause Claude to make mistakes?" test. Cut:
+   - Standard conventions Claude already knows from reading code
+   - Rules already enforced by linters or config files (eslintrc, prettier, tsconfig, etc.)
+   - Detailed API docs (link instead)
+   - Information that changes frequently
+3. **Keep** — Mark as explicitly kept (acknowledge the size)
+4. **Skip** — No changes
 
-Keep in `.claude/CLAUDE.md`: project overview, critical commands, key conventions, navigation pointers.
+#### What Belongs Where
 
-Move to `support/reference/`: detailed schemas (>8 lines), verbose examples, procedure docs, technology deep-dives.
+**Keep in root `./CLAUDE.md`:** Project overview (1-2 lines), tech stack, key build/test commands, naming conventions that differ from defaults, non-obvious gotchas.
+
+**Extract to `.claude/support/reference/project-*.md`:** Detailed architecture docs, verbose code examples, API specifications, database schemas, deployment procedures.
+
+**Don't put in root `./CLAUDE.md`:** Environment workflow instructions (those are in `.claude/CLAUDE.md` and `.claude/rules/`), information Claude can infer from reading code, style rules already enforced by tooling.
+
+### Part 2c: Rules Files Validation
+
+Validates that the expected template rule files exist in `.claude/rules/`.
+
+**Expected files:** `task-management.md`, `spec-workflow.md`, `decisions.md`, `dashboard.md`, `agents.md`, `archiving.md`
+
+**Checks:**
+- Each expected file exists
+- No expected file exceeds 200 lines
+- User-created rule files (`project-*.md`) are noted as informational
 
 ---
 
@@ -529,6 +578,8 @@ READ all .claude/tasks/task-*.json files
 READ .claude/dashboard.md
 READ .claude/spec_v{N}.md (current spec — for completion gate checks)
 READ .claude/CLAUDE.md
+READ ./CLAUDE.md (root, if exists)
+SCAN .claude/rules/ for rule files
 READ all .claude/support/decisions/decision-*.md files
 READ .claude/version.json (template version info)
 READ .claude/sync-manifest.json (file categories)
@@ -541,7 +592,7 @@ FETCH template remote and diff sync files (skip if offline)
 ### Step 2: Run Checks
 
 - Part 1: Task system validation (checks 1-11)
-- Part 2: `.claude/CLAUDE.md` audit
+- Part 2: Instruction files audit (2a: template alignment, 2b: root bloat, 2c: rules validation)
 - Part 3: Decision system validation (checks 1-6)
 - Part 4: Archive validation (checks 1-4)
 - Part 5: Template sync + collision + settings checks
@@ -554,7 +605,9 @@ FETCH template remote and diff sync files (skip if offline)
 - Task System — Dashboard Freshness (check 10)
 - Task System — Out-of-Spec Tasks (check 9, if any exist)
 - Workspace (check 8)
-- `.claude/CLAUDE.md` Audit (Part 2)
+- Instruction Files — Template Alignment (Part 2a)
+- Instruction Files — Root CLAUDE.md Bloat (Part 2b)
+- Instruction Files — Rules Validation (Part 2c)
 - Decision System (Part 3)
 - Archive Validation (Part 4)
 - Template Sync (Part 5)
@@ -575,7 +628,9 @@ If `--report` flag is set, skip this step and show report only.
 
 **Empty task list:** Reports "0 tasks — all checks pass" (healthy state for new projects)
 
-**Large `.claude/CLAUDE.md` (>120 lines):** Flags as error, suggests moving sections to reference/
+**Large root `./CLAUDE.md` (>200 lines):** Flags as error, suggests extracting sections to `.claude/support/reference/project-*.md`
+
+**`.claude/CLAUDE.md` deviations:** Presents diff and asks user to revert, keep, or merge
 
 **Subtask ID collisions:** Detects `5_1` already exists before creating duplicate
 
@@ -595,7 +650,7 @@ If `--report` flag is set, skip this step and show report only.
 - After extensive task operations
 - When something feels "off"
 - Before major handoffs
-- Periodically (weekly recommended for tasks and template sync, monthly for `.claude/CLAUDE.md`)
+- Periodically (weekly recommended for tasks and template sync, monthly for instruction files audit)
 
 ## Reference
 

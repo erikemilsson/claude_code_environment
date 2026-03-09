@@ -389,6 +389,34 @@ On next `/work` run, Step 0 detects the handoff file before the existing session
 
 **Authoritative file:** `support/reference/extension-patterns.md` § "Custom Views"
 
+### Instruction Architecture (CLAUDE.md, Rules, Ownership)
+
+**Purpose:** Give Claude the right instructions at the right time without bloating the context window. Separate environment instructions (how the workflow works) from project instructions (what's being built).
+
+**Three-layer model:**
+
+| Layer | File | Loaded | Content | Owned By |
+|-------|------|--------|---------|----------|
+| Environment core | `.claude/CLAUDE.md` | Always (session start) | Minimal: model requirement, navigation pointers, critical invariants | Template (sync) |
+| Environment rules | `.claude/rules/*.md` | Always (unconditional) | Modular workflow rules — task management, spec workflow, decisions, dashboard, agents, archiving | Template (sync) |
+| Project instructions | `./CLAUDE.md` (root) | Always (session start) | Tech stack, conventions, gotchas, project-specific context | User/Claude |
+
+**Why three layers:**
+- `.claude/CLAUDE.md` is loaded into every session. It must stay lean (~50-70 lines) — just enough for Claude to orient: where things are, what the critical invariants are, and where to find more detail. Detailed command behavior lives in command files (loaded on-demand when commands run). Modular workflow rules live in `.claude/rules/`.
+- `.claude/rules/*.md` uses Claude Code's native rules mechanism. Each file covers one topic (task management, spec workflow, etc.) and loads at session start. This keeps rules organized and maintainable without cramming everything into a single CLAUDE.md. All environment rules are template-synced — they update when the template updates.
+- `./CLAUDE.md` (root) is the user's file. It contains project-specific instructions that Claude needs to know: tech stack, naming conventions, build commands, gotchas. The template ships a starter with sections to fill in. When this file grows too large, verbose sections are extracted to `.claude/support/reference/` as project-owned reference docs.
+
+**Ownership boundaries:**
+- `.claude/CLAUDE.md` — **template-owned, never edited by users.** `/health-check` compares it against the template repo. Deviations are flagged and the user is asked whether to revert, keep, or merge. Users who need to add instructions use `./CLAUDE.md` (root) or project-specific rule files.
+- `.claude/rules/{template-rule}.md` — **template-owned, synced.** Updated through the normal template sync flow. Users who need project-specific rules create additional files (e.g., `.claude/rules/project-api-rules.md`) which are project-owned and never touched by sync.
+- `./CLAUDE.md` — **user-owned.** Audited by `/health-check` for bloat (soft limit: 100 lines warning, hard limit: 200 lines error). When over the soft limit, the health check suggests extracting verbose sections to `.claude/support/reference/` as project-owned reference docs, linked from the root CLAUDE.md. The health check also validates that any file paths referenced in root CLAUDE.md actually exist and are in the correct location.
+
+**What goes where — the loading test:** Claude reads command files on-demand when commands run, and reads agent definitions when agents spawn. So detailed command/agent behavior doesn't need to be in always-loaded context. What CLAUDE.md and rules must cover is: (1) things Claude needs before encountering a command — navigation, file locations, orientation; (2) invariants that apply across all contexts — spec is source of truth, verification required, use the project task system; (3) things Claude might violate without immediate visibility — "don't use built-in TaskCreate", "don't create files in project root."
+
+**Reference document locations:** All reference documents — whether supporting the environment CLAUDE.md or the project root CLAUDE.md — live in `.claude/support/reference/`. Environment reference docs (e.g., `task-schema.md`, `workflow.md`) are template-owned and synced. Project reference docs (e.g., `api-conventions.md`, `database-patterns.md`) are project-owned, created when the root CLAUDE.md extracts verbose sections. The health check validates that referenced docs exist and are in the correct folder.
+
+**Authoritative files:** `commands/health-check.md` Part 2, `.claude/rules/*.md`, `sync-manifest.json`
+
 ### Template Sync
 
 **Purpose:** Keep project workflow files up to date with upstream template improvements.
@@ -428,6 +456,9 @@ Agents use dedicated tools (Read, Glob, Grep, Edit, Write) for all file operatio
 ### Domain Agnosticism
 Nothing in the system assumes software development. Dashboard language, task tracking, verification, and all features adapt to whatever domain the project is in.
 
+### Instructions Are Layered and Lean
+Environment instructions (`.claude/CLAUDE.md` + `.claude/rules/*.md`) are template-owned and stay lean. Project instructions (`./CLAUDE.md`) are user-owned and audited for bloat. Detailed behavior lives in command and agent files (loaded on-demand), not in always-loaded context. Each instruction file serves one audience and stays under 200 lines.
+
 ### Single-Spec Invariant
 Exactly one `spec_v{N}.md` exists in `.claude/` at any time. Version transitions archive before creating. `/health-check` enforces this.
 
@@ -454,7 +485,7 @@ Exactly one `spec_v{N}.md` exists in `.claude/` at any time. Version transitions
 | `/feedback review` | Batch triage unreviewed feedback | Read-write |
 | `/feedback review {id}` | Triage a single feedback item | Read-write |
 | `/breakdown {id}` | Split a complex task into subtasks | Read-write |
-| `/health-check` | Validate tasks, decisions, CLAUDE.md, archives, and template sync | Read-write (with user approval) |
+| `/health-check` | Validate tasks, decisions, instruction files, archives, and template sync | Read-write (with user approval) |
 | `/health-check --report` | Show issues only, no fix prompts | Read-only |
 
 ---
@@ -475,9 +506,12 @@ See also `support/reference/paths.md` for the canonical paths reference used by 
 | `.claude/tasks/.last-clean-exit.json` | Session sentinel — tracks clean exit for fast recovery skip | `/work` |
 | `.claude/tasks/.handoff.json` | Context transition handoff — reasoning and strategic context preserved before compaction | `/work pause`, PreCompact hook |
 | `.claude/vision/` | Vision documents and supplementary reference docs for distillation | User |
+| `.claude/CLAUDE.md` | Environment instructions — minimal core (model req, navigation, invariants) | Template (sync) |
+| `.claude/rules/*.md` | Environment workflow rules — modular, topic-based | Template (sync) |
+| `./CLAUDE.md` | Project-specific instructions (tech stack, conventions, gotchas) | User/Claude |
 | `.claude/commands/*.md` | Command definitions | Template |
 | `.claude/agents/*.md` | Agent definitions | Template |
-| `.claude/support/reference/*.md` | Reference documentation | Template |
+| `.claude/support/reference/*.md` | Reference documentation (template-owned + project-owned) | Template / User |
 | `.claude/support/decisions/decision-*.md` | Decision records | `/work`, user |
 | `.claude/support/previous_specifications/` | Archived spec versions and decomposition snapshots | `/work`, `/iterate` |
 | `.claude/support/questions/questions.md` | Questions for human input | Agents, `/work` |

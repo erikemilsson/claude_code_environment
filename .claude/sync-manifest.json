@@ -2,8 +2,15 @@
   "manifest_version": "1.0.0",
   "categories": {
     "sync": [
+      ".claude/CLAUDE.md",
       ".claude/commands/*.md",
       ".claude/agents/*.md",
+      ".claude/rules/task-management.md",
+      ".claude/rules/spec-workflow.md",
+      ".claude/rules/decisions.md",
+      ".claude/rules/dashboard.md",
+      ".claude/rules/agents.md",
+      ".claude/rules/archiving.md",
       ".claude/support/reference/shared-definitions.md",
       ".claude/support/reference/task-schema.md",
       ".claude/support/reference/workflow.md",
@@ -20,6 +27,7 @@
       ".claude/support/reference/paths.md",
       ".claude/support/reference/setup-checklist.md",
       ".claude/support/reference/desktop-project-prompt.md",
+      ".claude/support/reference/root-claude-md-template.md",
       ".claude/support/reference/README.md",
       ".claude/support/learnings/README.md",
       ".claude/support/workspace/README.md",
@@ -29,12 +37,12 @@
       ".claude/hooks/pre-compact-handoff.sh"
     ],
     "customize": [
-      ".claude/CLAUDE.md",
       ".claude/README.md",
       "README.md",
       ".claude/support/documents/README.md"
     ],
     "ignore": [
+      ".claude/rules/project-*.md",
       ".claude/tasks/*.json",
       ".claude/dashboard.md",
       ".claude/verification-result.json",
@@ -49,8 +57,9 @@
       ".claude/tasks/.last-clean-exit.json",
       ".claude/tasks/.handoff.json",
       ".claude/support/feedback/feedback.md",
-      ".claude/support/feedback/archive.md"
+      ".claude/support/feedback/archive.md",
+      ".claude/support/reference/project-*.md"
     ]
   },
-  "notes": "Paths relative to template root. Use glob patterns."
+  "notes": "Paths relative to template root. Use glob patterns. User-created rule files (project-*.md) and reference docs (project-*.md) are ignored by sync."
 }

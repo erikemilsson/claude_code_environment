@@ -17,7 +17,8 @@ The `.claude/` directory contains the environment that ships to new projects. Th
 - **Edit command definitions** (`.claude/commands/*.md`) to improve workflow logic
 - **Edit agent definitions** (`.claude/agents/*.md`) to improve implementation/verification
 - **Edit reference docs** (`.claude/support/reference/*.md`) to improve patterns and schemas
-- **Edit `.claude/CLAUDE.md`** to improve project instructions
+- **Edit `.claude/CLAUDE.md`** to improve environment instructions (template-owned core)
+- **Edit `.claude/rules/*.md`** to improve modular workflow rules
 - **Edit `.claude/README.md`** to improve the user-facing environment guide
 - **Run conceptual tests** (`tests/scenarios/`) after significant command changes
 - **Use `[bracketed text]` for user-customizable placeholder sections** (exception: `dashboard.md` uses populated example data instead)
@@ -32,7 +33,7 @@ The `tests/` directory contains conceptual trace tests for the command definitio
 |----------|---------|:--:|
 | `.claude/` | Environment that users get | Yes |
 | `README.md` | Template documentation | No (users delete) |
-| `CLAUDE.md` | This file — template context | No (users delete) |
+| `CLAUDE.md` | This file — template context (replaced with project-specific `./CLAUDE.md` on setup) | Replaced |
 | `system-overview.md` | Environment design reference — lifecycle, features, design intent | No (users delete) |
 | `tests/` | Command verification scenarios | No (users delete) |
 | `.gitignore` | Repo config | Partially (users may keep) |
