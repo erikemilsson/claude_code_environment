@@ -40,7 +40,9 @@ Verification is not a rubber stamp. When verify-agent finds issues, the task mus
          "files_exist": "pass",
          "spec_alignment": "fail",
          "output_quality": "pass",
-         "integration_ready": "pass"
+         "runtime_validation": "not_applicable",
+         "integration_ready": "pass",
+         "scope_validation": "pass"
        },
        "issues": [{
          "severity": "major",
