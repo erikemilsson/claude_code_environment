@@ -4,6 +4,8 @@
 generated: 2026-01-28T14:30:00Z
 task_hash: sha256:a3f8c91d2e7b4056890cd1ef23456789abcdef0123456789abcdef0123456789
 task_count: 12
+spec_fingerprint: sha256:b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2
+template_version: 71ab4f5
 verification_debt: 1
 drift_deferrals: 0
 -->
@@ -56,7 +58,7 @@ drift_deferrals: 0
 
 | Task | What To Do | Where |
 |------|------------|-------|
-| 8 | Obtain building permit from city hall | [permit-application.pdf](support/documents/permit-application.pdf) |
+| 8 | Submit permit application at city hall (bring drawings from task 2). Then run `/work complete 8`. | [permit-application.pdf](support/documents/permit-application.pdf) |
 
 <!-- FEEDBACK:8 -->
 **Task 8 — Feedback:**
@@ -69,9 +71,9 @@ Applied in person on 2026-01-25. Expect 2-week processing time.
 
 | Phase | Done | Total | Status |
 |-------|------|-------|--------|
-| 1 — Planning | 4 | 4 | Complete |
-| 2 — Construction | 2 | 5 | Active |
-| 3 — Finishing | 0 | 3 | Blocked (DEC-002) |
+| Phase 1 — Planning | 4 | 4 | Complete |
+| Phase 2 — Construction | 2 | 5 | Active |
+| Phase 3 — Finishing | 0 | 3 | Blocked (DEC-002) |
 
 ### Timeline
 
@@ -88,7 +90,7 @@ Applied in person on 2026-01-25. Expect 2-week processing time.
 
 ```mermaid
 graph LR
-    P1["✅ Planning (4/4)"]
+    P1["✅ Phase 1 — Planning (4/4)"]
     P1 --> T6["🤖 Order materials"]
     P1 --> T8["❗ Building permit"]
     P1 --> T9["🤖 Rough plumbing"]
@@ -116,18 +118,11 @@ graph LR
 
 ## 📋 Tasks
 
-### Phase 1: Planning
+### Phase 1 — Planning
 
-| ID | Title | Status | Diff | Owner | Deps |
-|----|-------|--------|------|-------|------|
-| 1 | Site assessment and measurements | Finished | 3 | claude | — |
-| 2 | Architectural drawings | Finished | 4 | claude | 1 |
-| 3 | Budget estimation | Finished | 3 | claude | 1 |
-| 4 | Contractor selection research | Finished | 2 | claude | — |
+✅ 4 tasks finished
 
-*Phase 1: 4/4 complete (100%)*
-
-### Phase 2: Construction
+### Phase 2 — Construction
 
 | ID | Title | Status | Diff | Owner | Deps |
 |----|-------|--------|------|-------|------|
@@ -139,7 +134,7 @@ graph LR
 
 *Phase 2: 2/5 complete (40%) — 1 awaiting verification, 1 human task pending*
 
-### Phase 3: Finishing
+### Phase 3 — Finishing
 
 | ID | Title | Status | Diff | Owner | Deps |
 |----|-------|--------|------|-------|------|
@@ -201,7 +196,11 @@ graph LR
 
 <!-- USER SECTION -->
 
-[Your notes here — ideas, questions, reminders]
+**Quick Links:**
+- [Spec](spec_v1.md) — project specification
+- [Architectural drawings](support/documents/architectural-drawings.pdf)
+- Vendor: Acme Surfaces (acme-surfaces.example.com)
+- Vendor: FloorCo (floorco.example.com)
 
 <!-- END USER SECTION -->
 
