@@ -513,6 +513,7 @@ For accepted changes:
 
 ### Key Rules
 
+- **Actual file diffs required** — you MUST `git fetch template` and diff each sync file against the remote. Comparing `template_version` strings is NOT a substitute for file-level comparison. Version numbers can match while files diverge (e.g., local edits, partial syncs, template patches). The version number is only used for display and for updating `version.json` after applying changes.
 - **Sync category only** — never touch `customize` or `ignore` category files
 - **Local-only files are kept** — never suggest removing files that aren't in the template
 - **No silent changes** — always present changes and get confirmation before applying
