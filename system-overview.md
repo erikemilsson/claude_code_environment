@@ -65,15 +65,15 @@ graph LR
 2. Sets task to "In Progress", implements, self-reviews
 3. Sets task to "Awaiting Verification"
 4. Spawns verify-agent as a **separate agent** (fresh context, no implementation memory)
-5. verify-agent checks: task fidelity (did the deliverables match the task description?), output quality, files exist, runtime validation (self-tests runnable outputs like CLIs, APIs, web UIs), integration boundaries, scope validation — this is **Tier 1 verification**
+5. verify-agent checks: task fidelity (did the deliverables match the task description?), output quality, files exist, cross-file consistency (modified files are consistent with each other and with unmodified files that reference them — no stale references, no schema mismatches, no format drift, no broken cross-references), runtime validation (self-tests runnable outputs like CLIs, APIs, web UIs), integration boundaries, scope validation — this is **Tier 1 verification**
 6. If runtime validation is partial (some checks need human eyes), or for `both`-owned tasks with runnable output, verify-agent writes a `test_protocol` and `interaction_hint` to guide human testing
 7. Pass → "Finished". Fail → "In Progress" (fix and re-verify, max 3 attempts then escalate)
 
-**Auto-continuation within phases:** After a task finishes (passes verification), `/work` automatically routes to the next eligible task — no user prompt, no pause. This continues until a natural stopping point: phase boundary (requires gate approval), blocking decision, blocking question, or verification failure requiring human escalation. The value of front-loaded decomposition and structured verification is that work flows autonomously between these stops. This applies equally to sequential and parallel modes.
+**Auto-continuation within phases:** After a task finishes (passes verification), `/work` automatically routes to the next eligible task — no user prompt, no pause. This continues until a natural stopping point: phase boundary (requires gate approval), blocking decision, blocking question, verification failure requiring human escalation, or all remaining tasks being human-owned (fast-exit — skips agent dispatch, outputs summary of human tasks with contextual command suggestions). The value of front-loaded decomposition and structured verification is that work flows autonomously between these stops. This applies equally to sequential and parallel modes.
 
 **Parallel execution:** When multiple tasks have no file conflicts and all dependencies met, `/work` dispatches them concurrently. Each parallel task runs its own implement → verify cycle independently. Coordinator handles batching, result collection, and a single dashboard regeneration.
 
-**Context transfer to verify-agent:** verify-agent receives the task JSON (including implement-agent's structured completion notes), the relevant spec section, and the files_affected list. Completion notes should document what was implemented, key decisions made, and known limitations — giving verify-agent useful signal without sharing the full implementation conversation.
+**Context transfer to verify-agent:** verify-agent receives the task JSON (including implement-agent's structured completion notes), the relevant spec section, and the files_affected list. For the consistency check, verify-agent also scans for files that reference the modified files (via grep for filenames, anchors, or shared terminology) to detect stale cross-references. Completion notes should document what was implemented, key decisions made, and known limitations — giving verify-agent useful signal without sharing the full implementation conversation.
 
 **Output:** Completed deliverables, task JSON files with verification results
 **Authoritative files:** `commands/work.md`, `support/reference/decomposition.md`, `agents/implement-agent.md`, `agents/verify-agent.md`
@@ -127,7 +127,7 @@ The dashboard remains the default. CLI-direct is used when the task is synchrono
 **Key behaviors:**
 - **Tiered communication strategy** — dashboard does NOT regenerate on every task change:
   - *Tier 1 (Strategic Dashboard Regen):* Only at key moments — decomposition complete, parallel batch end, session boundaries, `/work complete`, phase gates, decision resolution, freshness check (Step 1a)
-  - *Tier 2 (Inline CLI Messages):* Brief contextual updates for routine changes — task starts, verification passes/fails, human tasks unblock
+  - *Tier 2 (Inline CLI Messages):* Brief contextual updates for routine changes — task starts, verification passes/fails, human tasks unblock, contextual command suggestions at stopping points (when no agent dispatch occurs, `/work` suggests the most relevant next command)
 - Freshness timestamp shown after completion % line: `*Updated [YYYY-MM-DD HH:MM] — may not reflect changes made outside /work*`
 - Hidden metadata block tracks `task_hash`, `spec_fingerprint`, `verification_debt`, `drift_deferrals` for freshness detection
 - User content preserved via marker pairs and a sidecar file (`dashboard-state.json`) with fields: `user_notes`, `section_toggles`, `phase_gates`, `inline_feedback`, `custom_views_instructions`, `updated`
@@ -138,6 +138,7 @@ The dashboard remains the default. CLI-direct is used when the task is synchrono
 - **Critical path** — computed from dependency graph: longest path with parallel branches shown in `[ | ]` notation, owner tags (`❗` human, `🤖` claude, `👥` both), decision nodes included
 - **Project overview diagram** — inline Mermaid diagram: completed phases collapsed into single nodes, completed tasks folded away, active/pending tasks with ownership prefix, decisions as diamond nodes, clumping when >15 active nodes
 - **Completed task summarization** — phases with 10+ finished tasks render as a summary line (`N tasks finished`) instead of listing each individually
+- **Partially actionable phase status** — phases not yet "Active" but with tasks whose dependencies are all satisfied show as `Partially Actionable` instead of `Blocked`, with eligible task IDs listed
 - **Repair indicator** — Finished tasks with multiple verification attempts show as `Finished (N retries)` in the Tasks section
 - **Acceptance criteria checklist** — when `verification-result.json` has a `criteria` array, renders pass/fail checklist with notes and summary count
 - **Spec drift surfacing** — when `drift-deferrals.json` has active entries, renders warnings in Action Required with affected task count and deferral age
@@ -170,7 +171,7 @@ Each feature below includes its purpose (why it exists), how it works (brief), a
 
 **Purpose:** Catch issues at two levels — per-task (immediately after each implementation) and integration-level (cross-task validation at phase boundaries).
 
-**Tier 1 (Per-Task):** Runs immediately after each task's implementation, as part of the atomic implement → verify cycle. Primary question: "did the implementation agent complete this task correctly?" Checks: task fidelity (deliverables match the task description), output quality, files exist, runtime validation (self-tests runnable outputs), integration boundaries, scope validation. The task description is the primary reference; the spec section provides context. Result stored in `task_verification` field on the task JSON. Each task is verified individually — no waiting for other tasks. When runtime validation is partial (some checks need human confirmation), verify-agent writes a `test_protocol` for guided testing.
+**Tier 1 (Per-Task):** Runs immediately after each task's implementation, as part of the atomic implement → verify cycle. Primary question: "did the implementation agent complete this task correctly?" Checks: task fidelity (deliverables match the task description), output quality, files exist, cross-file consistency (modified files checked against each other and against files that reference them for stale references, schema mismatches, and formatting drift), runtime validation (self-tests runnable outputs), integration boundaries, scope validation. The consistency check is scoped to the task's blast radius — `files_affected` plus any files that import, reference, or link to them — not a full project scan. This catches the common case where editing a document breaks references in related documents, without duplicating Tier 2's full integration scope. The task description is the primary reference; the spec section provides context. Result stored in `task_verification` field on the task JSON. Each task is verified individually — no waiting for other tasks. When runtime validation is partial (some checks need human confirmation), verify-agent writes a `test_protocol` for guided testing.
 
 **Tier 2 (Integration):** Runs at each phase boundary when all phase tasks are Finished with passing Tier 1 verification. Primary question: "do the deliverables work together, satisfy the spec's acceptance criteria, and cover all spec requirements?" Catches two things Tier 1 can't: cross-task integration issues (e.g., output format mismatches between tasks) and decomposition gaps (spec requirements that no task addressed). Decomposition gaps become new tasks; failed acceptance criteria become fix tasks. Runs before the phase gate — integration problems are caught before the next phase builds on top of them. Result stored in `verification-result.json`.
 
@@ -209,6 +210,8 @@ The `interaction_hint` field on the task JSON drives routing. When absent, defau
 **Purpose:** Enforce natural project boundaries (e.g., "build prototype first, then production"). Phase N+1 work cannot begin until Phase N is complete and approved.
 
 **How it works:** Spec sections define phases implicitly. During decomposition, tasks get a `phase` field. Dashboard groups tasks by phase. When all Phase N tasks finish, integration verification (Tier 2) runs first. After Tier 2 passes, a phase gate appears in the dashboard with checkboxes — auto-conditions (task counts, verification status) rendered as pre-checked `[x]` boxes that cannot be unchecked, plus a manual approval checkbox the user must check. Custom gate conditions from spec sections ("Gate Conditions" or "Transition Criteria" headings) become additional checkboxes. If auto-conditions are NOT met, they render with detail (e.g., `All verifications passed (8/10 — 2 tasks have verification debt)`). All must be satisfied before Phase N+1 unlocks.
+
+**Partially actionable phases:** A phase that isn't yet "Active" (previous phase not fully complete) may still have individual tasks whose task-level dependencies are all satisfied. These phases show as `Partially Actionable` in the dashboard instead of `Blocked`, surfacing eligible tasks so users can start early where dependencies allow.
 
 **Phase transitions trigger a spec version bump** (archive current → create v{N+1} → suggest `/iterate` to flesh out next phase sections).
 
@@ -272,7 +275,7 @@ The `interaction_hint` field on the task JSON drives routing. When absent, defau
 
 **Key rules:**
 - Difficulty >= 7 must be broken down before starting
-- "Finished" requires `task_verification.result == "pass"` (structurally enforced)
+- "Finished" requires `task_verification.result == "pass"` (structurally enforced — human tasks satisfy this via auto-generated self-attestation on `/work complete`)
 - "Awaiting Verification" is transitional — must proceed to verification immediately
 - "On Hold" tasks are excluded from auto-routing; only user can resume
 - "Absorbed" preserves audit trail (vs. deletion)
@@ -280,9 +283,9 @@ The `interaction_hint` field on the task JSON drives routing. When absent, defau
 
 **3 owner values:** `claude` (autonomous), `human` (requires user action), `both` (collaborative — user reviews after Claude implements)
 
-**Human deliverable validation:** When a human-owned task completes (or the user provides deliverables for a task — files, documents, configuration), `/work` runs a validation gate before continuing: check quantity (expected vs provided), usability (files parse, headers match, format correct), and plan validity (does downstream work still make sense?). If deliverables differ from what was planned, `/work` surfaces the discrepancy and offers: `[A]` Adjust dependent tasks, `[P]` Proceed as-is, `[W]` Wait for corrected deliverables.
+**Human task completion:** When a user runs `/work complete` for a human-owned task, the system: (1) auto-generates a `task_verification` record with `checks: { "self_attested": "pass" }` — satisfying the verification invariant without spawning verify-agent, since there is no Claude-produced implementation to verify; (2) asks for completion notes inline in the CLI conversation (the primary feedback path — dashboard FEEDBACK markers remain as an async fallback); (3) validates any deliverables the task required (quantity, usability, downstream plan validity).
 
-**Verification debt:** Tasks that bypassed or failed verification — status "Awaiting Verification", "Finished" without `task_verification`, or `task_verification.result` is "fail". Verification debt blocks project completion and is surfaced by `/health-check`, `/status`, and the dashboard metadata block.
+**Verification debt:** Tasks with verification issues: status "Awaiting Verification" (incomplete), "Finished" without valid `task_verification` (bypass — rare for human tasks which auto-generate), or `task_verification.result` is "fail". Verification debt blocks project completion and is surfaced by `/health-check`, `/status`, and the dashboard metadata block.
 
 **Auto-archive:** When active task count exceeds 100, `/work` identifies finished tasks older than 7 days, moves them to `.claude/tasks/archive/`, updates `archive-index.json` with summaries, and regenerates the dashboard.
 
@@ -293,6 +296,8 @@ The `interaction_hint` field on the task JSON drives routing. When absent, defau
 **Purpose:** Handle agent crashes, turn exhaustion, and session interruptions gracefully.
 
 **How it works:** `/work` Step 0 scans all tasks for recoverable states before doing anything else. A session sentinel file (`.claude/tasks/.last-clean-exit.json`) enables fast-path recovery skip — if the last session exited cleanly with no recoverable states, the scan is skipped.
+
+**Session start summary (Step 0c):** When no handoff or recovery is needed (clean start), `/work` produces a brief orientation summary before the full state analysis: last session timestamp, recently completed tasks (48h window), active work, and next human actions. This re-uses data that Step 1 will also read — it's surfaced earlier so the user can re-orient immediately. Complements (not duplicates) the spec state summary in Step 1c.
 
 **Six recovery cases:**
 - "Awaiting Verification" → Auto-recover: spawn verify-agent
@@ -442,7 +447,7 @@ All work aligns with the spec, or the spec is updated intentionally. Tasks follo
 Claude proposes spec changes via explicit change declarations; the user reviews and approves before Claude applies them. Claude handles the mechanics (versioning, archiving, applying edits) but never modifies spec content without presenting the declaration and receiving approval first. The user can modify, reject, or redirect any proposed change.
 
 ### Verification Is Structurally Enforced
-A task cannot reach "Finished" without `task_verification.result == "pass"`. This is checked by `/work`, `/health-check`, and the task schema. There is no way to bypass verification by marking tasks Finished directly.
+A task cannot reach "Finished" without `task_verification.result == "pass"`. This is checked by `/work`, `/health-check`, and the task schema. There is no way to bypass verification by marking tasks Finished directly. Human-owned tasks satisfy this invariant via auto-generated self-attestation (`checks.self_attested`) when the user runs `/work complete` — the invariant is universal, but the verification method differs by owner type.
 
 ### Context Separation Between Agents
 verify-agent always runs as a separate Task agent, never inline in the implementation conversation. This applies to both sequential and parallel execution modes.
@@ -452,6 +457,9 @@ During the build phase, the dashboard surfaces what needs attention and links to
 
 ### Agents Minimize Shell Execution
 Agents use dedicated tools (Read, Glob, Grep, Edit, Write) for all file operations and reserve Bash exclusively for operations requiring shell execution: git commands, running test suites, executing deliverables, and network requests. When Bash is necessary, agents consolidate related commands into single invocations and degrade gracefully if permission is denied (e.g., scope validation skips rather than blocks). This minimizes permission prompts when agents run as subagents.
+
+### Edits Preserve File Integrity
+When modifying structured documents (Markdown, JSON, YAML), agents prefer full file rewrites over incremental piecemeal edits when changes touch multiple sections or more than a third of the document. Incremental Edit is appropriate for surgical single-point changes; Write (full rewrite) is safer when changes are distributed across the file. Agents never use shell text manipulation (sed, awk) for document editing — these are error-prone for structured content and have caused file corruption in practice. After multi-file changes within a single task, implement-agent flags the scope in its completion notes so verify-agent can calibrate its consistency check.
 
 ### Domain Agnosticism
 Nothing in the system assumes software development. Dashboard language, task tracking, verification, and all features adapt to whatever domain the project is in.

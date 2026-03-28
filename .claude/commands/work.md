@@ -94,6 +94,30 @@ Check for tasks left in recoverable states by a previous session. Read `.claude/
 
 **Malformed files during scan:** If a task file fails to parse during Step 0, skip it and continue. Report the error in Step 1.
 
+#### Step 0c: Session Start Summary
+
+When Step 0a found no handoff and Step 0b found no recovery issues (clean start), produce a brief orientation summary:
+
+1. Read dashboard `<!-- DASHBOARD META -->` block for the `generated` timestamp
+2. Scan task files for:
+   - Tasks with `completion_date` within the last 48 hours → recent completions
+   - Tasks with `status: "In Progress"` → active work
+   - Tasks with `owner: "human"` or `"both"`, status `"Pending"`, all dependencies `"Finished"` → next human actions
+3. Output (3-5 lines):
+   ```
+   Last session: {relative time from dashboard generated timestamp}
+   Recent: {completed task titles, or "no recent completions"}
+   Active: {in-progress task titles, or "none"}
+   Your next actions: {human/both tasks ready with IDs, or "none — all human tasks complete"}
+   ```
+4. Proceed to Step 1
+
+**First-run fallback:** If no dashboard META block exists (first `/work` invocation), skip the summary — Step 1 will handle first-run detection.
+
+**Relationship to Step 1c:** Step 0c provides session context (temporal: "what happened recently"). Step 1c provides spec state ("Spec: v1 (active) — aligned with tasks"). They are complementary, not overlapping.
+
+Note: This reads task files and dashboard META before Step 1, but Step 1 reads the same data. The summary re-uses data that would be loaded regardless — it's surfaced earlier for user orientation.
+
 ### Step 1: Gather Context
 
 **Version discovery:** Determine the current spec version:
@@ -264,9 +288,14 @@ After phase and decision checks, assess whether multiple tasks can be dispatched
    → IF result == "fail" → Route to implement-agent (fix tasks)
    → IF spec_fingerprint mismatch OR tasks updated after timestamp → Re-verify
    → IF result == "pass" → Route to completion
-8. ELSE IF parallel_mode (from Step 2c):
+8. ELSE IF remaining pending tasks exist (status "Pending", all deps "Finished")
+      AND all of them have owner == "human":
+      → Do NOT dispatch an agent
+      → Output: summary of human tasks ready + contextual command suggestions (see Contextual Command Suggestions below)
+      → Proceed to Step 5 (post-dispatch validation) — skip Step 4
+9. ELSE IF parallel_mode (from Step 2c):
    → Route to parallel execution
-9. ELSE:
+10. ELSE:
    → Route to implement-agent for next pending task
 ```
 
@@ -281,6 +310,25 @@ After phase and decision checks, assess whether multiple tasks can be dispatched
 2. Set `out_of_spec_rejected: true` and `rejection_reason` (if provided) on task JSON
 3. Move task file to `.claude/tasks/archive/`
 4. Task preserved for audit trail but excluded from active processing and dashboard
+
+### Contextual Command Suggestions
+
+When Step 3 reaches a stopping point (no agent dispatch), append 1-3 relevant command suggestions to the output:
+
+| Condition | Suggestion |
+|-----------|------------|
+| All remaining tasks are `owner: human` | "Your next actions: {task list with IDs}. Run `/work complete {id}` when done." |
+| Phase gate pending approval | "Review the phase gate in the dashboard, then run `/work` to continue." |
+| Unresolved decision blocks work | "Run `/research {DEC-ID}` to investigate, or resolve it in the dashboard." |
+| Spec incomplete | "Run `/iterate` to refine the specification." |
+| No spec exists | "Create a vision document in `.claude/vision/` and run `/iterate distill`." |
+| Feedback items exist (new/refined) | "You have {N} feedback items. Run `/feedback review` to triage." |
+
+Rules:
+- Maximum 3 suggestions per stopping point
+- Prioritize by actionability: human tasks ready > decisions > feedback
+- Always include the specific command with arguments, not just a description
+- Only suggest commands relevant to the current state
 
 ### Interaction Mode Selection
 
@@ -532,6 +580,19 @@ Use `/work complete` for manual task completion outside of implement-agent's wor
 3. **Verification enforcement:**
    - If the task has `task_verification.result == "pass"` → proceed (already verified)
    - If the task has `user_review_pending: true` → proceed (verification already passed, user is completing their review)
+   - If the task has `owner: "human"` AND no `task_verification` → auto-generate self-attestation:
+     ```json
+     {
+       "task_verification": {
+         "result": "pass",
+         "timestamp": "ISO 8601",
+         "checks": { "self_attested": "pass" },
+         "notes": "Human task — completed by user",
+         "issues": []
+       }
+     }
+     ```
+     Write to task JSON and proceed. Human tasks are verified by the user's attestation of completion, not by verify-agent.
    - If the task has NO `task_verification` or `task_verification.result != "pass"` → **spawn verify-agent (per-task)** before allowing completion. Do not mark Finished without passing verification.
    - This ensures the structural invariant: no task reaches "Finished" without `task_verification.result == "pass"`.
 3b. **Human deliverable validation** (for `human` and `both`-owned tasks):
@@ -548,12 +609,25 @@ Use `/work complete` for manual task completion outside of implement-agent's wor
      [P] Proceed — continue as-is (deliverables are sufficient despite the difference)
      [W] Wait — task stays in progress until deliverables are corrected
      ```
-   - If deliverables pass validation: proceed silently to step 4
+   - If deliverables pass validation: proceed silently to step 3c
+3c. **Collect completion notes (interactive):**
+   Ask the user for feedback inline in the CLI conversation:
+
+   ```
+   Task {id}: "{title}" — any notes on how this went?
+   (Type your notes, or press Enter to skip)
+   ```
+
+   - If the user provides feedback → store in `user_feedback` field
+   - If the user skips → proceed without feedback
+   - This is the PRIMARY feedback path for `/work complete`
+   - Dashboard FEEDBACK markers remain as an ASYNC alternative — if the user wrote feedback in the dashboard before running `/work complete`, Step 4b captures it as fallback
 4. **Check work** - Review all changes made for this task
    - Look for bugs, edge cases, inefficiencies
    - If issues found, fix them before proceeding
-4b. **Capture inline feedback** - Read dashboard for `<!-- FEEDBACK:{id} -->` markers matching the completing task
-   - If non-empty content found, save to task JSON `user_feedback` field
+4b. **Capture dashboard feedback (fallback)** - Read dashboard for `<!-- FEEDBACK:{id} -->` markers matching the completing task
+   - If non-empty content found AND no inline feedback was captured in Step 3c, save to task JSON `user_feedback` field
+   - If both inline (Step 3c) and marker feedback exist, concatenate: inline first, then marker content (newline-separated)
 5. **Update task file:**
    ```json
    {

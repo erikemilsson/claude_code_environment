@@ -142,7 +142,9 @@ Canonical definitions for terms used across the environment. Terms already defin
 |------|------------|
 | **Per-Task Verification (Tier 1)** | Runs after each task implementation. Checks: files exist, spec alignment, output quality, runtime validation, integration readiness, scope validation. Pass → Finished. Fail → back to In Progress (max 2 retries). |
 | **Phase-Level Verification (Tier 2)** | Runs once when all tasks Finished. Validates full implementation against spec acceptance criteria. Result: `pass` or `fail`. Written to `.claude/verification-result.json`. |
-| **Verification Debt** | Tasks that bypassed or failed verification: status "Awaiting Verification", "Finished" without `task_verification`, or `task_verification.result` is "fail". Blocks project completion. |
+| **Verification Debt** | Tasks with verification issues: status "Awaiting Verification" (incomplete), "Finished" without valid `task_verification` (bypass — rare for human tasks which auto-generate), or `task_verification.result` is "fail". Blocks project completion. |
+
+**Human task verification:** Human-owned tasks satisfy the verification requirement via self-attestation — auto-generated when the user runs `/work complete`. The invariant holds (every Finished task has `task_verification.result == "pass"`), but human tasks use `checks.self_attested` instead of the standard 7-check suite.
 
 ### Runtime Validation & Interaction
 

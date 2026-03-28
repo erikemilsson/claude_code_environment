@@ -100,7 +100,7 @@ Detects tasks that may have bypassed the implement-agent or verify-agent workflo
 
 **Verification debt (ERRORS):**
 - Finished tasks MUST have a `task_verification` field with `result` of `"pass"`
-- `task_verification.checks` should have all 6 keys (`files_exist`, `spec_alignment`, `output_quality`, `runtime_validation`, `integration_ready`, `scope_validation`) with pass/fail values (or `"skipped"` only when result is `"fail"` due to timeout). Note: `runtime_validation` additionally allows `"not_applicable"` and `"partial"` as valid non-error values.
+- `task_verification.checks` should have all 7 keys (`files_exist`, `consistency_check`, `spec_alignment`, `output_quality`, `runtime_validation`, `integration_ready`, `scope_validation`) with pass/fail values (or `"skipped"` only when result is `"fail"` due to timeout). Note: `runtime_validation` additionally allows `"not_applicable"` and `"partial"` as valid non-error values. **Exception:** tasks with `owner: "human"` that have `checks.self_attested: "pass"` are exempt from the 7-key requirement — human tasks use self-attestation instead of the standard verification checks.
 - If any check is `"fail"`, the overall `result` must also be `"fail"` — a check-level fail with a result-level pass is invalid
 - If any finished task lacks `task_verification`: **ERROR** — "Verification debt: N finished tasks missing verification"
 - If any finished task has `task_verification.result == "fail"`: **ERROR**

@@ -33,6 +33,11 @@ When running as a subagent, always prefer dedicated tools over Bash for file ope
 
 **Only use Bash for operations that genuinely require shell execution:** running build commands, executing scripts, installing dependencies, git operations. When multiple Bash commands are needed, combine them into a single call where possible to minimize permission prompts.
 
+**Editing strategy for structured documents (Markdown, JSON, YAML):**
+- **Surgical single-point change** → use `Edit` tool (targeted replacement)
+- **Changes touching multiple sections or more than a third of the file** → use `Write` tool (full rewrite) — this avoids leftover content and corruption from piecemeal edits
+- **Never use shell text manipulation** (`sed`, `awk`) for document editing — these are error-prone for structured content
+
 ## When to Follow This Workflow
 
 The `/work` command directs you to follow this workflow when:
@@ -125,6 +130,7 @@ Before marking complete:
 - Review all changes made
 - Check for errors and edge cases
 - Verify against task requirements
+- For multi-file changes: spot-check cross-file consistency (stale references, broken links, terminology alignment between modified files)
 - Run existing tests or validation checks if available
 
 
@@ -140,9 +146,11 @@ Update task with transitional status:
   "status": "Awaiting Verification",
   "completion_date": "2026-01-26",
   "updated_date": "2026-01-26",
-  "notes": "Implemented login flow. Updated configuration. Added validation."
+  "notes": "Implemented login flow. Updated configuration. Added validation. [Multi-file: 3 files modified]"
 }
 ```
+
+**Multi-file scope flag:** When the task modified multiple files, note the count in completion notes (e.g., `[Multi-file: 5 files modified]`). This signals verify-agent to calibrate its cross-file consistency check — single-file tasks need minimal consistency checking, while multi-file tasks need thorough cross-reference validation.
 
 **Dashboard regeneration:** After setting "Awaiting Verification", regenerate the dashboard per `.claude/support/reference/dashboard-regeneration.md`. In parallel mode, skip this (coordinator handles it).
 

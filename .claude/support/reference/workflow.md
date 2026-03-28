@@ -75,7 +75,10 @@ To create or revise the spec, run `/iterate`. Claude will guide you through iter
 - Flag discovered issues
 
 **Exit Criteria:**
-- All tasks have status "Finished" with passing per-task verification (Absorbed tasks are excluded — they don't count as incomplete)
+- All tasks have status "Finished" with passing verification (Absorbed tasks are excluded — they don't count as incomplete):
+  - Claude-owned tasks: passed per-task verification (full 7-check suite via verify-agent)
+  - Human-owned tasks: completed via `/work complete` with auto-generated self-attestation (`checks.self_attested`)
+  - Both-owned tasks: passed per-task verification, then user review via `/work complete`
 - No blocked tasks remain
 - No "On Hold" tasks remain (user must resume, absorb, or remove them before phase exit)
 - Deliverables follow project conventions

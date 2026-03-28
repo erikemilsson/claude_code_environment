@@ -38,6 +38,7 @@ Verification is not a rubber stamp. When verify-agent finds issues, the task mus
        "result": "fail",
        "checks": {
          "files_exist": "pass",
+         "consistency_check": "pass",
          "spec_alignment": "fail",
          "output_quality": "pass",
          "runtime_validation": "not_applicable",

@@ -49,13 +49,15 @@ The `/work` command directs you to follow this workflow when:
 - **Per-task mode:** A task has status "Awaiting Verification" and needs per-task verification before it can become "Finished"
 - **Phase-level mode:** All execute-phase tasks are "Finished" with passing per-task verification, and the full implementation is ready for validation
 
+**Human-owned tasks:** Tasks with `owner: "human"` do not pass through per-task verification. They are completed by the user via `/work complete`, which auto-generates `task_verification` with `checks: { "self_attested": "pass" }`. If a human task appears in "Awaiting Verification" status (error state), set it to "In Progress" and return — the user should complete it via `/work complete`.
+
 ## Inputs
 
 **Per-task mode:**
 - The specific task JSON that was just completed
 - `.claude/spec_v{N}.md` — relevant spec section (from task's `spec_section` field)
-- List of files in the task's `files_affected`
-- Completion notes from implement-agent
+- List of files in the task's `files_affected` (consistency check in Step T2c may scan additional referencing files beyond this list)
+- Completion notes from implement-agent (including `[Multi-file: N]` flag when present)
 
 **Phase-level mode:**
 - Completed implementation (all tasks finished with passing per-task verification)
@@ -92,7 +94,7 @@ When spawned, your caller specifies a turn limit via `max_turns`. Plan your work
   - Stop new verification checks
   - Write `task_verification` to the task JSON with whatever checks you completed
   - For checks not yet completed, set their value to `"skipped"` (including `runtime_validation` if not reached)
-  - Set result to `"fail"` with note: "Verification incomplete — {N} of 6 checks completed before turn limit"
+  - Set result to `"fail"` with note: "Verification incomplete — {N} of 7 checks completed before turn limit"
   - Set task status to "In Progress" (normal fail flow — recovery will retry with extended turns)
   - Return your partial T8 report
 
@@ -189,6 +191,26 @@ Detect files modified during implementation that were NOT listed in `files_affec
    - Set scope_validation to "pass" with note: "Scope validation skipped — no git available or permission denied"
 ```
 
+
+### Step T2c: Cross-File Consistency Check
+
+Check that the modified files are consistent with each other and with unmodified files that reference them. This catches a common class of errors where editing one document breaks references, terminology, or formatting in related documents.
+
+1. For each file in `files_affected`, use `Grep` to find other files that reference it (by filename, anchors, or shared key terms from the task's domain)
+2. Read any referencing files found and check for:
+   - Stale references (links, filenames, section headings that no longer match)
+   - Schema or format mismatches (e.g., a JSON field renamed in one file but not in files that consume it)
+   - Terminology drift (e.g., a concept renamed in the task deliverable but still using the old name in related files)
+3. Scope this check to the task's blast radius — `files_affected` plus direct references — not a full project scan (that's Tier 2's job)
+
+**Fail conditions:**
+- Stale references that would cause broken links or incorrect cross-references
+- Schema mismatches between files that are supposed to align
+
+**Pass conditions:**
+- No referencing files found (common for isolated deliverables) — set to `"pass"`
+- All references and cross-file terminology are consistent
+- Minor formatting differences that don't affect correctness (informational note, not a failure)
 
 ### Step T3: Verify Spec Alignment
 
@@ -318,6 +340,7 @@ Record the per-task verification outcome in the task JSON:
     "timestamp": "2026-01-28T15:30:00Z",
     "checks": {
       "files_exist": "pass",
+      "consistency_check": "pass",
       "spec_alignment": "pass",
       "output_quality": "pass",
       "runtime_validation": "pass",
@@ -338,6 +361,7 @@ Record the per-task verification outcome in the task JSON:
     "timestamp": "2026-01-28T15:30:00Z",
     "checks": {
       "files_exist": "pass",
+      "consistency_check": "pass",
       "spec_alignment": "pass",
       "output_quality": "pass",
       "runtime_validation": "partial",
@@ -358,6 +382,7 @@ Record the per-task verification outcome in the task JSON:
     "timestamp": "2026-01-28T15:30:00Z",
     "checks": {
       "files_exist": "pass",
+      "consistency_check": "pass",
       "spec_alignment": "fail",
       "output_quality": "pass",
       "runtime_validation": "not_applicable",
@@ -383,6 +408,7 @@ Record the per-task verification outcome in the task JSON:
     "timestamp": "2026-01-28T15:30:00Z",
     "checks": {
       "files_exist": "pass",
+      "consistency_check": "pass",
       "spec_alignment": "pass",
       "output_quality": "pass",
       "runtime_validation": "not_applicable",
@@ -408,6 +434,7 @@ Record the per-task verification outcome in the task JSON:
     "timestamp": "2026-01-28T15:30:00Z",
     "checks": {
       "files_exist": "pass",
+      "consistency_check": "pass",
       "spec_alignment": "pass",
       "output_quality": "pass",
       "runtime_validation": "not_applicable",
@@ -493,6 +520,7 @@ Pass:
 ```
 Task 5 verification: PASS (attempt 1)
   Files: 1/1 exist
+  Consistency: no stale references or format drift in modified files
   Spec alignment: matches task description
   Output quality: no issues
   Runtime validation: CLI runs correctly, output matches spec
@@ -504,6 +532,7 @@ Pass with guided testing:
 ```
 Task 5 verification: PASS (attempt 1)
   Files: 3/3 exist
+  Consistency: no stale references or format drift in modified files
   Spec alignment: matches task description
   Output quality: no issues
   Runtime validation: partial (3/5 automated, 2 need human confirmation)
