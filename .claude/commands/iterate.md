@@ -32,12 +32,16 @@ Determine the current spec version using the same version discovery as `/work`: 
 
 Read `.claude/support/feedback/feedback.md` if it exists. Count items by status.
 
-IF `new` count > 0 OR `refined` count > 0:
-  Surface: "📝 {N} feedback items awaiting attention ({X} new, {Y} refined)"
+IF `ready` count > 0:
+  Surface: "📝 {N} feedback items ready for spec incorporation"
+  List each `ready` item with its title and refined insight.
   Options:
-  - `[I]` Include refined items as context — load refined entries as context for Step 4 change proposals. After incorporation, mark items as `promoted` with date.
-  - `[R]` Run `/feedback review` first — hand off to `/feedback review`, then return to `/iterate`.
+  - `[I]` Include ready items as context — load `ready` entries as context for Step 4 change proposals. After spec changes are approved and applied, auto-archive promoted items: set status to `promoted`, add `**Promoted:** YYYY-MM-DD — Incorporated into spec v{N} § [section]`, move from `feedback.md` to `archive.md`.
   - `[S]` Skip — continue normally without feedback context.
+
+IF `new` or `refined` count > 0 (but no `ready` items):
+  Surface: "📝 {N} feedback items need review before they can be incorporated ({X} new, {Y} refined) → /feedback review"
+  These items have not completed the review pipeline (grouping → refinement → impact assessment). Only `ready` items are eligible for `/iterate`.
 
 IF no feedback items exist or file doesn't exist: continue silently.
 
@@ -158,7 +162,7 @@ Current state:
   - Unresolved inflection points: N 🔴 (spec sections may be premature)
 - Acceptance criteria defined: ✓ / ✗
 - Blocking questions resolved: ✓ / ✗
-- Feedback items pending: N new, M refined
+- Feedback items: N new, M refined, P ready
 - Phase boundaries clear: ✓ / ✗ / N/A
   - Phase dependencies make sense: ✓ / ✗
   - No Phase 2 content mixed into Phase 1: ✓ / ✗

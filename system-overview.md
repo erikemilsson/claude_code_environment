@@ -360,11 +360,27 @@ On next `/work` run, Step 0 detects the handoff file before the existing session
 
 ### Feedback System
 
-**Purpose:** Let users capture fleeting ideas and improvement thoughts during project work without losing context, then triage them into actionable spec improvements or archive them.
+**Purpose:** Let users capture fleeting ideas and improvement thoughts during project work without losing context, then triage them into actionable spec improvements or archive them with clear disposition. Nothing reaches the spec without structured assessment and explicit user approval.
 
-**How it works:** `/feedback [text]` appends a new entry (ID format: `FB-NNN`) to `.claude/support/feedback/feedback.md` with status `new`. `/feedback review` walks through unreviewed items interactively — each can be refined (distilled to a core insight), archived (moved to `archive.md` with reason), skipped, or edited. Refined items surface in `/iterate` Step 1b for optional incorporation into the spec, completing the path from idea to specification.
+**How it works:** `/feedback [text]` appends a new entry (ID format: `FB-NNN`) to `.claude/support/feedback/feedback.md` with status `new`. `/feedback review` runs a 3-phase process that takes items from capture to spec-readiness:
 
-**Dashboard integration:** A single derived line in Action Required when unhandled items exist: `📝 {N} feedback items awaiting attention ({X} new, {Y} refined) → /feedback review`. Computed during regeneration, not stored.
+1. **Overview & Grouping** — Show all active items. Claude suggests which could combine (shared themes, affected areas). User confirms or adjusts. Combined items' originals are absorbed (status `absorbed`, moved to `archive.md` with pointer to new combined entry).
+2. **Refinement** — Per item: Claude asks directed questions, distills the core insight into a `**Refined:**` line, confirms the user is satisfied. Status → `refined`.
+3. **Impact Assessment** — User-initiated, per item. Claude reads the spec and active task files, presents structured assessment (spec sections affected, active task impact, scope change, decision conflicts, phase impact). User approves → status → `ready`. User can also close items here.
+
+Only `ready` items are eligible for `/iterate`. This ensures feedback is never incorporated without explicit assessment of its impact on existing work.
+
+**Status lifecycle:**
+```
+new → reviewing → refined → ready → promoted (auto-archived)
+new → absorbed (combined into another, immediately archived)
+new → closed (investigated, decided against, archived)
+new → archived (not relevant, quick triage)
+```
+
+`feedback.md` is an inbox — only actionable items (`new`, `reviewing`, `refined`, `ready`). All terminal states (`promoted`, `absorbed`, `closed`, `archived`) live in `archive.md` with dates and reasons.
+
+**Dashboard integration:** A single derived line in Action Required when unhandled items exist: `📝 **{N} feedback items** awaiting attention ({X} new, {Y} refined, {Z} ready) → /feedback review`. Computed during regeneration, not stored.
 
 **Authoritative file:** `commands/feedback.md`
 
@@ -490,8 +506,8 @@ Exactly one `spec_v{N}.md` exists in `.claude/` at any time. Version transitions
 | `/research {DEC-NNN}` | Research options for a specific existing decision | Read-write |
 | `/feedback` | Quick capture an idea | Read-write |
 | `/feedback list` | Show feedback summary and items | Read-only |
-| `/feedback review` | Batch triage unreviewed feedback | Read-write |
-| `/feedback review {id}` | Triage a single feedback item | Read-write |
+| `/feedback review` | 3-phase review: grouping, refinement, impact assessment | Read-write |
+| `/feedback review {id}` | Review a single item (adapts to current status) | Read-write |
 | `/breakdown {id}` | Split a complex task into subtasks | Read-write |
 | `/health-check` | Validate tasks, decisions, instruction files, archives, and template sync | Read-write (with user approval) |
 | `/health-check --report` | Show issues only, no fix prompts | Read-only |
@@ -524,7 +540,7 @@ See also `support/reference/paths.md` for the canonical paths reference used by 
 | `.claude/support/previous_specifications/` | Archived spec versions and decomposition snapshots | `/work`, `/iterate` |
 | `.claude/support/questions/questions.md` | Questions for human input | Agents, `/work` |
 | `.claude/support/feedback/feedback.md` | Active feedback items (ideas, improvements) | `/feedback`, `/iterate` |
-| `.claude/support/feedback/archive.md` | Archived feedback (not relevant, with reasons) | `/feedback review` |
+| `.claude/support/feedback/archive.md` | Archived feedback — all terminal states: promoted (into spec), absorbed (combined), closed (decided against), not relevant (quick triage) | `/feedback review`, `/iterate` |
 | `.claude/support/workspace/` | Temporary working documents | Agents (ephemeral) |
 | `.claude/support/documents/` | User-provided reference files | User |
 | `.claude/support/learnings/` | Project-specific patterns | Agents |

@@ -369,7 +369,7 @@ The user selects an option when prompted, and `/work` updates the task according
 - Phase Transitions: only render when a phase boundary has been reached (all Phase N tasks Finished, Phase N+1 exists) AND no APPROVED marker exists for that transition
 - Verification Pending: only render when all spec tasks are Finished with passing per-task verification but no valid verification-result.json
 - Spec Drift: only render when drift-deferrals.json has active entries
-- Feedback: only render when `feedback.md` has entries with status `new` or `refined` — render as: `- 📝 **{N} feedback items** awaiting attention ({X} new, {Y} refined) → /feedback review`
+- Feedback: only render when `feedback.md` has entries with status `new`, `refined`, or `ready` — render as: `- 📝 **{N} feedback items** awaiting attention ({X} new, {Y} refined, {Z} ready) → /feedback review`
 - Reviews sub-section format: `- [ ] **Item title** — what to do → [link to file](path)`
 - Reviews appear for: out_of_spec tasks without approval, draft/proposed decisions
 - Timeline sub-section in Progress: only render when tasks have `due_date` or `external_dependency.expected_date` (part of Progress, not an independent toggle)
@@ -404,7 +404,7 @@ The user selects an option when prompted, and `/work` updates the task according
 | Action Required → Verification Pending | Plain text status message |
 | Action Required → Verification Debt | `Task \| Title \| Issue` |
 | Action Required → Spec Drift | `- ⚠️ **{section}** — {N} tasks affected, deferred {M} days ago` |
-| Action Required → Feedback | `- 📝 **{N} feedback items** awaiting attention ({X} new, {Y} refined) → /feedback review` |
+| Action Required → Feedback | `- 📝 **{N} feedback items** awaiting attention ({X} new, {Y} refined, {Z} ready) → /feedback review` |
 | Action Required → Decisions | `Decision \| Question \| Doc` |
 | Action Required → Your Tasks | `Task \| What To Do \| Where` |
 | Action Required → Reviews | `- [ ] **Item title** — what to do → [link](path)` — derived, not stored |
