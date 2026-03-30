@@ -10,7 +10,7 @@ The project specification lives at `.claude/spec_v{N}.md` (exactly one file; `/w
 
 ## Propose-Approve-Apply
 
-Present spec changes as explicit declarations (what changes, where, proposed text); apply only after user approval. You CAN perform infrastructure operations autonomously (archiving, version transitions, frontmatter updates).
+Present spec changes as explicit declarations (what changes, where, proposed text); apply only after user approval. Every declaration must tag each change with its origin: `[requested]`, `[proposed]`, or `[assumption]`. You CAN perform infrastructure operations autonomously (archiving, version transitions, frontmatter updates).
 
 Direct edits to the spec are always safe — the decomposed snapshot preserves the before-state, and drift detection handles reconciliation.
 

@@ -104,6 +104,14 @@ Enter distill mode. Extract buildable spec from a vision document.
    - Add "Deferred to Future Phases" section for items not in Phase 1
    - Keep the spec high-level enough to remain a readable project overview, while precise enough for decomposition
 
+   **Distill transparency:** Extracting a spec from a vision document inherently involves interpretation. The same `[requested]`/`[proposed]`/`[assumption]` labels from Step 4 apply to each proposed section in the distill declaration. In addition, include a separate "Assumptions & Interpretations" section that flags interpretive choices holistically:
+   - **Scope decisions** — what was included/excluded from Phase 1 and why
+   - **Structural choices** — how the vision was organized into spec sections
+   - **Inferred requirements** — requirements Claude derived that weren't explicitly stated in the vision
+   - **Ambiguity resolutions** — places where the vision was vague and Claude chose a specific interpretation
+
+   Both mechanisms are required: per-section origin labels (so the user can review each piece individually) AND the summary section (so the user can see all assumptions in one place before approving).
+
 6. **Apply on approval:**
    On user approval (`[Y]`, `[M]`, or `[P]`), create or update the spec file:
    - If no spec exists: create `.claude/spec_v1.md` with the approved content
@@ -238,6 +246,13 @@ Approve these changes? [Y] Apply all | [M] Modify (tell me what to adjust) | [P]
 - Show the proposed text so the user can judge tone and detail level
 - Keep the spec high-level enough to remain readable as a project overview, while precise enough for decomposition and decision-making
 - When modifying existing content, briefly note what's being replaced
+
+**Transparency requirement:** Every change declaration must clearly separate:
+1. **User-requested changes** — changes the user explicitly asked for or that directly follow from their answers
+2. **Claude-proposed changes** — changes Claude is suggesting based on its own judgment (e.g., structural improvements, consistency fixes, scope suggestions)
+3. **Assumptions** — any decisions or assumptions Claude made in formulating the proposal (e.g., choosing a particular framing, inferring scope boundaries, interpreting ambiguous requirements)
+
+Mark each change with its origin: `[requested]`, `[proposed]`, or `[assumption]` after the change title. This transparency is required every time, not just when the user catches an unmarked autonomous change. The user must be able to distinguish what they asked for from what Claude decided on its own.
 
 ### Step 5: Apply or Continue
 

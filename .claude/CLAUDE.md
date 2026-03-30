@@ -21,7 +21,7 @@ This environment is designed for **Claude Opus 4.6** (`claude-opus-4-6`). All ag
 | Reference docs | `.claude/support/reference/` |
 | Vision documents | `.claude/vision/` |
 | Workspace (scratch) | `.claude/support/workspace/` |
-| User documents | `.claude/support/documents/` |
+| Reference documents (inputs) | `.claude/support/documents/` |
 | Feedback | `.claude/support/feedback/` |
 | Project instructions | `./CLAUDE.md` (root) |
 

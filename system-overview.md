@@ -1,6 +1,20 @@
 # System Overview
 
-Single-document reference for the entire environment: lifecycle, features, design intent, and authoritative sources. Use this to understand the big picture, verify that implementations match intent, and spot drift.
+Single-document reference for the entire environment: lifecycle, features, design intent, and authoritative sources. **This is the template's source of truth** — all template changes should be consistent with the design intent described here.
+
+**Version:** See `.claude/version.json` for the current template version.
+
+### Change-Proposal Process (Template Maintenance)
+
+When modifying template files (commands, agents, rules, reference docs), Claude must:
+
+1. **Check consistency** — read this document to understand how the proposed change fits the overall design
+2. **Assess impact** — identify which template files are affected and whether the change is additive, corrective, or reductive
+3. **Propose atomically** — make focused changes rather than broad rewrites. Each change should be independently reviewable.
+4. **Surface ambiguities** — if the change could go multiple ways, ask the user rather than deciding silently
+5. **Update this document** — if the change introduces new features, principles, or structural changes, update the relevant section here
+
+This is lightweight governance, not the full spec/task/dashboard workflow (which is template content, not a tool for managing the template itself).
 
 ---
 
@@ -69,7 +83,7 @@ graph LR
 6. If runtime validation is partial (some checks need human eyes), or for `both`-owned tasks with runnable output, verify-agent writes a `test_protocol` and `interaction_hint` to guide human testing
 7. Pass → "Finished". Fail → "In Progress" (fix and re-verify, max 3 attempts then escalate)
 
-**Auto-continuation within phases:** After a task finishes (passes verification), `/work` automatically routes to the next eligible task — no user prompt, no pause. This continues until a natural stopping point: phase boundary (requires gate approval), blocking decision, blocking question, verification failure requiring human escalation, or all remaining tasks being human-owned (fast-exit — skips agent dispatch, outputs summary of human tasks with contextual command suggestions). The value of front-loaded decomposition and structured verification is that work flows autonomously between these stops. This applies equally to sequential and parallel modes.
+**Auto-continuation within phases:** After a task finishes (passes verification), `/work` automatically routes to the next eligible task — no user prompt, no pause. This continues until a natural stopping point: phase boundary (requires gate approval), blocking decision, blocking question, verification failure requiring human escalation, or all remaining tasks being non-actionable: human-owned, blocked, or on hold (fast-exit via Step 1d — skips the full analysis pipeline, outputs a brief summary with specific next steps per category). The value of front-loaded decomposition and structured verification is that work flows autonomously between these stops. This applies equally to sequential and parallel modes.
 
 **Parallel execution:** When multiple tasks have no file conflicts and all dependencies met, `/work` dispatches them concurrently. Each parallel task runs its own implement → verify cycle independently. Coordinator handles batching, result collection, and a single dashboard regeneration.
 
@@ -384,6 +398,22 @@ new → archived (not relevant, quick triage)
 
 **Authoritative file:** `commands/feedback.md`
 
+### Cross-Project Interaction Logs
+
+**Purpose:** Automated feedback loop from projects using the template back to the template repo. Captures friction moments and design pushback opportunities to drive targeted template improvements.
+
+**How it works:** Dual-track capture system:
+- **Track 1 (automated markers):** Agents emit structured friction markers to `.claude/support/workspace/.session-log.jsonl` during execution. Captures verification failures, workflow deviations, spec drift, informal decisions, scope creep, and template gaps. Runs every session, including crashes.
+- **Track 2 (Claude assessment):** At graceful exits (`/work pause`), Claude generates an interaction assessment capturing design pushback opportunities and workflow friction patterns that require conversation context to identify. Only available on graceful exits.
+
+At session end, both tracks compile into a unified export (`.session-export-YYYY-MM-DD.json`). Exports flow to the template repo via local filesystem (`template_inbox_path` in `version.json`).
+
+**Processing pipeline** (runs as Part 7 of `/health-check` in the template repo): Ingests exports, categorizes friction events by template area, aggregates patterns across projects, generates insight documents, and routes high-confidence insights to `/feedback` for the normal review pipeline.
+
+**Authoritative files:** Agent definitions (marker emission), `work.md` § "Context Transition" (Track 2 + export), `pre-compact-handoff.sh` (Track 1 fallback export), `health-check.md` Part 7 (processing pipeline).
+
+**Decision record:** DEC-001 in `decisions/`.
+
 ### Out-of-Spec Tasks
 
 **Purpose:** Allow work beyond the spec without breaking verification integrity.
@@ -461,6 +491,8 @@ All work aligns with the spec, or the spec is updated intentionally. Tasks follo
 
 ### Propose-Approve-Apply (Spec Authorship)
 Claude proposes spec changes via explicit change declarations; the user reviews and approves before Claude applies them. Claude handles the mechanics (versioning, archiving, applying edits) but never modifies spec content without presenting the declaration and receiving approval first. The user can modify, reject, or redirect any proposed change.
+
+**Transparency requirement:** Every change declaration must separate user-requested changes (`[requested]`), Claude-proposed changes (`[proposed]`), and assumptions Claude made (`[assumption]`). This applies to `/iterate` proposals. During `/iterate distill`, Claude must also tag each proposed section with origin labels AND flag interpretive choices (scope decisions, inferred requirements, ambiguity resolutions) in a separate "Assumptions & Interpretations" section. When Claude encounters ambiguities during `/work`, it must surface them to the user (create decision record, resolve inline, or skip) rather than deciding silently. This is a behavioral requirement, not a structurally enforced invariant. Core principle: Claude surfaces choices, the user makes them.
 
 ### Verification Is Structurally Enforced
 A task cannot reach "Finished" without `task_verification.result == "pass"`. This is checked by `/work`, `/health-check`, and the task schema. There is no way to bypass verification by marking tasks Finished directly. Human-owned tasks satisfy this invariant via auto-generated self-attestation (`checks.self_attested`) when the user runs `/work complete` — the invariant is universal, but the verification method differs by owner type.

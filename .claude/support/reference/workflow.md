@@ -241,6 +241,7 @@ User → /work → Specialist Agent → /work → User
 - Pass context to agent
 - Trigger checkpoints
 - Report progress
+- Early-exit for non-actionable states (human-owned, blocked, on hold — Step 1d)
 - Auto-sync dashboard after changes
 
 ---

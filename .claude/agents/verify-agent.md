@@ -708,6 +708,23 @@ Write the verification outcome to `.claude/verification-result.json` so other co
 
 Display verification report: overall status, per-criterion pass/fail list, issues by severity (critical/major/minor), and recommendations.
 
+## Friction Markers
+
+During verification, emit structured friction markers to `.claude/support/workspace/.session-log.jsonl` when encountering situations that suggest template improvement opportunities. Write one JSON line per event (read existing content first, append the new line).
+
+**When to emit markers:**
+
+| Event | Marker type | What to capture |
+|-------|-------------|-----------------|
+| Verification failure on first attempt (suggests implement-agent gap) | `verification_failure` | Which check failed, task ID, whether it seems like a template-level issue |
+| False positive (flagged issue that isn't actually a problem) | `false_positive` | What was flagged, why it's not a real issue |
+| Missing verification capability (can't test something that should be testable) | `verification_gap` | What couldn't be verified, what capability would be needed |
+| Spec ambiguity discovered during verification | `spec_ambiguity` | Which spec section, what's unclear |
+
+**Marker format:** Same as implement-agent — `{"type": "...", "task_id": "...", "timestamp": "...", "details": "...", "template_area": "..."}`.
+
+**Rules:** Same as implement-agent — only emit for template-improvement signals, keep concise, don't interrupt verification flow.
+
 ## Separation of Concerns
 
 **Do NOT implement fixes.** Your role is to identify and document issues, not resolve them. Create fix tasks, set the verification result to "fail" (for in-spec issues) or "pass" (when only recommendation-level findings beyond spec exist — recommendations become `out_of_spec: true` tasks), and return control to `/work`. The implement-agent handles all changes.

@@ -4,5 +4,6 @@
   "template_repo": "https://github.com/erikemilsson/claude_code_environment",
   "project_version": "0.1.0",
   "project_initialized": "2026-01-26",
-  "notes": "template_repo points to the environment builder template (used by /health-check template sync). Project's own repo is determined from git remote. Update template_repo if you forked the template."
+  "template_inbox_path": "",
+  "notes": "template_repo points to the environment builder template (used by /health-check template sync). Project's own repo is determined from git remote. Update template_repo if you forked the template. template_inbox_path: local filesystem path to the template repo's interaction-logs/inbox/ directory — used by session export to send friction data back to the template."
 }

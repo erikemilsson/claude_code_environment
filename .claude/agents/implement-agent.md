@@ -282,6 +282,33 @@ If during implementation you realize something doesn't align with spec:
 2. Report back - /work will handle the spec check conversation
 3. Don't proceed with misaligned work
 
+## Friction Markers
+
+During implementation, emit structured friction markers to `.claude/support/workspace/.session-log.jsonl` when encountering situations that suggest template improvement opportunities. Write one JSON line per event using the `Write` tool (append mode — read existing content first, then write with the new line appended).
+
+**When to emit markers:**
+
+| Event | Marker type | What to capture |
+|-------|-------------|-----------------|
+| Workflow step skipped or deviated from | `workflow_deviation` | Which step, why, what was done instead |
+| Spec drift discovered during implementation | `spec_drift` | What drifted, which spec section |
+| Decision made inline (not via decision record) | `informal_decision` | What was decided, why it wasn't formalized |
+| Task scope grew beyond original description | `scope_creep` | Original scope vs. actual, what was added |
+| User feedback on task completion suggests template issue | `user_feedback_signal` | The feedback and which template area it relates to |
+| Blocked by unclear or missing template guidance | `template_gap` | What guidance was needed, how the gap was worked around |
+
+**Marker format:**
+```json
+{"type": "workflow_deviation", "task_id": "7", "timestamp": "2026-03-30T14:30:00Z", "details": "Skipped Step 5 self-review due to trivial change", "template_area": "implement-agent Step 5"}
+```
+
+**Rules:**
+- Only emit markers for events that suggest the template itself could be improved — not for normal implementation challenges
+- Keep details concise (one sentence)
+- Don't emit markers for user-specific preferences (those go in `session_knowledge`)
+- If the session log file doesn't exist, create it with the first marker
+- This is lightweight — don't let marker emission interrupt implementation flow
+
 ## Wind-Down Protocol
 
 When `/work pause` is triggered during implementation, wind down gracefully. Finish the current logical unit if close, otherwise stop. Write `[PARTIAL]`-prefixed completion notes (what's done, what remains), keep status "In Progress", and return control to `/work` for handoff.

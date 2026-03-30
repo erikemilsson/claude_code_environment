@@ -176,6 +176,77 @@ If version transition detected (tasks reference older spec version):
   "Tasks: {total} total — migration needed (see below)"
 ```
 
+### Step 1d: Non-Actionable State Fast Path (auto-detect only)
+
+After Step 1c, check whether the project state has any Claude-actionable work. This avoids running the full analysis pipeline (Steps 2, 2b, 2c, 3) when there's nothing for Claude to do.
+
+**Preconditions (all must be true):**
+- Auto-detect mode (no user request or task ID provided)
+- Tasks exist (not first run / decomposition needed)
+- Spec exists and is complete
+- No tasks in `"In Progress"` status (active work exists)
+- No tasks in `"Awaiting Verification"` status (verification takes priority)
+- No unverified Finished tasks (verification debt takes priority)
+
+**Remaining tasks** = spec tasks where status NOT IN (`"Finished"`, `"Absorbed"`, `"Broken Down"`, `"In Progress"`)
+
+```
+IF remaining_tasks is NOT empty
+   AND every task in remaining_tasks satisfies at least one of:
+     - owner == "human" (regardless of status)
+     - status == "Blocked"
+     - status == "On Hold"
+   → FAST EXIT
+```
+
+**Before presenting fast-exit output:** Verify dashboard freshness (same check as Step 5 item 4). If stale, regenerate first — the user may check the dashboard after seeing this message.
+
+**Fast-exit output by category:**
+
+All human-owned:
+```
+No Claude-actionable work — {N} remaining tasks are human-owned.
+
+Your next actions:
+- Task {id}: "{title}" — {brief description}
+- Task {id}: "{title}" — {brief description}
+
+Run `/work complete {id}` when done with a task.
+```
+
+All Blocked:
+```
+No Claude-actionable work — {N} remaining tasks are blocked.
+
+Blockers:
+- Task {id}: "{title}" — {blocker from notes}
+- Task {id}: "{title}" — {blocker from notes}
+
+Resolve the blockers above, then run `/work` to continue.
+```
+If any blocked task has `decision_dependencies`, suggest `/research {DEC-ID}`.
+
+All On Hold:
+```
+No Claude-actionable work — {N} remaining tasks are on hold.
+
+On hold:
+- Task {id}: "{title}" — {reason from notes}
+
+Resume a task by setting its status to "Pending", then run `/work`.
+```
+
+Mixed non-actionable:
+```
+No Claude-actionable work — {N} remaining tasks: {X} human-owned, {Y} blocked, {Z} on hold.
+
+{list by category, same format as above}
+```
+
+After output, append 1-2 contextual command suggestions (see Contextual Command Suggestions below), then proceed to Step 5 (post-dispatch validation) — skip Steps 2, 2b, 2c, 3, and 4.
+
+If none of the fast-path conditions are met, proceed to Drift Reconciliation / Step 2 as normal.
+
 ### Drift Reconciliation (if triggered)
 
 When Step 1b detects spec drift, the following checks run in sequence. Each delegates to `drift-reconciliation.md` for the full procedure:
@@ -231,6 +302,15 @@ Decision {DEC-NNN}: "{title}" is unresolved and blocks Task {id}.
   [R] Research options (spawns research-agent to investigate and populate the decision record)
   [S] Skip (you'll research manually — non-blocked tasks still dispatch normally)
 ```
+
+**When Claude encounters an ambiguity or choice point** (not covered by an existing decision record), it must surface it to the user rather than deciding silently:
+```
+Ambiguity detected: {description of the choice point}
+  [D] Create decision record (formal tracking)
+  [I] Resolve inline (quick resolution, no formal record)
+  [S] Skip for now
+```
+Claude must never resolve ambiguities autonomously. This applies during routing, spec checking, task dispatch, and any other step where Claude faces a choice the user hasn't explicitly decided.
 
 If user selects `[R]`: Gather context (decision record, spec, related tasks/decisions), then spawn research-agent. See `.claude/commands/research.md` Steps 2-4 for the delegation flow. After research completes, re-present the decision for user selection. If user selects via checkbox, auto-update frontmatter per the phase-decision-gates procedure and continue.
 
@@ -290,16 +370,23 @@ After phase and decision checks, assess whether multiple tasks can be dispatched
    → IF result == "pass" → Route to completion
 8. ELSE IF remaining pending tasks exist (status "Pending", all deps "Finished")
       AND all of them have owner == "human":
+      → (Fallback for cases not caught by Step 1d fast path — e.g., when
+         some tasks are Pending with unmet deps alongside human-ready tasks)
       → Do NOT dispatch an agent
       → Output: summary of human tasks ready + contextual command suggestions (see Contextual Command Suggestions below)
       → Proceed to Step 5 (post-dispatch validation) — skip Step 4
 9. ELSE IF parallel_mode (from Step 2c):
    → Route to parallel execution
-10. ELSE:
-   → Route to implement-agent for next pending task
+10. ELSE IF a pending task exists with owner != "human" AND all deps "Finished":
+   → Route to implement-agent for that task
+11. ELSE:
+   → No eligible tasks — all remaining Claude-owned tasks have unmet dependencies.
+   → Output: "No dispatchable tasks — {N} tasks remain but their dependencies aren't met yet."
+   → List each blocked-by-dependency task with its unmet deps.
+   → Proceed to Step 5 (post-dispatch validation) — skip Step 4
 ```
 
-**Auto-continuation within phases:** After a task finishes (passes per-task verification), `/work` loops back to Step 3 to determine the next action — no user prompt, no pause. Each iteration starts with an inline announcement: `Moving to task {id}: "{title}"`. Before dispatching the next task, check if any human-owned or both-owned tasks just became unblocked — if so, mention them inline: `Note: Task {id} ("{title}") is now available for you — {brief description}`. This continues automatically until a natural stopping point: phase boundary (gate approval needed), blocking decision, or verification failure requiring human escalation. The value of front-loaded decomposition and structured verification is that work flows autonomously between these stops.
+**Auto-continuation within phases:** After a task finishes (passes per-task verification), `/work` loops back to Step 3 to determine the next action — no user prompt, no pause. Each iteration starts with an inline announcement: `Moving to task {id}: "{title}"`. Before dispatching the next task, check if any human-owned or both-owned tasks just became unblocked — if so, mention them inline: `Note: Task {id} ("{title}") is now available for you — {brief description}`. This continues automatically until a natural stopping point: phase boundary (gate approval needed), blocking decision, verification failure requiring human escalation, or all remaining tasks non-actionable (human-owned, blocked, or on hold — see Step 1d). The value of front-loaded decomposition and structured verification is that work flows autonomously between these stops.
 
 **Important — spec tasks vs out-of-spec tasks:** Phase routing is based on spec tasks only (excluding `out_of_spec: true`). Out-of-spec tasks are excluded from **phase detection** (determining whether a phase is complete, triggering phase-level verification, or reaching project completion) to prevent a verify → execute → verify infinite loop. However, out-of-spec tasks still run the **full implement → verify cycle** — they are not exempt from per-task verification. The structural invariant applies universally: no task (spec or out-of-spec) can reach "Finished" without `task_verification.result == "pass"`.
 
@@ -318,6 +405,11 @@ When Step 3 reaches a stopping point (no agent dispatch), append 1-3 relevant co
 | Condition | Suggestion |
 |-----------|------------|
 | All remaining tasks are `owner: human` | "Your next actions: {task list with IDs}. Run `/work complete {id}` when done." |
+| All remaining tasks are `Blocked` | "Resolve blockers above, then run `/work` to continue." |
+| All remaining tasks are `Blocked` with decision deps | "Run `/research {DEC-ID}` to investigate, or resolve blockers manually." |
+| All remaining tasks are `On Hold` | "Resume a task: update its status to Pending, then run `/work`." |
+| Mixed non-actionable (human + blocked + on hold) | "Run `/work complete {id}` for human tasks, resolve blockers, or resume held tasks." |
+| No eligible tasks (deps unmet) | "Waiting on dependencies. Check blocked/human tasks that other tasks depend on." |
 | Phase gate pending approval | "Review the phase gate in the dashboard, then run `/work` to continue." |
 | Unresolved decision blocks work | "Run `/research {DEC-ID}` to investigate, or resolve it in the dashboard." |
 | Spec incomplete | "Run `/iterate` to refine the specification." |
@@ -695,3 +787,62 @@ Read `.claude/support/reference/context-transitions.md` and follow the Path A (U
 - Do NOT increment `verification_attempts` if verify-agent was interrupted
 - Do NOT skip the handoff file — that's the whole point
 - `session_knowledge` captures what would otherwise be lost: user preferences, informal decisions, discovered patterns
+
+### Interaction Assessment (Track 2 — Cross-Project Logging)
+
+After writing the handoff file but before ending the session, generate an interaction assessment. This is the nuanced "why" layer that automated friction markers (Track 1) cannot capture — insights about design pushback opportunities, workflow friction patterns, and observations that only Claude with conversation context can identify.
+
+**Write to:** `.claude/support/workspace/.interaction-assessment.json`
+
+```json
+{
+  "session_date": "YYYY-MM-DD",
+  "template_version": "[from version.json]",
+  "design_pushback_opportunities": [
+    "Description of a moment where Claude should have suggested a different approach"
+  ],
+  "workflow_friction_notes": [
+    "Description of template workflow friction observed during the session"
+  ],
+  "unstructured_observations": "Free-form text about anything else relevant to template improvement"
+}
+```
+
+**Guidelines:**
+- Focus on template-improvement signals, not project-specific details
+- `design_pushback_opportunities` captures the "styler scenario" — moments where a different approach would have been better
+- `workflow_friction_notes` captures repeated user workarounds or skipped steps
+- Keep it concise — this supplements Track 1 markers, not replaces them
+- If the session had no template-relevant observations, write the file with empty arrays
+
+### Session Export
+
+After writing both the handoff file and interaction assessment, compile the session export:
+
+1. Read `.claude/support/workspace/.session-log.jsonl` (Track 1 friction markers, if any exist)
+2. Read `.claude/support/workspace/.interaction-assessment.json` (Track 2, just written above)
+3. Read `.claude/version.json` for template version
+4. Compile into a unified export:
+
+```json
+{
+  "export_version": 1,
+  "source_project": "[project name from git remote or root CLAUDE.md]",
+  "template_version": "[from version.json]",
+  "session_date": "YYYY-MM-DD",
+  "automated_markers": [ /* Track 1 markers from session log */ ],
+  "session_metrics": {
+    "tasks_completed": 0,
+    "verification_pass_rate": 0.0,
+    "recovery_events": 0
+  },
+  "claude_assessment": { /* Track 2 assessment */ },
+  "export_quality": "full"
+}
+```
+
+5. Write to `.claude/support/workspace/.session-export-YYYY-MM-DD.json`
+6. If `template_inbox_path` is configured in `.claude/version.json`, copy the export there
+7. Clean up: delete `.session-log.jsonl` and `.interaction-assessment.json` (data is now in the export)
+
+**If `/work pause` is not run** (PreCompact hook fires instead): The hook compiles a markers-only export (`"export_quality": "markers_only"`, `"claude_assessment": null`) from whatever Track 1 markers exist on disk. See the updated hook in `context-transitions.md`.
