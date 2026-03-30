@@ -58,7 +58,9 @@
       ".claude/tasks/.handoff.json",
       ".claude/support/feedback/feedback.md",
       ".claude/support/feedback/archive.md",
-      ".claude/support/reference/project-*.md"
+      ".claude/support/reference/project-*.md",
+      ".claude/settings.local.json",
+      ".claude/spec_v*.md"
     ]
   },
   "notes": "Paths relative to template root. Use glob patterns. User-created rule files (project-*.md) and reference docs (project-*.md) are ignored by sync."
