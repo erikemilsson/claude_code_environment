@@ -346,9 +346,43 @@ On next `/work` run, Step 0 detects the handoff file before the existing session
 | User preferences | Only if in CLAUDE.md or spec | Preferences stated in conversation |
 | Next action | Derivable from routing logic | Explicit recovery instructions from current session |
 
+### Three Persistence Mechanisms
+
+Three mechanisms serve different time horizons and audiences. They are complementary, not overlapping:
+
+| Mechanism | Time Horizon | Purpose | Created By | Consumed By |
+|-----------|-------------|---------|------------|-------------|
+| **Handoff file** | Next session only | Task routing context — which step, what was promised, recovery state | `/work pause` or PreCompact hook | `/work` Step 0 (auto-deleted after read) |
+| **Plan file** | Until explicitly done | Human-reviewable execution plan — approach, reasoning, steps | User asks Claude to write to workspace | User directive, or `/work` Step 0 discovery |
+| **Auto-memory** | Permanent | Patterns, preferences, hazard warnings | Claude (automatic) | Every session (auto-loaded) |
+
+**Which mechanism when:**
+
+| I want to... | Do this |
+|--------------|---------|
+| Stop for the day, continue with `/work` | `/work pause` → handoff file |
+| Stop for the day, continue with `--continue` | Just close (conversation preserved natively) |
+| Execute a plan with fresh context | Write plan to workspace → `/clear` → "read and execute the plan" (or `/work` auto-discovers it) |
+| Record a hazard for future sessions | Auto-memory (automatic, no action needed) |
+| Resume from a crash | Automatic (PreCompact hook + session recovery) |
+
+**Explore → Plan → Execute** (named workflow):
+
+1. **Explore:** Plan mode or conversation — research, iterate, discuss
+2. **Persist:** "Write this plan to `.claude/support/workspace/plan-{topic}.md`"
+3. **Fresh context:** `/clear` (same session) or new session
+4. **Execute:** "Read the plan and execute it" — or just `/work` (which discovers plan files at Step 0)
+
+**`/work` Step 0 Three-Source Context Gathering:**
+
+On startup, `/work` gathers context from all three mechanisms before making execution decisions:
+1. **Handoff file** (existing) — task routing and recovery state
+2. **Plan files** (new) — scan workspace for recent `plan-*.md` files
+3. **Auto-memory hazards** (new) — check for project-level warnings before executing dangerous operations
+
 **Design principle:** Don't fight compaction, complement it. The handoff file is authoritative environment state; Claude Code's compact summary is best-effort conversation context. Together they give the next session both the structured state and the narrative thread.
 
-**Authoritative files:** `support/reference/context-transitions.md`, `commands/work.md` § Step 0
+**Authoritative files:** `support/reference/context-transitions.md`, `commands/work.md` § Step 0, `rules/session-management.md`
 
 ### Learnings
 
@@ -449,7 +483,7 @@ At session end, both tracks compile into a unified export (`.session-export-YYYY
 | Layer | File | Loaded | Content | Owned By |
 |-------|------|--------|---------|----------|
 | Environment core | `.claude/CLAUDE.md` | Always (session start) | Minimal: model requirement, navigation pointers, critical invariants | Template (sync) |
-| Environment rules | `.claude/rules/*.md` | Always (unconditional) | Modular workflow rules — task management, spec workflow, decisions, dashboard, agents, archiving | Template (sync) |
+| Environment rules | `.claude/rules/*.md` | Always (unconditional) | Modular workflow rules — task management, spec workflow, decisions, dashboard, agents, archiving, session management | Template (sync) |
 | Project instructions | `./CLAUDE.md` (root) | Always (session start) | Tech stack, conventions, gotchas, project-specific context | User/Claude |
 
 **Why three layers:**
@@ -506,8 +540,15 @@ During the build phase, the dashboard surfaces what needs attention and links to
 ### Agents Minimize Shell Execution
 Agents use dedicated tools (Read, Glob, Grep, Edit, Write) for all file operations and reserve Bash exclusively for operations requiring shell execution: git commands, running test suites, executing deliverables, and network requests. When Bash is necessary, agents consolidate related commands into single invocations and degrade gracefully if permission is denied (e.g., scope validation skips rather than blocks). This minimizes permission prompts when agents run as subagents.
 
+### Dangerous Operations Require Safety Checks
+
+Before executing resource-intensive or potentially destructive operations (dev servers, builds, heavy processes), Claude consults auto-memory and `.claude/support/reference/known-issues.md` for known hazards, then confirms with the user when warnings exist. `/work` Step 0 gathers hazard context before any execution decisions, and Step 4 gates dangerous process launches behind user confirmation when prior warnings are found. The rule: never auto-execute something a previous session flagged as dangerous.
+
 ### Edits Preserve File Integrity
 When modifying structured documents (Markdown, JSON, YAML), agents prefer full file rewrites over incremental piecemeal edits when changes touch multiple sections or more than a third of the document. Incremental Edit is appropriate for surgical single-point changes; Write (full rewrite) is safer when changes are distributed across the file. Agents never use shell text manipulation (sed, awk) for document editing — these are error-prone for structured content and have caused file corruption in practice. After multi-file changes within a single task, implement-agent flags the scope in its completion notes so verify-agent can calibrate its consistency check.
+
+### Flat Project Layout
+The app owns the repo root. `.claude/` is a dotfile directory within the project, like `.git/` or `.vscode/`. The template does not wrap the user's app in a subdirectory — it lives alongside the app as invisible infrastructure. This follows the universal convention of AI coding tools (Cursor, Windsurf, Copilot, Devin) and avoids framework tooling conflicts (Turbopack, Vite, etc.) that occur when apps don't live at the repo root. See DEC-003 in `decisions/` for the full research.
 
 ### Domain Agnosticism
 Nothing in the system assumes software development. Dashboard language, task tracking, verification, and all features adapt to whatever domain the project is in.

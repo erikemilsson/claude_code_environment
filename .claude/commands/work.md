@@ -55,6 +55,23 @@ When implementation work unblocks a human-owned or both-owned task, mention it i
 
 ### Step 0: Context Restoration and Session Recovery
 
+#### Step 0 Preamble: Hazard Check
+
+Before any execution decisions, check for known hazards.
+
+```
+1. Scan auto-memory for project-level warnings about dangerous operations
+   (dev server crashes, resource-intensive builds, known environment issues)
+
+2. Read .claude/support/reference/known-issues.md if it exists
+   Match entries against the project's tech stack and directory layout
+
+3. Store relevant hazards in working context as known_hazards[]
+   These are consulted in Step 4 before spawning agents.
+```
+
+This is a lightweight read — negligible overhead, prevents repeating known-dangerous operations.
+
 #### Step 0a: Handoff Detection
 
 Check for a context transition handoff from a previous session before anything else.
@@ -84,6 +101,31 @@ Check for a context transition handoff from a previous session before anything e
 ```
 
 **Full procedure:** `.claude/support/reference/context-transitions.md` § "Restoration"
+
+#### Step 0a2: Plan File Discovery
+
+Check for workspace plan files from a previous session.
+
+```
+1. Glob for .claude/support/workspace/plan-*.md
+   IF no matches → skip to Step 0b
+
+2. For each plan file, check modification time
+   IF older than 7 days → skip (stale)
+
+3. Present discovered plans:
+   "Found plan file(s):
+    - plan-{topic}.md ({relative time ago})
+   
+   [E] Execute plan | [I] Inspect first | [S] Skip"
+
+4. IF [E]: Read plan file, use as primary work directive
+      (overrides auto-detect routing in Step 3)
+   IF [I]: Display plan contents, then re-prompt [E] or [S]
+   IF [S]: Continue to Step 0b (plan remains on disk for later)
+```
+
+**Plan files are not auto-deleted** — unlike handoff files, they persist until the user removes them. This allows re-reading and editing across multiple sessions.
 
 #### Step 0b: Session Recovery Check
 
@@ -446,6 +488,19 @@ When a task involves human action (owner `"human"` or `"both"`, or `user_review_
 The `interaction_hint` is set by verify-agent during Step T4b/T7. `/work` respects the hint but users can always override by using `/work complete {id}` from the dashboard flow.
 
 ### Step 4: Execute Action
+
+#### Safety Gate (all execution paths)
+
+Before spawning any agent, check `known_hazards[]` (from Step 0 Preamble):
+
+```
+IF the task involves operations matching a known hazard:
+  "⚠️ Known issue: {hazard description}
+   This task involves {matching operation}.
+   [P] Proceed | [S] Skip task | [W] Use workaround: {specific fix}"
+```
+
+The safety gate applies to implement-agent dispatch, verify-agent runtime validation, and phase-level verification — any path that may launch processes.
 
 #### If Decomposing (spec → tasks)
 

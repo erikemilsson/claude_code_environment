@@ -50,6 +50,16 @@ This environment is designed for **Claude Opus 4.6** (`claude-opus-4-6`). All ag
 | `/breakdown {id}` | Split complex tasks into subtasks |
 | `/health-check` | Validate system health and template sync |
 
+## Session Management
+
+**Ending a session:** Run `/work pause` before closing a long conversation. This writes a handoff file that the next `/work` picks up automatically. Without it, the next session re-derives state from task files alone and may miss context.
+
+**Resuming:** Use `claude --continue` (last session) or `claude --resume` (pick from list) to resume with full conversation context. A fresh `/work` in a new conversation works but relies on handoff files and auto-memory — it won't have the reasoning from the previous session.
+
+**Mid-session context pressure:** Use `/compact focus on [what matters]` to summarize while preserving specific context. CLAUDE.md and rules files survive compaction automatically.
+
+**Plans:** Write plans to files (`.claude/support/workspace/`), not conversation context. To explore, plan, then execute with fresh context: discuss the plan, have Claude write it to a file, `/clear`, then tell Claude to read and execute the plan file. This replaces the old "compact with plan" workflow.
+
 ## Design Philosophy
 
 This environment is domain-agnostic — it works for software, research, procurement, renovation, or any spec-driven project. Dashboard language, task tracking, and verification adapt to the project domain.
@@ -63,6 +73,7 @@ Detailed workflow rules are in `.claude/rules/`:
 - `dashboard.md` — navigation hub, interaction modes, regeneration strategy
 - `agents.md` — agent separation, tool preferences, model requirement
 - `archiving.md` — file placement, archive locations, credentials
+- `session-management.md` — ending sessions, resuming, plans, context survival
 
 ## Glossary
 

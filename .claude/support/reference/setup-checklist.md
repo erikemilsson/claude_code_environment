@@ -14,7 +14,17 @@ Look for unfilled template placeholders:
 ✓ Pass: No placeholders found
 ⚠ Warn: Placeholders remain — list which ones
 
-### 2. `version.json` Configuration
+### 2. Project Layout Check
+
+Verify the project uses flat layout (app at repo root, recommended since template v2.0):
+
+- Check for `package.json` (or equivalent project manifest) at the repo root
+- Check that no `app/` subdirectory contains a separate `package.json` (subdirectory layout)
+
+✓ Pass: App files at repo root (flat layout)
+⚠ Warn: App appears to be in a subdirectory — see `.claude/support/reference/known-issues.md` KI-001 for potential framework tooling issues. The template works in both layouts, but flat layout avoids dev server and build tool friction.
+
+### 3. `version.json` Configuration
 
 Check that `.claude/version.json` exists and has a `template_repo` field pointing to the upstream template repository:
 ```json
