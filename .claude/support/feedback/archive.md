@@ -86,3 +86,27 @@ Three-lane model (handoff/plan/memory) with clear decision table, explore→plan
 
 New design principle: never auto-execute flagged-dangerous operations. `/work` Step 0 consults auto-memory and known-issues before execution, Step 4 gates dangerous processes behind user confirmation.
 
+## FB-014: Dashboard Mermaid diagrams are unreadable at scale — need diagram rules overhaul
+
+**Status:** promoted
+**Captured:** 2026-04-10
+**Refined:** 2026-04-14 — Reframe the dashboard diagram's purpose from "project overview" to "orientation snapshot": show where the user is now and what's next in line, with dependency detail on upcoming tasks. It does not need uniformly-sized boxes for every task or phase. The current approach works up to ~10 tasks and breaks beyond that. Mermaid is preferred but not mandatory. Scope: diagram-generation rules in `dashboard-regeneration.md` and `rules/dashboard.md`. Large-project rendering should zoom in on the active frontier rather than fitting the whole project on one canvas.
+**Assessed:** 2026-04-14 — Primary rewrite target: `dashboard-regeneration.md` § "Project Overview Diagram" — remove `graph LR` as hard rule, drop the ">15 nodes" critical-path-only threshold, revisit the 4-task render threshold, switch labeling model to frontier-vs-context, and shift scaling from "fit everything" to "show the frontier". Direct template edit — no decision record needed.
+**Promoted:** 2026-04-14 — Incorporated into `system-overview.md` § Communication: Dashboard and CLI-Direct → "Dashboard visualization features" (Orientation diagram bullet). Follow-up work targets `dashboard-regeneration.md` § "Project Overview Diagram" and `rules/dashboard.md` § Scaling.
+
+## FB-016: Feedback review should persist review notes for /iterate handoff
+
+**Status:** promoted
+**Captured:** 2026-04-13
+**Refined:** 2026-04-14 — Phase 2 refinement Q&A and Phase 3 impact assessment Q&A both generate context (scoping decisions, motivation, priority signals, "explicitly not X" boundaries) that is lost after the one-line `**Refined:**` / `**Assessed:**` summaries. Add a `**Review notes:**` section captured at both trigger points (end of Phase 2 refinement, and on `[Y] Approve` in Phase 3). The command must explicitly prompt the user for review notes — do not auto-generate from the conversation (fabrication risk). Prefer noisier UX over silent drift. Scope: `commands/feedback.md` Phase 2 and Phase 3 flow.
+**Assessed:** 2026-04-14 — Isolated to `commands/feedback.md`. `commands/iterate.md` already reads ready items — no logic change, just benefits from richer source. Dependency: FB-018 also edits Phase 2 flow — bundle implementation. Review notes apply after `[R] Refine` Q&A only, not after `[P] Promote`.
+**Promoted:** 2026-04-14 — Incorporated into `system-overview.md` § Feature Catalog → Feedback System (Review notes persistence). Follow-up work targets `commands/feedback.md` Phase 2 Refine flow and Phase 3 Approve flow.
+
+## FB-018: /feedback review Phase 2 options need clarification and a "proceed without refining" path
+
+**Status:** promoted
+**Captured:** 2026-04-14
+**Refined:** 2026-04-14 — Two UX gaps: (1) inline option prompts like `[R] / [C] / [N] / [S]` need a short one-line gloss on every letter; a single legend printed once is not enough — the gloss must ride with every prompt. (2) Add `[P] Promote — mark refined using current text` in Phase 2 that skips Q&A refinement and sets status to `refined` using the capture text. Phase 2 only — Phase 3 keeps its `[Y] Approve` gate. Scope: `commands/feedback.md` Phase 2 prompts and option handling.
+**Assessed:** 2026-04-14 — Isolated to `commands/feedback.md`: add glosses everywhere option menus appear and add a `[P] Promote` action handler. Dependency: FB-016 (Review notes) — bundle implementation since both edit Phase 2; Review notes apply after `[R] Refine` Q&A only, not after `[P] Promote`.
+**Promoted:** 2026-04-14 — Incorporated into `system-overview.md` § Feature Catalog → Feedback System (Promote path). Follow-up work targets `commands/feedback.md` Phase 2 prompts (glosses on every option menu) and the new `[P] Promote` action handler.
+

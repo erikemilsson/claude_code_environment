@@ -16,6 +16,16 @@ When modifying template files (commands, agents, rules, reference docs), Claude 
 
 This is lightweight governance, not the full spec/task/dashboard workflow (which is template content, not a tool for managing the template itself).
 
+### Pending Template Decisions
+
+Some template improvements require architectural choices before implementation. Active decision records live in root `decisions/` (template-maintenance only — ephemeral, removed once resolved and encoded into template files). Check that folder before starting work on:
+
+- **Subagent capability contract** — whether subagents spawned by `/work` own task state transitions (implement-agent Steps 6a/6b) or the orchestrator does. Relates to FB-010.
+- **Base `allowedTools` shipping policy** — whether the template ships `.claude/settings.json` with a base `allowedTools` set, and what merge strategy `/health-check` uses. Relates to FB-012.
+- **Phase gate flexibility** — how to let long-running human-owned tasks cross phase boundaries without breaking the software-domain invariant. Relates to FB-013.
+
+When a decision record is resolved and its conclusions land in template files, remove it from root `decisions/`.
+
 ---
 
 ## What This System Is
@@ -150,7 +160,7 @@ The dashboard remains the default. CLI-direct is used when the task is synchrono
 
 **Dashboard visualization features:**
 - **Critical path** — computed from dependency graph: longest path with parallel branches shown in `[ | ]` notation, owner tags (`❗` human, `🤖` claude, `👥` both), decision nodes included
-- **Project overview diagram** — inline Mermaid diagram: completed phases collapsed into single nodes, completed tasks folded away, active/pending tasks with ownership prefix, decisions as diamond nodes, clumping when >15 active nodes
+- **Orientation diagram** — inline diagram in the Progress section showing where the user is now and what's next, with dependency detail on upcoming tasks. Not a full-project overview: completed phases collapse, pending far-future work is deferred, the active frontier gets the focus. Mermaid is preferred but not required — representation may shift to alternatives (focused sub-graph, phase-grouped list, script-generated SVG) when diagrams stop aiding orientation. Driven by rules in `support/reference/dashboard-regeneration.md` § "Project Overview Diagram".
 - **Completed task summarization** — phases with 10+ finished tasks render as a summary line (`N tasks finished`) instead of listing each individually
 - **Partially actionable phase status** — phases not yet "Active" but with tasks whose dependencies are all satisfied show as `Partially Actionable` instead of `Blocked`, with eligible task IDs listed
 - **Repair indicator** — Finished tasks with multiple verification attempts show as `Finished (N retries)` in the Tasks section
@@ -415,6 +425,10 @@ On startup, `/work` gathers context from all three mechanisms before making exec
 1. **Overview & Grouping** — Show all active items. Claude suggests which could combine (shared themes, affected areas). User confirms or adjusts. Combined items' originals are absorbed (status `absorbed`, moved to `archive.md` with pointer to new combined entry).
 2. **Refinement** — Per item: Claude asks directed questions, distills the core insight into a `**Refined:**` line, confirms the user is satisfied. Status → `refined`.
 3. **Impact Assessment** — User-initiated, per item. Claude reads the spec and active task files, presents structured assessment (spec sections affected, active task impact, scope change, decision conflicts, phase impact). User approves → status → `ready`. User can also close items here.
+
+**Review notes persistence:** At the end of Phase 2 refinement Q&A and on `[Y] Approve` in Phase 3, Claude explicitly prompts the user for 2-4 sentences of review context — scoping decisions, motivation, priority signals, and "explicitly not X" boundaries. These `**Review notes:**` persist alongside the refined insight so `/iterate` sessions in fresh conversations carry forward the reasoning that shaped the refinement.
+
+**Promote path (Phase 2):** When a captured item is already well-structured and doesn't need clarifying Q&A, the user can select `[P] Promote` — Claude marks the item `refined` using the capture text as-is, skipping refinement Q&A. Phase 3 keeps its `[Y] Approve` gate; there is no promote-without-assessment shortcut.
 
 Only `ready` items are eligible for `/iterate`. This ensures feedback is never incorporated without explicit assessment of its impact on existing work.
 
