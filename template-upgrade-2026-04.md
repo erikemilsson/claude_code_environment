@@ -37,28 +37,22 @@ User retains approval authority at every intake and edit point. Claude does not 
 
 ## Current State
 
-- **Active phase:** Phase 0 — Hygiene
-- **Next action:** Root file cleanup + Opus 4.7 reference sweep
+- **Active phase:** Phase 1 — Implement approved decisions
+- **Next action:** Read `decisions/decision-004-subagent-capability-contract.md` to confirm selected option; then plan implementation touchpoints
 - **Blocked on:** nothing
 
 ---
 
 ## Phases
 
-### Phase 0 — Hygiene
+### Phase 0 — Hygiene ✓ Complete (commits `40f80a5`, `05a17f2`)
 
-- [ ] **Root file cleanup** — delete: `coworkfolderspec.md`, `insights-report.html`, `migration-guide.md`, `migration-plan-v2-flat-layout.md`, `.DS_Store`
-- [ ] **Add `.DS_Store` to `.gitignore`** (verify not already present)
-- [ ] **Keep at root:** `dashboard_example_SIREN.pdf`, `dashboard_export_SIREN_new.pdf` (references for FB-014/FB-015)
-- [ ] **Opus 4.7 reference sweep** — grep for `claude-opus-4-6` and `Opus 4.6`; update in:
-  - `.claude/CLAUDE.md` § Model Requirement
-  - `.claude/rules/agents.md` § Model Requirement
-  - `.claude/agents/implement-agent.md` frontmatter
-  - `.claude/agents/verify-agent.md` frontmatter
-  - `.claude/agents/research-agent.md` frontmatter
-  - Any other occurrences
-- [ ] **Version bump** — `.claude/version.json` (decide scope at Phase 5 based on what landed)
-- [ ] **Verify pre-commit hook installed** per root `CLAUDE.md`
+- [x] **Root file cleanup** — deleted `coworkfolderspec.md`, `insights-report.html`, `migration-guide.md`, `migration-plan-v2-flat-layout.md`, `.DS_Store`; tracked `dashboard_example_SIREN.pdf`
+- [x] **`.gitignore`** — `.DS_Store` already present (lines 5-6), no edit needed
+- [x] **Opus 4.7 reference sweep** — 19 occurrences updated across 12 files; pinned `claude-opus-4-7[1m]` in docs, alias `opus[1m]` in Task spawns
+- [x] **Context discipline note** added to `.claude/CLAUDE.md` § Model Requirement
+- [x] **Pre-commit hook** — verified functional (warned on version.json during 4.7 commit)
+- [ ] **Version bump** — deferred to Phase 5 (decide scope once total changes known)
 
 ### Phase 1 — Implement approved decisions
 
@@ -178,8 +172,12 @@ Every working file for this upgrade is tagged. `DELETE-AFTER` items removed in P
 - Audited root for stale artifacts: 5 files flagged for deletion, 2 SIREN PDFs to keep as references
 - Built collision map from existing `**Assessed:**` lines + Opus 4.7 touchpoints — 4 hot files identified
 - Agreed on 6-phase structure with file-level grouping for implementation
+- Established Control and Commits section — user approves intake and edit units; one commit per logical unit
+- **Executed Phase 0** (commits `40f80a5` root cleanup, `05a17f2` Opus 4.7 sweep)
+- Verified Task spawn syntax via claude-code-guide agent: `opus[1m]` alias forces 1M context; plain `opus` resolves to non-1M
+- Added context-discipline note to `.claude/CLAUDE.md` — 1M is headroom, not license
 
-**Next:** Execute Phase 0 — root file cleanup, `.gitignore` update, Opus 4.7 sweep.
+**Next:** Phase 1 — implement DEC-004 (subagent capability contract). Read decision record first to confirm selected option, then plan touchpoints across `commands/work.md`, `agents/implement-agent.md`, `agents/verify-agent.md`, `rules/agents.md`, `system-overview.md`.
 
 **Open questions for later:**
 - Version bump scope (major/minor/patch) — decide at Phase 5 based on landed changes; DEC-004 may change agent contract meaningfully (potential major)
