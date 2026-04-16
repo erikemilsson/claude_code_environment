@@ -2,8 +2,8 @@
 
 **Purpose:** Coordinate multi-session template improvements from three inputs (Opus 4.7 upgrade, Claude Code best-practices doc, usage insights report) alongside the existing feedback backlog and approved decisions.
 
-**Status:** Phase 0 — Hygiene
-**Last updated:** 2026-04-16
+**Status:** Phase 1 — Implement approved decisions
+**Last updated:** 2026-04-17
 
 ---
 
@@ -38,8 +38,8 @@ User retains approval authority at every intake and edit point. Claude does not 
 ## Current State
 
 - **Active phase:** Phase 1 — Implement approved decisions
-- **Next action:** Fresh session reads `plan-dec-004-implementation.md` and executes DEC-004 rewrite across 6 files (implement-agent.md, verify-agent.md, work.md, parallel-execution.md, system-overview.md, rules/agents.md)
-- **Blocked on:** nothing — plan is complete, ready to execute with a clean context
+- **Next action:** DEC-005 — Base allowedTools shipping policy (read `decisions/decision-005-base-allowedtools-shipping-policy.md`, plan touchpoints, execute)
+- **Blocked on:** nothing — DEC-004 implementation complete (commit pending)
 
 ---
 
@@ -58,7 +58,7 @@ User retains approval authority at every intake and edit point. Claude does not 
 
 Decisions already researched and approved (commit `55c1040`). Read each decision record first to confirm the selected option's scope matches the feedback `**Assessed:**` line (scope may have narrowed during research).
 
-- [ ] **DEC-004** — Subagent capability contract → `decisions/decision-004-subagent-capability-contract.md`. Closes FB-010.
+- [x] **DEC-004** — Subagent capability contract → `decisions/decision-004-subagent-capability-contract.md`. Closes FB-010. *(Option B implemented 2026-04-17 — orchestrator owns all `.claude/` state transitions.)*
 - [ ] **DEC-005** — Base allowedTools shipping policy → `decisions/decision-005-base-allowedtools-shipping-policy.md`. Closes FB-012.
 - [ ] **DEC-006** — Phase gate flexibility → `decisions/decision-006-phase-gate-flexibility.md`. Closes FB-013.
 
@@ -115,12 +115,12 @@ Rows = files. Columns = in-flight items. Cells = section/step affected (or `•`
 
 | File | DEC-004 | DEC-005 | DEC-006 | FB-011 | FB-015 | FB-017 | Opus 4.7 | Best-prac | Usage |
 |------|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| `commands/work.md` | Step 4 | | Step 4 | | • | Step 2b | | TBD | TBD |
-| `system-overview.md` | atomic contract | file boundary | invariant | | | | sweep | TBD | TBD |
+| `commands/work.md` | ~~Step 4~~ ✓ | | Step 4 | | • | Step 2b | | TBD | TBD |
+| `system-overview.md` | ~~atomic contract~~ ✓ | file boundary | invariant | | | | sweep | TBD | TBD |
 | `commands/health-check.md` | | Part 5 merge | Part 1 gate | | Part 6 | | | TBD | TBD |
-| `rules/agents.md` | Context Separation | | | | | | model req | TBD | TBD |
-| `.claude/agents/implement-agent.md` | Steps 3, 6a-c | | | Steps 3, 6a, 6c | | | frontmatter | TBD | TBD |
-| `.claude/agents/verify-agent.md` | T6, T7 | | | | | | frontmatter | TBD | TBD |
+| `rules/agents.md` | ~~Context Separation~~ ✓ | | | | | | model req | TBD | TBD |
+| `.claude/agents/implement-agent.md` | ~~Steps 3, 6a-c~~ ✓ | | | Steps 3, 6a, 6c | | | frontmatter | TBD | TBD |
+| `.claude/agents/verify-agent.md` | ~~T6, T7~~ ✓ | | | | | | frontmatter | TBD | TBD |
 | `.claude/agents/research-agent.md` | | | | | | | frontmatter | TBD | TBD |
 | `.claude/CLAUDE.md` | | file-boundary | | | | | model req | TBD | TBD |
 | `rules/task-management.md` | | | • | | | | | TBD | TBD |
@@ -192,6 +192,23 @@ Every working file for this upgrade is tagged. `DELETE-AFTER` items removed in P
 **Next:** Fresh session (new conversation or `/clear` then resume) reads `plan-dec-004-implementation.md` and executes the 6-file rewrite. Commit message already drafted in the plan.
 
 **Open questions for later:** None for DEC-004. DEC-005 and DEC-006 still pending after.
+
+### 2026-04-17 — DEC-004 execution
+
+**Done:**
+- Executed `plan-dec-004-implementation.md` across all 6 target files:
+  - `.claude/agents/implement-agent.md` — full rewrite; Steps 3/6a/6b/6c collapsed into Step 6 "Return Structured Report" with JSON contract; friction-marker and handoff guidance rewritten to match report-returning model
+  - `.claude/agents/verify-agent.md` — full rewrite; T6/T7 + phase Steps 6/7 restructured as return schemas (per-task + phase-level); `task_verification` persistence, `verification-result.json` writes, and fix-task creation all moved to orchestrator contract; turn-budget and wind-down protocols rewritten
+  - `.claude/commands/work.md` — Step 4 gains "State Persistence Protocol" sub-section with full after-implement-agent / after-verify-agent (per-task + phase-level) procedures; the 4 existing execution sub-sections reference it
+  - `.claude/support/reference/parallel-execution.md` — Write Ownership Rules table reversed (orchestrator is sole writer); Section 3 spawn prompt requires structured reports; Section 4 collect loop processes implement-agent reports and dispatches per-task verify-agents individually
+  - `system-overview.md` — atomic contract reframed (implement→verify invariant preserved, writer moved to orchestrator); fresh-eyes framing clarified in "Context Separation" and "Two-Agent Verification" sections; DEC-004 references added
+  - `.claude/rules/agents.md` — Context Separation updated; new "State Ownership" section; Tool Preferences note added re: subagent harness constraints
+- Cleared stale references in 3 further docs (outside the 6 but surfaced by grep): `workflow.md` (build-workflow step list, guided-testing flow), `task-schema.md` ("Awaiting Verification" attribution), `shared-definitions.md` (agent glossary entries), `context-transitions.md` (wind-down step mapping)
+- Grep verification: remaining `Step 6[abc]` / "verify-agent writes" references are confined to `plan-dec-004-implementation.md`, `decisions/decision-004-*.md`, `decisions/.archive/`, `.claude/support/feedback/feedback.md` (FB-010 historical context), and `tests/scenarios/` (not in this commit's scope)
+
+**Next:** Commit the DEC-004 changes, then proceed to DEC-005 (base `allowedTools` shipping policy).
+
+**Open questions for later:** Tests in `tests/scenarios/08-verification-gate-integrity.md` and `tests/scenarios/11-non-software-project.md` still describe the old "implement-agent writes task_verification" state — update in a follow-up commit or during Phase 5 cleanup.
 
 **Open questions for later:**
 - Version bump scope (major/minor/patch) — decide at Phase 5 based on landed changes; DEC-004 may change agent contract meaningfully (potential major)

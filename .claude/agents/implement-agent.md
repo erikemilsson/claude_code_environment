@@ -54,10 +54,7 @@ The `/work` command directs you to follow this workflow when:
 
 ## Outputs
 
-- Completed deliverables and new files
-- Updated task status ("Awaiting Verification" after implementation, then "Finished" after verification passes)
-- Completion notes on task
-- Issues discovered (flagged or new tasks created)
+The agent returns a structured implementation report (see Step 6 below). The orchestrator consumes this report and performs all task-JSON state transitions, friction-marker persistence, and dashboard regeneration. Agents never write to `.claude/` paths — that write class is owned by `/work` (see DEC-004).
 
 ## How This Workflow Is Invoked
 
@@ -98,19 +95,7 @@ Before starting:
 
 ### Step 3: Set In Progress
 
-**Required artifact:** Update task JSON file to "In Progress" **before starting any implementation work.** This is the checkpoint that proves the workflow is being followed — a task that jumps directly from "Pending" to "Finished" without passing through "In Progress" indicates the workflow was bypassed.
-
-Update task status:
-```json
-{
-  "status": "In Progress",
-  "updated_date": "YYYY-MM-DD"
-}
-```
-
-**Dashboard regeneration:** After setting "In Progress", regenerate the dashboard per `.claude/support/reference/dashboard-regeneration.md`. In parallel mode, skip this (coordinator handles it).
-
-In sequential mode: one task "In Progress" at a time. In parallel mode (dispatched by `/work`): multiple tasks allowed — `/work` manages eligibility and file conflict checks.
+The orchestrator sets task status to "In Progress" before dispatching this agent. You do not write this transition yourself. Start implementation assuming the task is already "In Progress" per the orchestrator.
 
 ### Step 4: Implement
 
@@ -124,167 +109,120 @@ Do the work:
 
 ### Step 5: Self-Review
 
-**Required artifact:** Document the review in the task notes (even briefly). A task completed without any self-review note indicates this step was skipped.
+**Required artifact:** Document the review in your return report's `notes` field (even briefly). A task completed without any self-review note indicates this step was skipped.
 
-Before marking complete:
+Before returning:
 - Review all changes made
 - Check for errors and edge cases
 - Verify against task requirements
 - For multi-file changes: spot-check cross-file consistency (stale references, broken links, terminology alignment between modified files)
 - Run existing tests or validation checks if available
 
+### Step 6: Return Structured Report
 
-### Step 6: Document and Trigger Verification
+After self-review (Step 5), construct and return the structured implementation report per the schema below. Do not attempt to write to `.claude/tasks/`, do not attempt to spawn verify-agent — subagents cannot do either, and the orchestrator handles both.
 
-Implementation and verification are a single atomic operation. A task only reaches "Finished" if verification passes.
+**Return schema:**
 
-#### Step 6a: Mark Ready for Verification
-
-Update task with transitional status:
 ```json
 {
-  "status": "Awaiting Verification",
-  "completion_date": "2026-01-26",
-  "updated_date": "2026-01-26",
-  "notes": "Implemented login flow. Updated configuration. Added validation. [Multi-file: 3 files modified]"
+  "task_id": "string (e.g., '7' or '7.2')",
+  "implementation_status": "completed | partial | blocked | misaligned",
+  "completion_date": "YYYY-MM-DD (null if not completed)",
+  "notes": "one-paragraph summary including [Multi-file: N] flag when N>=2 files modified",
+  "files_modified": ["relative/path/to/file"],
+  "friction_markers": [
+    {
+      "type": "workflow_deviation | spec_drift | informal_decision | scope_creep | user_feedback_signal | template_gap",
+      "timestamp": "ISO 8601",
+      "details": "one-sentence summary",
+      "template_area": "which template file/section the marker applies to"
+    }
+  ],
+  "issues_discovered": [
+    {
+      "type": "blocker | non_blocking | scope_creep | spec_drift | decision_made | spec_misalignment",
+      "description": "one-sentence description",
+      "suggested_action": "create new task | flag for human | proceed | stop and report"
+    }
+  ]
 }
 ```
 
-**Multi-file scope flag:** When the task modified multiple files, note the count in completion notes (e.g., `[Multi-file: 5 files modified]`). This signals verify-agent to calibrate its cross-file consistency check — single-file tasks need minimal consistency checking, while multi-file tasks need thorough cross-reference validation.
+**Completion status values:**
+- `completed` — all work done per spec, ready for verification
+- `partial` — wind-down triggered mid-implementation; orchestrator leaves status as "In Progress" with `[PARTIAL]` notes
+- `blocked` — cannot proceed; orchestrator sets status to "Blocked"
+- `misaligned` — implementation revealed spec conflict; orchestrator handles spec-check conversation
 
-**Dashboard regeneration:** After setting "Awaiting Verification", regenerate the dashboard per `.claude/support/reference/dashboard-regeneration.md`. In parallel mode, skip this (coordinator handles it).
+**Multi-file scope flag:** When the task modified multiple files, include the count in `notes` (e.g., `[Multi-file: 5 files modified]`). This signals verify-agent to calibrate its cross-file consistency check — single-file tasks need minimal consistency checking, while multi-file tasks need thorough cross-reference validation.
 
-**Separation of concerns:**
-- Do NOT write `task_verification` field — that is verify-agent's exclusive responsibility
-- Do NOT write `verification-result.json` — that is verify-agent's exclusive responsibility
+**What the orchestrator does with your report:**
+- For `completed`: sets status to "Awaiting Verification", writes your notes/completion_date, dispatches verify-agent
+- For `partial`: leaves status "In Progress", prepends `[PARTIAL]` to notes, returns control to `/work`
+- For `blocked`: sets status to "Blocked", returns control with your `issues_discovered` list
+- For `misaligned`: does not advance status, routes to spec-alignment flow
 
-#### Step 6b: Trigger Per-Task Verification (MANDATORY)
-
-Immediately after setting "Awaiting Verification", **spawn a separate agent** for verification. This ensures genuine context separation — the verifier does not share the implementation conversation and cannot be biased by it.
-
-**Spawn the verify-agent using the `Task` tool:**
-
-```
-Task tool call:
-  subagent_type: "general-purpose"
-  model: "opus[1m]"
-  max_turns: 30
-  description: "Verify task {id}"
-  prompt: |
-    You are the verify-agent. Read `.claude/agents/verify-agent.md` and follow
-    the Per-Task Verification Workflow (Steps T1-T8) for this task.
-
-    Task file: .claude/tasks/task-{id}.json
-    Spec file: .claude/spec_v{N}.md (section: "{spec_section}")
-
-    Verify the implementation independently. Do NOT assume correctness.
-```
-
-The verify-agent file contains the full Turn Budget Protocol, verification steps, and result handling. The spawn prompt only needs to specify mode, task, and spec context.
-
-**Timeout handling:** If the agent exhausts `max_turns` without writing a result, treat this as verification failure:
-- Increment `verification_attempts` on the task JSON (read current value, +1, write back)
-- Set task status to "Blocked"
-- Add note: `[VERIFICATION TIMEOUT] verify-agent did not complete within max_turns limit`
-- Report to user: the task needs manual verification or a retry
-
-
-**Handle the result:**
-
-| Result | What Happens |
-|--------|--------------|
-| **Pass** | verify-agent sets status to "Finished" with `task_verification.result = "pass"` |
-| **Fail** | verify-agent sets status to "In Progress" with `[VERIFICATION FAIL #N]` notes (N = attempt count). Return to Step 4 to fix issues, then re-verify. After 3 total attempts, verify-agent sets status to "Blocked" instead. |
-
-**This is atomic:** implement → verify. The gap where tasks could be "Finished" without verification no longer exists.
-
-#### Step 6c: Post-Verification Cleanup
-
-After verification completes (pass or fail):
-
-**Parallel Mode Detection:** If your Task instructions include "DO NOT regenerate dashboard", you are running as a parallel agent dispatched by `/work`. In parallel mode:
-- Do NOT regenerate dashboard (coordinator handles it)
-- Do NOT check parent auto-completion (coordinator handles it)
-- Do NOT select next task
-- Return your results immediately to the coordinator
-
-**If running in sequential mode (normal):**
-
-**If verification passed:**
-- Check parent auto-completion:
-  - If this task has a `parent_task` field
-  - And all sibling subtasks are now "Finished"
-  - Set the parent task status to "Finished"
-
-**Always (pass or fail):**
-- Update dashboard.md in place from source data per `.claude/support/reference/dashboard-regeneration.md`
-  - Source of truth: only tasks with corresponding task-*.json files
-  - Preserve Notes section between `<!-- USER SECTION -->` markers
-
-**MANDATORY: Return control to `/work` after completing this step.**
-- Do NOT proceed to the next task
-- `/work` will select the next task or route to phase-level verification if all tasks done
+In all cases, the orchestrator appends your `friction_markers` to `.claude/support/workspace/.session-log.jsonl` and regenerates the dashboard (per phase-end policy). You do not perform any of these persistence steps yourself.
 
 ## Implementation Guidelines
 
 ### Scope Discipline
 
 Stay within task boundaries:
-- If you discover needed changes outside scope, note them for new tasks
-- If a task reveals bigger issues, flag for human review
+- If you discover needed changes outside scope, include them in your report's `issues_discovered` list so the orchestrator can create new tasks
+- If a task reveals bigger issues, flag via `issues_discovered` for human review
 - Don't gold-plate (add unrequested polish)
 
 ### Progress Tracking
 
-For larger tasks, update notes with progress:
-```json
-{
-  "notes": "Phase 1/3: Database schema created. Starting API routes next."
-}
-```
+For larger tasks, include progress information in the `notes` field of your return report (e.g., "Phase 1/3: Database schema created. Starting API routes next."). The orchestrator writes these notes to the task JSON.
 
 ## Handling Issues
 
 ### Blocking Issues
 
 If you cannot proceed:
-1. Set status to "Blocked"
-2. Document blocker in notes
-3. Flag the ambiguity for human clarification (ask directly via conversation)
-4. Report back to /work
+1. Return your report with `implementation_status: "blocked"`
+2. Document the blocker in `notes`
+3. Include specifics in `issues_discovered` (type: `blocker`, suggested_action: `flag for human`)
+4. The orchestrator sets task status to "Blocked" and surfaces the blocker to the user
 
 ### Non-Blocking Issues
 
-If you discover problems that don't block current task:
-1. Complete current task
-2. Create new task for discovered issue
-3. Note in completion: "Discovered: [issue], see task X"
+If you discover problems that don't block the current task:
+1. Complete current task (`implementation_status: "completed"`)
+2. Add an `issues_discovered` entry with type: `non_blocking` and suggested_action: `create new task`
+3. Reference the discovery in `notes` (e.g., "Discovered: [issue], see issues_discovered")
+4. The orchestrator creates follow-up task files from these entries
 
 ### Scope Creep
 
 If task grows larger than expected:
 1. Implement minimum viable version
-2. Create follow-up tasks for extras
-3. Note: "MVP complete. Additional work in tasks X, Y"
+2. Include `issues_discovered` entries (type: `scope_creep`, suggested_action: `create new task`) for each follow-up
+3. Add a friction marker of type `scope_creep`
+4. Notes should read: "MVP complete. Additional work flagged in issues_discovered"
 
 ### Decisions Made During Implementation
 
 If you make a significant choice during implementation:
 1. Read `.claude/support/reference/decisions.md` for the format and example
-2. Create a `decision-*.md` file in `.claude/support/decisions/` using that template
-3. Add the decision to the dashboard's Decisions section
-4. **Rule:** Never reference a decision ID on the dashboard without a corresponding file
+2. Create a `decision-*.md` file in `.claude/support/decisions/` using that template (decision records live outside `.claude/tasks/`, so subagent writes there are permitted)
+3. Add an `issues_discovered` entry (type: `decision_made`) referencing the decision ID — the orchestrator ensures the decision is surfaced on the dashboard
+4. **Rule:** Never reference a decision ID without a corresponding file
 
 ### Spec Misalignment Discovered
 
 If during implementation you realize something doesn't align with spec:
-1. Stop and note the misalignment
-2. Report back - /work will handle the spec check conversation
-3. Don't proceed with misaligned work
+1. Stop and return your report with `implementation_status: "misaligned"`
+2. Describe the misalignment in `notes` and in an `issues_discovered` entry (type: `spec_misalignment`)
+3. The orchestrator handles the spec-check conversation with the user
+4. Don't proceed with misaligned work
 
 ## Friction Markers
 
-During implementation, emit structured friction markers to `.claude/support/workspace/.session-log.jsonl` when encountering situations that suggest template improvement opportunities. Write one JSON line per event using the `Write` tool (append mode — read existing content first, then write with the new line appended).
+During implementation, observe workflow deviations, spec drift, informal decisions, scope creep, user feedback signals, or template guidance gaps. Include observations in the `friction_markers` array of your return report. The orchestrator appends each marker to `.claude/support/workspace/.session-log.jsonl`.
 
 **When to emit markers:**
 
@@ -297,31 +235,24 @@ During implementation, emit structured friction markers to `.claude/support/work
 | User feedback on task completion suggests template issue | `user_feedback_signal` | The feedback and which template area it relates to |
 | Blocked by unclear or missing template guidance | `template_gap` | What guidance was needed, how the gap was worked around |
 
-**Marker format:**
+**Marker object shape (within your return report):**
 ```json
-{"type": "workflow_deviation", "task_id": "7", "timestamp": "2026-03-30T14:30:00Z", "details": "Skipped Step 5 self-review due to trivial change", "template_area": "implement-agent Step 5"}
+{"type": "workflow_deviation", "timestamp": "2026-04-17T14:30:00Z", "details": "Skipped Step 5 self-review due to trivial change", "template_area": "implement-agent Step 5"}
 ```
+Note: `task_id` is added by the orchestrator from the task dispatched to you — do not include it yourself.
 
 **Rules:**
 - Only emit markers for events that suggest the template itself could be improved — not for normal implementation challenges
 - Keep details concise (one sentence)
 - Don't emit markers for user-specific preferences (those go in `session_knowledge`)
-- If the session log file doesn't exist, create it with the first marker
-- This is lightweight — don't let marker emission interrupt implementation flow
+- This is lightweight — don't let marker collection interrupt implementation flow
 
 ## Wind-Down Protocol
 
-When `/work pause` is triggered during implementation, wind down gracefully. Finish the current logical unit if close, otherwise stop. Write `[PARTIAL]`-prefixed completion notes (what's done, what remains), keep status "In Progress", and return control to `/work` for handoff.
+When `/work pause` is triggered during implementation, wind down gracefully. Finish the current logical unit if close, otherwise stop. Return your report with `implementation_status: "partial"` and `[PARTIAL]`-prefixed notes (what's done, what remains). The orchestrator keeps task status as "In Progress" and writes the handoff file.
 
 **Full procedure:** `.claude/support/reference/context-transitions.md` § "Implement-Agent Wind-Down"
 
 ## Handoff Criteria
 
-Task is complete when:
-- All task requirements met
-- Work passes self-review
-- Tests pass (if applicable)
-- Notes document what was done
-- Status set to "Finished" (after passing verification)
-- Per-task verification passes (Step 6b triggers verify-agent as part of this workflow)
-
+Task is ready for verification when your report declares `implementation_status: "completed"`, includes `notes`, and lists all `files_modified`. The orchestrator performs the actual status transition to "Awaiting Verification" and dispatches verify-agent. Verification pass/fail is the orchestrator's subsequent responsibility.

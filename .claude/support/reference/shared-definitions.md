@@ -159,8 +159,8 @@ Canonical definitions for terms used across the environment. Terms already defin
 
 | Term | Definition |
 |------|------------|
-| **Implement-Agent** | Builder agent. Executes tasks, produces deliverables, self-reviews, marks "Awaiting Verification". Defined in `.claude/agents/implement-agent.md`. |
-| **Verify-Agent** | Validator agent. Tests against spec, finds issues, handles both Tier 1 and Tier 2 verification. Defined in `.claude/agents/verify-agent.md`. |
+| **Implement-Agent** | Builder agent. Executes tasks, produces deliverables, self-reviews, returns a structured implementation report. The `/work` orchestrator writes task state from the report (including transition to "Awaiting Verification"). See DEC-004. Defined in `.claude/agents/implement-agent.md`. |
+| **Verify-Agent** | Validator agent. Tests against spec, finds issues, returns a structured verification report. The `/work` orchestrator writes `task_verification` and state transitions from the report. Handles both Tier 1 (per-task) and Tier 2 (phase-level) verification. Defined in `.claude/agents/verify-agent.md`. |
 | **Dashboard** | Project dashboard at `.claude/dashboard.md`. Primary communication channel during build phase. Regenerated after task changes. |
 | **Dashboard Freshness** | Whether dashboard reflects current state. Two dimensions: content freshness (comparing `task_hash` against current computed hash) and format freshness (comparing `template_version` in META against `.claude/version.json`). Either mismatch triggers regeneration. |
 | **Workspace** | Temporary documents at `.claude/support/workspace/`. Subdirs: scratch, research, drafts. May be deleted between sessions. |

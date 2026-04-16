@@ -506,18 +506,59 @@ The safety gate applies to implement-agent dispatch, verify-agent runtime valida
 
 Read `.claude/support/reference/decomposition.md` and follow its 10-step procedure to break the spec into granular tasks with full provenance fields.
 
+#### State Persistence Protocol
+
+After any agent (implement-agent or verify-agent) returns a structured report, the orchestrator is responsible for all state transitions, JSON persistence, and dashboard updates. Agents cannot write to `.claude/` paths — this is enforced by the Claude Code harness (see DEC-004). Follow this protocol precisely to preserve the atomic implement→verify contract.
+
+**Schemas:** The two agent return schemas are defined in `.claude/agents/implement-agent.md` § "Step 6: Return Structured Report" and `.claude/agents/verify-agent.md` § "Step T6: Construct Verification Report" (per-task) + § "Step 7: Include Verification Result in Report" (phase-level).
+
+**After implement-agent returns:**
+
+1. **Status transition** based on `implementation_status`:
+   - `completed`: write `{ "status": "Awaiting Verification", "completion_date": report.completion_date, "updated_date": today, "notes": report.notes }` to task JSON
+   - `partial`: leave status "In Progress"; prepend `[PARTIAL]` to notes
+   - `blocked`: write `{ "status": "Blocked", "notes": "...", "updated_date": today }`; surface `issues_discovered[]` to user
+   - `misaligned`: do not advance status; route to spec-alignment flow with `issues_discovered[]` context
+
+2. **Append friction markers:** for each marker in `report.friction_markers`, add `task_id: report.task_id` and append as a JSON line to `.claude/support/workspace/.session-log.jsonl` (Read existing content, then Write with appended line; if file doesn't exist, create it)
+
+3. **Dashboard regeneration:** in sequential mode, regenerate `dashboard.md` per `.claude/support/reference/dashboard-regeneration.md`. In parallel mode, defer — handled at batch-end.
+
+4. **For `completed` status:** dispatch verify-agent (see "If Verifying (Per-Task)" section) and then apply the "After verify-agent returns" protocol below.
+
+**After verify-agent returns (per-task mode):**
+
+1. **Read task's current `verification_attempts`** (default 0), compute `new_attempts = current + 1`
+2. **Build `verification_history` entry** from report's `checks`, `issues`, `notes`, with `{"attempt": new_attempts, "result": report.result, "timestamp": report.timestamp}`. Append to task's `verification_history[]` array (create array if absent).
+3. **Write `task_verification`** field to task JSON using report's `result`, `timestamp`, `checks`, `notes`, `issues`
+4. **Status transition** based on `result`:
+   - `pass`: set `status: "Finished"`, `updated_date: today`. If `report.user_review_pending == true`, also write `user_review_pending: true`, `test_protocol: report.test_protocol`, `interaction_hint: report.interaction_hint`
+   - `fail` AND `new_attempts < 3`: set `status: "In Progress"`, `updated_date: today`. Clear `completion_date`. Prepend `[VERIFICATION FAIL #{new_attempts}]` to notes with the fail summary
+   - `fail` AND `new_attempts >= 3`: set `status: "Blocked"`, `updated_date: today`. Prepend `[VERIFICATION ESCALATED]` note — "3 attempts exhausted — requires human review"
+5. **Timeout detection:** if verify-agent exhausted max_turns without returning a valid report, treat as fail: increment `verification_attempts`, set status to "Blocked", add `[VERIFICATION TIMEOUT]` note
+6. **Append friction markers** from `report.friction_markers` (same as implement-agent)
+7. **Parent auto-completion:** if task has `parent_task` and all siblings are now "Finished", set parent to "Finished"
+8. **Dashboard regeneration:** sequential mode — regenerate now; parallel mode — defer
+
+**After verify-agent returns (phase-level mode):**
+
+1. **Write `.claude/verification-result.json`** using the report's payload: `result`, `timestamp`, `spec_version`, `spec_fingerprint`, `summary`, `criteria_passed`, `criteria_failed`, `criteria`, `issues`, plus a `tasks_created[]` array populated with the IDs of task files you create in the next step
+2. **Create fix task files:** for each entry in `report.fix_tasks_to_create[]`, write `task_{id}.json` with the entry's `task_json` payload plus `out_of_spec` flag
+3. **Append friction markers**
+4. **Regenerate dashboard** — include Verification Debt sub-section if debt exists; show out-of-spec tasks with ⚠️ prefix
+5. **If result is `fail`:** loop back to Execute phase for fix tasks. If `pass`: proceed to "If Completing"
+
 #### If Executing
 
-Read `.claude/agents/implement-agent.md` and follow Steps 1-6. Required artifacts:
-   - Step 1: Task selected (logged)
-   - Step 1b: Validation checks passed
-   - Step 3: Task JSON updated to `"In Progress"` **before any implementation begins**
-   - Step 4: Implementation done
-   - Step 5: Self-review completed
-   - Step 6a: Task JSON updated to `"Awaiting Verification"`
-   - Step 6b: verify-agent **spawned as a separate Task agent** (fresh context)
-   - Step 6c: Inline status update (tier 2) — e.g., `Starting task {id}: "{title}"` when beginning, status announcement after verify-agent completes. Dashboard regen deferred to next strategic moment (session boundary, parallel batch end, or async routing to dashboard).
-3. **Context to provide:** Current task, relevant spec sections, constraints/notes
+**Before dispatch:** orchestrator sets task JSON to `{"status": "In Progress", "updated_date": today}`.
+
+Dispatch implement-agent (Task tool with `model: "opus[1m]"`) instructing it to read `.claude/agents/implement-agent.md` and follow Steps 1-6. Agent returns a structured report.
+
+**After agent returns:** apply "After implement-agent returns" from State Persistence Protocol. Then, if `implementation_status == "completed"`, dispatch verify-agent per "If Verifying (Per-Task)" and apply "After verify-agent returns" protocol.
+
+**Context to provide:** Current task, relevant spec sections, constraints/notes, and an explicit instruction that the agent must not attempt writes to `.claude/` — return the structured report only.
+
+**Inline status update (tier 2):** announce `Starting task {id}: "{title}"` when dispatching and a pass/fail summary after verify-agent completes. Dashboard regen deferred to next strategic moment (session boundary, parallel batch end, or async routing to dashboard).
 
 #### If Executing (Parallel)
 
@@ -526,9 +567,11 @@ When Step 2c produces a parallel batch of >= 2 tasks, execute them concurrently.
 **Full procedure:** `.claude/support/reference/parallel-execution.md` § "Parallel Dispatch"
 
 **Key rules:**
-- Each parallel agent reads `implement-agent.md` and runs Steps 2/4/5/6a/6b independently
-- Agents must NOT regenerate dashboard, select next task, or check parent auto-completion
-- After all agents complete: final parent auto-completion, single dashboard regeneration, Step 5
+- Orchestrator sets all batch tasks to "In Progress" before dispatch (see parallel-execution.md § 2)
+- Each parallel implement-agent reads `implement-agent.md` and follows Steps 1-6; returns a structured report
+- As each implement-agent report arrives, orchestrator applies "After implement-agent returns" protocol AND dispatches that task's verify-agent (see parallel-execution.md § 4)
+- As each verify-agent report arrives, orchestrator applies "After verify-agent returns" protocol
+- After all reports processed: final parent auto-completion, single dashboard regeneration, post-dispatch validation (Step 5)
 
 #### If Verifying (Per-Task)
 
@@ -550,11 +593,14 @@ Task tool call:
     Verify the implementation independently. Do NOT assume correctness.
 ```
 
-**Timeout handling:** If verify-agent exhausts `max_turns` without completing, treat as verification failure — increment `verification_attempts`, set task to "Blocked" with `[VERIFICATION TIMEOUT]` note, report to user.
+**Timeout handling:** If verify-agent exhausts `max_turns` without returning a valid report, treat as verification failure — per State Persistence Protocol, increment `verification_attempts`, set task to "Blocked" with `[VERIFICATION TIMEOUT]` note, report to user.
 
-**After per-task verification completes:**
-- **Pass**: Announce inline: `Task {id} verified`. If `owner: "both"` or task has `test_protocol`, verify `user_review_pending: true` was set. Check for interaction mode routing (see below). Before looping, check if any human-owned or both-owned tasks just became unblocked by this completion — if so, surface them inline: `Note: Task {id} ("{title}") is now available for you — {brief description}`. Then loop back to Step 3 (auto-continuation). Dashboard regen deferred to next strategic moment.
-- **Fail**: Announce inline: `Task {id} verification failed: {summary}`. Task set to "In Progress". Route to implement-agent to fix, then re-verify. No dashboard regen needed (Claude is fixing it immediately).
+**After per-task verification completes:** verify-agent returns a structured per-task report. Apply "After verify-agent returns (per-task mode)" from State Persistence Protocol.
+
+**Auto-continuation:** after the orchestrator persists verification state:
+- **Pass**: announce inline `Task {id} verified`. If `report.user_review_pending == true`, check `interaction_hint` for routing (see below). Before looping, check if any human-owned or both-owned tasks just became unblocked by this completion — if so, surface them inline: `Note: Task {id} ("{title}") is now available for you — {brief description}`. Then loop back to Step 3 (auto-continuation). Dashboard regen deferred to next strategic moment.
+- **Fail (retry)**: announce inline `Task {id} verification failed: {summary} — routing back to implement-agent`. Task was set back to "In Progress" by the protocol. Route to implement-agent to fix, then re-verify. No dashboard regen needed (Claude is fixing it immediately).
+- **Fail (escalated)**: announce inline `Task {id} verification escalated after 3 attempts`. Stop auto-continuation; report to user.
 
 **Interaction mode routing (after per-task verification pass):**
 
@@ -633,12 +679,12 @@ Task tool call:
     Create fix tasks for any issues found. Do NOT implement fixes yourself.
 ```
 
-**After phase-level verification completes:** Check `.claude/verification-result.json`:
+**After phase-level verification completes:** verify-agent returns a structured phase-level report. Apply "After verify-agent returns (phase-level mode)" from State Persistence Protocol.
 
 | Result | Action |
 |--------|--------|
 | `pass` | Proceed to "If Completing". Present any out-of-spec recommendations for user approval. |
-| `fail` | Fix tasks created. Loop back to Execute, then re-verify when all spec tasks finished. |
+| `fail` | Fix tasks created by the orchestrator. Loop back to Execute, then re-verify when all spec tasks finished. |
 
 #### If Completing
 

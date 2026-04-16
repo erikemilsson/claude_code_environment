@@ -451,7 +451,7 @@ Any non-Finished status → Absorbed (when scope is folded into another task)
 **"Awaiting Verification"** is the transitional status between implementation completion and verification. Tasks in this status:
 - Have completed implementation but not yet been verified
 - Must proceed to verify-agent immediately (cannot remain in this status)
-- Are set automatically by implement-agent Step 6a
+- Are set by the `/work` orchestrator after implement-agent returns its structured report with `implementation_status: "completed"` (see DEC-004)
 
 ### On Hold
 
