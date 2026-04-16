@@ -38,8 +38,8 @@ User retains approval authority at every intake and edit point. Claude does not 
 ## Current State
 
 - **Active phase:** Phase 1 — Implement approved decisions
-- **Next action:** DEC-005 — Base allowedTools shipping policy (read `decisions/decision-005-base-allowedtools-shipping-policy.md`, plan touchpoints, execute)
-- **Blocked on:** nothing — DEC-004 implementation complete (commit pending)
+- **Next action:** Fresh session reads `plan-dec-005-implementation.md` and executes the 6-file change (ship `.claude/settings.json` base set, update sync-manifest, rewrite health-check Part 5c, add layering notes to CLAUDE.md / README / system-overview)
+- **Blocked on:** nothing — DEC-004 committed as `c5805b8`; DEC-005 plan ready to execute with a clean context
 
 ---
 
@@ -152,6 +152,7 @@ Every working file for this upgrade is tagged. `DELETE-AFTER` items removed in P
 | `upgrade-candidates-best-practices.md` (created in Phase 2) | DELETE-AFTER | Candidate list for user review; ephemeral intake doc |
 | `upgrade-candidates-usage-report.md` (created in Phase 2) | DELETE-AFTER | Candidate list for user review; ephemeral intake doc |
 | `plan-dec-004-implementation.md` | DELETE-AFTER | DEC-004 implementation plan for fresh-session execution |
+| `plan-dec-005-implementation.md` | DELETE-AFTER | DEC-005 implementation plan for fresh-session execution |
 | `coworkfolderspec.md` | DELETE (Phase 0) | No longer moving forward |
 | `insights-report.html` | DELETE (Phase 0) | Stale; live at `~/.claude/usage-data/report.html` |
 | `migration-guide.md` | DELETE (Phase 0) | Already applied to downstream projects |
@@ -209,6 +210,18 @@ Every working file for this upgrade is tagged. `DELETE-AFTER` items removed in P
 **Next:** Commit the DEC-004 changes, then proceed to DEC-005 (base `allowedTools` shipping policy).
 
 **Open questions for later:** Tests in `tests/scenarios/08-verification-gate-integrity.md` and `tests/scenarios/11-non-software-project.md` still describe the old "implement-agent writes task_verification" state — update in a follow-up commit or during Phase 5 cleanup.
+
+### 2026-04-17 — DEC-005 plan
+
+**Done:**
+- Reviewed DEC-005 decision record (Option E approved: layered two-file settings model)
+- Verified current state: template has no `.claude/settings.json`; `.claude/settings.local.json` exists (gitignored); `sync-manifest.json` has no settings entry; `health-check.md` Part 5c is a 3-line presence check
+- Cross-checked the collision map against the approved option — the "new `merge` cat" column entry is stale for DEC-005 (Option E needs no new category; it uses existing `sync`). Plan reflects Option E's actual footprint.
+- Wrote `plan-dec-005-implementation.md` for fresh-session execution. 6 files: new `.claude/settings.json`, sync-manifest update, health-check Part 5c rewrite, `.claude/CLAUDE.md` Critical Invariants bullet, `system-overview.md` File Map + Pending Decisions, `.claude/README.md` File Ownership + Settings subsection. Commit message drafted.
+
+**Next:** Fresh session (new conversation or `/clear` then resume) reads `plan-dec-005-implementation.md` and executes. Commit message already drafted in the plan.
+
+**Open questions for later:** None for DEC-005. DEC-006 remains pending.
 
 **Open questions for later:**
 - Version bump scope (major/minor/patch) — decide at Phase 5 based on landed changes; DEC-004 may change agent contract meaningfully (potential major)
