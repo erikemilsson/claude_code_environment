@@ -38,8 +38,8 @@ User retains approval authority at every intake and edit point. Claude does not 
 ## Current State
 
 - **Active phase:** Phase 1 — Implement approved decisions
-- **Next action:** Fresh session reads `plan-dec-005-implementation.md` and executes the 6-file change (ship `.claude/settings.json` base set, update sync-manifest, rewrite health-check Part 5c, add layering notes to CLAUDE.md / README / system-overview)
-- **Blocked on:** nothing — DEC-004 committed as `c5805b8`; DEC-005 plan ready to execute with a clean context
+- **Next action:** DEC-006 — Phase gate flexibility. Read `decisions/decision-006-phase-gate-flexibility.md` first to confirm selected option; plan touchpoints across `commands/work.md`, `commands/health-check.md`, `commands/breakdown.md`, `commands/iterate.md`, `rules/task-management.md`, `rules/spec-workflow.md`, `support/reference/task-schema.md`, `support/reference/phase-decision-gates.md`, `system-overview.md`.
+- **Blocked on:** nothing — DEC-005 executed; DEC-004 already committed as `c5805b8`
 
 ---
 
@@ -59,7 +59,7 @@ User retains approval authority at every intake and edit point. Claude does not 
 Decisions already researched and approved (commit `55c1040`). Read each decision record first to confirm the selected option's scope matches the feedback `**Assessed:**` line (scope may have narrowed during research).
 
 - [x] **DEC-004** — Subagent capability contract → `decisions/decision-004-subagent-capability-contract.md`. Closes FB-010. *(Option B implemented 2026-04-17 — orchestrator owns all `.claude/` state transitions.)*
-- [ ] **DEC-005** — Base allowedTools shipping policy → `decisions/decision-005-base-allowedtools-shipping-policy.md`. Closes FB-012.
+- [x] **DEC-005** — Base allowedTools shipping policy → `decisions/decision-005-base-allowedtools-shipping-policy.md`. Closes FB-012. *(Option E implemented 2026-04-17 — template ships `.claude/settings.json` with 15-entry base `permissions.allow`; user additions layer in `settings.local.json`.)*
 - [ ] **DEC-006** — Phase gate flexibility → `decisions/decision-006-phase-gate-flexibility.md`. Closes FB-013.
 
 **Implementation order:** hottest file first — `commands/work.md` takes touchpoints from all three decisions + FB-017. Apply in a single editing pass to avoid re-reading.
@@ -116,13 +116,13 @@ Rows = files. Columns = in-flight items. Cells = section/step affected (or `•`
 | File | DEC-004 | DEC-005 | DEC-006 | FB-011 | FB-015 | FB-017 | Opus 4.7 | Best-prac | Usage |
 |------|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | `commands/work.md` | ~~Step 4~~ ✓ | | Step 4 | | • | Step 2b | | TBD | TBD |
-| `system-overview.md` | ~~atomic contract~~ ✓ | file boundary | invariant | | | | sweep | TBD | TBD |
-| `commands/health-check.md` | | Part 5 merge | Part 1 gate | | Part 6 | | | TBD | TBD |
+| `system-overview.md` | ~~atomic contract~~ ✓ | ~~file boundary~~ ✓ | invariant | | | | sweep | TBD | TBD |
+| `commands/health-check.md` | | ~~Part 5 merge~~ ✓ | Part 1 gate | | Part 6 | | | TBD | TBD |
 | `rules/agents.md` | ~~Context Separation~~ ✓ | | | | | | model req | TBD | TBD |
 | `.claude/agents/implement-agent.md` | ~~Steps 3, 6a-c~~ ✓ | | | Steps 3, 6a, 6c | | | frontmatter | TBD | TBD |
 | `.claude/agents/verify-agent.md` | ~~T6, T7~~ ✓ | | | | | | frontmatter | TBD | TBD |
 | `.claude/agents/research-agent.md` | | | | | | | frontmatter | TBD | TBD |
-| `.claude/CLAUDE.md` | | file-boundary | | | | | model req | TBD | TBD |
+| `.claude/CLAUDE.md` | | ~~file-boundary~~ ✓ | | | | | model req | TBD | TBD |
 | `rules/task-management.md` | | | • | | | | | TBD | TBD |
 | `rules/spec-workflow.md` | | | • | | | | | TBD | TBD |
 | `rules/dashboard.md` | | | | • | Sections | | | TBD | TBD |
@@ -133,8 +133,8 @@ Rows = files. Columns = in-flight items. Cells = section/step affected (or `•`
 | `support/reference/dashboard-regeneration.md` | | | render | • | Action Item Contract | | | TBD | TBD |
 | `support/reference/decisions.md` | | | | | | line 151 | | TBD | TBD |
 | `support/reference/workflow.md` | | | | | | lines 195-201 | | TBD | TBD |
-| `.claude/sync-manifest.json` | | new `merge` cat | | | | | | TBD | TBD |
-| `.claude/settings.json` (new) | | • | | | | | | TBD | TBD |
+| `.claude/sync-manifest.json` | | ~~new `merge` cat~~ ✓ (used existing `sync`) | | | | | | TBD | TBD |
+| `.claude/settings.json` (new) | | ~~•~~ ✓ | | | | | | TBD | TBD |
 | `.claude/version.json` | | | | | | | bump | TBD | TBD |
 
 **Hot files** (3+ in-flight items): `commands/work.md`, `system-overview.md`, `commands/health-check.md`, `.claude/agents/implement-agent.md`.
@@ -226,3 +226,19 @@ Every working file for this upgrade is tagged. `DELETE-AFTER` items removed in P
 **Open questions for later:**
 - Version bump scope (major/minor/patch) — decide at Phase 5 based on landed changes; DEC-004 may change agent contract meaningfully (potential major)
 - Whether to bundle Phase 1 implementation into one session or split by decision — depends on editing load per file
+
+### 2026-04-17 — DEC-005 execution
+
+**Done:**
+- Executed `plan-dec-005-implementation.md` across all 6 target files:
+  - `.claude/settings.json` (new): shipped 15-entry base `permissions.allow` set (read-only git/ls/grep/find/test/sort/shasum/head/wc/tree family); JSON structure verified (exactly `permissions.allow`, nothing else)
+  - `.claude/sync-manifest.json`: added `.claude/settings.json` to `sync` (immediately after `.claude/CLAUDE.md`); `settings.local.json` confirmed still in `ignore`; `notes` field expanded to document the layered two-file pattern
+  - `.claude/commands/health-check.md`: Part 5c rewritten from 3-line "Settings Conflict Detection" to full "Settings Boundary Validation" with JSON parse, scope check (only `permissions.allow` allowed), `[M]`/`[S]` prompt to move stray entries, and drift-reassurance note. Part 5/5c name references elsewhere in the file (Steps 2/3 summaries line 762, 780) already used generic wording ("settings checks") — no rename needed.
+  - `.claude/CLAUDE.md`: added 8th Critical Invariants bullet about settings layering (placed after the workspace invariant)
+  - `system-overview.md`: removed DEC-005 row from Pending Template Decisions (line 24); File Map table now has two rows for settings (template-owned + user-owned)
+  - `.claude/README.md`: File Ownership lists updated (added `settings.json` to Template-owned, `settings.local.json` to Project-owned); new `### Settings` subsection added after File Ownership explaining the runtime merge
+- Verification: both JSON files parse; settings.json has exactly `permissions.allow` with 15 entries; no lingering "Settings Conflict Detection" or "template doesn't ship settings" references in active docs (only in decision record + archive, which is correct — those are frozen research artifacts)
+
+**Next:** Commit the DEC-005 changes, then proceed to DEC-006 (phase gate flexibility). Commit message drafted in plan file.
+
+**Open questions for later:** None for DEC-005. DEC-006 remains pending.

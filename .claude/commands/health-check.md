@@ -568,15 +568,45 @@ Never delete or rename custom commands without user consent.
 
 ---
 
-## Part 5c: Settings Conflict Detection
+## Part 5c: Settings Boundary Validation
 
-Checks for existing user settings files and confirms the template doesn't interfere.
+Validates the layered-settings contract: `.claude/settings.json` is template-owned (base `permissions.allow` only); `.claude/settings.local.json` is user-owned (all user additions, hooks, env vars, theme). Enforcing the boundary prevents template sync from silently clobbering user edits.
 
 ### Process
 
-1. Check for `.claude/settings.local.json` and `.claude/settings.json`
-2. If found: report presence, confirm template doesn't ship settings files, note any restrictions that might affect agent workflows (e.g., restricted `Bash` may prevent test execution)
-3. If not found: report as informational
+1. **Check for presence:**
+   - If `.claude/settings.json` is missing: informational only (will be created by next template sync).
+   - If `.claude/settings.local.json` is missing: informational only (user has no overrides yet — fine).
+
+2. **Validate template-owned `settings.json` scope:**
+   - Parse `.claude/settings.json` as JSON.
+   - If parse fails: ❌ error — "`.claude/settings.json` is not valid JSON. Sync may have been interrupted; re-run `/health-check` to re-sync."
+   - Check that the file contains **only** `permissions.allow`:
+     - ✅ Pass: the top-level object has exactly one key (`permissions`) whose value has exactly one key (`allow`).
+     - ⚠️ Warn if any of the following are present: `permissions.deny`, `permissions.ask`, `hooks`, `env`, `theme`, or any other top-level key.
+     - Warning message:
+       ```
+       ⚠️ Found non-base entries in `.claude/settings.json` (template-owned file).
+          Unexpected keys: {list}
+          These will be overwritten on next template sync.
+          Move them to `.claude/settings.local.json` to preserve them.
+          [M] Move automatically  [S] Skip (accept overwrite on next sync)
+       ```
+     - On `[M]`: merge the unexpected entries into `.claude/settings.local.json` (create if missing, concatenate+dedupe for array fields like `permissions.allow`, preserve existing keys for object fields like `hooks`), then strip them from `.claude/settings.json`. On `[S]`: leave files as-is; next sync will overwrite.
+
+3. **Validate base-set drift (template vs. local):**
+   - Read the template's `.claude/settings.json` from the template remote (if configured and reachable — same fetch as Part 5). Skip this check if offline.
+   - Compare the local `permissions.allow` array against the template's.
+   - If entries differ: this is normal (user has not yet synced, or template has been updated). Part 5's sync flow will offer the update — no Part 5c action needed.
+   - This check exists purely to reassure users that additions/removals from the template base will propagate through normal sync.
+
+4. **Report:**
+   - Pass: `✓ Settings layer valid (template-owned base + user-owned local)`
+   - Warnings: emit the warning block from step 2 above.
+
+### Rationale
+
+Claude Code's runtime concatenates `permissions.allow[]` across all settings layers, so the user's additions in `settings.local.json` combine automatically with the template's base in `settings.json`. The template-owned file exists for one job only: shipping a conservative base set. Everything else belongs in the user-owned file.
 
 ---
 

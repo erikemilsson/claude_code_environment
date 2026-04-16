@@ -21,7 +21,6 @@ This is lightweight governance, not the full spec/task/dashboard workflow (which
 Some template improvements require architectural choices before implementation. Active decision records live in root `decisions/` (template-maintenance only — ephemeral, removed once resolved and encoded into template files). Check that folder before starting work on:
 
 - **Subagent capability contract** — whether subagents spawned by `/work` own task state transitions (implement-agent Steps 6a/6b) or the orchestrator does. Relates to FB-010.
-- **Base `allowedTools` shipping policy** — whether the template ships `.claude/settings.json` with a base `allowedTools` set, and what merge strategy `/health-check` uses. Relates to FB-012.
 - **Phase gate flexibility** — how to let long-running human-owned tasks cross phase boundaries without breaking the software-domain invariant. Relates to FB-013.
 
 When a decision record is resolved and its conclusions land in template files, remove it from root `decisions/`.
@@ -635,5 +634,6 @@ See also `support/reference/paths.md` for the canonical paths reference used by 
 | `.claude/hooks/pre-compact-handoff.sh` | PreCompact hook script — writes structural handoff from disk state | Template |
 | `.claude/sync-manifest.json` | Template sync file categories | Template |
 | `.claude/version.json` | Template version tracking | Template |
-| `.claude/settings.local.json` | Pre-approved Bash permissions for Claude Code | Template (user-customizable) |
+| `.claude/settings.json` | Template-owned base `permissions.allow` — shipped read-only set | Template (sync) |
+| `.claude/settings.local.json` | User-owned settings — additional permissions, hooks, env, theme; merges with base at runtime | User |
 | `.claude/README.md` | User-facing environment guide (quick start, commands, concepts) | Template (user-customizable) |

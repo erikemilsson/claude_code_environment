@@ -36,6 +36,7 @@ This environment is designed for **Claude Opus 4.7** (`claude-opus-4-7[1m]`). Al
 - Exactly one `spec_v{N}.md` exists in `.claude/` at any time.
 - Never commit credentials to tracked files.
 - Never create working documents in the project root — use `.claude/support/workspace/`.
+- Settings layering: `.claude/settings.json` is template-owned (base `permissions.allow` only); put hooks, env vars, theme, and any additional permissions in `.claude/settings.local.json`. Claude Code merges both at runtime.
 
 ## Environment Commands
 
