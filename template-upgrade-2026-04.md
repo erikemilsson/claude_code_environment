@@ -38,8 +38,8 @@ User retains approval authority at every intake and edit point. Claude does not 
 ## Current State
 
 - **Active phase:** Phase 1 — Implement approved decisions
-- **Next action:** DEC-006 — Phase gate flexibility. Read `decisions/decision-006-phase-gate-flexibility.md` first to confirm selected option; plan touchpoints across `commands/work.md`, `commands/health-check.md`, `commands/breakdown.md`, `commands/iterate.md`, `rules/task-management.md`, `rules/spec-workflow.md`, `support/reference/task-schema.md`, `support/reference/phase-decision-gates.md`, `system-overview.md`.
-- **Blocked on:** nothing — DEC-005 executed; DEC-004 already committed as `c5805b8`
+- **Next action:** Fresh session reads `plan-dec-006-implementation.md` and executes the 9-file change (add `cross_phase: true` field per Option A, update phase-gate skip rule, parallel eligibility, work/breakdown/decomposition guidance, dashboard annotation, close out system-overview pending bullet, add health-check boolean check).
+- **Blocked on:** nothing — DEC-005 executed as `3cb10d8`; DEC-006 plan ready to execute with a clean context
 
 ---
 
@@ -153,6 +153,7 @@ Every working file for this upgrade is tagged. `DELETE-AFTER` items removed in P
 | `upgrade-candidates-usage-report.md` (created in Phase 2) | DELETE-AFTER | Candidate list for user review; ephemeral intake doc |
 | `plan-dec-004-implementation.md` | DELETE-AFTER | DEC-004 implementation plan for fresh-session execution |
 | `plan-dec-005-implementation.md` | DELETE-AFTER | DEC-005 implementation plan for fresh-session execution |
+| `plan-dec-006-implementation.md` | DELETE-AFTER | DEC-006 implementation plan for fresh-session execution |
 | `coworkfolderspec.md` | DELETE (Phase 0) | No longer moving forward |
 | `insights-report.html` | DELETE (Phase 0) | Stale; live at `~/.claude/usage-data/report.html` |
 | `migration-guide.md` | DELETE (Phase 0) | Already applied to downstream projects |
@@ -242,3 +243,17 @@ Every working file for this upgrade is tagged. `DELETE-AFTER` items removed in P
 **Next:** Commit the DEC-005 changes, then proceed to DEC-006 (phase gate flexibility). Commit message drafted in plan file.
 
 **Open questions for later:** None for DEC-005. DEC-006 remains pending.
+
+### 2026-04-17 — DEC-006 plan
+
+**Done:**
+- Reviewed DEC-006 decision record (Option A approved: add optional `cross_phase: true` boolean field, per-task opt-in, exempt from phase gate on eligibility only)
+- DEC-005 committed as `3cb10d8` — settings layering confirmed in-place
+- Verified current state of 9 target files. Key line anchors captured: `task-schema.md:122` (phase row), `phase-decision-gates.md:51-55` (skip rule), `parallel-execution.md:29` (eligibility), `work.md:367` (Step 2c summary), `breakdown.md:18-34` (subtask JSON), `decomposition.md:37-45` (Task Creation Guidelines), `dashboard-regeneration.md:~389` (Section Display Rules), `system-overview.md:23-24` (Pending Decisions), `health-check.md:25` (Check 1).
+- Confirmed judgment calls with user: dashboard annotation = text `(cross-phase)` suffix (no emoji); health-check Part 1 boolean validation added as 9th touchpoint
+- Noted that collision map entries for `rules/task-management.md`, `rules/spec-workflow.md`, and `commands/iterate.md` in the DEC-006 column are stale — Option A's footprint does not reach those files. To be struck through in the post-execution tracker update.
+- Wrote `plan-dec-006-implementation.md` for fresh-session execution. 9 files. Commit message drafted in the plan. Inflection-point note included in commit message + post-execution tracker steps.
+
+**Next:** Fresh session (new conversation or `/clear` then resume) reads `plan-dec-006-implementation.md` and executes. After commit, Phase 1 is complete; proceed to Phase 2 (new input intake — best-practices doc + usage insights report).
+
+**Open questions for later:** None for DEC-006. After DEC-006 commits, Phase 1 is done.
