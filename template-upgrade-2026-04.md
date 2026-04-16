@@ -38,8 +38,8 @@ User retains approval authority at every intake and edit point. Claude does not 
 ## Current State
 
 - **Active phase:** Phase 1 — Implement approved decisions
-- **Next action:** Read `decisions/decision-004-subagent-capability-contract.md` to confirm selected option; then plan implementation touchpoints
-- **Blocked on:** nothing
+- **Next action:** Fresh session reads `plan-dec-004-implementation.md` and executes DEC-004 rewrite across 6 files (implement-agent.md, verify-agent.md, work.md, parallel-execution.md, system-overview.md, rules/agents.md)
+- **Blocked on:** nothing — plan is complete, ready to execute with a clean context
 
 ---
 
@@ -151,6 +151,7 @@ Every working file for this upgrade is tagged. `DELETE-AFTER` items removed in P
 | `CLAUDE.md` (root) — tracker pointer notice | REVERT (Phase 5) | Block under "You are working on the template itself..." — remove at cleanup |
 | `upgrade-candidates-best-practices.md` (created in Phase 2) | DELETE-AFTER | Candidate list for user review; ephemeral intake doc |
 | `upgrade-candidates-usage-report.md` (created in Phase 2) | DELETE-AFTER | Candidate list for user review; ephemeral intake doc |
+| `plan-dec-004-implementation.md` | DELETE-AFTER | DEC-004 implementation plan for fresh-session execution |
 | `coworkfolderspec.md` | DELETE (Phase 0) | No longer moving forward |
 | `insights-report.html` | DELETE (Phase 0) | Stale; live at `~/.claude/usage-data/report.html` |
 | `migration-guide.md` | DELETE (Phase 0) | Already applied to downstream projects |
@@ -178,6 +179,19 @@ Every working file for this upgrade is tagged. `DELETE-AFTER` items removed in P
 - Added context-discipline note to `.claude/CLAUDE.md` — 1M is headroom, not license
 
 **Next:** Phase 1 — implement DEC-004 (subagent capability contract). Read decision record first to confirm selected option, then plan touchpoints across `commands/work.md`, `agents/implement-agent.md`, `agents/verify-agent.md`, `rules/agents.md`, `system-overview.md`.
+
+### 2026-04-17 — DEC-004 scoping + plan
+
+**Done:**
+- Verified current-day status of the three subagent sandbox restrictions (issues #38806, #4182, #18950/22665/37730) via claude-code-guide agent — all three still in place. Option B assumptions hold.
+- Resolved three open questions from DEC-004: Q1 write scope = confirm (all writes move to orchestrator), Q2 friction-marker persistence = (a) orchestrator appends to log, Q3 = verified online first.
+- Approved two structured-report schemas (implement-agent, verify-agent per-task + phase-level) as the agent↔orchestrator contract
+- Approved three judgment calls: individual per-task verify-agent dispatch in parallel mode; State Persistence Protocol inlined in `work.md`; timeout logic moves to orchestrator unchanged
+- Wrote full implementation plan to `plan-dec-004-implementation.md` for fresh-session execution (keeps rewrite context clean)
+
+**Next:** Fresh session (new conversation or `/clear` then resume) reads `plan-dec-004-implementation.md` and executes the 6-file rewrite. Commit message already drafted in the plan.
+
+**Open questions for later:** None for DEC-004. DEC-005 and DEC-006 still pending after.
 
 **Open questions for later:**
 - Version bump scope (major/minor/patch) — decide at Phase 5 based on landed changes; DEC-004 may change agent contract meaningfully (potential major)
