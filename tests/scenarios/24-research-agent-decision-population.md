@@ -23,7 +23,7 @@ Verify that the research agent correctly investigates options, populates decisio
 ### Expected
 
 - `/work` gathers context (decision record, spec, related tasks)
-- research-agent spawned via Task tool with `model: "opus"`, `max_turns: 25`
+- research-agent spawned via Task tool with `model: "opus[1m]"`, `max_turns: 25`
 - Spawn prompt includes: decision record path, spec file, related task paths
 
 ## Trace: research-agent Steps R1-R5

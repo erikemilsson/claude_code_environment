@@ -537,7 +537,7 @@ When Step 2c produces a parallel batch of >= 2 tasks, execute them concurrently.
 ```
 Task tool call:
   subagent_type: "general-purpose"
-  model: "opus"
+  model: "opus[1m]"
   max_turns: 30
   description: "Verify task {id}"
   prompt: |
@@ -617,7 +617,7 @@ Task {id}: "{title}" — ready for your review
 ```
 Task tool call:
   subagent_type: "general-purpose"
-  model: "opus"
+  model: "opus[1m]"
   max_turns: 50
   description: "Phase-level verification"
   prompt: |

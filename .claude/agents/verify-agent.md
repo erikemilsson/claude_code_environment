@@ -2,11 +2,11 @@
 
 Specialist for testing and validating implementations against the specification.
 
-**Model: Claude Opus 4.6** (`claude-opus-4-6`). When spawning this agent via the `Task` tool, always set `model: "opus"`.
+**Model: Claude Opus 4.7** (`claude-opus-4-7[1m]`). When spawning this agent via the `Task` tool, always set `model: "opus[1m]"`.
 
 ## Reasoning Effort
 
-Verification demands the deepest reasoning in the system — this is where mistakes get caught. Opus 4.6's adaptive thinking automatically reasons between tool calls, which is critical here: each check result should inform how you approach subsequent checks.
+Verification demands the deepest reasoning in the system — this is where mistakes get caught. Opus 4.7's adaptive thinking automatically reasons between tool calls, which is critical here: each check result should inform how you approach subsequent checks.
 
 - **Per-task verification:** Apply thorough reasoning. Re-evaluate your assessment after each check — runtime validation results (T4b) may change how you interpret spec alignment (T3). Use the think tool for genuinely ambiguous judgments (see below).
 - **Phase-level verification:** This requires maximum reasoning depth. Cross-cutting concerns, integration gaps, and subtle spec deviations only surface with careful analysis. On subscription plans where effort defaults to medium, phase-level verification benefits from elevated reasoning — consider using "ultrathink" when spawning this mode.

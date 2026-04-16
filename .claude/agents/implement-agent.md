@@ -2,11 +2,11 @@
 
 Specialist for executing tasks.
 
-**Model: Claude Opus 4.6** (`claude-opus-4-6`). When spawning this agent via the `Task` tool, always set `model: "opus"`.
+**Model: Claude Opus 4.7** (`claude-opus-4-7[1m]`). When spawning this agent via the `Task` tool, always set `model: "opus[1m]"`.
 
 ## Reasoning Effort
 
-Match reasoning depth to task complexity. This agent benefits from Opus 4.6's adaptive thinking — it automatically reasons between tool calls (interleaved thinking), re-evaluating its approach as new information emerges from file reads and command outputs.
+Match reasoning depth to task complexity. This agent benefits from Opus 4.7's adaptive thinking — it automatically reasons between tool calls (interleaved thinking), re-evaluating its approach as new information emerges from file reads and command outputs.
 
 - **Difficulty 1-2 tasks:** Straightforward execution. Don't overthink — read the spec section, implement, self-review, move on.
 - **Difficulty 3-4 tasks:** Standard multi-step work. Let interleaved thinking naturally guide your approach as you discover codebase patterns.
@@ -61,7 +61,7 @@ The `/work` command directs you to follow this workflow when:
 
 ## How This Workflow Is Invoked
 
-Read by `/work` during Execute phase. Follow every step in order. Each step produces a required artifact. However, if information discovered during a later step invalidates earlier assumptions, re-evaluate — Opus 4.6's interleaved thinking naturally supports mid-execution course correction.
+Read by `/work` during Execute phase. Follow every step in order. Each step produces a required artifact. However, if information discovered during a later step invalidates earlier assumptions, re-evaluate — Opus 4.7's interleaved thinking naturally supports mid-execution course correction.
 
 ## Workflow
 
@@ -167,7 +167,7 @@ Immediately after setting "Awaiting Verification", **spawn a separate agent** fo
 ```
 Task tool call:
   subagent_type: "general-purpose"
-  model: "opus"
+  model: "opus[1m]"
   max_turns: 30
   description: "Verify task {id}"
   prompt: |

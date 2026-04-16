@@ -17,7 +17,7 @@ All agents use dedicated tools (Read, Glob, Grep, Edit, Write) for file operatio
 
 ## Model Requirement
 
-All agents must run on Claude Opus 4.6 (`claude-opus-4-6`).
+All agents must run on Claude Opus 4.7 (`claude-opus-4-7[1m]`).
 
 **Effort defaults:** Max/Team subscriptions default to medium reasoning effort. Use "ultrathink" in prompts when deeper reasoning is needed (phase-level verification, complex design decisions).
 

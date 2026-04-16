@@ -2,7 +2,7 @@
 
 A structured development environment for Claude Code using the **Spec → Execute → Verify** workflow.
 
-**Designed for Claude Opus 4.6.** The difficulty scale, task breakdown thresholds, and agent workflows are calibrated for Opus-level reasoning.
+**Designed for Claude Opus 4.7.** The difficulty scale, task breakdown thresholds, and agent workflows are calibrated for Opus-level reasoning.
 
 ## Quick Start
 

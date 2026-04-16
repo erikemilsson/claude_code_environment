@@ -165,7 +165,7 @@ Before agents spawn (Step 2) and after they complete (Step 5), only the orchestr
 
 ### 3. Spawn Parallel Agents
 
-Use Claude Code's `Task` tool to spawn one agent per task. **Always set `model: "opus"` and `max_turns: 40`** to ensure agents run on Claude Opus 4.6 with a bounded turn limit. Each agent receives:
+Use Claude Code's `Task` tool to spawn one agent per task. **Always set `model: "opus[1m]"` and `max_turns: 40`** to ensure agents run on Claude Opus 4.7 (1M context) with a bounded turn limit. Each agent receives:
 - The task JSON to execute
 - Instructions to read `.claude/agents/implement-agent.md`
 - Instructions to follow Steps 2, 4, 5, 6a, and 6b (understand, implement, self-review, mark awaiting verification, spawn verify-agent as a sub-agent for per-task verification)
@@ -173,7 +173,7 @@ Use Claude Code's `Task` tool to spawn one agent per task. **Always set `model: 
 - **Explicit instruction: "DO NOT regenerate dashboard. DO NOT select next task. DO NOT check parent auto-completion. Return results when verification completes."**
 - **Note:** Each parallel implement-agent will spawn its own verify-agent sub-agent (nested Task call). This is expected — verification separation applies in parallel mode too.
 
-All agents run concurrently via parallel `Task` tool calls with `model: "opus"`.
+All agents run concurrently via parallel `Task` tool calls with `model: "opus[1m]"`.
 
 ### 4. Collect Results with Incremental Re-Dispatch
 

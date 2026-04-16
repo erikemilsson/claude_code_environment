@@ -4,9 +4,11 @@ Environment instructions for Claude Code. This file is template-owned — do not
 
 ## Model Requirement
 
-This environment is designed for **Claude Opus 4.6** (`claude-opus-4-6`). All agents (implement-agent, verify-agent, research-agent) must run on Opus 4.6.
+This environment is designed for **Claude Opus 4.7** (`claude-opus-4-7[1m]`). All agents (implement-agent, verify-agent, research-agent) must run on Opus 4.7.
 
 **Output token constraint:** Claude Code caps output at 32K tokens per response (thinking + text + tool arguments share this budget). Agents should avoid writing large artifacts and reasoning deeply in the same response.
+
+**Context budget:** 1M is headroom, not license. Keep agent context minimal — fewer, more accurate tokens produce higher-quality output. Prefer targeted reads, focused plans, and subagent delegation over broad context dumps.
 
 ## Navigation
 
