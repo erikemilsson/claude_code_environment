@@ -2,7 +2,7 @@
 
 **Purpose:** Coordinate multi-session template improvements from three inputs (Opus 4.7 upgrade, Claude Code best-practices doc, usage insights report) alongside the existing feedback backlog and approved decisions.
 
-**Status:** Phase 1 — Implement approved decisions
+**Status:** Phase 1 complete — proceed to Phase 2 (new input intake)
 **Last updated:** 2026-04-17
 
 ---
@@ -37,9 +37,9 @@ User retains approval authority at every intake and edit point. Claude does not 
 
 ## Current State
 
-- **Active phase:** Phase 1 — Implement approved decisions
-- **Next action:** Fresh session reads `plan-dec-006-implementation.md` and executes the 9-file change (add `cross_phase: true` field per Option A, update phase-gate skip rule, parallel eligibility, work/breakdown/decomposition guidance, dashboard annotation, close out system-overview pending bullet, add health-check boolean check).
-- **Blocked on:** nothing — DEC-005 executed as `3cb10d8`; DEC-006 plan ready to execute with a clean context
+- **Active phase:** Phase 2 — New input intake
+- **Next action:** Read the best-practices doc (https://code.claude.com/docs/en/best-practices) and produce `upgrade-candidates-best-practices.md` (root, `DELETE-AFTER`) for user per-item review. After user approval, do the same for the usage insights report (`file:///Users/erikemilsson/.claude/usage-data/report.html`).
+- **Blocked on:** nothing — DEC-006 implementation pending commit (commit SHA to be filled in after `git commit`); Phase 1 closes with that commit
 
 ---
 
@@ -60,7 +60,7 @@ Decisions already researched and approved (commit `55c1040`). Read each decision
 
 - [x] **DEC-004** — Subagent capability contract → `decisions/decision-004-subagent-capability-contract.md`. Closes FB-010. *(Option B implemented 2026-04-17 — orchestrator owns all `.claude/` state transitions.)*
 - [x] **DEC-005** — Base allowedTools shipping policy → `decisions/decision-005-base-allowedtools-shipping-policy.md`. Closes FB-012. *(Option E implemented 2026-04-17 — template ships `.claude/settings.json` with 15-entry base `permissions.allow`; user additions layer in `settings.local.json`.)*
-- [ ] **DEC-006** — Phase gate flexibility → `decisions/decision-006-phase-gate-flexibility.md`. Closes FB-013.
+- [x] **DEC-006** — Phase gate flexibility → `decisions/decision-006-phase-gate-flexibility.md`. Closes FB-013. *(Option A implemented 2026-04-17 — `cross_phase: true` boolean field added; per-task opt-in exempts task from phase gate on eligibility while preserving phase membership for verification.)*
 
 **Implementation order:** hottest file first — `commands/work.md` takes touchpoints from all three decisions + FB-017. Apply in a single editing pass to avoid re-reading.
 
@@ -115,22 +115,24 @@ Rows = files. Columns = in-flight items. Cells = section/step affected (or `•`
 
 | File | DEC-004 | DEC-005 | DEC-006 | FB-011 | FB-015 | FB-017 | Opus 4.7 | Best-prac | Usage |
 |------|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| `commands/work.md` | ~~Step 4~~ ✓ | | Step 4 | | • | Step 2b | | TBD | TBD |
-| `system-overview.md` | ~~atomic contract~~ ✓ | ~~file boundary~~ ✓ | invariant | | | | sweep | TBD | TBD |
-| `commands/health-check.md` | | ~~Part 5 merge~~ ✓ | Part 1 gate | | Part 6 | | | TBD | TBD |
+| `commands/work.md` | ~~Step 4~~ ✓ | | ~~Step 2c summary~~ ✓ | | • | Step 2b | | TBD | TBD |
+| `system-overview.md` | ~~atomic contract~~ ✓ | ~~file boundary~~ ✓ | ~~Pending Decisions~~ ✓ | | | | sweep | TBD | TBD |
+| `commands/health-check.md` | | ~~Part 5 merge~~ ✓ | ~~Part 1 boolean check~~ ✓ | | Part 6 | | | TBD | TBD |
 | `rules/agents.md` | ~~Context Separation~~ ✓ | | | | | | model req | TBD | TBD |
 | `.claude/agents/implement-agent.md` | ~~Steps 3, 6a-c~~ ✓ | | | Steps 3, 6a, 6c | | | frontmatter | TBD | TBD |
 | `.claude/agents/verify-agent.md` | ~~T6, T7~~ ✓ | | | | | | frontmatter | TBD | TBD |
 | `.claude/agents/research-agent.md` | | | | | | | frontmatter | TBD | TBD |
 | `.claude/CLAUDE.md` | | ~~file-boundary~~ ✓ | | | | | model req | TBD | TBD |
-| `rules/task-management.md` | | | • | | | | | TBD | TBD |
-| `rules/spec-workflow.md` | | | • | | | | | TBD | TBD |
+| `rules/task-management.md` | | | ~~• (stale — no edit needed)~~ | | | | | TBD | TBD |
+| `rules/spec-workflow.md` | | | ~~• (stale — no edit needed)~~ | | | | | TBD | TBD |
 | `rules/dashboard.md` | | | | • | Sections | | | TBD | TBD |
-| `commands/breakdown.md` | | | subtask inherit | | | | | TBD | TBD |
-| `commands/iterate.md` | | | | | | detection | | TBD | TBD |
-| `support/reference/task-schema.md` | | | `phase` field | | | | | TBD | TBD |
-| `support/reference/phase-decision-gates.md` | | | enforcement | | | • | | TBD | TBD |
-| `support/reference/dashboard-regeneration.md` | | | render | • | Action Item Contract | | | TBD | TBD |
+| `commands/breakdown.md` | | | ~~subtask inherit~~ ✓ | | | | | TBD | TBD |
+| `commands/iterate.md` | | | ~~(stale — no edit needed)~~ | | | detection | | TBD | TBD |
+| `support/reference/task-schema.md` | | | ~~`phase` row + new `cross_phase` row~~ ✓ | | | | | TBD | TBD |
+| `support/reference/phase-decision-gates.md` | | | ~~skip rule + Cross-Phase section~~ ✓ | | | • | | TBD | TBD |
+| `support/reference/dashboard-regeneration.md` | | | ~~`(cross-phase)` suffix~~ ✓ | • | Action Item Contract | | | TBD | TBD |
+| `support/reference/parallel-execution.md` | | | ~~OR clause in eligibility~~ ✓ | | | | | TBD | TBD |
+| `support/reference/decomposition.md` | | | ~~heuristic bullet~~ ✓ | | | | | TBD | TBD |
 | `support/reference/decisions.md` | | | | | | line 151 | | TBD | TBD |
 | `support/reference/workflow.md` | | | | | | lines 195-201 | | TBD | TBD |
 | `.claude/sync-manifest.json` | | ~~new `merge` cat~~ ✓ (used existing `sync`) | | | | | | TBD | TBD |
@@ -257,3 +259,23 @@ Every working file for this upgrade is tagged. `DELETE-AFTER` items removed in P
 **Next:** Fresh session (new conversation or `/clear` then resume) reads `plan-dec-006-implementation.md` and executes. After commit, Phase 1 is complete; proceed to Phase 2 (new input intake — best-practices doc + usage insights report).
 
 **Open questions for later:** None for DEC-006. After DEC-006 commits, Phase 1 is done.
+
+### 2026-04-17 — DEC-006 execution
+
+**Done:**
+- Executed `plan-dec-006-implementation.md` across all 9 target files:
+  - `.claude/support/reference/task-schema.md` — `phase` row now mentions the `cross_phase` escape hatch; new `cross_phase` Boolean row added immediately after `parallel_safe` with long-lead-work semantics
+  - `.claude/support/reference/phase-decision-gates.md` — Phase Check procedure split into `!= true` (skip) and `== true` (bypass + log) branches; new `### Cross-Phase Tasks` sub-section explains exemption scope
+  - `.claude/support/reference/parallel-execution.md` — eligibility OR clause added: `task.phase <= active_phase OR task.cross_phase == true`
+  - `.claude/commands/work.md` — Step 2c summary clarifies eligibility "in active phase (or `cross_phase: true`)"
+  - `.claude/commands/breakdown.md` — subtask inheritance note covering `cross_phase` (auto-inherit) and `parallel_safe` (per-subtask per side effects)
+  - `.claude/support/reference/decomposition.md` — cross-phase heuristic bullet with keyword list (recruit/procure/approve/schedule/coordinate/stakeholder/vendor/contract) and 14-day `external_dependency.expected_date` threshold; always prompts before setting
+  - `.claude/support/reference/dashboard-regeneration.md` — Section Display Rules has `(cross-phase)` title-suffix rule; phase table and counts remain unchanged
+  - `system-overview.md` — DEC-006 bullet removed from Pending Template Decisions; DEC-004 bullet retained (per plan; tied to Phase 5 decisions-folder purge)
+  - `.claude/commands/health-check.md` — Part 1 Check 1 now requires `cross_phase` (with `parallel_safe`, `out_of_spec`, `out_of_spec_rejected`, `user_review_pending`) to be Boolean when present
+- Grep verification: `cross_phase` appears in all 8 expected files (all targets minus `system-overview.md`, which correctly contains no reference); `phase-decision-gates.md` has both the `!= true` skip branch (line 52) and the `== true` bypass branch (line 57) plus the new sub-section (line 64); `system-overview.md` has only the DEC-004 Pending Decisions bullet remaining
+- File Collision Map updated: DEC-006 column entries struck through with done-markers; `rules/task-management.md`, `rules/spec-workflow.md`, and `commands/iterate.md` DEC-006 entries marked "stale — no edit needed" (Option A's footprint narrower than the map anticipated); two missing rows added for `support/reference/parallel-execution.md` and `support/reference/decomposition.md` (completed entries)
+
+**Next:** Commit the DEC-006 changes. Commit message drafted in `plan-dec-006-implementation.md`. After commit, Phase 1 is complete; proceed to Phase 2 (new input intake — best-practices doc + usage insights report).
+
+**Open questions for later:** None for DEC-006. Downstream projects running `/work` after pulling this change may encounter phase-boundary nudges toward `/iterate` — per the inflection-point note in the commit message.

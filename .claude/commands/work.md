@@ -364,7 +364,7 @@ After phase and decision checks, assess whether multiple tasks can be dispatched
 
 **Full procedure:** `.claude/support/reference/parallel-execution.md` § "Parallelism Eligibility Assessment"
 
-**Summary:** Read `parallel_execution` from spec frontmatter (defaults: `enabled: true`, `max_parallel_tasks: 3`). Eligible tasks must be Pending, not human-owned, all deps Finished, in active phase, all decision deps resolved, difficulty < 7. Build conflict-free batch by pairwise-comparing `files_affected`. If batch >= 2, set `parallel_mode = true`.
+**Summary:** Read `parallel_execution` from spec frontmatter (defaults: `enabled: true`, `max_parallel_tasks: 3`). Eligible tasks must be Pending, not human-owned, all deps Finished, in active phase (or `cross_phase: true`), all decision deps resolved, difficulty < 7. Build conflict-free batch by pairwise-comparing `files_affected`. If batch >= 2, set `parallel_mode = true`.
 
 ### Step 3: Determine Action
 

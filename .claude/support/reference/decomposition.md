@@ -43,6 +43,7 @@ Procedure for breaking a spec into granular tasks. Run as `/work` Step 4 "If Dec
 - Include all spec provenance fields (fingerprint, version, section, section_fingerprint, section_snapshot_ref)
 - **Phase field:** Assign `phase` based on spec section structure (e.g., tasks from "## Phase 1: Data Pipeline" get `"phase": "1"`). Also set `phase_name` to the spec's descriptive name for the phase (e.g., `"phase_name": "Data Pipeline"`). Dashboard rendering uses the format "Phase {N} — {phase_name}" — generic labels like "Phase 1" alone are not acceptable.
 - **Decision dependencies:** If a task depends on an unresolved decision, add the decision ID to `decision_dependencies` array. Note whether the decision is an inflection point in task notes.
+- **Cross-phase flag:** Consider suggesting `cross_phase: true` for long-lead tasks that must start before prior phase completion. Heuristic: `owner: human` tasks whose title or notes contain recruit/procure/approve/schedule/coordinate/stakeholder/vendor/contract, OR any task with `external_dependency.expected_date` more than 14 days out. When the heuristic fires, ask the user: `"Task {id} looks like long-lead work. Mark as cross_phase: true? [Y/N]"`. Never set silently. See `task-schema.md` § `cross_phase` for semantics.
 
 ---
 

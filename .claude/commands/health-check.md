@@ -22,7 +22,7 @@ Detects and fixes drift from task management standards.
 
 #### 1. Task JSON Schema Validation
 
-Validates required fields (id, title, status, difficulty) and optional fields per `.claude/support/reference/task-schema.md`.
+Validates required fields (id, title, status, difficulty) and optional fields per `.claude/support/reference/task-schema.md`. Boolean fields (`parallel_safe`, `out_of_spec`, `out_of_spec_rejected`, `cross_phase`, `user_review_pending`) must be booleans when present — flag non-boolean values as schema violations.
 
 **Migration detection:** When non-conforming schemas are found (missing required fields, unknown status values, unexpected fields), provide migration guidance:
 - Suggest field mappings (e.g., `"done"` → `"Finished"`, `"assignee"` → `"owner"`)

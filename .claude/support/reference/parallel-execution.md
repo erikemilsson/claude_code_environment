@@ -26,7 +26,7 @@ eligible = tasks where ALL of:
   - status == "Pending" (excludes On Hold, Absorbed, Blocked, Broken Down)
   - owner != "human"
   - all dependencies have status "Finished"
-  - task.phase <= active_phase (no phase dependency blocks the task)
+  - task.phase <= active_phase OR task.cross_phase == true (no phase dependency blocks the task)
   - all decision_dependencies are resolved
   - difficulty < 7
 ```

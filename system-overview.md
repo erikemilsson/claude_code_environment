@@ -21,7 +21,6 @@ This is lightweight governance, not the full spec/task/dashboard workflow (which
 Some template improvements require architectural choices before implementation. Active decision records live in root `decisions/` (template-maintenance only — ephemeral, removed once resolved and encoded into template files). Check that folder before starting work on:
 
 - **Subagent capability contract** — whether subagents spawned by `/work` own task state transitions (implement-agent Steps 6a/6b) or the orchestrator does. Relates to FB-010.
-- **Phase gate flexibility** — how to let long-running human-owned tasks cross phase boundaries without breaking the software-domain invariant. Relates to FB-013.
 
 When a decision record is resolved and its conclusions land in template files, remove it from root `decisions/`.
 
