@@ -38,7 +38,7 @@ User retains approval authority at every intake and edit point. Claude does not 
 ## Current State
 
 - **Active phase:** Phase 2 — intake complete; triage next
-- **Next action:** Run `/feedback review` to triage captured items (FB-019–FB-037). Check overlap with existing ready items (FB-011 scripts, FB-015 action-required, FB-017 checkbox detection). Absorb duplicates (mark `absorbed_into`). Update **File Collision Map** with `**Assessed:**`-style entries from the triage. Decide which new items need `/research` (Phase 3) vs direct implementation (Phase 4).
+- **Next action:** Fresh session reads `plan-feedback-review-triage.md` at root and executes. Triage covers 19 `new`-status items (FB-019–FB-037) plus re-examination of carryover `ready` items (FB-010/011/012/013/015/017 — some likely absorbed by closed DEC-004/005/006). Output: items routed to `ready` (with `**Assessed:**` lines), `absorbed`/`closed`/`archived` (moved to archive.md), Phase 3 research scope populated in tracker, Phase 4 direct-implementation list finalized, File Collision Map Best-prac/Usage columns filled in.
 - **Blocked on:** nothing — best-practices and usage-report intake bundles captured; both candidate files (`upgrade-candidates-best-practices.md`, `upgrade-candidates-usage-report.md`) live at root as DELETE-AFTER and will be removed in Phase 5 cleanup.
 
 ---
@@ -159,6 +159,7 @@ Every working file for this upgrade is tagged. `DELETE-AFTER` items removed in P
 | `plan-dec-005-implementation.md` | DELETE-AFTER | DEC-005 implementation plan for fresh-session execution |
 | `plan-dec-006-implementation.md` | DELETE-AFTER | DEC-006 implementation plan for fresh-session execution |
 | `plan-usage-report-intake.md` | DELETE-AFTER | Phase 2 usage-report intake plan for fresh-session execution |
+| `plan-feedback-review-triage.md` | DELETE-AFTER | Phase 2 triage plan for fresh-session execution |
 | `coworkfolderspec.md` | DELETE (Phase 0) | No longer moving forward |
 | `insights-report.html` | DELETE (Phase 0) | Stale; live at `~/.claude/usage-data/report.html` |
 | `migration-guide.md` | DELETE (Phase 0) | Already applied to downstream projects |
