@@ -4,8 +4,6 @@
 
 The `.claude/` directory contains the environment that ships to new projects. The root-level files (this file, `README.md`, `tests/`) are template maintenance infrastructure.
 
-> **⚠️ Active multi-session work:** An upgrade is in progress — see `template-upgrade-2026-04.md` for phase state, file collision map, and session log. Read that tracker at session start before picking up new work. It is `DELETE-AFTER`; this notice and the tracker itself are removed at the end of Phase 5.
-
 ## What This Means
 
 - **Don't fill in template placeholders** — sections like `[Brief description]` and `[Your license here]` are intentionally blank
