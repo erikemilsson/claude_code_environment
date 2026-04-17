@@ -6,6 +6,7 @@
       ".claude/settings.json",
       ".claude/commands/*.md",
       ".claude/agents/*.md",
+      ".claude/skills/*/SKILL.md",
       ".claude/rules/task-management.md",
       ".claude/rules/spec-workflow.md",
       ".claude/rules/decisions.md",

@@ -43,6 +43,7 @@ Your project uses three instruction sources. Understanding the split is importan
 | `tasks/` | Task data (JSON files managed by `/work`) |
 | `commands/` | Slash commands (`/work`, `/iterate`, `/status`, etc.) |
 | `agents/` | Specialist agents (implement-agent builds, verify-agent validates, research-agent investigates) |
+| `skills/` | On-demand reference content Claude auto-invokes when needed (spec-checklist, decomposition-heuristics, dashboard-style) |
 | `support/` | Reference docs, decisions, workspace, archived specs |
 | `vision/` | Vision/design documents from ideation (required before spec creation) |
 
@@ -52,7 +53,7 @@ Understanding which files are yours to edit vs. which are managed by the templat
 
 **Template-owned** (updated via template sync, don't edit):
 - `.claude/CLAUDE.md`, `.claude/rules/{template-rules}.md`
-- `.claude/commands/*.md`, `.claude/agents/*.md`
+- `.claude/commands/*.md`, `.claude/agents/*.md`, `.claude/skills/*/SKILL.md`
 - `.claude/support/reference/*.md` (except `project-*.md`)
 - `.claude/settings.json` (base `permissions.allow` — never edit; template sync replaces it)
 
@@ -72,6 +73,20 @@ Claude Code reads permissions, hooks, and theme from two files that merge at run
 - **`.claude/settings.local.json`** — yours. Add additional permissions (language runners, write-class git, anything project-specific), hooks, env vars, and theme here. Claude Code concatenates `permissions.allow` across both files automatically.
 
 If you accidentally add permissions to `.claude/settings.json`, `/health-check` will warn you and offer to move them to `.claude/settings.local.json`.
+
+### Skills
+
+`.claude/skills/` holds on-demand reference content. Each skill is a directory with a `SKILL.md` entrypoint whose frontmatter description tells Claude when to auto-invoke it — the content loads only when relevant, rather than living in always-on context. Skills can also be invoked explicitly via `/skill-name` for inspection.
+
+Current skills (template-owned):
+
+| Skill | When Claude auto-invokes |
+|-------|--------------------------|
+| `decomposition-heuristics` | During `/work` decomposition — task creation, provenance fields, stages |
+| `spec-checklist` | During `/iterate` — evaluating spec readiness, red flags, calibration |
+| `dashboard-style` | When regenerating `.claude/dashboard.md` — sections, critical path, diagram rules |
+
+Skills currently mirror companion files in `.claude/support/reference/` (decomposition.md, spec-checklist.md, dashboard-regeneration.md). This duplication is temporary for the DEC-007 adoption trial; one of the two locations will be retired once the Skill auto-invocation pattern is validated.
 
 ## Commands
 
@@ -188,6 +203,7 @@ flowchart TD
 | Task details | `tasks/task-*.json` |
 | Decision records | `support/decisions/decision-*.md` |
 | Reference documentation | `support/reference/` |
+| On-demand reference skills | `skills/` (auto-invoked by description match) |
 | Scratch/draft documents | `support/workspace/` |
 | Feedback and ideas | `support/feedback/` |
 | Previous spec versions | `support/previous_specifications/` |

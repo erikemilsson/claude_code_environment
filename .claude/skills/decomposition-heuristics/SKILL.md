@@ -1,4 +1,9 @@
-<!-- During Skills trial (DEC-007 Option B, 2026-04-17): this file mirrors `.claude/skills/decomposition-heuristics/SKILL.md`. Update both files in sync until one is retired. -->
+---
+name: decomposition-heuristics
+description: Procedure and guidelines for decomposing a spec into granular tasks. Use when decomposing a spec (e.g., running /work decomposition step), creating task JSON files from spec sections, setting task provenance fields (spec_fingerprint, section_fingerprint, phase, cross_phase), computing spec/section hashes for drift detection, or organizing tasks into implementation stages (Foundation, Core Features, Polish, Validation). Covers all 10 decomposition steps, task creation fields, difficulty bounds, phase/cross-phase assignment heuristics, and decomposition quality checks.
+---
+
+<!-- During Skills trial (DEC-007 Option B, 2026-04-17): this Skill mirrors `.claude/support/reference/decomposition.md`. Update both files in sync until one is retired. -->
 
 # Spec Decomposition
 

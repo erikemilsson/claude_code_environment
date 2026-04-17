@@ -2,7 +2,7 @@
 
 **Purpose:** Coordinate multi-session template improvements from three inputs (Opus 4.7 upgrade, Claude Code best-practices doc, usage insights report) alongside the existing feedback backlog and approved decisions.
 
-**Status:** Phase 3 complete — DEC-007 (Option B) and DEC-008 (Option D) approved; ready for Phase 4 implementation
+**Status:** Phase 4 — DEC-007 Option B implemented (skills trial live); DEC-008 Option D and remaining direct items next
 **Last updated:** 2026-04-17
 
 ---
@@ -42,7 +42,8 @@ User retains approval authority at every intake and edit point. Claude does not 
 - **DEC-008 outcome:** Option D approved (Narrow allowlist to 8 entries + document auto mode). DEC-005's layered two-file model stays intact. Implementation scope: narrow `.claude/settings.json` from 15 to 8 entries (drop: `branch`, `check-ignore`, `ls-tree`, `tree`, `find`, `sort`, `shasum`); add auto-mode documentation section to `.claude/README.md` (or setup-checklist.md); update `.claude/CLAUDE.md` Settings invariant to reference auto-mode layering. Unblocks FB-037.
 - **Feedback state:** FB-020 and FB-026 archived as `absorbed` (→DEC-007 / →DEC-008). FB-033 assessment updated to note dependency resolutions (still deferred on FB-032 trial). FB-037 assessment updated to note unblocking.
 - **Inflection note on DEC-008:** Frontmatter flag was conservative. Option D is narrowing + documentation, not reversal — layered model preserved. No `/iterate` spec revisit needed; template-maintenance implementation work captured in Phase 4.
-- **Next action:** Erik chooses between Phase 4 implementation priorities. Suggested sequencing: (1) DEC-008 Option D implementation (small, well-scoped, unblocks FB-037); (2) DEC-007 Option B first Skills (validates pattern); (3) continue with Phase 4 direct-implementation items by hot file. Any of these can be done in this conversation or planned-and-executed in fresh sessions.
+- **DEC-007 Option B implemented 2026-04-17:** `.claude/skills/` directory created with three Skills (`decomposition-heuristics`, `spec-checklist`, `dashboard-style`) each containing full content from the companion reference doc plus auto-invocation frontmatter. Reference docs kept as fallback during trial — each file (Skill and reference) carries a dual-location comment so maintainers know to edit both until one is retired. `.claude/README.md` updated (Essential Files row, File Ownership list, new Skills subsection, Where to Find Things row). `sync-manifest.json` `sync` category adds `.claude/skills/*/SKILL.md`.
+- **Next action:** Erik chooses the next Phase 4 unit. Suggested: (1) DEC-008 Option D implementation (narrow settings.json + auto-mode documentation, unblocks FB-037); (2) one of the hot-file batches for remaining direct-implementation items. Skills trial is passive — it validates itself through use during subsequent `/work` and `/iterate` runs.
 - **Blocked on:** nothing. FB-033 remains deferred on FB-032 trial (Phase 4 direct item). FB-037 ready now.
 
 ---
@@ -119,7 +120,24 @@ Existing `ready` items + new items routed as direct implementation. Group by fil
 
 **Blocked within Phase 4:**
 
-- [ ] **FB-037** — Optional PreToolUse hook in `setup-checklist.md`. **Blocked on FB-026 → DEC-008 closing** (hook recipe shape depends on whether DEC-008 keeps, simplifies, or retires DEC-005's settings model).
+- [ ] **FB-037** — ~~**Blocked on FB-026 → DEC-008 closing**~~ **Unblocked 2026-04-17** by DEC-008 Option D (layered model preserved). Hook recipe now implementable: reference `.claude/settings.local.json` under `hooks` key; position in `setup-checklist.md` new "Optional Hooks" subsection.
+
+**DEC-007 implementation (Option B — skills trial):**
+- [x] **Create `.claude/skills/` directory** — done 2026-04-17
+- [x] **`decomposition-heuristics/SKILL.md`** — 95 lines, mirrors `support/reference/decomposition.md`; auto-invoke description covers decomposition procedure, provenance fields, stages, cross_phase heuristic
+- [x] **`spec-checklist/SKILL.md`** — 65 lines, mirrors `support/reference/spec-checklist.md`; auto-invoke description covers readiness levels, core questions, red flags, calibration
+- [x] **`dashboard-style/SKILL.md`** — 489 lines, mirrors `support/reference/dashboard-regeneration.md`; auto-invoke description covers regeneration triggers, steps, section format, critical path, Project Overview diagram
+- [x] **Dual-location HTML comments** added to both the Skill file and the companion reference doc so maintainers know to update both until one is retired
+- [x] **`.claude/README.md`** updated — Essential Files row, File Ownership list (Template-owned), new Skills subsection, Where to Find Things row
+- [x] **`.claude/sync-manifest.json`** — added `.claude/skills/*/SKILL.md` to `sync` category
+- [ ] **Trial validation (passive, no action required):** subsequent `/work` decompositions and dashboard regens should auto-invoke the Skills by description match. If auto-invocation works reliably, follow-up work retires the companion reference docs and updates citation sites in commands/rules. If not, revert the Skill dir (companion docs already preserved).
+
+**DEC-008 implementation (Option D — narrow allowlist + document auto mode):**
+- [ ] **`.claude/settings.json`** — narrow `permissions.allow` from 15 entries to 8 (drop: `branch`, `check-ignore`, `ls-tree`, `tree`, `find`, `sort`, `shasum`; keep: `git status`, `git log`, `git diff`, `ls`, `grep`, `test`, `head`, `wc`)
+- [ ] **`.claude/README.md`** — add auto-mode subsection next to the existing Settings subsection; explain plan/model requirements, composition with `permissions.allow`, when to enable
+- [ ] **`.claude/CLAUDE.md`** — update Settings invariant wording (bullet 8) to mention auto-mode layering
+- [ ] **`.claude/commands/health-check.md` Part 5c** — verify wording still accurate after allowlist narrowing (no boundary-validation change expected; just word check)
+- [ ] **Unblocks FB-037** — once DEC-008 implementation commits, FB-037 hook recipe can land in `support/reference/setup-checklist.md`
 
 **Notes:**
 - FB-034 + FB-036 share an "over-eager execution" theme but land in different files (`rules/agents.md` / `implement-agent.md` vs `commands/work.md` / `parallel-execution.md`). Implementer may choose to phrase them consistently, but they are not a single edit.
@@ -430,3 +448,27 @@ Every working file for this upgrade is tagged. `DELETE-AFTER` items removed in P
 Any of these can be inline or plan-and-execute in a fresh session. DEC-008 is a good first pick — small scope, immediate FB-037 unblock, and validates the Option D narrowed set before other Phase 4 work adds entries (if any). 
 
 **Open questions for later:** None blocking.
+
+### 2026-04-17 — Phase 4: DEC-007 Option B implementation (skills trial)
+
+**Done:**
+- Created `.claude/skills/` directory with three Skills:
+  - `decomposition-heuristics/SKILL.md` (95 lines, 5.2KB) — full content from `support/reference/decomposition.md` plus auto-invocation frontmatter
+  - `spec-checklist/SKILL.md` (65 lines, 2.8KB) — full content from `support/reference/spec-checklist.md`
+  - `dashboard-style/SKILL.md` (489 lines, 38.5KB) — full content from `support/reference/dashboard-regeneration.md`
+- Frontmatter descriptions tuned for auto-invocation: each description explicitly lists the triggering contexts (e.g., "use when decomposing a spec", "use when regenerating .claude/dashboard.md"). This is the content Claude pattern-matches against when deciding whether to auto-load the Skill.
+- Added dual-location HTML comments to all six files (3 Skills + 3 reference docs) so future template maintainers know the mirror relationship and update both until one is retired.
+- Updated `.claude/README.md`: new `skills/` row in Essential Files, `SKILL.md` added to Template-owned bullet in File Ownership, new "Skills" subsection explaining the pattern + current trial set, new "On-demand reference skills" row in Where to Find Things.
+- Updated `.claude/sync-manifest.json`: added `.claude/skills/*/SKILL.md` to `sync` category (after `.claude/agents/*.md`). Skills ship with the template just like commands and agents.
+- Did NOT update citation sites in commands/rules. References to the three reference docs still work because those files remain in place during the trial. If trial succeeds, a follow-up pass retires the reference docs and updates ~15 citation sites.
+
+**Judgment calls:**
+- Copied full content into Skills rather than writing pointer-wrappers. A Skill that redirects to a file adds no value over a direct Read — the whole point of auto-invocation is loading content that guides behavior. Full content means each Skill is self-sufficient when invoked.
+- Kept the approved name `dashboard-style` for the third Skill rather than renaming to `dashboard-regeneration` (which would be more accurate). Sticking with DEC-007's approved naming avoids drift between the decision record and implementation; renaming is a trivial follow-up.
+- Trial kept reversible: reference docs preserved, no citation updates. If Skills don't auto-invoke reliably, remove `.claude/skills/` and nothing else changes.
+
+**Next:** Erik chooses the next Phase 4 unit. Strong suggestion: DEC-008 Option D implementation (narrow `settings.json` + auto-mode documentation). Small scope (~4 files), immediate FB-037 unblock, and validates the Option D narrowed baseline before other Phase 4 work potentially re-expands it.
+
+**Open questions for later:**
+- Trial validation is passive — the next `/work` decomposition or dashboard regeneration will either auto-invoke the Skills correctly or not. If auto-invocation proves unreliable (e.g., Claude reads the companion reference doc directly instead), consider whether descriptions need tuning or whether the Skills pattern itself is a poor fit for this template's reference content.
+- Follow-up if trial succeeds: retire companion reference docs (3 files), update citation sites in `commands/work.md`, `commands/iterate.md`, `commands/breakdown.md`, `rules/dashboard.md`, `rules/spec-workflow.md`, `support/reference/README.md`, `support/reference/task-schema.md`, `support/reference/phase-decision-gates.md`, `support/reference/extension-patterns.md`, `system-overview.md`.
