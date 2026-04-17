@@ -33,6 +33,13 @@ When making changes to the template, use the `.claude/` command definitions as r
 
 These are template-maintenance artifacts that don't ship to projects.
 
+## Active Follow-ups
+
+Template-maintenance work staged for later sessions. Read these first if resuming template work after a gap:
+
+- **FB-011 scripts extraction.** Families A + B landed in v3.0.0 (`.claude/scripts/fingerprint.py` + `validate-tasks.py`). Families C (dashboard regen), D (parallel-plan), E (decision finalization) are tiered per observed need. Inventory: `scripts-candidates.md` (root) — includes trigger criteria and a 30-day trial window for Family E that started 2026-04-17.
+- **Feedback backlog.** `.claude/support/feedback/feedback.md` holds assessed-but-unimplemented template improvements. FB-033 (spec-auditor subagent) is gated on FB-032 trial data from real `/iterate` sessions. Run `/feedback review` in a fresh session to triage when you come back.
+
 ## Version Bumping
 
 A git pre-commit hook (`.git/hooks/pre-commit`) warns when sync-category files are committed without bumping `template_version` in `.claude/version.json`. The hook warns but does not block — commit proceeds with a reminder.
@@ -59,5 +66,6 @@ The `tests/` directory contains conceptual trace tests for the command definitio
 | `tests/` | Command verification scenarios | No (users delete) |
 | `decisions/` | Template-level decision records (via `/research`) | No (users delete) |
 | `scripts/` | Template maintenance scripts (pre-commit hook) | No (users delete) |
+| `scripts-candidates.md` | Template-maintenance inventory for staged work (see Active Follow-ups) | No (users delete) |
 | `interaction-logs/` | Cross-project session exports and derived insights | No (template repo only) |
 | `.gitignore` | Repo config | Partially (users may keep) |

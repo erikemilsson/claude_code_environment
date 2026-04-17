@@ -14,7 +14,7 @@ rm -rf .git && git init
 
 # Customize
 # 1. Fill in the placeholder sections in .claude/CLAUDE.md (Project Overview, Tech Stack, Conventions)
-# 2. Delete this README.md, tests/, and root CLAUDE.md (template maintenance files)
+# 2. Delete everything at the root level except the .claude/ folder (all root files are template maintenance)
 # 3. Run /iterate in Claude Code to create your spec
 ```
 
@@ -26,6 +26,9 @@ The `.claude/` directory is the environment — it ships to new projects. Everyt
 ├── README.md              # Template docs (delete in projects)
 ├── CLAUDE.md              # Template maintenance context (delete in projects)
 ├── system-overview.md     # Environment design reference (delete in projects)
+├── scripts-candidates.md  # Inventory for staged template-maintenance work (delete in projects)
+├── decisions/             # Template-level decision records (delete in projects)
+├── scripts/               # Template maintenance scripts, e.g. pre-commit hook (delete in projects)
 ├── tests/                 # Command verification scenarios (delete in projects)
 └── .claude/               # ← This is what ships to new projects
     ├── README.md          # Environment guide — how it works, essential files
