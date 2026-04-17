@@ -74,6 +74,20 @@ Claude Code reads permissions, hooks, and theme from two files that merge at run
 
 If you accidentally add permissions to `.claude/settings.json`, `/health-check` will warn you and offer to move them to `.claude/settings.local.json`.
 
+### Auto Mode
+
+Claude Code supports a `--permission-mode auto` flag (available on Max, Team, Enterprise, and API plans with Opus 4.7). In auto mode, a classifier model approves safe tool calls at runtime without prompting — read-only operations, file edits inside the working directory, and lock-file-driven dependency installs pass through; potentially destructive actions (force push to main, mass cloud deletions, `curl | bash`, IAM grants) are blocked.
+
+**Composition with `permissions.allow`:**
+
+- Rules in `.claude/settings.json` and `.claude/settings.local.json` are evaluated **before** the classifier. An explicit `allow` rule short-circuits the classifier entirely, saving a server round-trip and the token cost of classifier review.
+- Broad rules like `Bash(*)` are dropped when auto mode activates; narrow rules like the template's `Bash(git status:*)` carry through.
+- Classifier coverage overlaps substantially with the template's base allowlist, but the allowlist remains useful for: hot paths (repeated read-only operations), hooks (which don't get classifier intelligence), and `dontAsk` / CI contexts (where auto mode isn't available).
+
+**Recommended setup for Max + Opus 4.7:** enable auto mode for interactive sessions (`claude --permission-mode auto`, or persist via `settings.local.json`) and keep the template's base `permissions.allow` for latency-sensitive paths and hook compatibility. Users on Pro plans, on Sonnet/Haiku, or in `dontAsk` / CI contexts should extend the base allowlist in `settings.local.json` as needed — auto mode is not available there.
+
+See Claude Code's permission-modes documentation (`https://code.claude.com/docs/en/permission-modes`) for full classifier behavior, fallback conditions, and plan availability.
+
 ### Skills
 
 `.claude/skills/` holds on-demand reference content. Each skill is a directory with a `SKILL.md` entrypoint whose frontmatter description tells Claude when to auto-invoke it — the content loads only when relevant, rather than living in always-on context. Skills can also be invoked explicitly via `/skill-name` for inspection.

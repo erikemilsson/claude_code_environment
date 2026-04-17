@@ -2,7 +2,7 @@
 
 **Purpose:** Coordinate multi-session template improvements from three inputs (Opus 4.7 upgrade, Claude Code best-practices doc, usage insights report) alongside the existing feedback backlog and approved decisions.
 
-**Status:** Phase 4 — DEC-007 Option B implemented (skills trial live); DEC-008 Option D and remaining direct items next
+**Status:** Phase 4 — DEC-007 + DEC-008 implemented; remaining direct items next (hot-file batches)
 **Last updated:** 2026-04-17
 
 ---
@@ -43,7 +43,8 @@ User retains approval authority at every intake and edit point. Claude does not 
 - **Feedback state:** FB-020 and FB-026 archived as `absorbed` (→DEC-007 / →DEC-008). FB-033 assessment updated to note dependency resolutions (still deferred on FB-032 trial). FB-037 assessment updated to note unblocking.
 - **Inflection note on DEC-008:** Frontmatter flag was conservative. Option D is narrowing + documentation, not reversal — layered model preserved. No `/iterate` spec revisit needed; template-maintenance implementation work captured in Phase 4.
 - **DEC-007 Option B implemented 2026-04-17:** `.claude/skills/` directory created with three Skills (`decomposition-heuristics`, `spec-checklist`, `dashboard-style`) each containing full content from the companion reference doc plus auto-invocation frontmatter. Reference docs kept as fallback during trial — each file (Skill and reference) carries a dual-location comment so maintainers know to edit both until one is retired. `.claude/README.md` updated (Essential Files row, File Ownership list, new Skills subsection, Where to Find Things row). `sync-manifest.json` `sync` category adds `.claude/skills/*/SKILL.md`.
-- **Next action:** Erik chooses the next Phase 4 unit. Suggested: (1) DEC-008 Option D implementation (narrow settings.json + auto-mode documentation, unblocks FB-037); (2) one of the hot-file batches for remaining direct-implementation items. Skills trial is passive — it validates itself through use during subsequent `/work` and `/iterate` runs.
+- **DEC-008 Option D implemented 2026-04-17:** `.claude/settings.json` narrowed from 15 to 8 entries per Q5 keep-set (kept: `git status`, `git log`, `git diff`, `ls`, `grep`, `test`, `head`, `wc`; dropped: `git branch`, `git check-ignore`, `git ls-tree`, `tree`, `find`, `sort`, `shasum`). New `### Auto Mode` subsection added to `.claude/README.md` between `### Settings` and `### Skills` — explains classifier behavior, composition with `permissions.allow`, and recommended setup for Max+Opus 4.7 vs Pro/Sonnet/Haiku vs dontAsk/CI. `.claude/CLAUDE.md` Critical Invariant bullet 8 updated with auto-mode composition reference. `commands/health-check.md` Part 5c verified entry-count-agnostic — no edit needed. Layered two-file model from DEC-005 preserved.
+- **Next action:** Erik chooses the next Phase 4 unit. Suggested: remaining Phase 4 hot-file batches (e.g., `commands/work.md` group: FB-015 + FB-017 + FB-027 + FB-036) or FB-037 implementation (now unblocked — optional PreToolUse hook recipe in `setup-checklist.md`).
 - **Blocked on:** nothing. FB-033 remains deferred on FB-032 trial (Phase 4 direct item). FB-037 ready now.
 
 ---
@@ -133,10 +134,10 @@ Existing `ready` items + new items routed as direct implementation. Group by fil
 - [ ] **Trial validation (passive, no action required):** subsequent `/work` decompositions and dashboard regens should auto-invoke the Skills by description match. If auto-invocation works reliably, follow-up work retires the companion reference docs and updates citation sites in commands/rules. If not, revert the Skill dir (companion docs already preserved).
 
 **DEC-008 implementation (Option D — narrow allowlist + document auto mode):**
-- [ ] **`.claude/settings.json`** — narrow `permissions.allow` from 15 entries to 8 (drop: `branch`, `check-ignore`, `ls-tree`, `tree`, `find`, `sort`, `shasum`; keep: `git status`, `git log`, `git diff`, `ls`, `grep`, `test`, `head`, `wc`)
-- [ ] **`.claude/README.md`** — add auto-mode subsection next to the existing Settings subsection; explain plan/model requirements, composition with `permissions.allow`, when to enable
-- [ ] **`.claude/CLAUDE.md`** — update Settings invariant wording (bullet 8) to mention auto-mode layering
-- [ ] **`.claude/commands/health-check.md` Part 5c** — verify wording still accurate after allowlist narrowing (no boundary-validation change expected; just word check)
+- [x] **`.claude/settings.json`** — narrow `permissions.allow` from 15 entries to 8 (drop: `branch`, `check-ignore`, `ls-tree`, `tree`, `find`, `sort`, `shasum`; keep: `git status`, `git log`, `git diff`, `ls`, `grep`, `test`, `head`, `wc`)
+- [x] **`.claude/README.md`** — add auto-mode subsection next to the existing Settings subsection; explain plan/model requirements, composition with `permissions.allow`, when to enable
+- [x] **`.claude/CLAUDE.md`** — update Settings invariant wording (bullet 8) to mention auto-mode layering
+- [x] **`.claude/commands/health-check.md` Part 5c** — verify wording still accurate after allowlist narrowing (no boundary-validation change expected; just word check)
 - [ ] **Unblocks FB-037** — once DEC-008 implementation commits, FB-037 hook recipe can land in `support/reference/setup-checklist.md`
 
 **Notes:**
@@ -473,3 +474,16 @@ Any of these can be inline or plan-and-execute in a fresh session. DEC-008 is a 
 **Open questions for later:**
 - Trial validation is passive — the next `/work` decomposition or dashboard regeneration will either auto-invoke the Skills correctly or not. If auto-invocation proves unreliable (e.g., Claude reads the companion reference doc directly instead), consider whether descriptions need tuning or whether the Skills pattern itself is a poor fit for this template's reference content.
 - Follow-up if trial succeeds: retire companion reference docs (3 files), update citation sites in `commands/work.md`, `commands/iterate.md`, `commands/breakdown.md`, `rules/dashboard.md`, `rules/spec-workflow.md`, `support/reference/README.md`, `support/reference/task-schema.md`, `support/reference/phase-decision-gates.md`, `support/reference/extension-patterns.md`, `system-overview.md`.
+
+### 2026-04-17 — Phase 4: DEC-008 Option D implementation
+
+**Done:**
+- Narrowed `.claude/settings.json` from 15 to 8 entries per DEC-008 Q5 analysis. Kept: `git status`, `git log`, `git diff`, `ls`, `grep`, `test`, `head`, `wc`. Dropped: `git branch`, `git check-ignore`, `git ls-tree`, `tree`, `find`, `sort`, `shasum`.
+- Added `### Auto Mode` subsection to `.claude/README.md` between the existing `### Settings` and `### Skills` subsections. Explains classifier behavior, composition with `permissions.allow` (rules short-circuit classifier; broad rules dropped; narrow rules persist), and recommended setup for Max + Opus 4.7 vs Pro/Sonnet/Haiku vs dontAsk/CI contexts.
+- Appended an auto-mode composition reference to the Settings Critical Invariant bullet in `.claude/CLAUDE.md`.
+- Verified `commands/health-check.md` Part 5c wording remains accurate — entry-agnostic contract language; no edit needed.
+- Pre-commit hook warned about `version.json` not being bumped (expected; version bump deferred to Phase 5 cleanup per tracker policy).
+
+**Next:** Phase 4 continues with remaining direct items. Suggested ordering: FB-037 (now unblocked — optional PreToolUse hook recipe in `setup-checklist.md`) is a natural follow-on since the auto-mode section just written is its documentation neighbor. Alternative: hot-file batches starting with `commands/work.md` (FB-015 + FB-017 + FB-027 + FB-036).
+
+**Open questions for later:** None blocking. Version bump tallies now include DEC-007 Option B + DEC-008 Option D — still deferred to Phase 5.
