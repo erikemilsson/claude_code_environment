@@ -2,7 +2,7 @@
 
 **Purpose:** Coordinate multi-session template improvements from three inputs (Opus 4.7 upgrade, Claude Code best-practices doc, usage insights report) alongside the existing feedback backlog and approved decisions.
 
-**Status:** Phase 4 — DEC-007 + DEC-008 + FB-037 implemented; remaining direct items next (hot-file batches)
+**Status:** Phase 4 — work.md hot-file batch implemented (FB-017 primary + FB-027 + FB-036 + FB-015 audit); remaining direct items next
 **Last updated:** 2026-04-17
 
 ---
@@ -45,7 +45,8 @@ User retains approval authority at every intake and edit point. Claude does not 
 - **DEC-007 Option B implemented 2026-04-17:** `.claude/skills/` directory created with three Skills (`decomposition-heuristics`, `spec-checklist`, `dashboard-style`) each containing full content from the companion reference doc plus auto-invocation frontmatter. Reference docs kept as fallback during trial — each file (Skill and reference) carries a dual-location comment so maintainers know to edit both until one is retired. `.claude/README.md` updated (Essential Files row, File Ownership list, new Skills subsection, Where to Find Things row). `sync-manifest.json` `sync` category adds `.claude/skills/*/SKILL.md`.
 - **DEC-008 Option D implemented 2026-04-17:** `.claude/settings.json` narrowed from 15 to 8 entries per Q5 keep-set (kept: `git status`, `git log`, `git diff`, `ls`, `grep`, `test`, `head`, `wc`; dropped: `git branch`, `git check-ignore`, `git ls-tree`, `tree`, `find`, `sort`, `shasum`). New `### Auto Mode` subsection added to `.claude/README.md` between `### Settings` and `### Skills` — explains classifier behavior, composition with `permissions.allow`, and recommended setup for Max+Opus 4.7 vs Pro/Sonnet/Haiku vs dontAsk/CI. `.claude/CLAUDE.md` Critical Invariant bullet 8 updated with auto-mode composition reference. `commands/health-check.md` Part 5c verified entry-count-agnostic — no edit needed. Layered two-file model from DEC-005 preserved.
 - **FB-037 implemented 2026-04-17:** new `## Optional Hooks` section added to `.claude/support/reference/setup-checklist.md` with a `PreToolUse` recipe blocking dev-server starts (`npm/pnpm/yarn/bun run? dev`, `next dev`, `vite`) via `jq` + `grep` exit-2 hard-block. Documents composition with `permissions.allow` and auto-mode classifier (hooks run last; can override classifier-approved actions). Includes customization guidance and pointer to Claude Code's hooks docs.
-- **Next action:** Erik chooses the next Phase 4 unit. Suggested: hot-file batches (e.g., `commands/work.md` group: FB-015 + FB-017 + FB-027 + FB-036; or `rules/session-management.md` group: FB-023 + FB-024 + FB-025).
+- **work.md hot-file batch implemented 2026-04-17:** Step 2b inlines the checkbox-detection trigger so `/work` reliably auto-finalizes checked decisions (FB-017 primary fix; resolves styler-project regression). Step 2 spec-check tree's "Minor/trivial addition" branch now explicitly says "no spec change, no formal planning" with a new paragraph routing one-sentence diffs around `/research` (FB-027 work.md slice). New `## Pre-Dispatch Confirmation` section in `parallel-execution.md` (referenced from work.md § "If Executing (Parallel)" Key Rules) gates parallel batches ≥ 3 behind a `[D]`/`[S]`/`[1]` prompt (FB-036 primary). "If Completing" dashboard-regen bullet rephrased from "completion summary" to "completion state" (FB-015 work.md audit slice). Out-of-file primary edits remain: dashboard-regeneration.md § Action Item Contract negative rule for FB-015; phase-decision-gates.md restructure (optional) and decisions.md/workflow.md audit (likely no edit) for FB-017; alt-site callouts (research.md, rules/decisions.md) for FB-027.
+- **Next action:** Erik chooses the next Phase 4 unit. Suggested: (1) FB-015 primary edit in `dashboard-regeneration.md § Action Item Contract` — small, completes FB-015; (2) `rules/session-management.md` group (FB-023 + FB-024 + FB-025); (3) `rules/agents.md` / `implement-agent.md` group (FB-022 + FB-034 + FB-035 + FB-031).
 - **Blocked on:** nothing. FB-033 remains deferred on FB-032 trial (Phase 4 direct item).
 
 ---
@@ -108,7 +109,7 @@ Existing `ready` items + new items routed as direct implementation. Group by fil
 
 **Hot files** (3+ in-flight items — do these first to avoid re-reads):
 
-- [ ] **`.claude/commands/work.md`** — FB-015 (Action Required cleanup), FB-017 (Step 2b checkbox detection), FB-027 (skip-planning callout in Step 3 routing), FB-036 (pre-dispatch confirm in Step 4).
+- [x] **`.claude/commands/work.md`** — FB-015 (work.md audit only — primary edit deferred to dashboard-regeneration.md), FB-017 (Step 2b inlining — primary done), FB-027 (Step 2 spec-check skip-planning callout — work.md slice; alt-sites in research.md/decisions.md deferred), FB-036 (work.md callout + parallel-execution.md primary done). Implemented 2026-04-17.
 - [ ] **`.claude/rules/session-management.md`** — FB-023 (`/btw`), FB-024 (`/rewind`/Esc+Esc), FB-025 (`/rename`). Single bundled edit.
 - [ ] **`.claude/rules/agents.md`** and/or **`.claude/agents/implement-agent.md`** — FB-022 (root-cause rule), FB-034 (respect user kills), FB-035 (large-file Read guidance), FB-031 (Writer/Reviewer parallel-session mention — may alternatively go to `.claude/README.md`). Plus FB-011 call-sites if FB-011 implementation lands here.
 - [ ] **`.claude/commands/iterate.md`** — FB-021 (AskUserQuestion in distill), FB-032 (Decisions-in-Proposal output contract in propose). FB-032 should land first to start generating trial data for FB-033.
@@ -162,7 +163,7 @@ Rows = files. Columns = in-flight items. Cells = section/step affected (or `•`
 
 | File | DEC-004 | DEC-005 | DEC-006 | FB-011 | FB-015 | FB-017 | Opus 4.7 | Best-prac | Usage |
 |------|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| `commands/work.md` | ~~Step 4~~ ✓ | | ~~Step 2c summary~~ ✓ | | • | Step 2b | | FB-027 Step 3 routing | FB-036 Step 4 |
+| `commands/work.md` | ~~Step 4~~ ✓ | | ~~Step 2c summary~~ ✓ | | ~~FB-015 audit~~ ✓ | ~~FB-017 Step 2b inlined~~ ✓ | | ~~FB-027 Step 2 callout~~ ✓ (label was "Step 3 routing"; actual home Step 2) | ~~FB-036 Key Rules bullet~~ ✓ |
 | `system-overview.md` | ~~atomic contract~~ ✓ | ~~file boundary~~ ✓ | ~~Pending Decisions~~ ✓ | | | | sweep | — | — |
 | `commands/health-check.md` | | ~~Part 5 merge~~ ✓ | ~~Part 1 boolean check~~ ✓ | | Part 6 | | | — | — |
 | `rules/agents.md` | ~~Context Separation~~ ✓ | | | | | | model req | FB-022 root-cause; FB-031 Writer/Reviewer | FB-034 behavior; FB-035 Tool Prefs |
@@ -181,7 +182,7 @@ Rows = files. Columns = in-flight items. Cells = section/step affected (or `•`
 | `support/reference/task-schema.md` | | | ~~`phase` row + new `cross_phase` row~~ ✓ | | | | | — | — |
 | `support/reference/phase-decision-gates.md` | | | ~~skip rule + Cross-Phase section~~ ✓ | | | • | | — | — |
 | `support/reference/dashboard-regeneration.md` | | | ~~`(cross-phase)` suffix~~ ✓ | • | Action Item Contract | | | — | — |
-| `support/reference/parallel-execution.md` | | | ~~OR clause in eligibility~~ ✓ | | | | | — | FB-036 pre-dispatch confirm; FB-030 fan-out (alt site) |
+| `support/reference/parallel-execution.md` | | | ~~OR clause in eligibility~~ ✓ | | | | | — | ~~FB-036 Pre-Dispatch Confirmation section~~ ✓; FB-030 fan-out (alt site) |
 | `support/reference/decomposition.md` | | | ~~heuristic bullet~~ ✓ | | | | | — | — |
 | `support/reference/decisions.md` | | | | | | line 151 | | — | — |
 | `support/reference/workflow.md` | | | | | | lines 195-201 | | — | — |
@@ -509,3 +510,30 @@ Any of these can be inline or plan-and-execute in a fresh session. DEC-008 is a 
 
 **Open questions for later:**
 - Phase 5 cleanup: define an "implemented" status (or repurpose `closed` with positive language) for direct-implementation template-maintenance feedback items; sweep FB-037 (and any other ready→implemented items by then) into archive.md under that convention.
+
+### 2026-04-17 — Phase 4: work.md hot-file batch (FB-015 audit + FB-017 + FB-027 + FB-036)
+
+**Done:**
+- **FB-017 (primary):** Inlined the checkbox-detection trigger into work.md Step 2b. Step 2b now explicitly enumerates "for every proposed decision file, scan for checked boxes, normalize, update frontmatter to approved, populate Decision section, run post-decision check." `phase-decision-gates.md` retains the algorithm; Step 2b ensures the algorithm fires on every entry. Resolves the styler-project regression (DEC-039/040/026 stayed `proposed` after boxes were checked).
+- **FB-027 (work.md slice):** Step 2 spec-check tree's "Minor/trivial addition" branch reworded to "(no spec change, no formal planning)". New paragraph below the tree spells out: one-sentence diffs (typo, log line, rename, single import) skip `/research`/decisions/decomposition, dispatch implement-agent directly. Alt-site callouts in research.md / rules/decisions.md remain available as follow-up.
+- **FB-036 (primary):** New `## Pre-Dispatch Confirmation` section in `parallel-execution.md` between Eligibility Assessment and Parallel Dispatch. Triggers for batches ≥ 3 (matches `max_parallel_tasks` default). Format: dispatch summary + `[D] Dispatch / [S] Skip / [1] First-only` prompt. work.md § "If Executing (Parallel)" gains a "Pre-dispatch confirmation" bullet at the top of "Key rules" referencing the new procedure.
+- **FB-015 (work.md audit slice):** "If Completing" bullet 2 reworded from "Regenerate dashboard with completion summary" → "Regenerate dashboard to reflect completion state". The "summary"-coded framing was the only such language in work.md's regen paths. Other regen call sites in work.md already use neutral wording. Primary FB-015 edit (negative rule in `dashboard-regeneration.md § Action Item Contract`) remains deferred to its own batch.
+- Tracker bookkeeping: status line, Current State, Phase 4 hot-files block (work.md → `[x]`), File Collision Map (work.md row + parallel-execution.md row strikes), Cleanup Manifest (plan file added), Session Log entry.
+- Pre-commit hook: warns about `version.json` not being bumped (work.md and parallel-execution.md are sync-category files). Expected per existing tracker policy; commit anyway. Phase 5 cleanup handles version-bump scope.
+
+**Judgment calls:**
+- **FB-017 inline-vs-restructure:** Inlined the trigger as an imperative caller-side checklist rather than restructuring `phase-decision-gates.md` itself. Reasoning: the algorithm is correct; the failure mode is "caller forgets to fire it." Restructuring the reference would still leave call-site ambiguity. Inlining at the call-site is the more direct fix. `phase-decision-gates.md` restructure remains optional follow-up.
+- **FB-027 placement:** Kept the work.md slice in Step 2 (spec check) rather than Step 3 (routing). Step 3's routing table is about phase/decision/parallel-batch state, not request-scope-vs-planning-overhead. The collision-map "Step 3 routing" label was a loose pointer. Alt-sites (research.md, rules/decisions.md) would reinforce the principle but aren't load-bearing for the user-flow fix.
+- **FB-036 threshold:** Set at "≥ 3" rather than "≥ 2" so the cheap case (2-task batch, low surprise) doesn't get the friction. Matches the default `max_parallel_tasks` value (3) — confirmation triggers when the batch is at the configured maximum. FB's "N configurable; default 3" wording supports this; threshold-as-config can be a follow-up.
+- **FB-015 file-grouping discipline:** Deliberately did NOT touch `dashboard-regeneration.md` in this batch even though it's the primary FB-015 location. The work.md batch principle is "edit work.md once"; cross-cutting into a different reference file would violate the file-grouping rule. The primary FB-015 edit gets its own commit.
+
+**Next:** Erik chooses the next Phase 4 unit. Strong candidates:
+1. **FB-015 primary** in `dashboard-regeneration.md § Action Item Contract` — small file, completes FB-015 work begun in this batch, neighbours the work.md audit just done.
+2. **`rules/session-management.md` group** (FB-023 `/btw` + FB-024 `/rewind`/Esc+Esc + FB-025 `/rename`) — three items in one file, single bundled edit.
+3. **`rules/agents.md` + `implement-agent.md` group** (FB-022 root-cause rule + FB-034 respect user kills + FB-035 large-file Read guidance + FB-031 Writer/Reviewer mention) — larger group, two related files.
+
+**Open questions for later:**
+- After this batch lands, re-verify that `decisions.md` line 151 and `workflow.md` lines 195-201 (the auto-finalization promises FB-017 was meant to honor) still read accurately. Expected: yes — the work.md inlining should make those promises true again. Edit only if wording drifted.
+- FB-027 alt-sites (research.md callout, rules/decisions.md cross-reference) become available follow-on work but aren't required if work.md handles the user-flow case.
+- FB-036 threshold may want to become configurable (`pre_dispatch_confirm_threshold` in spec frontmatter or a settings field) — not implemented here; assess after some real-world dispatches.
+- Version bump tally for Phase 5 now includes DEC-007 + DEC-008 + FB-037 + work.md batch.

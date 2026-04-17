@@ -312,13 +312,15 @@ When the user provides a request or task:
 ```
 Check request against spec:
 ├─ Clearly aligned → Proceed
-├─ Minor/trivial addition → Proceed (doesn't need spec change)
+├─ Minor/trivial addition → Proceed (no spec change, no formal planning)
 └─ Significant but not in spec → Surface it:
    "This isn't covered in the spec. Options:
     1. Add to spec: [suggested addition]
     2. Proceed anyway (won't be verified against spec)
     3. Skip for now"
 ```
+
+**Skip formal planning for trivial requests:** If the diff for the request fits in one sentence (typo fix, log line addition, variable rename, single import update), dispatch implement-agent directly — do not route through `/research`, decision records, or task decomposition. The "Minor/trivial addition" branch above is the entry point. The principle: planning overhead should be proportional to scope.
 
 **If user selects "Proceed anyway":**
 - Create task with `"out_of_spec": true`
@@ -337,6 +339,22 @@ Read `.claude/support/reference/phase-decision-gates.md` and follow its procedur
 - Late decision check (reverse cross-reference for new decisions)
 - Post-decision check (inflection point handling)
 - Early-exit conditions (skip when no phases or no decisions exist)
+
+**Required inline trigger — checkbox detection on every entry:**
+
+For every `decision-*.md` file with frontmatter `status: proposed`:
+
+1. Read the file's `## Select an Option` section
+2. Scan for checked boxes — match `[x]`, `[X]`, `[✓]`, `[✔]` (per the normalization in `phase-decision-gates.md` § "Phase Check")
+3. If a checked box is found AND frontmatter `status` is still `proposed`:
+   - Extract the selected option name (text after `[x] ` on the matched line)
+   - Update frontmatter: `status: approved`, `decided: <today's YYYY-MM-DD>`
+   - Populate the Decision section using the option name and the matching Option Details rationale
+   - Run the Post-Decision Check (`phase-decision-gates.md` § "Post-Decision Check") — handles inflection-point pause if applicable
+   - Log: `Decision {DEC-ID} resolved → status updated to 'approved' (selected: {option_name})`
+4. If no checked boxes are found across all proposed decisions, proceed to the rest of Step 2b without changes.
+
+This step MUST run on every Step 2b invocation. It is the caller's responsibility — `phase-decision-gates.md` defines the algorithm, but `/work` Step 2b is what fires it. Do not skip this scan even if other Step 2b checks suggest no new decisions.
 
 **When a decision blocks work**, present options including research:
 ```
@@ -567,6 +585,7 @@ When Step 2c produces a parallel batch of >= 2 tasks, execute them concurrently.
 **Full procedure:** `.claude/support/reference/parallel-execution.md` § "Parallel Dispatch"
 
 **Key rules:**
+- **Pre-dispatch confirmation (batch ≥ 3):** Before spawning, present the dispatch plan to the user — task IDs, titles, files affected, verify strategy — and await explicit confirmation. Skip for batches of 2 (low surprise; partial budget). See parallel-execution.md § "Pre-Dispatch Confirmation" for the prompt format and `[D]`/`[S]`/`[1]` behavior.
 - Orchestrator sets all batch tasks to "In Progress" before dispatch (see parallel-execution.md § 2)
 - Each parallel implement-agent reads `implement-agent.md` and follows Steps 1-6; returns a structured report
 - As each implement-agent report arrives, orchestrator applies "After implement-agent returns" protocol AND dispatches that task's verify-agent (see parallel-execution.md § 4)
@@ -698,7 +717,7 @@ When all tasks are finished and verification conditions are met:
 **Once both gates pass:**
 
 1. **Update spec status** to `complete` (set `status: complete`, `updated: YYYY-MM-DD` in frontmatter)
-2. **Regenerate dashboard** with completion summary
+2. **Regenerate dashboard** to reflect completion state (Action Required clears; Progress shows final phase complete; Tasks section collapses fully-finished phases)
 3. **Present final checkpoint** — report completion with verification summary
 4. **Learning capture prompt** — "Project complete. Any patterns or learnings to capture? [L] Share  [S] Skip". If [L]: append to `.claude/support/learnings/project-learnings.md`. If [S]: continue silently.
 5. **Stop** — do not route to any agent. The project is done.

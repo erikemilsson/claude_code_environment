@@ -110,6 +110,42 @@ ELSE:
 
 ---
 
+## Pre-Dispatch Confirmation
+
+When Step 2c produces a parallel batch of **3 or more tasks**, confirm with the user before spawning. Batches of 2 skip this step — the parallel-dispatch default of 3 means a 2-batch is a partial use of the budget and the cheapest case to interrupt if wrong.
+
+### Format
+
+```
+Parallel dispatch ready: {N} tasks
+
+  Task {id}: "{title}" → files: [{files_affected}]
+  Task {id}: "{title}" → files: [{files_affected}]
+  ...
+
+Verify strategy: per-task verify-agent dispatched as each implement-agent completes.
+
+{If held_back is non-empty:}
+Held back (file conflicts):
+  Task {id}: "{title}" — conflict with Task {conflict_with} on [{conflict_files}]
+
+[D] Dispatch  [S] Skip — review batch first  [1] Dispatch only first task
+```
+
+### Behavior
+
+- `[D]` Dispatch → proceed to § "Parallel Dispatch" Step 1 (Log the Parallel Dispatch)
+- `[S]` Skip → return to `/work` Step 2c. User can review tasks, adjust priorities, edit `files_affected`, then re-run `/work`.
+- `[1]` Dispatch only first task → drop the batch, treat as sequential single-task dispatch on the highest-priority eligible task.
+
+### Rationale
+
+Parallel batches scale Claude's throughput but also remove the natural pause-points that sequential dispatch provides (per-call permission prompts, post-task user-visible state changes). A pre-dispatch confirmation restores a cheap human checkpoint without changing parallel-batch behavior.
+
+Independent of permission settings or auto-mode classifier behavior — auto mode (which removes per-call permission prompts) actually makes this checkpoint *more* valuable, not less.
+
+---
+
 ## Parallel Dispatch
 
 When Step 2c produces a parallel batch of >= 2 tasks, execute them concurrently (runs as `/work` Step 4 "If Executing (Parallel)").
