@@ -2,7 +2,7 @@
 
 **Purpose:** Coordinate multi-session template improvements from three inputs (Opus 4.7 upgrade, Claude Code best-practices doc, usage insights report) alongside the existing feedback backlog and approved decisions.
 
-**Status:** Phase 4 — work.md hot-file batch implemented (FB-017 primary + FB-027 + FB-036 + FB-015 audit); remaining direct items next
+**Status:** Phase 4 — FB-015 primary landed in dashboard-regeneration.md (FB-015 complete pending health-check secondary); remaining direct items next
 **Last updated:** 2026-04-17
 
 ---
@@ -46,7 +46,8 @@ User retains approval authority at every intake and edit point. Claude does not 
 - **DEC-008 Option D implemented 2026-04-17:** `.claude/settings.json` narrowed from 15 to 8 entries per Q5 keep-set (kept: `git status`, `git log`, `git diff`, `ls`, `grep`, `test`, `head`, `wc`; dropped: `git branch`, `git check-ignore`, `git ls-tree`, `tree`, `find`, `sort`, `shasum`). New `### Auto Mode` subsection added to `.claude/README.md` between `### Settings` and `### Skills` — explains classifier behavior, composition with `permissions.allow`, and recommended setup for Max+Opus 4.7 vs Pro/Sonnet/Haiku vs dontAsk/CI. `.claude/CLAUDE.md` Critical Invariant bullet 8 updated with auto-mode composition reference. `commands/health-check.md` Part 5c verified entry-count-agnostic — no edit needed. Layered two-file model from DEC-005 preserved.
 - **FB-037 implemented 2026-04-17:** new `## Optional Hooks` section added to `.claude/support/reference/setup-checklist.md` with a `PreToolUse` recipe blocking dev-server starts (`npm/pnpm/yarn/bun run? dev`, `next dev`, `vite`) via `jq` + `grep` exit-2 hard-block. Documents composition with `permissions.allow` and auto-mode classifier (hooks run last; can override classifier-approved actions). Includes customization guidance and pointer to Claude Code's hooks docs.
 - **work.md hot-file batch implemented 2026-04-17:** Step 2b inlines the checkbox-detection trigger so `/work` reliably auto-finalizes checked decisions (FB-017 primary fix; resolves styler-project regression). Step 2 spec-check tree's "Minor/trivial addition" branch now explicitly says "no spec change, no formal planning" with a new paragraph routing one-sentence diffs around `/research` (FB-027 work.md slice). New `## Pre-Dispatch Confirmation` section in `parallel-execution.md` (referenced from work.md § "If Executing (Parallel)" Key Rules) gates parallel batches ≥ 3 behind a `[D]`/`[S]`/`[1]` prompt (FB-036 primary). "If Completing" dashboard-regen bullet rephrased from "completion summary" to "completion state" (FB-015 work.md audit slice). Out-of-file primary edits remain: dashboard-regeneration.md § Action Item Contract negative rule for FB-015; phase-decision-gates.md restructure (optional) and decisions.md/workflow.md audit (likely no edit) for FB-017; alt-site callouts (research.md, rules/decisions.md) for FB-027.
-- **Next action:** Erik chooses the next Phase 4 unit. Suggested: (1) FB-015 primary edit in `dashboard-regeneration.md § Action Item Contract` — small, completes FB-015; (2) `rules/session-management.md` group (FB-023 + FB-024 + FB-025); (3) `rules/agents.md` / `implement-agent.md` group (FB-022 + FB-034 + FB-035 + FB-031).
+- **FB-015 primary implemented 2026-04-17:** `dashboard-regeneration.md § "Action Item Contract"` gained a `**Must NOT include:**` block listing work summaries, completion reports, and recent-activity recaps as out-of-scope for Action Required. Explicitly bars a "Recent Activity" / "Work Summary" / "Completed This Session" sub-section and cross-references the canonical Sections list in `rules/dashboard.md` (which already omits these). Confirms git log + task JSON as the authoritative history source. FB-015 is now complete except for the optional `health-check.md` Part 6 check #4 secondary (extend summary-shaped-content detection if feasible) — folded into the eventual health-check edit batch. Existing Action Item Contract positives remain unchanged.
+- **Next action:** Erik chooses the next Phase 4 unit. Suggested: (1) `rules/session-management.md` group (FB-023 + FB-024 + FB-025) — three items, one bundled edit; (2) `rules/agents.md` / `implement-agent.md` group (FB-022 + FB-034 + FB-035 + FB-031); (3) `commands/iterate.md` group (FB-021 + FB-032).
 - **Blocked on:** nothing. FB-033 remains deferred on FB-032 trial (Phase 4 direct item).
 
 ---
@@ -181,7 +182,7 @@ Rows = files. Columns = in-flight items. Cells = section/step affected (or `•`
 | `commands/research.md` (new row) | | | | | | | | FB-027 trivial-skip callout | — |
 | `support/reference/task-schema.md` | | | ~~`phase` row + new `cross_phase` row~~ ✓ | | | | | — | — |
 | `support/reference/phase-decision-gates.md` | | | ~~skip rule + Cross-Phase section~~ ✓ | | | • | | — | — |
-| `support/reference/dashboard-regeneration.md` | | | ~~`(cross-phase)` suffix~~ ✓ | • | Action Item Contract | | | — | — |
+| `support/reference/dashboard-regeneration.md` | | | ~~`(cross-phase)` suffix~~ ✓ | • | ~~FB-015 Action Item Contract negative rule~~ ✓ | | | — | — |
 | `support/reference/parallel-execution.md` | | | ~~OR clause in eligibility~~ ✓ | | | | | — | ~~FB-036 Pre-Dispatch Confirmation section~~ ✓; FB-030 fan-out (alt site) |
 | `support/reference/decomposition.md` | | | ~~heuristic bullet~~ ✓ | | | | | — | — |
 | `support/reference/decisions.md` | | | | | | line 151 | | — | — |
@@ -537,3 +538,28 @@ Any of these can be inline or plan-and-execute in a fresh session. DEC-008 is a 
 - FB-027 alt-sites (research.md callout, rules/decisions.md cross-reference) become available follow-on work but aren't required if work.md handles the user-flow case.
 - FB-036 threshold may want to become configurable (`pre_dispatch_confirm_threshold` in spec frontmatter or a settings field) — not implemented here; assess after some real-world dispatches.
 - Version bump tally for Phase 5 now includes DEC-007 + DEC-008 + FB-037 + work.md batch.
+
+### 2026-04-17 — Phase 4: FB-015 primary (dashboard-regeneration.md Action Item Contract)
+
+**Done:**
+- Added a `**Must NOT include:**` block to `dashboard-regeneration.md § "Action Item Contract"` immediately after the five positive rules. Negative rule explicitly bars work summaries, completion reports, and recent-activity recaps; calls out "Recent Activity" / "Work Summary" / "Completed This Session" as disallowed sub-section names; cites the canonical Sections list in `rules/dashboard.md` as the authoritative source of truth for which sub-sections render.
+- Verified `rules/dashboard.md § Sections` already omits Recent Activity (canonical list: Action Required, Progress, Tasks, Decisions, Notes, Custom Views) — no edit needed; the cross-reference in the new block points to this existing list.
+- Grep of `dashboard-regeneration.md` for other "summary" / "completion report" / "recent activity" occurrences: remaining uses are legitimate structural language (status summary table, completed-phase collapse summary, verification-result summary row, `template_version` mention of "status summary") — not work-summary-coded, no further edits needed.
+- Mirrored the same `**Must NOT include:**` block into `.claude/skills/dashboard-style/SKILL.md § Action Item Contract` to honor the DEC-007 dual-location convention (companion reference doc and Skill are kept in sync until one is retired).
+- Tracker bookkeeping: status line, Current State (new bullet + next-action refresh), File Collision Map (dashboard-regeneration.md row FB-015 cell struck through `~~FB-015 Action Item Contract negative rule~~ ✓`), Session Log entry.
+- Pre-commit hook: `dashboard-regeneration.md` and `skills/dashboard-style/SKILL.md` are both sync-category files, so the hook will warn about `version.json` again (expected per Phase 5 deferral).
+
+**Judgment calls:**
+- **Placement — append vs. reshape:** Added the negative block as a separate paragraph under the five positive rules rather than interleaving or restructuring. Reasoning: the positives describe what every item IS; the negative describes what the section as a whole EXCLUDES. Different shape → different block. Leaves the existing enumeration stable for any external references.
+- **Cross-reference to `rules/dashboard.md`:** Explicitly named the canonical Sections list as the source of truth for sub-section names. The rules file doesn't need a new negative rule — its existing omission of Recent Activity is already load-bearing. Pointing to it avoids duplicating the rule in two places (and risking drift between them).
+- **Out-of-scope:** Did NOT touch `commands/status.md` line 28 ("Current status (progress summary, decisions, recent activity)") or `commands/workflow.md` line 253 ("current phase, spec summary, recent activity..."). These describe derived CLI output from `/status` (computed from task JSON on the fly), not dashboard file content. Different artifact, different rules. Status.md line 28's "recent activity" framing is technically stale now but the `/status` Recent Activity (last 24h) block on line 90 is a CLI-side feature that legitimately renders. Folding this into a follow-on "status.md audit" item if it bites in practice.
+- **Health-check secondary remains open:** `commands/health-check.md` Part 6 check #4 extension (detect summary-shaped content in dashboard during health-check) is deferred to the eventual health-check edit batch per FB-015 assessment. Primary rule is what verify-agent / Claude will cite when regenerating; the health-check detector is belt-and-braces.
+
+**Next:** FB-015 is functionally complete (primary negative rule + the earlier work.md audit slice). Erik chooses the next Phase 4 unit. Strong candidates:
+1. **`rules/session-management.md` group** (FB-023 `/btw` + FB-024 `/rewind`/Esc+Esc + FB-025 `/rename`) — three items, one bundled edit.
+2. **`commands/iterate.md` group** (FB-021 AskUserQuestion in distill + FB-032 Decisions-in-Proposal output contract) — FB-032 is gate-lifting for FB-033's trial.
+3. **`rules/agents.md` / `implement-agent.md` group** (FB-022 + FB-034 + FB-035 + FB-031).
+
+**Open questions for later:**
+- `commands/status.md` line 28 inaccurate framing ("recent activity" as dashboard content) — low-priority follow-on.
+- Version bump tally now: DEC-007 + DEC-008 + FB-037 + work.md batch + FB-015 primary. Still Phase 5.

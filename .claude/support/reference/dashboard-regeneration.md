@@ -330,6 +330,8 @@ Every item in "Action Required" must be:
 4. **Contextual** — if feedback is needed, provide a feedback area or link
 5. **Instructional** — for human-owned tasks, include a brief "how to proceed" note. If the task requires external tools, name them. If it requires access to specific systems, say so. The user should never need to open the task JSON to understand what to do next
 
+**Must NOT include:** work summaries, completion reports, or recent-activity recaps. "Action Required" is a list of things the user still needs to do — not a record of what has happened. Git log and task JSON already preserve history; duplicating it here slows the user down when scanning for next actions. If an item describes completed work (e.g., "Task 5 finished — added X"), it belongs elsewhere (or nowhere). This rule applies to every sub-section under Action Required (Phase Transitions, Verification Pending, Your Tasks, Reviews, etc.): each entry must be an action the user takes, not a status report on one they already took. Do not add a "Recent Activity", "Work Summary", "Completed This Session" or similar sub-section — the canonical Sections list in `.claude/rules/dashboard.md` intentionally omits them.
+
 ### Review Item Derivation
 
 Review items are derived, not stored. During regeneration:
