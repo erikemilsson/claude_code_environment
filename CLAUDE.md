@@ -29,7 +29,8 @@ When making changes to the template, use the `.claude/` command definitions as r
 
 - **Source of truth:** `system-overview.md` (root) describes the template's design intent
 - **Decision records:** `decisions/` (root) — for formal decisions about template changes via `/research`
-- **Feedback:** `.claude/support/feedback/` — feedback items about template improvements (this is an exception — feedback is about the template, not template content that ships)
+- **Feedback:** `template-maintenance/feedback.md` (root) — template-maintenance FB-NNN items. Append manually; do NOT use `/feedback` in this repo. `/feedback` writes to `.claude/support/feedback/feedback.md`, which is the shipped location reserved for downstream projects using the template.
+- **Staged work inventories:** `template-maintenance/` (root) — deferred extractions and multi-stage plans (e.g., `scripts-candidates.md`)
 
 These are template-maintenance artifacts that don't ship to projects.
 
@@ -37,8 +38,8 @@ These are template-maintenance artifacts that don't ship to projects.
 
 Template-maintenance work staged for later sessions. Read these first if resuming template work after a gap:
 
-- **FB-011 scripts extraction.** Families A + B landed in v3.0.0 (`.claude/scripts/fingerprint.py` + `validate-tasks.py`). Families C (dashboard regen), D (parallel-plan), E (decision finalization) are tiered per observed need. Inventory: `scripts-candidates.md` (root) — includes trigger criteria and a 30-day trial window for Family E that started 2026-04-17.
-- **Feedback backlog.** `.claude/support/feedback/feedback.md` holds assessed-but-unimplemented template improvements. FB-033 (spec-auditor subagent) is gated on FB-032 trial data from real `/iterate` sessions. Run `/feedback review` in a fresh session to triage when you come back.
+- **FB-011 scripts extraction.** Families A + B landed in v3.0.0 (`.claude/scripts/fingerprint.py` + `validate-tasks.py`). Families C (dashboard regen), D (parallel-plan), E (decision finalization) are tiered per observed need. Inventory: `template-maintenance/scripts-candidates.md` — includes trigger criteria and a 30-day trial window for Family E that started 2026-04-17.
+- **Feedback backlog.** `template-maintenance/feedback.md` holds assessed-but-unimplemented template improvements. FB-033 (spec-auditor subagent) is gated on FB-032 trial data from real `/iterate` sessions. Triage manually by reading the file and re-assessing; do not run `/feedback review` against it (that command targets the shipped `.claude/support/feedback/` path).
 
 ## Version Bumping
 
@@ -66,6 +67,6 @@ The `tests/` directory contains conceptual trace tests for the command definitio
 | `tests/` | Command verification scenarios | No (users delete) |
 | `decisions/` | Template-level decision records (via `/research`) | No (users delete) |
 | `scripts/` | Template maintenance scripts (pre-commit hook) | No (users delete) |
-| `scripts-candidates.md` | Template-maintenance inventory for staged work (see Active Follow-ups) | No (users delete) |
+| `template-maintenance/` | Template-maintenance working docs: feedback log, staged work inventories (see Active Follow-ups) | No (users delete) |
 | `interaction-logs/` | Cross-project session exports and derived insights | No (template repo only) |
 | `.gitignore` | Repo config | Partially (users may keep) |

@@ -6,7 +6,7 @@ Reference for users who want to automate template workflows or run Claude Code n
 
 ---
 
-## `claude -p` — the automation primitive (FB-029)
+## `claude -p` — the automation primitive
 
 Non-interactive mode runs a single prompt and exits. No session state, no dashboard, no `/work` — just prompt in, output out. It's the building block for CI checks, pre-commit hooks, scheduled jobs, and shell-driven batch pipelines.
 
@@ -60,7 +60,7 @@ claude -p "..." --cwd /path/to/project --model claude-opus-4-7
 
 ---
 
-## Fan-out — parallel batch execution (FB-030)
+## Fan-out — parallel batch execution
 
 When a workload is "same operation, many inputs," spawn many `claude -p` processes in parallel. This is how you scale past what one session (intra-session Task dispatch) can coordinate.
 
