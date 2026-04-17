@@ -2,7 +2,7 @@
 
 **Purpose:** Coordinate multi-session template improvements from three inputs (Opus 4.7 upgrade, Claude Code best-practices doc, usage insights report) alongside the existing feedback backlog and approved decisions.
 
-**Status:** Phase 2 complete — Phase 3 research scope determined
+**Status:** Phase 3 — DEC-007 and DEC-008 drafted (proposed); awaiting user option selection
 **Last updated:** 2026-04-17
 
 ---
@@ -37,10 +37,13 @@ User retains approval authority at every intake and edit point. Claude does not 
 
 ## Current State
 
-- **Active phase:** Phase 2 closed — Phase 3 (research) or Phase 4 (direct implementation) can begin next.
-- **Triage outcome (2026-04-17):** 19 new items assessed (FB-019–FB-037); 3 carryover items archived as absorbed (FB-010→DEC-004, FB-012→DEC-005, FB-013→DEC-006). No duplicates, no rejects, no `refined` holds. Carryover `ready` items unchanged: FB-011, FB-015, FB-017. **Phase 3 research scope:** 3 items — FB-020 (Skills / candidate DEC-007), FB-026 (permissions-auto-mode / candidate DEC-008, inflection), FB-033 (spec-auditor / candidate DEC-009, deferred until FB-032 trialed). **Phase 4 direct-implementation:** 16 items ready now; FB-037 blocked until DEC-008 closes. Full list in the Phase 3 / Phase 4 sections below.
-- **Next action:** Erik chooses between (a) start Phase 3 research — write research plans for FB-020 and FB-026 (research is iterative; keep the conversation rather than fresh-session), decisions land in root `decisions/`; or (b) start Phase 4 direct implementation batched by file, hot files first (`commands/work.md`, `rules/agents.md`, `.claude/agents/implement-agent.md`, `rules/session-management.md`, `commands/iterate.md`). Do not assume.
-- **Blocked on:** nothing at the phase level. Within Phase 4, FB-037 blocks on FB-026; within Phase 3, FB-033 blocks on FB-032 trial (FB-032 is Phase 4 direct).
+- **Active phase:** Phase 3 — research for FB-020 (DEC-007) and FB-026 (DEC-008) complete; decision records drafted in `decisions/` with `status: proposed`. Awaiting user option selection (checkbox in each record).
+- **Phase 3 research output (2026-04-17):**
+  - **DEC-007 (Skills adoption scope, not inflection):** 4 options — A: no adoption / B: reference-only / C: rules + domain packs / D: defer. Research recommends B. Key finding: Skills inherit caller's context (inject markdown into caller's message stream), so they cannot host verify-flow orchestration — but subagents spawned inside a Skill DO get fresh context. This also answers FB-033's "subagent vs Skill" sub-question definitively: subagent. DEC-007 blocks FB-033.
+  - **DEC-008 (auto-mode reevaluation, inflection):** 4 options — A: full reversal / B: narrow to 8 entries / C: keep DEC-005 / D: narrow + document auto mode. Research recommends B (or D if auto-mode documentation is desired). Key finding: `permissions.allow` rules short-circuit the auto-mode classifier, so DEC-005's allowlist is not dead code — it saves latency, covers dontAsk/CI, and supports hooks (which don't get classifier intelligence). Full reversal would break hook execution and CI. DEC-008 blocks FB-037.
+- **Triage outcome (2026-04-17, Phase 2 close):** 19 new items assessed (FB-019–FB-037); 3 carryover archived as absorbed (FB-010→DEC-004, FB-012→DEC-005, FB-013→DEC-006). Carryover `ready` items unchanged: FB-011, FB-015, FB-017. Phase 4 direct-implementation: 16 items ready now; FB-037 blocked until DEC-008 closes.
+- **Next action:** Erik reviews `decisions/decision-007-skills-adoption-scope.md` and `decisions/decision-008-auto-mode-permissions-reevaluation.md`, checks one option in each "## Select an Option" section. On next `/work`, Step 2b auto-finalizes the decisions (status → approved, Decision section populated). Then FB-020 and FB-026 move to `archive.md` as absorbed; FB-037 unblocks for Phase 4.
+- **Blocked on:** user selection on DEC-007 and DEC-008. FB-033 stays deferred (gated on FB-032 trial). FB-037 blocked on DEC-008 closure.
 
 ---
 
@@ -87,8 +90,8 @@ Intake control is explicit: Claude produces a candidate list first, user approve
 
 Only for new items that emerge as cross-file or inflection-point decisions. Research runs iteratively (keep conversation context rather than fresh-session). Decision records land in root `decisions/`.
 
-- [ ] **FB-020** — Skills architectural research → candidate **DEC-007**. Investigates subagent-vs-skill context-window semantics (primary concern: would affect DEC-004 guarantees), distribution/override semantics, permissions inheritance. **No upstream blocker.** FB-033 depends on this outcome. Can start immediately.
-- [ ] **FB-026** — Permissions story given auto-mode maturity → candidate **DEC-008** (inflection-point; may reverse portions of DEC-005). Affects 6 files including `.claude/settings.json` and DEC-005's layering model. **No upstream blocker.** Blocks FB-037 (hook recipe shape depends on outcome). Can start immediately.
+- [x] **FB-020** — Skills architectural research → **DEC-007 drafted (proposed)**. Research complete. 4 options in the record; primary finding resolved the blocking concern (Skills inherit caller context, so they cannot host verify flows; subagents spawned from Skills still get fresh context). FB-033's sub-question ("subagent or Skill for spec-auditor?") is answered regardless of option: subagent. Awaiting user option selection. DEC-007 blocks FB-033.
+- [x] **FB-026** — Permissions story given auto-mode maturity → **DEC-008 drafted (proposed, inflection)**. Research complete. 4 options; primary finding: `permissions.allow` short-circuits the classifier, so DEC-005 is not dead code. Recommends narrowing to 8 entries rather than full reversal. Awaiting user option selection. DEC-008 blocks FB-037.
 - [ ] **FB-033** — Spec-auditor subagent + PreToolUse gate → candidate **DEC-009**. **Deferred** — gated on FB-032 trial data. Depends on FB-020 (skill-vs-subagent) and FB-026 (hook surface) outcomes. Do not start until FB-032 has been implemented (Phase 4) and trialed across several real `/iterate` sessions.
 
 **Ordering constraints:**
@@ -374,3 +377,27 @@ Every working file for this upgrade is tagged. `DELETE-AFTER` items removed in P
 **Next:** Commit Phase 2 close. Then Erik chooses between Phase 3 (research for FB-020 and/or FB-026; keep conversation rather than fresh-session; decision records land in root `decisions/`) and Phase 4 (direct implementation grouped by hot files). Do not assume — ask first.
 
 **Open questions for later:** None blocking. Version bump scope (Phase 5) pending total-change tally.
+
+### 2026-04-17 — Phase 3 research: DEC-007 + DEC-008 drafted
+
+**Done:**
+- Erik chose Phase 3 option C (research FB-020 and FB-026 interleaved, keeping conversation context).
+- Dispatched two parallel `claude-code-guide` agents:
+  - **FB-020 agent** investigated Skills context semantics, invocation, distribution, permissions inheritance, and limitations. Primary concern answered decisively: Skill content injects into the caller's message stream (shared context), but subagents spawned *inside* a Skill still receive fresh context. Implication: Skills cannot host verify-flow orchestration (DEC-004 isolation violated at the Skill layer), but remain viable for on-demand reference content.
+  - **FB-026 agent** investigated auto-mode mechanics, rule-classifier interaction, latency cost, dontAsk/hook contexts, and entry-by-entry redundancy. Primary finding: `permissions.allow` rules short-circuit the classifier — DEC-005's allowlist is not dead code. Recommends narrowing to 6–8 essential entries (Option B) rather than full reversal; full reversal would break hooks, CI, and non-Opus-4.7 users.
+- Drafted `decisions/decision-007-skills-adoption-scope.md` — 4 options (A no adoption / B reference-only / C broader rules+packs / D defer); research recommends B. Not inflection. Blocks FB-033.
+- Drafted `decisions/decision-008-auto-mode-permissions-reevaluation.md` — 4 options (A full reversal / B narrow to 8 / C keep DEC-005 / D narrow + document); research recommends B or D. Inflection. Blocks FB-037.
+- Both records follow the DEC-005 format (frontmatter + Select Option + Context + Questions + Options Comparison + Option Details + Research Findings + Notes + Recommendation).
+- Tracker updated: Current State reflects drafted proposed records; Phase 3 checkboxes `[x]` for FB-020 and FB-026 research (but the records themselves still await user selection).
+- FB-033 remains deferred (gated on FB-032 trial, not on DEC-007 — DEC-007 resolves the subagent-vs-skill sub-question, but the trial-gate is about whether FB-032 itself is sufficient).
+
+**Judgment calls worth surfacing:**
+- Kept DEC-007 and DEC-008 as two separate records despite their interaction (FB-020 research noted Skills' permission inheritance relates to where hooks can live). The interaction is loose — Skills don't change DEC-005's layering, and auto mode doesn't change Skills' context semantics. Two records are clearer for audit and each can resolve on its own timeline.
+- Both records use the DEC-005 Option-Matrix + Research-Findings template. DEC-007's Q5 cross-references FB-033; DEC-008's Q5 provides per-entry analysis of DEC-005's 15-entry set to justify the narrowed 8.
+- Research recommendations are explicit (`## Recommendation` section) but all four options remain available in each record — Erik picks. Research agents do not decide per `.claude/rules/agents.md`.
+
+**Next:** Erik reviews both drafted decisions and checks one option in each. Next `/work` invocation will auto-finalize (Step 2b checkbox detection), populate Decision sections, mark as approved, and unblock FB-033 (sub-question resolved) and FB-037 (DEC-008 closed). At that point, FB-020 and FB-026 move to archive as absorbed, and the template is ready to begin Phase 4 implementation work (or Phase 1-style implementation of any chosen options).
+
+**Open questions for later:**
+- DEC-008 is flagged inflection in its frontmatter — if Erik selects Option A (full reversal) this matters a lot (spec revisit); if Option B/C/D it's a minor flag. The inflection marker is conservative.
+- Whether to implement DEC-007 and DEC-008 selections in the same session they close, or treat them as Phase 1-style implementations (plan-in-fresh-session-and-execute). Suggest handling inline for DEC-007 (small: maybe one new Skill + reference pointer), and plan-and-execute for DEC-008 Option B (settings.json rewrite + health-check Part 5c check + `.claude/CLAUDE.md` Settings invariant + `.claude/README.md` Settings section — touches multiple files).
