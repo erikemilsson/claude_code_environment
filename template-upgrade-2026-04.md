@@ -218,6 +218,7 @@ Every working file for this upgrade is tagged. `DELETE-AFTER` items removed in P
 | `plan-dec-006-implementation.md` | DELETE-AFTER | DEC-006 implementation plan for fresh-session execution |
 | `plan-usage-report-intake.md` | DELETE-AFTER | Phase 2 usage-report intake plan for fresh-session execution |
 | `plan-feedback-review-triage.md` | DELETE-AFTER | Phase 2 triage plan for fresh-session execution |
+| `plan-dec-008-implementation.md` | DELETE-AFTER | DEC-008 Option D implementation plan for fresh-session execution |
 | `coworkfolderspec.md` | DELETE (Phase 0) | No longer moving forward |
 | `insights-report.html` | DELETE (Phase 0) | Stale; live at `~/.claude/usage-data/report.html` |
 | `migration-guide.md` | DELETE (Phase 0) | Already applied to downstream projects |
