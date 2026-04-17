@@ -2,7 +2,7 @@
 
 **Purpose:** Coordinate multi-session template improvements from three inputs (Opus 4.7 upgrade, Claude Code best-practices doc, usage insights report) alongside the existing feedback backlog and approved decisions.
 
-**Status:** Phase 4 — FB-029/030 implemented (new support/reference/automation.md); FB-011 ready next (scripts inventory can now route to claude -p primitive); FB-019 + FB-028 also remaining
+**Status:** Phase 4 — FB-019 implemented (explicit @imports in .claude/CLAUDE.md); FB-028 + FB-011 remaining
 **Last updated:** 2026-04-17
 
 ---
@@ -51,7 +51,8 @@ User retains approval authority at every intake and edit point. Claude does not 
 - **iterate.md group implemented 2026-04-17:** `/iterate` Step 1a now inlines the same checkbox-detection trigger that work.md Step 2b got — the FB-017 fix applies at both entry points, closing the gap where running `/iterate` (not `/work`) on checked decisions left them `proposed`. Distill mode's sub-step 3 restructured to use `AskUserQuestion` for structured interview (FB-021) — explicit option lists force decisions to be visible instead of accepting flat text and silently interpreting. Step 4's change declaration now ends with a mandatory `## Decisions in This Proposal` section tagging each non-trivial choice `[NEEDS APPROVAL]` / `[FROM EXISTING SPEC]` / `[USER REQUESTED]`; Step 5 gates apply on zero-unchecked `[NEEDS APPROVAL]` (FB-032). `rules/spec-workflow.md § "Propose-Approve-Apply"` gains one sentence making the contract visible at the rules layer. Unblocks FB-033 trial-gate data generation.
 - **agents group implemented 2026-04-17:** Four rules/agents.md + implement-agent.md + CLAUDE.md additions. Root-cause-over-symptom rule: new § in rules/agents.md (primary) + sub-section in implement-agent Implementation Guidelines (reinforcement) + matching check in verify-agent per-task checklist (FB-022). Respect-prior-kills behavioral rule: new § in rules/agents.md + new 9th Critical Invariant bullet in `.claude/CLAUDE.md` pointing to the rules file (FB-034). Large-file Read guidance: new paragraph in implement-agent § Tool Preferences covering Grep/Glob preference, offset/limit usage, and file-too-large recovery (FB-035). Writer/Reviewer parallel-session pattern: one-paragraph mention in rules/agents.md § Separated Concerns (FB-031). Also landed the deferred FB-032 verify-agent matching check for spec-change tasks requiring the Decisions section contract. Auto mode does not absorb any of these — all are behavioral or rule-layer, not permission-layer.
 - **FB-029/030 implemented 2026-04-17:** New `.claude/support/reference/automation.md` documenting the `claude -p` primitive (FB-029) and fan-out pattern (FB-030). Doc clarifies the intra- vs inter-session parallelism distinction, scopes `claude -p` with concrete examples (output formats, allowedTools scoping, working-dir/model flags), and covers fan-out with concurrency caps and the shared-state coordination rule (workers produce artifacts, main collects; never shared-write). Cross-referenced from `support/reference/parallel-execution.md` (one-paragraph scope note) and added to `support/reference/README.md § Guides` + `sync-manifest.json § sync`. Template itself does not adopt fan-out — this is user-facing reference.
-- **Next action:** Erik chooses the next Phase 4 unit. FB-011 is now unblocked (automation primitive available for routing scripts-inventory candidates — some may collapse to `claude -p` one-liners rather than bash scripts). Other remaining single-file items: FB-019 (`@path` imports in `.claude/CLAUDE.md`), FB-028 (CLI-tool hints in `setup-checklist.md`). FB-033 research can also be dispatched once `/iterate` has run on real projects under the FB-032 contract.
+- **FB-019 implemented 2026-04-17:** `.claude/CLAUDE.md § "Workflow Rules"` now uses explicit `@.claude/rules/*.md` imports at the top of the section, followed by the existing bulleted one-liner index. Declarative harness directive + human-readable summary preserved. All seven rule files explicitly imported (task-management, spec-workflow, decisions, dashboard, agents, archiving, session-management).
+- **Next action:** Erik chooses the next Phase 4 unit. Remaining: FB-028 (CLI-tool hints in `setup-checklist.md`), FB-011 (scripts inventory — unblocked by automation.md; some candidates can route to `claude -p` one-liners rather than bash scripts). FB-033 research can also be dispatched once `/iterate` has run on real projects under the FB-032 contract.
 - **Blocked on:** nothing. FB-033 remains deferred on FB-032 trial (Phase 4 direct item).
 
 ---
@@ -122,7 +123,7 @@ Existing `ready` items + new items routed as direct implementation. Group by fil
 **Single-item / single-file batches:**
 
 - [ ] **FB-011** — Scripts as alternative (dashboard regen, checkbox detection); starts with a candidates inventory doc. Consider after FB-029/FB-030 (some candidates may become `claude -p` one-liners instead of bash scripts).
-- [ ] **FB-019** — `@path` imports in `.claude/CLAUDE.md` (Workflow Rules section).
+- [x] **FB-019** — `@path` imports in `.claude/CLAUDE.md` (Workflow Rules section). *(Implemented 2026-04-17.)*
 - [ ] **FB-028** — CLI-tool installation hints in `.claude/support/reference/setup-checklist.md`.
 - [x] **FB-029 + FB-030** — New `.claude/support/reference/automation.md`: `claude -p` primitive + fan-out pattern. Bundle (same file). *(Implemented 2026-04-17.)*
 
@@ -175,7 +176,7 @@ Rows = files. Columns = in-flight items. Cells = section/step affected (or `•`
 | `.claude/agents/implement-agent.md` | ~~Steps 3, 6a-c~~ ✓ | | | Steps 3, 6a, 6c | | | frontmatter | ~~FB-022 Root Cause sub-section~~ ✓ | FB-034 landed in rules/agents.md + CLAUDE.md ✓; ~~FB-035 large-file paragraph~~ ✓ |
 | `.claude/agents/verify-agent.md` | ~~T6, T7~~ ✓ | | | | | | frontmatter | ~~FB-022 symptom-vs-root-cause check~~ ✓ | ~~FB-032 Decisions section check~~ ✓ |
 | `.claude/agents/research-agent.md` | | | | | | | frontmatter | — | — |
-| `.claude/CLAUDE.md` | | ~~file-boundary~~ ✓ | | | | | model req | FB-019 `@path` imports | ~~FB-034 Critical Invariant bullet 9~~ ✓ |
+| `.claude/CLAUDE.md` | | ~~file-boundary~~ ✓ | | | | | model req | ~~FB-019 `@path` imports~~ ✓ | ~~FB-034 Critical Invariant bullet 9~~ ✓ |
 | `rules/task-management.md` | | | ~~• (stale — no edit needed)~~ | | | | | — | — |
 | `rules/spec-workflow.md` | | | ~~• (stale — no edit needed)~~ | | | | | — | ~~FB-032 rules-layer sentence~~ ✓ |
 | `rules/dashboard.md` | | | | • | Sections | | | — | — |
@@ -678,3 +679,23 @@ FB-033 research can also be dispatched once `/iterate` has run on real projects 
 **Open questions for later:**
 - Whether any template command (e.g., `/health-check`) should grow a "run non-interactively via `claude -p`" section in its own doc. Deferred — the automation doc covers the general pattern; per-command CI recipes are a separate shape and would be their own bundle if pursued.
 - Version bump tally now: DEC-007 + DEC-008 + FB-037 + work.md batch + FB-015 primary + session-management.md group + iterate.md group + agents group + FB-029/030 automation.md. Still Phase 5.
+
+### 2026-04-17 — Phase 4: FB-019 (.claude/CLAUDE.md @path imports)
+
+**Done:**
+- **`.claude/CLAUDE.md § "Workflow Rules"`:** Added seven `@.claude/rules/*.md` import lines at the top of the section (task-management, spec-workflow, decisions, dashboard, agents, archiving, session-management). Intro line replaced with a declarative statement about explicit imports. Existing bulleted one-liner index preserved below the imports under a new "Summary of each:" label — now reads as commentary on what was loaded.
+- Tracker bookkeeping: status line, Current State (new bullet + next-action refresh), Phase 4 single-item FB-019 row → `[x]`, File Collision Map strike (`.claude/CLAUDE.md` Best-prac `FB-019 @path imports` → struck), Cleanup Manifest row was pre-added with the plan, Session Log entry (this).
+- Pre-commit hook: `.claude/CLAUDE.md` is sync-category — hook will warn about `version.json` not being bumped (expected per Phase 5 deferral).
+
+**Judgment calls:**
+- **Kept bulleted descriptions alongside `@imports` (not replaced):** The `@imports` are the harness-level directive (load the file contents); the bulleted one-liners are the human-level scannable index (what's in each file). Removing the bullets would lose the at-a-glance view for humans browsing CLAUDE.md. Both serve different purposes.
+- **Full repo-relative paths (`.claude/rules/...`) over bare names:** Claude Code resolves `@` imports relative to the CLAUDE.md file, but explicit paths are unambiguous across IDE integrations and any future nested CLAUDE.md files in downstream projects.
+- **Scope held narrow — no `@imports` for reference docs:** Did not add imports for `support/reference/shared-definitions.md`, `task-schema.md`, etc. Those are on-demand references loaded by specific commands, not always-in-context. Expanding scope was out of the plan.
+- **Root `./CLAUDE.md` untouched:** That file is template-maintenance-only and gets replaced on project setup — no ship impact.
+
+**Next:** Erik chooses the next Phase 4 unit. Remaining: FB-028 (CLI-tool hints in `setup-checklist.md`), FB-011 (scripts inventory — unblocked by automation.md). FB-033 research dispatch still gated on FB-032 trial data from real `/iterate` sessions.
+
+**Open questions for later:**
+- Whether the `Critical Invariants` block should also reference `shared-definitions.md` via `@import` once the glossary is frequently cited. Deferred — current cross-references by path string are sufficient, and adding a glossary import expands always-loaded context without a clear payoff.
+- Verification (post-commit, non-blocking): in a fresh session, confirm the imported rules-file content appears exactly once in context by asking a question answered only in `task-management.md` (e.g., "what are the 8 task statuses?"). If the harness was already implicit-loading `.claude/rules/*.md`, duplication may appear — cost is small re-injected tokens; clarification benefit stands.
+- Version bump tally now: DEC-007 + DEC-008 + FB-037 + work.md batch + FB-015 primary + session-management.md group + iterate.md group + agents group + FB-029/030 automation.md + FB-019. Still Phase 5.

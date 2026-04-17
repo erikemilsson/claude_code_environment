@@ -70,7 +70,17 @@ This environment is domain-agnostic — it works for software, research, procure
 
 ## Workflow Rules
 
-Detailed workflow rules are in `.claude/rules/`:
+Rules files are loaded via explicit imports (Claude Code auto-reads `@path` references in CLAUDE.md):
+
+@.claude/rules/task-management.md
+@.claude/rules/spec-workflow.md
+@.claude/rules/decisions.md
+@.claude/rules/dashboard.md
+@.claude/rules/agents.md
+@.claude/rules/archiving.md
+@.claude/rules/session-management.md
+
+Summary of each:
 - `task-management.md` — statuses, difficulty, ownership, parallel execution
 - `spec-workflow.md` — spec lifecycle, propose-approve-apply, vision documents
 - `decisions.md` — decision records, inflection points
