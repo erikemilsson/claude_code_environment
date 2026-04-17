@@ -230,6 +230,9 @@ Every working file for this upgrade is tagged. `DELETE-AFTER` items removed in P
 | `plan-session-management-batch.md` | DELETE-AFTER | rules/session-management.md group (FB-023/024/025) implementation plan for fresh-session execution |
 | `plan-iterate-batch.md` | DELETE-AFTER | commands/iterate.md group (FB-021 + FB-032 + FB-017 detection mirror) implementation plan for fresh-session execution |
 | `plan-agents-batch.md` | DELETE-AFTER | rules/agents.md + implement-agent.md group (FB-022/031/034/035) implementation plan for fresh-session execution |
+| `plan-fb-019-claude-md-imports.md` | DELETE-AFTER | FB-019 CLAUDE.md @imports implementation plan for fresh-session execution |
+| `plan-fb-028-setup-checklist-clis.md` | DELETE-AFTER | FB-028 setup-checklist CLI hints implementation plan for fresh-session execution |
+| `plan-automation-md-bundle.md` | DELETE-AFTER | FB-029 + FB-030 automation.md bundle implementation plan for fresh-session execution |
 | `coworkfolderspec.md` | DELETE (Phase 0) | No longer moving forward |
 | `insights-report.html` | DELETE (Phase 0) | Stale; live at `~/.claude/usage-data/report.html` |
 | `migration-guide.md` | DELETE (Phase 0) | Already applied to downstream projects |
