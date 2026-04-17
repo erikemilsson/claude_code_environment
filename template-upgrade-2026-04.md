@@ -2,7 +2,7 @@
 
 **Purpose:** Coordinate multi-session template improvements from three inputs (Opus 4.7 upgrade, Claude Code best-practices doc, usage insights report) alongside the existing feedback backlog and approved decisions.
 
-**Status:** Phase 1 complete — proceed to Phase 2 (new input intake)
+**Status:** Phase 2 in progress — best-practices intake complete; usage-report intake pending
 **Last updated:** 2026-04-17
 
 ---
@@ -37,9 +37,9 @@ User retains approval authority at every intake and edit point. Claude does not 
 
 ## Current State
 
-- **Active phase:** Phase 2 — New input intake
-- **Next action:** Read the best-practices doc (https://code.claude.com/docs/en/best-practices) and produce `upgrade-candidates-best-practices.md` (root, `DELETE-AFTER`) for user per-item review. After user approval, do the same for the usage insights report (`file:///Users/erikemilsson/.claude/usage-data/report.html`).
-- **Blocked on:** nothing — DEC-006 implementation pending commit (commit SHA to be filled in after `git commit`); Phase 1 closes with that commit
+- **Active phase:** Phase 2 — New input intake (usage-report bundle remaining)
+- **Next action:** Fresh session reads `plan-usage-report-intake.md` at root and executes. Source is `file:///Users/erikemilsson/.claude/usage-data/report.html`; output is `upgrade-candidates-usage-report.md` at root (DELETE-AFTER) in the same A/B/C/D format as `upgrade-candidates-best-practices.md`. Approved captures continue the FB sequence from FB-032.
+- **Blocked on:** nothing — best-practices intake bundle committed; `plan-usage-report-intake.md` and Cleanup Manifest update committed as Phase 2 prep for fresh-context handoff.
 
 ---
 
@@ -69,9 +69,9 @@ Decisions already researched and approved (commit `55c1040`). Read each decision
 Intake control is explicit: Claude produces a candidate list first, user approves per-item, only approved items enter `/feedback`.
 
 **Best-practices doc (https://code.claude.com/docs/en/best-practices):**
-- [ ] Claude reads the doc and produces `upgrade-candidates-best-practices.md` (root, `DELETE-AFTER`). Each candidate: title, 1-line description, tentative impact scope, relevance rationale. No `/feedback` invocations yet.
-- [ ] User reviews candidate list and marks each `[approve]` / `[edit]` / `[reject]` with 1-line reason on rejects
-- [ ] Claude captures approved items via `/feedback` (one per candidate), using any user edits
+- [x] Claude reads the doc and produces `upgrade-candidates-best-practices.md` (root, `DELETE-AFTER`). Each candidate: title, 1-line description, tentative impact scope, relevance rationale. No `/feedback` invocations yet.
+- [x] User reviews candidate list and marks each `[approve]` / `[edit]` / `[reject]` with 1-line reason on rejects
+- [x] Claude captures approved items via `/feedback` (one per candidate), using any user edits
 
 **Usage insights report (`file:///Users/erikemilsson/.claude/usage-data/report.html`):**
 - [ ] Claude reads the report and produces `upgrade-candidates-usage-report.md` (root, `DELETE-AFTER`) in the same format
@@ -279,3 +279,16 @@ Every working file for this upgrade is tagged. `DELETE-AFTER` items removed in P
 **Next:** Commit the DEC-006 changes. Commit message drafted in `plan-dec-006-implementation.md`. After commit, Phase 1 is complete; proceed to Phase 2 (new input intake — best-practices doc + usage insights report).
 
 **Open questions for later:** None for DEC-006. Downstream projects running `/work` after pulling this change may encounter phase-boundary nudges toward `/iterate` — per the inflection-point note in the commit message.
+
+### 2026-04-17 — Phase 2 best-practices intake
+
+**Done:**
+- Fetched https://code.claude.com/docs/en/best-practices via WebFetch; produced `upgrade-candidates-best-practices.md` at root (DELETE-AFTER) with 17 candidates grouped into A (template/architecture), B (doc/rules tweaks), C (user-facing tips), D (preemptively rejected with 1-line reasons) plus an "Already covered in template" transparency section
+- Preemptively dropped 4 candidates after Erik flagged them as absorbed by Opus 4.7 + 1M context: CLAUDE.md/rules bloat audit, custom compaction instructions, IMPORTANT/YOU MUST emphasis tuning, separate prompting-tips reference doc. Top note in the candidate file explains what was dropped and why.
+- Erik reviewed the file per-item. Tally: 11 approved, 2 edited (research/decision-flavored), 1 rejected (C2 CLAUDE.local.md — template is personal-use only)
+- Captured all 13 non-rejected items into `.claude/support/feedback/feedback.md` as FB-019 through FB-031. Two edits converted candidates into bigger questions: FB-020 (Skills research-first — sub-agent context-window concern, candidate DEC-007) and FB-026 (permissions/auto-mode reevaluation — inflection-point candidate, may impact DEC-005, candidate DEC-008). Both flagged for triage route rather than direct implementation.
+- Cross-reference aids for usage-report bundle: FB-011 (scripts), FB-015 (dashboard action-required), FB-017 (checkbox detection), plus new FB-020 and FB-026 are existing anchors — overlapping usage-report findings should be routed as absorbs, not duplicates
+
+**Next:** Write the usage-report intake plan at root (`plan-usage-report-intake.md`) and commit it as Phase 2 prep. Fresh-context session then executes the plan: fetch `file:///Users/erikemilsson/.claude/usage-data/report.html`, produce `upgrade-candidates-usage-report.md`, collect Erik's decisions, capture approved items as FB-032+.
+
+**Open questions for later:** None for the best-practices intake. Phase 2 finishes with `/feedback review` triage after the usage-report bundle lands.

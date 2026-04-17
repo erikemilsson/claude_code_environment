@@ -139,3 +139,183 @@ Proposed changes:
 1. Keep "Action Required" tight — only items that require user action, with just enough context to understand what's needed.
 2. Move work summaries and completion reports to a separate section further down the dashboard (e.g., "Recent Activity" or "Work Summary").
 3. Establish clear rules for how Claude writes these summaries so they stay useful without becoming an ever-growing pile of information as phases and tasks get finished. Need rules for what gets included, how much detail, and when old summaries get pruned or collapsed.
+
+## FB-019: Adopt `@path` imports in `.claude/CLAUDE.md` for rules files
+
+**Status:** new
+**Captured:** 2026-04-17
+
+Source: Claude Code best-practices doc (fetched 2026-04-17) — CLAUDE.md supports `@path/to/import` syntax; imports are auto-loaded by the harness.
+
+The template's `.claude/CLAUDE.md` currently lists rules files in a "Workflow Rules" prose section but does not import them explicitly — they happen to be loaded by other mechanisms. Switch to explicit `@.claude/rules/task-management.md`, `@.claude/rules/spec-workflow.md`, etc., making the dependency declarative.
+
+**Impact scope:** `.claude/CLAUDE.md` (one section). Possibly `.claude/rules/*.md` if reorganized.
+
+**Why:** Makes context loading explicit and predictable; aligns the template with the documented harness feature; surfaces accidental-load behavior. Low risk if rules are already short.
+
+## FB-020: Research Skills architectural limitations before template adoption
+
+**Status:** new
+**Captured:** 2026-04-17
+
+Source: Claude Code best-practices doc (fetched 2026-04-17) — presents Skills as the on-demand alternative to CLAUDE.md for "domain knowledge or workflows that are only relevant sometimes." User flagged adoption as **research-first**, not implementation.
+
+The template currently uses commands + rules + agents for everything. Skills could, in principle, carry domain-specific guidance (software vs. research vs. procurement vs. renovation patterns) loaded only when invoked, instead of bundling it in spec-checklist or rules. But before committing to any migration from commands/rules → skills or from subagents → skill-invocation, the architectural limitations need investigation.
+
+**Known concerns to investigate:**
+- Do subagents that run *through* a skill get their own context window, or does the skill's execution share the caller's context? (User's primary concern — would invalidate the separation-of-concerns guarantees underpinning DEC-004.)
+- What other constraints exist for replacing commands or rules with skills (e.g., invocation semantics, parameter passing, discoverability, scope of `disable-model-invocation`)?
+- Can skills be template-owned (ship in `.claude/skills/`) the same way commands ship, or do they carry different distribution/override semantics?
+- Interaction with the settings/permissions layer: do skills inherit `permissions.allow` from parent CLAUDE.md, or do they need their own?
+
+**Scope if pursued after research:** potentially large — new `.claude/skills/` directory, redistribution of content from `support/reference/`, possible refactor of some commands. Do not begin any migration until the above questions are answered.
+
+**Likely outcome:** this becomes a formal decision record (candidate DEC-007) once the research phase closes.
+
+## FB-021: Use AskUserQuestion-driven interview in `/iterate distill`
+
+**Status:** new
+**Captured:** 2026-04-17
+
+Source: Claude Code best-practices doc (fetched 2026-04-17) — recommends interviewing the user via the `AskUserQuestion` tool before writing a spec, to surface implementation, UX, edge-case, and tradeoff questions they haven't considered.
+
+The template's `/iterate distill` already extracts a spec from a vision doc but doesn't explicitly use `AskUserQuestion`. Adopt the structured-question pattern so distillation surfaces hard-to-see decisions rather than silently assuming.
+
+**Impact scope:** `.claude/commands/iterate.md` (distill subcommand section).
+
+**Why:** Direct mapping; vision-doc-to-spec is exactly the use case the doc describes. Improves spec quality at the most important leverage point in the whole workflow.
+
+## FB-022: Add "address root causes, not symptoms" rule to implement-agent
+
+**Status:** new
+**Captured:** 2026-04-17
+
+Source: Claude Code best-practices doc (fetched 2026-04-17) — verification table entry: *"the build fails with this error: [paste]. fix it and verify the build succeeds. address the root cause, don't suppress the error."*
+
+implement-agent does not currently codify this principle. Add a short explicit rule (in agent prompt or `.claude/rules/agents.md`) so verify-agent has unambiguous grounds to reject symptom-only fixes: try/except swallows, suppressed warnings, magic-number overrides, silenced failing tests, skipped assertions.
+
+**Impact scope:** `.claude/agents/implement-agent.md` and/or `.claude/rules/agents.md`. Possibly a matching check in verify-agent's per-task return schema.
+
+**Why:** Aligns with the template's verification-first design. Currently implicit; making it explicit gives verify-agent a clear, citable check.
+
+## FB-023: Document `/btw` for side questions in session-management
+
+**Status:** new
+**Captured:** 2026-04-17
+
+Source: Claude Code best-practices doc (fetched 2026-04-17) — `/btw` answers appear in a dismissible overlay and never enter conversation history.
+
+Template's `.claude/rules/session-management.md` already documents `/clear` and `/compact` for managing context pressure. Add `/btw` as a third tool for "quick question that shouldn't bloat context."
+
+**Impact scope:** `.claude/rules/session-management.md` (one bullet in Managing Context Pressure section).
+
+**Why:** Direct context-discipline tool that complements existing guidance. Minimal addition, real leverage for long sessions.
+
+## FB-024: Document `/rewind` and Esc+Esc checkpoint flow in session-management
+
+**Status:** new
+**Captured:** 2026-04-17
+
+Source: Claude Code best-practices doc (fetched 2026-04-17) — every Claude action creates a checkpoint; `Esc+Esc` or `/rewind` opens the menu; can restore conversation only, code only, or both; persists across sessions.
+
+Template's `session-management.md` doesn't mention checkpointing at all — it focuses on `/work pause` and handoff files. Add a short section noting checkpointing as a complementary recovery mechanism (for recovering from agent missteps without needing `/work pause` or a fresh session).
+
+**Impact scope:** `.claude/rules/session-management.md` (new short section, likely after "What Survives What" table).
+
+**Why:** Important user-facing feature currently undocumented in the template's session guidance.
+
+## FB-025: Document `/rename` for naming sessions
+
+**Status:** new
+**Captured:** 2026-04-17
+
+Source: Claude Code best-practices doc (fetched 2026-04-17) — `/rename` gives sessions descriptive names (e.g., `oauth-migration`, `debugging-memory-leak`) so they're findable via `claude --resume`.
+
+Template's resume-methods table in `session-management.md` doesn't mention this. Add a one-liner.
+
+**Impact scope:** `.claude/rules/session-management.md` (one row in resume-methods table or a one-liner under "Resuming Sessions").
+
+**Why:** Useful when running this template across multiple long-running projects. Pure documentation, no behavior change.
+
+## FB-026: Reevaluate permissions story given auto-mode maturity (potential inflection — may impact DEC-005)
+
+**Status:** new
+**Captured:** 2026-04-17
+
+Source: Claude Code best-practices doc (fetched 2026-04-17) mentions auto mode (`--permission-mode auto`) and sandboxing as alternatives to explicit allowlists. User flagged this as more than a doc tweak — it may change the foundation DEC-005 was built on.
+
+**Context:** Auto mode is now available on the Max plan (user's plan) as of just a few days before 2026-04-17. Previously the template was designed on the assumption that auto mode was not available to the user, which led DEC-005 to ship a two-layer allowlist model (template-owned `settings.json` with base `permissions.allow` + user-owned `settings.local.json`). Under auto mode, a classifier model approves routine actions at runtime, which may make much of that allowlist machinery unnecessary.
+
+**Questions to resolve (likely via a decision record):**
+- Does auto mode reliably cover the set that DEC-005's base allowlist was protecting? Where does it fall back to prompting the user?
+- If the base allowlist becomes largely redundant under auto mode, should the template simplify or remove `settings.json`? What becomes the supported permissions model?
+- Do sandboxing (`/sandbox`, OS-level isolation) and auto mode compose cleanly, or is this an either/or choice?
+- How much of `commands/health-check.md` Part 5c (Settings Boundary Validation) is still useful if the allowlist simplifies?
+- What would downstream projects migrating from the current DEC-005 template structure experience?
+
+**Scope if acted upon:** potentially reverses portions of DEC-005. Likely an inflection-point decision record (candidate DEC-008). Affects `.claude/settings.json`, `sync-manifest.json`, `commands/health-check.md`, `.claude/CLAUDE.md` Critical Invariants, `system-overview.md`, `.claude/README.md` Settings section.
+
+**User's framing:** *"Auto mode actually runs quite smoothly and it might not be so necessary to bloat the documentation and rules with specifics about ways to handle permissions. We should explore the impact of both auto mode and what simplifying the docs might mean for how well the template runs."*
+
+## FB-027: Skip-planning guidance for trivial tasks
+
+**Status:** new
+**Captured:** 2026-04-17
+
+Source: Claude Code best-practices doc (fetched 2026-04-17): *"For tasks where the scope is clear and the fix is small (like fixing a typo, adding a log line, or renaming a variable) ask Claude to do it directly... If you could describe the diff in one sentence, skip the plan."*
+
+Template's `/research` and decomposition flow don't currently distinguish trivial from non-trivial tasks. Add an explicit callout: skip formal planning when the diff can be described in one sentence. Prevents overhead for small fixes and aligns with the "no premature abstraction" ethos already in CLAUDE.md.
+
+**Impact scope:** `.claude/commands/research.md` (callout) or `.claude/rules/decisions.md`; possibly `.claude/commands/work.md` Step 3 routing.
+
+## FB-028: Add CLI-tool installation hints to setup-checklist
+
+**Status:** new
+**Captured:** 2026-04-17
+
+Source: Claude Code best-practices doc (fetched 2026-04-17) — recommends installing `gh`, `aws`, `gcloud`, `sentry-cli` etc. for context-efficient external interactions, noting unauthenticated API calls often hit rate limits.
+
+Template's `.claude/support/reference/setup-checklist.md` could detect which CLIs are present and suggest installs based on spec content (e.g., spec mentions GitHub PRs → suggest `gh`).
+
+**Impact scope:** `.claude/support/reference/setup-checklist.md`.
+
+**Why:** Aligns with the template's setup-time validation pattern. Low-cost addition.
+
+## FB-029: Document non-interactive mode (`claude -p`) as automation primitive
+
+**Status:** new
+**Captured:** 2026-04-17
+
+Source: Claude Code best-practices doc (fetched 2026-04-17) — `claude -p "prompt"` runs without a session; with `--output-format json`/`stream-json` and `--allowedTools`, it's the building block for CI, pre-commit hooks, scripts, and fan-out patterns.
+
+Worth a short reference for users automating template workflows (e.g., nightly `/health-check`, batch report generation, scheduled dashboard refresh).
+
+**Impact scope:** New `.claude/support/reference/automation.md` or section in `.claude/README.md`.
+
+**Why:** Connects directly to FB-011 (scripts as alternative) and may influence FB-011's scope — some "scripts" candidates might be better expressed as `claude -p` one-liners than as bash scripts.
+
+## FB-030: Document fan-out pattern for batch task execution
+
+**Status:** new
+**Captured:** 2026-04-17
+
+Source: Claude Code best-practices doc (fetched 2026-04-17) — `for file in $(...); do claude -p "Migrate $file..." --allowedTools "Edit,Bash(git commit *)"; done` pattern for large migrations.
+
+Template's parallel execution is intra-session (multiple `Task` agents coordinated by one `/work` orchestrator); fan-out is inter-session (many independent `claude` processes). The two scaling axes are complementary. Document the fan-out pattern so users know it exists for very large workloads (e.g., migrating hundreds of files).
+
+**Impact scope:** New section in an automation doc (depends on FB-029) or addendum to `parallel-execution.md`.
+
+**Why:** Different scaling axis from current parallel model. Worth flagging even if template does not itself implement fan-out — users may discover and adopt it themselves.
+
+## FB-031: Document Writer/Reviewer parallel-session pattern
+
+**Status:** new
+**Captured:** 2026-04-17
+
+Source: Claude Code best-practices doc (fetched 2026-04-17) — running parallel Claude sessions for quality: Session A writes, Session B reviews with fresh context, avoiding bias toward code it just wrote.
+
+Template already enforces this via the implement-agent / verify-agent split within one session, but users can go further by running two separate `claude` instances (e.g., one implementing a feature, another doing a deeper security or architectural review of the finished code).
+
+**Impact scope:** `.claude/README.md` or `.claude/rules/agents.md`.
+
+**Why:** Reinforces the template's existing separation-of-concerns design. Small mention, no behavioral change.
