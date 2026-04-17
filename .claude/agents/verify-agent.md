@@ -296,6 +296,13 @@ Default when absent: `"dashboard"` (preserves current behavior).
 - If other tasks depend on this one: does this task produce what they will need?
 - Check: references, interfaces, naming conventions, and file paths that downstream tasks will depend on
 
+### Step T5b: Rule-Layer Checks
+
+Two checks from the rules layer that apply across tasks:
+
+- **Symptom-vs-root-cause check:** Inspect the implementation for symptom-hiding patterns — empty `try/except`, broad catch-all handlers, `@ts-ignore` / `# type: ignore` without a documented reason, skipped or deleted tests, suppressed warnings, magic-number overrides. If any present without an explicit exception (per `rules/agents.md § "Root Cause Over Symptom"` — spec-level design choice, third-party-library workaround with issue link, or `issues_discovered` follow-up), return `result: "fail"` with an `issues` entry pointing to the specific suppression.
+- **Spec-change Decisions section check:** For tasks whose `spec_section` indicates a spec-change outcome (task modifies `spec_v*.md` or `.claude/spec_v*.md` is in `files_affected`), verify the `/iterate` proposal that drove this task included a `## Decisions in This Proposal` section with all `[NEEDS APPROVAL]` items resolved. If the task was applied without this contract being honored, return `result: "fail"` with an issue flagging the contract violation — silent design decisions should not reach the spec.
+
 ### Step T6: Construct Verification Report
 
 Construct and return the structured per-task verification report per the schema below. Do NOT write to the task JSON. The orchestrator persists `task_verification`, appends to `verification_history`, increments `verification_attempts`, and performs the status transition.

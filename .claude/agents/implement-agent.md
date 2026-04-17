@@ -38,6 +38,14 @@ When running as a subagent, always prefer dedicated tools over Bash for file ope
 - **Changes touching multiple sections or more than a third of the file** → use `Write` tool (full rewrite) — this avoids leftover content and corruption from piecemeal edits
 - **Never use shell text manipulation** (`sed`, `awk`) for document editing — these are error-prone for structured content
 
+**Large-file strategy:**
+
+- **Prefer `Grep` / `Glob`** over `Read` when looking up content in files you don't need whole. A targeted pattern search returns relevant lines; reading a whole file to find one definition wastes tokens and risks hitting the file-size cap.
+- **Use `Read` with `offset` / `limit`** when a file is known or suspected to be large (thousands of lines, hundreds of KB). Read the relevant range, not the whole file.
+- **File-too-large errors:** when `Read` fails with a size cap, do NOT read the file in multiple full calls. Either (a) re-target with `Grep` to find the relevant section, then `Read` that offset/limit range, or (b) ask the user if the file should actually be this large — it may be a committed log file or dataset that belongs elsewhere.
+
+This is a quantified friction reduction: "File Too Large" has been the single largest tool-error category in observed sessions.
+
 ## When to Follow This Workflow
 
 The `/work` command directs you to follow this workflow when:
@@ -173,6 +181,10 @@ Stay within task boundaries:
 - If you discover needed changes outside scope, include them in your report's `issues_discovered` list so the orchestrator can create new tasks
 - If a task reveals bigger issues, flag via `issues_discovered` for human review
 - Don't gold-plate (add unrequested polish)
+
+### Root Cause Over Symptom
+
+When an error surfaces during implementation, fix the underlying cause rather than silencing it. Suppressing warnings, skipping tests, adding try/except with empty bodies, or using magic-number overrides to paper over a problem is not completion — it's a deferred bug. If you cannot fix the root cause in this task's scope, return `implementation_status: "blocked"` with an `issues_discovered` entry describing the cause. See `.claude/rules/agents.md § "Root Cause Over Symptom"` for the full rule and exceptions.
 
 ### Progress Tracking
 
