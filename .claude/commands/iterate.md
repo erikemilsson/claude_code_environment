@@ -28,6 +28,24 @@ Assesses spec readiness, asks focused questions (max 4), proposes changes as dec
 
 Determine the current spec version using the same version discovery as `/work`: glob for `.claude/spec_v*.md`, use the highest N. Read `.claude/spec_v{N}.md` and assess its current state.
 
+### Step 1a: Auto-Finalize Checked Decisions
+
+Before assessing spec state, scan for unresolved-but-checked decisions. This mirrors `/work` Step 2b's inline trigger — both entry points to spec-adjacent work must fire the auto-finalization algorithm.
+
+For every `decision-*.md` file with frontmatter `status: proposed`:
+
+1. Read the file's `## Select an Option` section
+2. Scan for checked boxes — match `[x]`, `[X]`, `[✓]`, `[✔]` (per the normalization in `phase-decision-gates.md § "Phase Check"`)
+3. If a checked box is found AND frontmatter `status` is still `proposed`:
+   - Extract the selected option name (text after `[x] ` on the matched line)
+   - Update frontmatter: `status: approved`, `decided: <today's YYYY-MM-DD>`
+   - Populate the Decision section using the option name and matching Option Details rationale
+   - Run the Post-Decision Check (`phase-decision-gates.md § "Post-Decision Check"`) — handles inflection-point pause
+   - Log: `Decision {DEC-ID} resolved → status updated to 'approved' (selected: {option_name})`
+4. If no checked boxes are found across all proposed decisions, proceed to Step 1b without changes.
+
+This step MUST run on every `/iterate` invocation. It is the caller's responsibility — `phase-decision-gates.md` defines the algorithm; `/iterate` Step 1a is what fires it. This prevents the case where the user checks a decision and runs `/iterate` (not `/work`) and the decision stays `proposed`.
+
 ### Step 1b: Check Feedback Items
 
 Read `.claude/support/feedback/feedback.md` if it exists. Count items by status.
@@ -68,21 +86,22 @@ Enter distill mode. Extract buildable spec from a vision document.
    - [theme 3]
    ```
 
-3. **Ask distillation questions:**
-   ```
-   Let's extract a buildable Phase 1 spec.
+3. **Structured distillation interview (`AskUserQuestion`):**
 
-   1. What's the core value proposition in one sentence?
-      (From your vision, I see: "[extracted summary]" - confirm or refine?)
+   Use the `AskUserQuestion` tool to surface decisions rather than passively extracting them from the vision doc. Submit at most 4 questions per call, up to two calls total (8 questions max). For each question, provide 2–4 suggested answers derived from the vision doc plus an "Other" escape option.
 
-   2. What must be working for this to be useful at all?
-      (Your vision mentions several features - which are essential vs. nice-to-have for Phase 1?)
+   Question types to cover (pick 4 per call based on which surface the biggest gaps):
 
-   3. What's explicitly NOT in Phase 1?
-      (Your vision has ambitious ideas - which do we defer?)
+   - **Core value proposition:** "What's the single most important outcome for a user in Phase 1?" with suggested answers extracted from vision themes.
+   - **Scope boundary:** "Which of these vision items are in Phase 1?" with options: all / MVP subset / deferred to future phases.
+   - **User and critical path:** "Who's the first user and what's their happy path?" with persona options.
+   - **Implementation-or-UX tradeoffs:** surface tradeoffs Claude noticed but the vision didn't resolve.
+   - **Edge cases the vision didn't cover:** flag specific gaps (e.g., "Vision mentions data ingestion but not what happens on malformed input — which of these matches your intent?").
+   - **Explicit non-goals:** "What's explicitly NOT in Phase 1?" with suggested exclusions.
 
-   4. Who's the first user and what's their critical path?
-   ```
+   The structured format forces Claude to surface decisions — a flat text question lets Claude accept any answer and silently interpret it; a structured question with explicit options forces each decision to become visible.
+
+   After the user answers, proceed to sub-step 4 (Carry structure through from vision doc).
 
 4. **Carry structure through from vision doc:**
 
@@ -238,6 +257,23 @@ Based on your answers, here's what I'd change:
 
 ---
 
+## Decisions in This Proposal
+
+MANDATORY section — every spec-change proposal must end with this list. Enumerate every non-trivial choice embedded in the proposal and tag each:
+
+- `[NEEDS APPROVAL]` — a design choice Claude made that the user has not explicitly approved (e.g., chose library X over Y, structured section Z as a table)
+- `[FROM EXISTING SPEC]` — a decision already present in the current spec that the proposal inherits
+- `[USER REQUESTED]` — a decision the user explicitly asked for in this conversation or a prior one
+
+**Format:**
+- [ ] `[NEEDS APPROVAL]` Chose table layout for acceptance criteria section — rationale: easier to scan than prose list
+- [x] `[USER REQUESTED]` Added "Deferred to Future Phases" section per user ask
+- [x] `[FROM EXISTING SPEC]` Retained phased structure from spec_v{N-1}
+
+Rule: every `[NEEDS APPROVAL]` item MUST be resolved before Step 5 applies changes. If no decisions were made (rare — only for trivial wording changes), write `No non-trivial decisions — all changes are mechanical`.
+
+---
+
 Approve these changes? [Y] Apply all | [M] Modify (tell me what to adjust) | [P] Partial (pick which changes) | [N] Skip
 ```
 
@@ -255,6 +291,8 @@ Approve these changes? [Y] Apply all | [M] Modify (tell me what to adjust) | [P]
 Mark each change with its origin: `[requested]`, `[proposed]`, or `[assumption]` after the change title. This transparency is required every time, not just when the user catches an unmarked autonomous change. The user must be able to distinguish what they asked for from what Claude decided on its own.
 
 ### Step 5: Apply or Continue
+
+**Mandatory gate — Decisions resolved:** Before applying, verify the `## Decisions in This Proposal` section has zero unchecked `[NEEDS APPROVAL]` items. If any remain unresolved, block apply and ask the user to resolve each. This rule applies even to `[Y] Apply all` — the `[NEEDS APPROVAL]` items must be checked first.
 
 Based on user response:
 

@@ -2,7 +2,7 @@
 
 **Purpose:** Coordinate multi-session template improvements from three inputs (Opus 4.7 upgrade, Claude Code best-practices doc, usage insights report) alongside the existing feedback backlog and approved decisions.
 
-**Status:** Phase 4 — session-management.md group implemented (FB-023 + FB-024 + FB-025); remaining direct items next
+**Status:** Phase 4 — iterate.md group implemented (FB-021 + FB-032 + FB-017 detection mirror); FB-033 trial-gate unblocked; remaining direct items next
 **Last updated:** 2026-04-17
 
 ---
@@ -48,7 +48,8 @@ User retains approval authority at every intake and edit point. Claude does not 
 - **work.md hot-file batch implemented 2026-04-17:** Step 2b inlines the checkbox-detection trigger so `/work` reliably auto-finalizes checked decisions (FB-017 primary fix; resolves styler-project regression). Step 2 spec-check tree's "Minor/trivial addition" branch now explicitly says "no spec change, no formal planning" with a new paragraph routing one-sentence diffs around `/research` (FB-027 work.md slice). New `## Pre-Dispatch Confirmation` section in `parallel-execution.md` (referenced from work.md § "If Executing (Parallel)" Key Rules) gates parallel batches ≥ 3 behind a `[D]`/`[S]`/`[1]` prompt (FB-036 primary). "If Completing" dashboard-regen bullet rephrased from "completion summary" to "completion state" (FB-015 work.md audit slice). Out-of-file primary edits remain: dashboard-regeneration.md § Action Item Contract negative rule for FB-015; phase-decision-gates.md restructure (optional) and decisions.md/workflow.md audit (likely no edit) for FB-017; alt-site callouts (research.md, rules/decisions.md) for FB-027.
 - **FB-015 primary implemented 2026-04-17:** `dashboard-regeneration.md § "Action Item Contract"` gained a `**Must NOT include:**` block listing work summaries, completion reports, and recent-activity recaps as out-of-scope for Action Required. Explicitly bars a "Recent Activity" / "Work Summary" / "Completed This Session" sub-section and cross-references the canonical Sections list in `rules/dashboard.md` (which already omits these). Confirms git log + task JSON as the authoritative history source. FB-015 is now complete except for the optional `health-check.md` Part 6 check #4 secondary (extend summary-shaped-content detection if feasible) — folded into the eventual health-check edit batch. Existing Action Item Contract positives remain unchanged.
 - **session-management.md group implemented 2026-04-17:** Three session-management tools documented in `.claude/rules/session-management.md`: `/btw` bullet added to § "Managing Context Pressure" (FB-023); new `## Checkpointing and Rewind` section after § "What Survives What" covering `Esc+Esc`/`/rewind` with conversation/code/both restore options (FB-024); `/rename` paragraph after the § "Resuming Sessions" table covering named-session discovery in `claude --resume` (FB-025). All three bundled in one commit per the file-grouping rule.
-- **Next action:** Erik chooses the next Phase 4 unit. Suggested: (1) `commands/iterate.md` group (FB-021 + FB-032); (2) `rules/agents.md` / `implement-agent.md` group (FB-022 + FB-034 + FB-035 + FB-031).
+- **iterate.md group implemented 2026-04-17:** `/iterate` Step 1a now inlines the same checkbox-detection trigger that work.md Step 2b got — the FB-017 fix applies at both entry points, closing the gap where running `/iterate` (not `/work`) on checked decisions left them `proposed`. Distill mode's sub-step 3 restructured to use `AskUserQuestion` for structured interview (FB-021) — explicit option lists force decisions to be visible instead of accepting flat text and silently interpreting. Step 4's change declaration now ends with a mandatory `## Decisions in This Proposal` section tagging each non-trivial choice `[NEEDS APPROVAL]` / `[FROM EXISTING SPEC]` / `[USER REQUESTED]`; Step 5 gates apply on zero-unchecked `[NEEDS APPROVAL]` (FB-032). `rules/spec-workflow.md § "Propose-Approve-Apply"` gains one sentence making the contract visible at the rules layer. Unblocks FB-033 trial-gate data generation.
+- **Next action:** Erik chooses the next Phase 4 unit. Suggested: `rules/agents.md` / `implement-agent.md` group (FB-022 + FB-034 + FB-035 + FB-031). FB-033 research can also be dispatched once `/iterate` has run on real projects under the FB-032 contract.
 - **Blocked on:** nothing. FB-033 remains deferred on FB-032 trial (Phase 4 direct item).
 
 ---
@@ -114,7 +115,7 @@ Existing `ready` items + new items routed as direct implementation. Group by fil
 - [x] **`.claude/commands/work.md`** — FB-015 (work.md audit only — primary edit deferred to dashboard-regeneration.md), FB-017 (Step 2b inlining — primary done), FB-027 (Step 2 spec-check skip-planning callout — work.md slice; alt-sites in research.md/decisions.md deferred), FB-036 (work.md callout + parallel-execution.md primary done). Implemented 2026-04-17.
 - [x] **`.claude/rules/session-management.md`** — FB-023 (`/btw` bullet), FB-024 (Checkpointing and Rewind section), FB-025 (`/rename` paragraph). Implemented 2026-04-17.
 - [ ] **`.claude/rules/agents.md`** and/or **`.claude/agents/implement-agent.md`** — FB-022 (root-cause rule), FB-034 (respect user kills), FB-035 (large-file Read guidance), FB-031 (Writer/Reviewer parallel-session mention — may alternatively go to `.claude/README.md`). Plus FB-011 call-sites if FB-011 implementation lands here.
-- [ ] **`.claude/commands/iterate.md`** — FB-021 (AskUserQuestion in distill), FB-032 (Decisions-in-Proposal output contract in propose). FB-032 should land first to start generating trial data for FB-033.
+- [x] **`.claude/commands/iterate.md`** — FB-021 (AskUserQuestion in distill), FB-032 (Decisions-in-Proposal output contract in propose + Step 5 gate), FB-017 detection mirror (Step 1a inlined to match work.md Step 2b). Rules-layer sentence added to `rules/spec-workflow.md § "Propose-Approve-Apply"`. Implemented 2026-04-17.
 
 **Single-item / single-file batches:**
 
@@ -174,12 +175,12 @@ Rows = files. Columns = in-flight items. Cells = section/step affected (or `•`
 | `.claude/agents/research-agent.md` | | | | | | | frontmatter | — | — |
 | `.claude/CLAUDE.md` | | ~~file-boundary~~ ✓ | | | | | model req | FB-019 `@path` imports | FB-034 Critical Invariants |
 | `rules/task-management.md` | | | ~~• (stale — no edit needed)~~ | | | | | — | — |
-| `rules/spec-workflow.md` | | | ~~• (stale — no edit needed)~~ | | | | | — | FB-032 propose-approve-apply |
+| `rules/spec-workflow.md` | | | ~~• (stale — no edit needed)~~ | | | | | — | ~~FB-032 rules-layer sentence~~ ✓ |
 | `rules/dashboard.md` | | | | • | Sections | | | — | — |
 | `rules/session-management.md` (new row) | | | | | | | | ~~FB-023 `/btw`~~ ✓; ~~FB-024 `/rewind`/Esc+Esc~~ ✓; ~~FB-025 `/rename`~~ ✓ | — |
 | `rules/decisions.md` (new row) | | | | | | | | FB-027 skip-planning (alt site) | — |
 | `commands/breakdown.md` | | | ~~subtask inherit~~ ✓ | | | | | — | — |
-| `commands/iterate.md` | | | ~~(stale — no edit needed)~~ | | | detection | | FB-021 distill interview | FB-032 propose output contract |
+| `commands/iterate.md` | | | ~~(stale — no edit needed)~~ | | | ~~FB-017 Step 1a inlined~~ ✓ | | ~~FB-021 AskUserQuestion restructure~~ ✓ | ~~FB-032 Decisions section + Step 5 gate~~ ✓ |
 | `commands/research.md` (new row) | | | | | | | | FB-027 trivial-skip callout | — |
 | `support/reference/task-schema.md` | | | ~~`phase` row + new `cross_phase` row~~ ✓ | | | | | — | — |
 | `support/reference/phase-decision-gates.md` | | | ~~skip rule + Cross-Phase section~~ ✓ | | | • | | — | — |
@@ -587,3 +588,28 @@ Any of these can be inline or plan-and-execute in a fresh session. DEC-008 is a 
 **Open questions for later:**
 - Whether to cross-reference the new Checkpointing section from the "Which Persistence Mechanism When" table (checkpoints could be a fourth row). Deferred — would require re-architecting the table; current 3-mechanism framing is cleaner. Revisit if users confuse checkpoints with handoff.
 - Version bump tally now: DEC-007 + DEC-008 + FB-037 + work.md batch + FB-015 primary + session-management.md group. Still Phase 5.
+
+### 2026-04-17 — Phase 4: commands/iterate.md group (FB-017 mirror + FB-021 + FB-032)
+
+**Done:**
+- **FB-017 (secondary — caller mirror):** New `### Step 1a: Auto-Finalize Checked Decisions` section added to `commands/iterate.md` between Step 1 and Step 1b. Mirrors `/work` Step 2b's inline checkbox-detection trigger verbatim in shape: scan proposed decisions, normalize checkbox forms (`[x]`/`[X]`/`[✓]`/`[✔]`), update frontmatter to `approved` + today's `decided` date, populate Decision section from Option Details, run Post-Decision Check for inflection-point handling, emit log line. Closes the gap where running `/iterate` (not `/work`) on freshly-checked decisions left them `proposed` — the algorithm now fires at both entry points to spec-adjacent work.
+- **FB-021 (AskUserQuestion in distill):** Distill mode's sub-step 3 restructured from the flat 4-question block to a structured `AskUserQuestion`-driven interview. Up to 4 questions per call, two calls max (8 total). Each question carries 2–4 suggested answers derived from the vision doc plus an "Other" escape. Six question archetypes retained as a selection guide (value prop, scope boundary, users & critical path, tradeoffs, edge cases, non-goals); the interview picks 4 per call based on which surface the biggest gaps. Rationale preserved inline: structured options force decisions to become visible instead of letting Claude accept flat text and silently interpret.
+- **FB-032 (Decisions in This Proposal):** Step 4's declaration template extended with a mandatory final `## Decisions in This Proposal` section tagging each non-trivial choice `[NEEDS APPROVAL]`, `[FROM EXISTING SPEC]`, or `[USER REQUESTED]`. Rule: every `[NEEDS APPROVAL]` item must be resolved (checked) before Step 5 applies changes; trivial-wording-only proposals write `No non-trivial decisions — all changes are mechanical`. Step 5 opens with a "Mandatory gate — Decisions resolved" paragraph gating `[Y] Apply all` / `[M] Modify` / `[P] Partial` paths on zero-unchecked `[NEEDS APPROVAL]` items (Skip `[N]` is unaffected — skipping abandons the proposal entirely).
+- **FB-032 rules-layer:** One sentence appended to `rules/spec-workflow.md § "Propose-Approve-Apply"` surfacing the Decisions-in-Proposal contract at the rules layer. Makes the three tags visible and notes that `/iterate` does not apply until `[NEEDS APPROVAL]` items are resolved.
+- Tracker bookkeeping: status line, Current State (new bullet + next-action refresh), Phase 4 Hot files `[x]` for `commands/iterate.md`, File Collision Map strikes (iterate.md row: FB-017 detection → `FB-017 Step 1a inlined ✓`, Best-prac → `FB-021 AskUserQuestion restructure ✓`, Usage → `FB-032 Decisions section + Step 5 gate ✓`; spec-workflow.md row Usage → `FB-032 rules-layer sentence ✓`), Cleanup Manifest row for `plan-iterate-batch.md` (pre-added with plan), Session Log entry.
+- Pre-commit hook: `commands/iterate.md` and `rules/spec-workflow.md` are both sync-category — hook will warn about `version.json` (expected per Phase 5 deferral).
+
+**Judgment calls:**
+- **Step 1a mirrors work.md Step 2b verbatim rather than pointing to a shared reference:** FB-017's whole point is that the algorithm reference (`phase-decision-gates.md`) is correct but caller-side was failing to fire it. Inlining the imperative at each call-site (both `/work` Step 2b and `/iterate` Step 1a) is the direct fix. Pointing to a shared reference would preserve the "caller might forget to fire it" failure mode we just closed. Two short inline blocks beat one shared reference for this case.
+- **AskUserQuestion restructure keeps existing question archetypes rather than replacing them wholesale:** The archetypes are the content (value prop, scope, users, tradeoffs, edge cases, non-goals are the right decisions to surface); `AskUserQuestion` is the delivery mechanism. Replacing the archetypes would be a separate scope change unjustified by FB-021's framing.
+- **`## Decisions in This Proposal` lives in the declaration template (Step 4), not as a separate post-declaration step:** Single artifact, single approval point. Splitting it into a post-declaration step would let users approve the changes before seeing the decisions list, defeating the purpose. The declaration and the decisions list are one unit.
+- **Gate applies to `[Y]/[M]/[P]` but not `[N]`:** Skipping abandons the proposal entirely; there's no apply to gate. Gating skip would trap users who want to walk away from a proposal that has unresolved decisions.
+- **Verify-agent matching check deferred:** The verify-agent workflow could validate that spec-change tasks include a Decisions section, but verify-agent is a hot file for the agents batch (FB-022 + FB-031 + FB-034 + FB-035 target it). Folding one more verify-agent edit into that batch keeps the file-grouping discipline intact.
+
+**Next:** Erik chooses the next Phase 4 unit. Strong candidate: `rules/agents.md` + `implement-agent.md` group (FB-022 root-cause rule + FB-031 Writer/Reviewer parallel-session + FB-034 respect user kills + FB-035 large-file Read guidance) — four items across two hot files. FB-033 research can also be dispatched once the FB-032 contract has trial data from real `/iterate` sessions.
+
+**Open questions for later:**
+- Re-verify `decisions.md` and `workflow.md` post-batch (FB-017 Assessed line mentions both). Expected: no edit needed — work.md and iterate.md inlining make the upstream promises accurate again. Grep for "auto-finalize" / "checkbox" wording drift at next opportunity.
+- `phase-decision-gates.md` restructure remains optional (algorithm is correct; callers now fire it at both entry points). Revisit only if a third caller appears.
+- Verify-agent matching check for FB-032 Decisions section — tracked for agents batch.
+- Version bump tally now: DEC-007 + DEC-008 + FB-037 + work.md batch + FB-015 primary + session-management.md group + iterate.md group. Still Phase 5.
