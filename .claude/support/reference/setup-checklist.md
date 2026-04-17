@@ -38,6 +38,28 @@ This is the source repo for template sync (`/health-check` Part 5). It should po
 ✓ Pass: File exists with a `template_repo` value
 ⚠ Warn: File missing or `template_repo` is empty
 
+### 4. External CLI Tools
+
+Scan the spec and (if present) `./CLAUDE.md` for signals that the project integrates with external services. When a signal matches, check whether the corresponding CLI is on `PATH` — warn if missing.
+
+| Spec signal (keywords, case-insensitive) | Recommended CLI | Install (macOS) | Install (Linux) |
+|------------------------------------------|-----------------|-----------------|-----------------|
+| `github`, `pull request`, `PR`, `gh issue`, `gh.com` | `gh` | `brew install gh` | `sudo apt install gh` or see cli.github.com |
+| `aws`, `s3://`, `lambda`, `ec2`, `cloudformation` | `aws` | `brew install awscli` | `pip install awscli` or AWS installer |
+| `gcp`, `google cloud`, `gcs://`, `cloud run`, `bigquery` | `gcloud` | `brew install --cask google-cloud-sdk` | see cloud.google.com/sdk/docs/install |
+| `sentry`, `error tracking` (when release tagging is implied) | `sentry-cli` | `brew install getsentry/tools/sentry-cli` | `curl -sL https://sentry.io/get-cli/ \| bash` |
+| `vercel deploy`, `vercel env`, `v0.dev` | `vercel` | `npm install -g vercel` | `npm install -g vercel` |
+| `netlify deploy`, `netlify build` | `netlify` | `npm install -g netlify-cli` | `npm install -g netlify-cli` |
+
+**How to check presence:** `command -v <cli> >/dev/null 2>&1` (shell-builtin, works in bash/zsh/sh). If the check returns non-zero for a matched signal, emit a warning row.
+
+**Signal detection scope:** Read the spec's stated integrations, dependencies, and acceptance criteria. Do NOT infer from generic mentions — a spec that says "authenticate with GitHub OAuth" is a `gh` signal only if PR/issue/release operations are also in scope. When ambiguous, emit the warning anyway — a false positive here is cheaper than a mid-implementation friction.
+
+✓ Pass: No external-service signals detected, OR all matched signals have their CLI on `PATH`
+⚠ Warn: One or more matched signals missing a CLI — list each with the install command
+
+**Why this check exists:** Authenticated CLI tools return structured data with fewer rate-limit issues than unauthenticated API calls. When spec work depends on (for example) reading GitHub issues or uploading to S3, having the CLI installed and authenticated at decomposition time prevents mid-implementation context loss from repeated unauthenticated failures.
+
 ## Output
 
 Report results inline during decomposition as a brief summary block:
@@ -45,8 +67,12 @@ Report results inline during decomposition as a brief summary block:
 ```
 Setup check:
   ✓ CLAUDE.md customized
+  ✓ Flat layout
   ⚠ version.json — file missing
+  ⚠ CLI tools — `gh` missing (spec mentions GitHub PRs); install: brew install gh
 ```
+
+CLI-tool warnings are advisory — decomposition proceeds. The user installs flagged tools when convenient.
 
 Continue with decomposition regardless of warnings.
 

@@ -2,7 +2,7 @@
 
 **Purpose:** Coordinate multi-session template improvements from three inputs (Opus 4.7 upgrade, Claude Code best-practices doc, usage insights report) alongside the existing feedback backlog and approved decisions.
 
-**Status:** Phase 4 — FB-019 implemented (explicit @imports in .claude/CLAUDE.md); FB-028 + FB-011 remaining
+**Status:** Phase 4 — FB-028 implemented (CLI-tool hints in setup-checklist.md); FB-011 remaining
 **Last updated:** 2026-04-17
 
 ---
@@ -52,7 +52,8 @@ User retains approval authority at every intake and edit point. Claude does not 
 - **agents group implemented 2026-04-17:** Four rules/agents.md + implement-agent.md + CLAUDE.md additions. Root-cause-over-symptom rule: new § in rules/agents.md (primary) + sub-section in implement-agent Implementation Guidelines (reinforcement) + matching check in verify-agent per-task checklist (FB-022). Respect-prior-kills behavioral rule: new § in rules/agents.md + new 9th Critical Invariant bullet in `.claude/CLAUDE.md` pointing to the rules file (FB-034). Large-file Read guidance: new paragraph in implement-agent § Tool Preferences covering Grep/Glob preference, offset/limit usage, and file-too-large recovery (FB-035). Writer/Reviewer parallel-session pattern: one-paragraph mention in rules/agents.md § Separated Concerns (FB-031). Also landed the deferred FB-032 verify-agent matching check for spec-change tasks requiring the Decisions section contract. Auto mode does not absorb any of these — all are behavioral or rule-layer, not permission-layer.
 - **FB-029/030 implemented 2026-04-17:** New `.claude/support/reference/automation.md` documenting the `claude -p` primitive (FB-029) and fan-out pattern (FB-030). Doc clarifies the intra- vs inter-session parallelism distinction, scopes `claude -p` with concrete examples (output formats, allowedTools scoping, working-dir/model flags), and covers fan-out with concurrency caps and the shared-state coordination rule (workers produce artifacts, main collects; never shared-write). Cross-referenced from `support/reference/parallel-execution.md` (one-paragraph scope note) and added to `support/reference/README.md § Guides` + `sync-manifest.json § sync`. Template itself does not adopt fan-out — this is user-facing reference.
 - **FB-019 implemented 2026-04-17:** `.claude/CLAUDE.md § "Workflow Rules"` now uses explicit `@.claude/rules/*.md` imports at the top of the section, followed by the existing bulleted one-liner index. Declarative harness directive + human-readable summary preserved. All seven rule files explicitly imported (task-management, spec-workflow, decisions, dashboard, agents, archiving, session-management).
-- **Next action:** Erik chooses the next Phase 4 unit. Remaining: FB-028 (CLI-tool hints in `setup-checklist.md`), FB-011 (scripts inventory — unblocked by automation.md; some candidates can route to `claude -p` one-liners rather than bash scripts). FB-033 research can also be dispatched once `/iterate` has run on real projects under the FB-032 contract.
+- **FB-028 implemented 2026-04-17:** `support/reference/setup-checklist.md` gained a new `### 4. External CLI Tools` check between Check 3 and `## Output`. Signal → CLI → install-command table covers the high-signal set (`gh`, `aws`, `gcloud`, `sentry-cli`, `vercel`, `netlify`) with spec keyword triggers and `command -v` presence checks. Sample Output block extended with a CLI warning line. Decomposition proceeds regardless of warnings (advisory, not blocking). `## Optional Hooks` appendix from FB-037 untouched — same file, different section.
+- **Next action:** Erik chooses the next Phase 4 unit. Remaining: FB-011 (scripts inventory — unblocked by automation.md; some candidates can route to `claude -p` one-liners rather than bash scripts). FB-033 research can also be dispatched once `/iterate` has run on real projects under the FB-032 contract.
 - **Blocked on:** nothing. FB-033 remains deferred on FB-032 trial (Phase 4 direct item).
 
 ---
@@ -124,7 +125,7 @@ Existing `ready` items + new items routed as direct implementation. Group by fil
 
 - [ ] **FB-011** — Scripts as alternative (dashboard regen, checkbox detection); starts with a candidates inventory doc. Consider after FB-029/FB-030 (some candidates may become `claude -p` one-liners instead of bash scripts).
 - [x] **FB-019** — `@path` imports in `.claude/CLAUDE.md` (Workflow Rules section). *(Implemented 2026-04-17.)*
-- [ ] **FB-028** — CLI-tool installation hints in `.claude/support/reference/setup-checklist.md`.
+- [x] **FB-028** — CLI-tool installation hints in `.claude/support/reference/setup-checklist.md`. *(Implemented 2026-04-17.)*
 - [x] **FB-029 + FB-030** — New `.claude/support/reference/automation.md`: `claude -p` primitive + fan-out pattern. Bundle (same file). *(Implemented 2026-04-17.)*
 
 **Blocked within Phase 4:**
@@ -192,7 +193,7 @@ Rows = files. Columns = in-flight items. Cells = section/step affected (or `•`
 | `support/reference/decomposition.md` | | | ~~heuristic bullet~~ ✓ | | | | | — | — |
 | `support/reference/decisions.md` | | | | | | line 151 | | — | — |
 | `support/reference/workflow.md` | | | | | | lines 195-201 | | — | — |
-| `support/reference/setup-checklist.md` (new row) | | | | | | | | FB-028 CLI installs | FB-037 Optional Hooks appendix |
+| `support/reference/setup-checklist.md` (new row) | | | | | | | | ~~FB-028 CLI installs~~ ✓ | FB-037 Optional Hooks appendix |
 | `support/reference/automation.md` (new file) | | | | | | | | ~~FB-029 `claude -p`~~ ✓; ~~FB-030 fan-out~~ ✓ | — |
 | `.claude/README.md` (new row) | | ~~File Ownership + Settings~~ ✓ | | | | | | FB-031 Writer/Reviewer (alt site); FB-029 mention (alt site) | — |
 | `.claude/sync-manifest.json` | | ~~new `merge` cat~~ ✓ (used existing `sync`) | | | | | | — | — |
@@ -699,3 +700,26 @@ FB-033 research can also be dispatched once `/iterate` has run on real projects 
 - Whether the `Critical Invariants` block should also reference `shared-definitions.md` via `@import` once the glossary is frequently cited. Deferred — current cross-references by path string are sufficient, and adding a glossary import expands always-loaded context without a clear payoff.
 - Verification (post-commit, non-blocking): in a fresh session, confirm the imported rules-file content appears exactly once in context by asking a question answered only in `task-management.md` (e.g., "what are the 8 task statuses?"). If the harness was already implicit-loading `.claude/rules/*.md`, duplication may appear — cost is small re-injected tokens; clarification benefit stands.
 - Version bump tally now: DEC-007 + DEC-008 + FB-037 + work.md batch + FB-015 primary + session-management.md group + iterate.md group + agents group + FB-029/030 automation.md + FB-019. Still Phase 5.
+
+### 2026-04-17 — Phase 4: FB-028 (setup-checklist.md CLI-tool hints)
+
+**Done:**
+- **FB-028 (primary):** New `### 4. External CLI Tools` check inserted into `.claude/support/reference/setup-checklist.md` between Check 3 (`version.json` Configuration) and `## Output`. Signal → CLI → install-command table with six high-signal rows: `gh` (GitHub keywords), `aws` (S3/Lambda/EC2/CloudFormation), `gcloud` (GCP/BigQuery/Cloud Run), `sentry-cli` (error tracking + release tagging), `vercel` (deploy/env/v0.dev), `netlify` (deploy/build). macOS and Linux install commands per row. Presence check: `command -v <cli> >/dev/null 2>&1` (shell-builtin, works in bash/zsh/sh). Signal-detection scope paragraph distinguishes integration-level signals from generic mentions; ambiguous cases emit warning.
+- **Output block extension:** Sample block expanded from 2 lines to 4, adding a `✓ Flat layout` line and a representative `⚠ CLI tools — gh missing (spec mentions GitHub PRs); install: brew install gh` warning. One-sentence clarifier added after the sample block: CLI-tool warnings are advisory, decomposition proceeds, user installs flagged tools when convenient.
+- **FB-037 Optional Hooks appendix untouched:** same file, different section (checks list vs. end-of-file appendix). Both additions coexist cleanly.
+- Tracker bookkeeping: status line, Current State (new bullet + next-action refresh), Phase 4 single-item FB-028 row → `[x]`, File Collision Map strike (`support/reference/setup-checklist.md` row Best-prac `FB-028 CLI installs` → struck), Cleanup Manifest row was pre-added with the plan, Session Log entry (this).
+- Pre-commit hook: `setup-checklist.md` is sync-category — hook will warn about `version.json` not being bumped (expected per Phase 5 deferral).
+
+**Judgment calls:**
+- **Table shape over prose:** Signal → CLI → install-command as a 4-column table lets Claude scan the matrix during decomposition rather than parsing paragraphs. The existing Checks 1–3 use mixed prose + ✓/⚠ blocks; a table fits the many-signals-to-many-CLIs shape of this check better than more prose.
+- **Starter CLI set (6 rows):** Took the high-signal set straight from the best-practices source (`gh`, `aws`, `gcloud`, `sentry-cli`) and extended with the two deploy CLIs most commonly implied by template users (`vercel`, `netlify`). Not exhaustive. Container/orchestration CLIs (`docker`, `kubectl`, `terraform`) deliberately skipped — those imply more infrastructure scope than a single `command -v` hint usefully captures. Users extend per project if needed.
+- **Advisory, not blocking, consistent with Checks 1–3:** Every existing check returns ✓/⚠ and decomposition continues regardless. CLI hints match that pattern rather than introducing a new "⛔ block" state — setup friction happens at install time, not decomposition time.
+- **Placement between Check 3 and `## Output`:** Keeps all checks contiguous; Optional Hooks appendix stays an end-of-file appendix. Inserting CLI Tools as Check 4 also preserves the check-numbering sequence (1, 2, 3, 4) that maps cleanly to the Output block.
+- **Signal-detection cautious framing:** Emphasized that `"authenticate with GitHub OAuth"` alone is NOT a `gh` signal — the CLI is useful only when PR/issue/release operations are in scope. False positives are cheap (one warning line ignored); false negatives (no CLI, friction mid-implementation) are the expensive failure mode the check is designed to catch, so ambiguity resolves toward warning.
+
+**Next:** Erik chooses the next Phase 4 unit. Remaining: FB-011 (scripts inventory — unblocked by automation.md; some candidates can route to `claude -p` one-liners rather than bash scripts). FB-033 research can also be dispatched once `/iterate` has run on real projects under the FB-032 contract.
+
+**Open questions for later:**
+- Whether the CLI check should be generalized into a "runtime dependencies" umbrella covering language toolchains (node/python/rust) alongside cloud CLIs. Deferred — existing layout validation (Check 2) already covers package-manager presence implicitly. Revisit only if language-toolchain friction surfaces.
+- Whether to add `docker`/`kubectl`/`terraform` rows. Deferred for the reasons noted in judgment calls above. Users can extend per-project; a template default list that's too broad becomes noise.
+- Version bump tally now: DEC-007 + DEC-008 + FB-037 + work.md batch + FB-015 primary + session-management.md group + iterate.md group + agents group + FB-029/030 automation.md + FB-019 + FB-028. Still Phase 5.
