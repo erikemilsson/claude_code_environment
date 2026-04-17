@@ -128,6 +128,8 @@ verification_debt = count of tasks where:
 
 **Note:** Workflow bypass warnings are informational. Some tasks may legitimately have brief notes. The intent is to surface patterns, not block individual tasks.
 
+**Script alternative:** `.claude/scripts/validate-tasks.py .claude/tasks` runs schema + verification-debt checks deterministically and prints a combined report. `--json` flag emits structured output for downstream consumption.
+
 #### 8. Workspace Staleness
 
 **Stale Workspace Files:**

@@ -29,6 +29,7 @@ Procedure for breaking a spec into granular tasks. Run as `/work` Step 4 "If Dec
    - `section_fingerprint` — Hash of specific section computed in step 6
    - `section_snapshot_ref` — Snapshot filename (e.g., "spec_v1_decomposed.md")
    - **Important:** Create all task JSON files before regenerating the dashboard. Every task must have a `task-*.json` file — the dashboard is generated from these files, never the other way around.
+   - **Script alternative:** Capture hashes via `.claude/scripts/fingerprint.py --spec` / `--sections`; orchestrator writes the `sha256:...` strings into task JSON `spec_fingerprint` and `section_fingerprint` fields.
 
 9. **Map dependencies** — What must complete before what.
 

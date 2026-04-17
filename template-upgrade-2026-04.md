@@ -2,7 +2,7 @@
 
 **Purpose:** Coordinate multi-session template improvements from three inputs (Opus 4.7 upgrade, Claude Code best-practices doc, usage insights report) alongside the existing feedback backlog and approved decisions.
 
-**Status:** Phase 4 — FB-028 implemented (CLI-tool hints in setup-checklist.md); FB-011 remaining
+**Status:** Phase 4 — FB-011 Families A + B extracted (fingerprint.py + validate-tasks.py + advisory wiring); C/D/E remain for later stages
 **Last updated:** 2026-04-17
 
 ---
@@ -53,7 +53,8 @@ User retains approval authority at every intake and edit point. Claude does not 
 - **FB-029/030 implemented 2026-04-17:** New `.claude/support/reference/automation.md` documenting the `claude -p` primitive (FB-029) and fan-out pattern (FB-030). Doc clarifies the intra- vs inter-session parallelism distinction, scopes `claude -p` with concrete examples (output formats, allowedTools scoping, working-dir/model flags), and covers fan-out with concurrency caps and the shared-state coordination rule (workers produce artifacts, main collects; never shared-write). Cross-referenced from `support/reference/parallel-execution.md` (one-paragraph scope note) and added to `support/reference/README.md § Guides` + `sync-manifest.json § sync`. Template itself does not adopt fan-out — this is user-facing reference.
 - **FB-019 implemented 2026-04-17:** `.claude/CLAUDE.md § "Workflow Rules"` now uses explicit `@.claude/rules/*.md` imports at the top of the section, followed by the existing bulleted one-liner index. Declarative harness directive + human-readable summary preserved. All seven rule files explicitly imported (task-management, spec-workflow, decisions, dashboard, agents, archiving, session-management).
 - **FB-028 implemented 2026-04-17:** `support/reference/setup-checklist.md` gained a new `### 4. External CLI Tools` check between Check 3 and `## Output`. Signal → CLI → install-command table covers the high-signal set (`gh`, `aws`, `gcloud`, `sentry-cli`, `vercel`, `netlify`) with spec keyword triggers and `command -v` presence checks. Sample Output block extended with a CLI warning line. Decomposition proceeds regardless of warnings (advisory, not blocking). `## Optional Hooks` appendix from FB-037 untouched — same file, different section.
-- **Next action:** Erik chooses the next Phase 4 unit. Remaining: FB-011 (scripts inventory — unblocked by automation.md; some candidates can route to `claude -p` one-liners rather than bash scripts). FB-033 research can also be dispatched once `/iterate` has run on real projects under the FB-032 contract.
+- **FB-011 Families A + B implemented 2026-04-17:** New `.claude/scripts/` directory with `fingerprint.py` (spec/section/dashboard-rollup hashes) and `validate-tasks.py` (task JSON schema + verification debt). `README.md` documents the invocation contract (stdlib-only, read-only, structured stdout, exit codes). Advisory wiring added to `drift-reconciliation.md`, `decomposition.md`, `health-check.md`, `work.md`, `status.md` — prose procedures remain authoritative, scripts are opt-in. `rules/agents.md § "Tool Preferences"` gained a paragraph clarifying scripts are orchestrator-invoked, not subagent-invoked. `sync-manifest.json § sync` includes the new files. Families C (dashboard regen), D (parallel-plan), E (decision finalization) remain as later extraction stages per `support/workspace/scripts-candidates.md`.
+- **Next action:** Erik reviews the landed scripts. Options: advance to Family C (dashboard regen hybrid — biggest win, biggest scope), pause Stage 2 for real-world trial of A + B before more extraction, or close Phase 4 and move to Phase 5 cleanup. FB-033 research can also be dispatched once `/iterate` has run on real projects under the FB-032 contract.
 - **Blocked on:** nothing. FB-033 remains deferred on FB-032 trial (Phase 4 direct item).
 
 ---
@@ -123,7 +124,7 @@ Existing `ready` items + new items routed as direct implementation. Group by fil
 
 **Single-item / single-file batches:**
 
-- [ ] **FB-011** — Scripts as alternative (dashboard regen, checkbox detection); starts with a candidates inventory doc. Consider after FB-029/FB-030 (some candidates may become `claude -p` one-liners instead of bash scripts).
+- [x] **FB-011 (partial — Families A + B)** — `.claude/scripts/fingerprint.py` + `validate-tasks.py` + README; advisory wiring in 5 call sites. *(Implemented 2026-04-17. Families C/D/E remain as later stages — see `.claude/support/workspace/scripts-candidates.md` for tiered plan.)*
 - [x] **FB-019** — `@path` imports in `.claude/CLAUDE.md` (Workflow Rules section). *(Implemented 2026-04-17.)*
 - [x] **FB-028** — CLI-tool installation hints in `.claude/support/reference/setup-checklist.md`. *(Implemented 2026-04-17.)*
 - [x] **FB-029 + FB-030** — New `.claude/support/reference/automation.md`: `claude -p` primitive + fan-out pattern. Bundle (same file). *(Implemented 2026-04-17.)*
@@ -174,13 +175,13 @@ Rows = files. Columns = in-flight items. Cells = section/step affected (or `•`
 | `system-overview.md` | ~~atomic contract~~ ✓ | ~~file boundary~~ ✓ | ~~Pending Decisions~~ ✓ | | | | sweep | — | — |
 | `commands/health-check.md` | | ~~Part 5 merge~~ ✓ | ~~Part 1 boolean check~~ ✓ | | Part 6 | | | — | — |
 | `rules/agents.md` | ~~Context Separation~~ ✓ | | | | | | model req | ~~FB-022 Root Cause section~~ ✓; ~~FB-031 Writer/Reviewer paragraph~~ ✓ | ~~FB-034 Behavioral Rules section~~ ✓; FB-035 landed in implement-agent.md Tool Preferences ✓ |
-| `.claude/agents/implement-agent.md` | ~~Steps 3, 6a-c~~ ✓ | | | Steps 3, 6a, 6c | | | frontmatter | ~~FB-022 Root Cause sub-section~~ ✓ | FB-034 landed in rules/agents.md + CLAUDE.md ✓; ~~FB-035 large-file paragraph~~ ✓ |
+| `.claude/agents/implement-agent.md` | ~~Steps 3, 6a-c~~ ✓ | | | ~~Steps 3, 6a, 6c (deferred — Family C)~~ | | | frontmatter | ~~FB-022 Root Cause sub-section~~ ✓ | FB-034 landed in rules/agents.md + CLAUDE.md ✓; ~~FB-035 large-file paragraph~~ ✓ |
 | `.claude/agents/verify-agent.md` | ~~T6, T7~~ ✓ | | | | | | frontmatter | ~~FB-022 symptom-vs-root-cause check~~ ✓ | ~~FB-032 Decisions section check~~ ✓ |
 | `.claude/agents/research-agent.md` | | | | | | | frontmatter | — | — |
 | `.claude/CLAUDE.md` | | ~~file-boundary~~ ✓ | | | | | model req | ~~FB-019 `@path` imports~~ ✓ | ~~FB-034 Critical Invariant bullet 9~~ ✓ |
 | `rules/task-management.md` | | | ~~• (stale — no edit needed)~~ | | | | | — | — |
 | `rules/spec-workflow.md` | | | ~~• (stale — no edit needed)~~ | | | | | — | ~~FB-032 rules-layer sentence~~ ✓ |
-| `rules/dashboard.md` | | | | • | Sections | | | — | — |
+| `rules/dashboard.md` | | | | ~~• (deferred — Family C)~~ | Sections | | | — | — |
 | `rules/session-management.md` (new row) | | | | | | | | ~~FB-023 `/btw`~~ ✓; ~~FB-024 `/rewind`/Esc+Esc~~ ✓; ~~FB-025 `/rename`~~ ✓ | — |
 | `rules/decisions.md` (new row) | | | | | | | | FB-027 skip-planning (alt site) | — |
 | `commands/breakdown.md` | | | ~~subtask inherit~~ ✓ | | | | | — | — |
@@ -188,7 +189,7 @@ Rows = files. Columns = in-flight items. Cells = section/step affected (or `•`
 | `commands/research.md` (new row) | | | | | | | | FB-027 trivial-skip callout | — |
 | `support/reference/task-schema.md` | | | ~~`phase` row + new `cross_phase` row~~ ✓ | | | | | — | — |
 | `support/reference/phase-decision-gates.md` | | | ~~skip rule + Cross-Phase section~~ ✓ | | | • | | — | — |
-| `support/reference/dashboard-regeneration.md` | | | ~~`(cross-phase)` suffix~~ ✓ | • | ~~FB-015 Action Item Contract negative rule~~ ✓ | | | — | — |
+| `support/reference/dashboard-regeneration.md` | | | ~~`(cross-phase)` suffix~~ ✓ | ~~• (deferred — Family C)~~ | ~~FB-015 Action Item Contract negative rule~~ ✓ | | | — | — |
 | `support/reference/parallel-execution.md` | | | ~~OR clause in eligibility~~ ✓ | | | | | — | ~~FB-036 Pre-Dispatch Confirmation section~~ ✓; ~~FB-030 landed in automation.md; parallel-execution.md gained scope pointer~~ ✓ |
 | `support/reference/decomposition.md` | | | ~~heuristic bullet~~ ✓ | | | | | — | — |
 | `support/reference/decisions.md` | | | | | | line 151 | | — | — |
@@ -201,6 +202,9 @@ Rows = files. Columns = in-flight items. Cells = section/step affected (or `•`
 | `.claude/version.json` | | | | | | | bump | — | — |
 | `.claude/agents/spec-auditor.md` (if created) | | | | | | | | — | FB-033 research-first — defer |
 | `.claude/skills/spec-auditor/` (if chosen over subagent) | | | | | | | | FB-020 outcome | FB-033 alternative home |
+| `.claude/scripts/fingerprint.py` (new file) | | | | ~~FB-011 Family A~~ ✓ | | | | — | — |
+| `.claude/scripts/validate-tasks.py` (new file) | | | | ~~FB-011 Family B~~ ✓ | | | | — | — |
+| `.claude/scripts/README.md` (new file) | | | | ~~FB-011 contract~~ ✓ | | | | — | — |
 
 **Hot files** (3+ in-flight items):
 - `commands/work.md` — `FB-015` (•) + `FB-017` (Step 2b) + `FB-027` (Step 3 routing) + `FB-036` (Step 4). 4 items.
@@ -236,6 +240,8 @@ Every working file for this upgrade is tagged. `DELETE-AFTER` items removed in P
 | `plan-fb-019-claude-md-imports.md` | DELETE-AFTER | FB-019 CLAUDE.md @imports implementation plan for fresh-session execution |
 | `plan-fb-028-setup-checklist-clis.md` | DELETE-AFTER | FB-028 setup-checklist CLI hints implementation plan for fresh-session execution |
 | `plan-automation-md-bundle.md` | DELETE-AFTER | FB-029 + FB-030 automation.md bundle implementation plan for fresh-session execution |
+| `plan-fb-011-scripts-a-b.md` | DELETE-AFTER | FB-011 Families A + B extraction plan for fresh-session execution |
+| `.claude/support/workspace/scripts-candidates.md` | KEEP | Multi-stage inventory; referenced by future Families C/D/E plans |
 | `coworkfolderspec.md` | DELETE (Phase 0) | No longer moving forward |
 | `insights-report.html` | DELETE (Phase 0) | Stale; live at `~/.claude/usage-data/report.html` |
 | `migration-guide.md` | DELETE (Phase 0) | Already applied to downstream projects |
@@ -723,3 +729,33 @@ FB-033 research can also be dispatched once `/iterate` has run on real projects 
 - Whether the CLI check should be generalized into a "runtime dependencies" umbrella covering language toolchains (node/python/rust) alongside cloud CLIs. Deferred — existing layout validation (Check 2) already covers package-manager presence implicitly. Revisit only if language-toolchain friction surfaces.
 - Whether to add `docker`/`kubectl`/`terraform` rows. Deferred for the reasons noted in judgment calls above. Users can extend per-project; a template default list that's too broad becomes noise.
 - Version bump tally now: DEC-007 + DEC-008 + FB-037 + work.md batch + FB-015 primary + session-management.md group + iterate.md group + agents group + FB-029/030 automation.md + FB-019 + FB-028. Still Phase 5.
+
+### 2026-04-17 — Phase 4: FB-011 Families A + B (fingerprint.py + validate-tasks.py)
+
+**Done:**
+- **FB-011 Family A (`.claude/scripts/fingerprint.py`):** New Python script (stdlib-only) exposing three modes via mutually-exclusive CLI flags. `--spec PATH` hashes full file contents (byte-identical to `shasum -a 256 FILE | cut -d' ' -f1` prefixed with `sha256:`). `--sections PATH` splits on `## ` level-2 headings and hashes each heading + content-through-next-`##` as UTF-8 bytes with no trailing newline (mirrors the `printf '%s'` recipe in drift-reconciliation.md lines 70-84 exactly). `--dashboard-rollup DIR` hashes sorted `task_id:status` lines per status.md line 36. Spot-check confirmed: `--spec` hash matches shell `shasum` reference byte-for-byte; `--sections` returns `{}` on the template's placeholder spec (no `## ` headings) and returns the expected section map on `task-schema.md` (10+ sections, each prefixed with `sha256:`).
+- **FB-011 Family B (`.claude/scripts/validate-tasks.py`):** Task JSON schema validator + verification-debt counter. Required-field check (`task_id`, `title`, `description`, `status`, `difficulty`, `owner`, `dependencies`, `files_affected`), enum checks (status one of 8 values, owner one of 3, difficulty 1-10 int), boolean-type checks for the 5 known boolean fields, and status-specific invariants (Absorbed → `absorbed_into` required; Broken Down → `subtasks` required). Verification debt logic counts Finished tasks missing `task_verification` or with `result != "pass"` per health-check.md Part 1 formula. Default output human-readable; `--json` flag emits structured summary. Exit codes: 0 pass, 1 validation/debt failure, 2 runtime error. Spot-check on empty template tasks dir: "Validated 0 task files. Schema: OK. Verification debt: none" with exit 0.
+- **`.claude/scripts/README.md`:** Invocation contract doc. Covers stdlib-only discipline, read-only behavior, stdout/stderr conventions, exit codes, `--help` support, orchestrator-vs-subagent boundary (subagents don't invoke — they can't write `.claude/` state), `claude -p` usability, and the dual-location risk flag pointing to `task-schema.json` as future single-source-of-truth candidate (deferred per inventory open Q2).
+- **Advisory wiring (5 call sites):** `drift-reconciliation.md` — script alternative note after section-fingerprint bash block. `decomposition.md` Step 8 — script-alternative bullet after provenance fields. `health-check.md` Part 1 — script-alternative paragraph at end of Verification Debt section. `work.md` Step 1b — one-line callout alongside the drift-detection prose. `status.md` — script-alternative paragraph after the dashboard freshness check. Every call site keeps the existing prose fully intact; scripts are opt-in.
+- **`rules/agents.md § "Tool Preferences"`:** One-paragraph appendix explaining scripts ship with the template, are orchestrator-invoked via Bash, subagents should not call them, and scripts are advisory (absent scripts → fall back to prose).
+- **`sync-manifest.json § sync`:** Added `.claude/scripts/*.py` and `.claude/scripts/README.md` after the `.claude/skills/*/SKILL.md` entry (two explicit entries rather than `**` glob for broader manifest-consumer compatibility).
+- Tracker bookkeeping: status line, Current State (new bullet + next-action refresh), Phase 4 `FB-011` row → `[x] (partial — Families A + B)`, File Collision Map — three new rows for the new script files (FB-011 column marked ✓) plus FB-011 cells on existing rows (`rules/dashboard.md`, `implement-agent.md`, `dashboard-regeneration.md`) struck with `(deferred — Family C)` note, Cleanup Manifest — new row for `plan-fb-011-scripts-a-b.md` (DELETE-AFTER) and `.claude/support/workspace/scripts-candidates.md` (KEEP — source of truth for later stages).
+- Pre-commit hook: `rules/agents.md`, `drift-reconciliation.md`, `decomposition.md`, `health-check.md`, `work.md`, `status.md`, and the new `.claude/scripts/*` files are all sync-category — hook will warn about `version.json` not being bumped (expected per Phase 5 deferral).
+
+**Judgment calls:**
+- **Advisory wiring (not mandatory):** Prose procedures in reference docs stay authoritative; scripts are opt-in helpers. Preserves backward compatibility for downstream projects that haven't pulled scripts, and keeps the prose-as-spec-of-record invariant intact.
+- **Stdlib-only Python:** No pip dependencies — simplifies ship and test, no install burden, no lock-file drift. If future scripts need `jsonschema` or `pyyaml`, that decision is explicit and deferred.
+- **Skipped `task-schema.json`:** A machine-readable schema would eliminate dual-edit risk for `validate-tasks.py` but doubles this commit's scope and introduces a new authority question (is the JSON schema or task-schema.md the source of truth?). Flagged as follow-up in scripts/README.md and inventory open Q2.
+- **Skipped test harness:** Spot-checks against real files (spec_v1.md for `--spec`, task-schema.md for `--sections`, empty `.claude/tasks/` for validate-tasks) covered the core code paths. Testing infrastructure (pytest or plain-script runners) earns its keep when Family C lands — dashboard regen is structurally more complex and merits tests.
+- **Normalization exactness is the invariant:** The script must mirror `drift-reconciliation.md` lines 70-84 byte-for-byte (full spec: UTF-8 bytes of file; sections: UTF-8 bytes of heading + content-through-next-`##` with no appended newline; both prefixed `sha256:`). The spot-check against shell `shasum` confirmed this. Any future edit to either the prose or the script must update both in lockstep; the README flags this dual-location risk.
+- **Sync-manifest uses two explicit entries:** `.claude/scripts/*.py` and `.claude/scripts/README.md` instead of `.claude/scripts/**` — the broader glob works in most consumers but the explicit form is maximally portable and matches the existing manifest style (e.g., `.claude/skills/*/SKILL.md` is a single glob, not `**`).
+- **Script uses `task_id` (not `id`) for dashboard-rollup:** Matches `status.md` line 36's formula exactly. `task-schema.md` uses `id` in its minimal-task example but `task_id` appears in several dashboard/hook references — this is a pre-existing inconsistency in the template docs and not in scope for this commit. validate-tasks.py's REQUIRED_FIELDS uses `task_id` to align with the dashboard-rollup convention; if the template later standardizes on `id`, both script functions update together.
+
+**Next:** Erik reviews the landed scripts. Options: (A) advance to Family C (dashboard regen hybrid — biggest win, biggest scope), (B) pause Stage 2 for real-world trial of A + B before more extraction, (C) close Phase 4 and move to Phase 5 cleanup. FB-033 research can also be dispatched once `/iterate` has run on real projects under the FB-032 contract.
+
+**Open questions for later:**
+- `task-schema.json` as single machine-readable source of truth — deferred, flagged in scripts/README.md.
+- Whether advisory wiring is enough or some call sites should become mandatory — learn from trial. If drift still sneaks in despite the scripts existing, promote the wiring in specific places (drift-reconciliation hash recipe is the most likely candidate).
+- Whether FB-017 trial window (Family E candidacy) is ready to evaluate — revisit in 30 days once real `/iterate` sessions have exercised the FB-032 Decisions contract.
+- The `task_id` vs `id` inconsistency in task-schema.md noted above — not in scope for this commit, but worth cleaning up when next editing task-schema.md.
+- Version bump tally now: DEC-007 + DEC-008 + FB-037 + work.md batch + FB-015 primary + session-management.md group + iterate.md group + agents group + FB-029/030 automation.md + FB-019 + FB-028 + FB-011 A + B. Still Phase 5.
