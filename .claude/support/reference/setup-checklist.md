@@ -49,3 +49,48 @@ Setup check:
 ```
 
 Continue with decomposition regardless of warnings.
+
+## Optional Hooks
+
+Hooks let you enforce structural rules at the harness level — running before or after every tool call. They live in `.claude/settings.local.json` (user-owned, gitignored) under the `hooks` key, so they're opt-in per project. The template does not ship hooks; the recipe below is documentation for users who want a copy-paste starting point.
+
+### Block dev-server starts (frontend projects)
+
+Long-running dev servers (`next dev`, `npm run dev`, etc.) are easy to start accidentally inside an agent loop and hard to terminate cleanly afterwards. A `PreToolUse` hook can hard-block them so you start the dev server yourself in a separate terminal.
+
+Add to `.claude/settings.local.json`:
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.command // \"\"' | grep -qE '(npm|pnpm|yarn|bun)( run)? dev|next dev|vite( |$)' && { echo 'Dev server start blocked by PreToolUse hook in settings.local.json. Start it yourself in another terminal if needed.' >&2; exit 2; } || exit 0"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**How it works:**
+- `PreToolUse` fires before every Bash invocation; the JSON tool envelope (including `tool_input.command`) is piped to the hook on stdin.
+- `jq` extracts the command string; `grep -qE` returns 0 if any dev-server pattern matches.
+- On match: print to stderr and exit 2 — Claude Code treats exit 2 as a hard block and surfaces the message to the model. On no match: exit 0 and the Bash call proceeds.
+- Requires `jq` on `PATH` (preinstalled on most Linux distros; `brew install jq` on macOS).
+
+**Composition with `permissions.allow` and auto mode:**
+- Hooks run **after** rule lookup and classifier evaluation — they're the final gate before execution. A `PreToolUse` hook can hard-block a command that `permissions.allow` or `--permission-mode auto` would otherwise approve.
+- A `permissions.deny` rule short-circuits before the hook ever runs. Use `deny` for static blocks; use a hook when the decision needs runtime logic (parsing the actual command string, checking env vars, inspecting working-directory state).
+
+**Customizing:**
+- Adjust the regex to cover the package manager / framework / script names your project uses.
+- For multi-pattern logic or several projects, lift the inline command into a script file (e.g., `scripts/hooks/block-dev-server.sh`) and reference its path in the `command` field — keeps `settings.local.json` readable.
+- Other useful matchers: `Write` / `Edit` (guard specific paths), `WebFetch` (block external endpoints), or `*` (run for every tool).
+
+See Claude Code's hooks documentation for the full event list (`PreToolUse`, `PostToolUse`, `UserPromptSubmit`, `Stop`, etc.) and matcher syntax.

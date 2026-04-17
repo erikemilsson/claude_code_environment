@@ -2,7 +2,7 @@
 
 **Purpose:** Coordinate multi-session template improvements from three inputs (Opus 4.7 upgrade, Claude Code best-practices doc, usage insights report) alongside the existing feedback backlog and approved decisions.
 
-**Status:** Phase 4 — DEC-007 + DEC-008 implemented; remaining direct items next (hot-file batches)
+**Status:** Phase 4 — DEC-007 + DEC-008 + FB-037 implemented; remaining direct items next (hot-file batches)
 **Last updated:** 2026-04-17
 
 ---
@@ -44,8 +44,9 @@ User retains approval authority at every intake and edit point. Claude does not 
 - **Inflection note on DEC-008:** Frontmatter flag was conservative. Option D is narrowing + documentation, not reversal — layered model preserved. No `/iterate` spec revisit needed; template-maintenance implementation work captured in Phase 4.
 - **DEC-007 Option B implemented 2026-04-17:** `.claude/skills/` directory created with three Skills (`decomposition-heuristics`, `spec-checklist`, `dashboard-style`) each containing full content from the companion reference doc plus auto-invocation frontmatter. Reference docs kept as fallback during trial — each file (Skill and reference) carries a dual-location comment so maintainers know to edit both until one is retired. `.claude/README.md` updated (Essential Files row, File Ownership list, new Skills subsection, Where to Find Things row). `sync-manifest.json` `sync` category adds `.claude/skills/*/SKILL.md`.
 - **DEC-008 Option D implemented 2026-04-17:** `.claude/settings.json` narrowed from 15 to 8 entries per Q5 keep-set (kept: `git status`, `git log`, `git diff`, `ls`, `grep`, `test`, `head`, `wc`; dropped: `git branch`, `git check-ignore`, `git ls-tree`, `tree`, `find`, `sort`, `shasum`). New `### Auto Mode` subsection added to `.claude/README.md` between `### Settings` and `### Skills` — explains classifier behavior, composition with `permissions.allow`, and recommended setup for Max+Opus 4.7 vs Pro/Sonnet/Haiku vs dontAsk/CI. `.claude/CLAUDE.md` Critical Invariant bullet 8 updated with auto-mode composition reference. `commands/health-check.md` Part 5c verified entry-count-agnostic — no edit needed. Layered two-file model from DEC-005 preserved.
-- **Next action:** Erik chooses the next Phase 4 unit. Suggested: remaining Phase 4 hot-file batches (e.g., `commands/work.md` group: FB-015 + FB-017 + FB-027 + FB-036) or FB-037 implementation (now unblocked — optional PreToolUse hook recipe in `setup-checklist.md`).
-- **Blocked on:** nothing. FB-033 remains deferred on FB-032 trial (Phase 4 direct item). FB-037 ready now.
+- **FB-037 implemented 2026-04-17:** new `## Optional Hooks` section added to `.claude/support/reference/setup-checklist.md` with a `PreToolUse` recipe blocking dev-server starts (`npm/pnpm/yarn/bun run? dev`, `next dev`, `vite`) via `jq` + `grep` exit-2 hard-block. Documents composition with `permissions.allow` and auto-mode classifier (hooks run last; can override classifier-approved actions). Includes customization guidance and pointer to Claude Code's hooks docs.
+- **Next action:** Erik chooses the next Phase 4 unit. Suggested: hot-file batches (e.g., `commands/work.md` group: FB-015 + FB-017 + FB-027 + FB-036; or `rules/session-management.md` group: FB-023 + FB-024 + FB-025).
+- **Blocked on:** nothing. FB-033 remains deferred on FB-032 trial (Phase 4 direct item).
 
 ---
 
@@ -121,7 +122,7 @@ Existing `ready` items + new items routed as direct implementation. Group by fil
 
 **Blocked within Phase 4:**
 
-- [ ] **FB-037** — ~~**Blocked on FB-026 → DEC-008 closing**~~ **Unblocked 2026-04-17** by DEC-008 Option D (layered model preserved). Hook recipe now implementable: reference `.claude/settings.local.json` under `hooks` key; position in `setup-checklist.md` new "Optional Hooks" subsection.
+- [x] **FB-037** — ~~**Blocked on FB-026 → DEC-008 closing**~~ **Unblocked 2026-04-17** by DEC-008 Option D (layered model preserved). *Implemented 2026-04-17:* `Optional Hooks` section appended to `.claude/support/reference/setup-checklist.md` with a copy-paste `PreToolUse` recipe blocking `npm run dev` / `next dev` / `vite` patterns via `jq` + `grep` exit-2 hard-block, plus composition notes covering `permissions.allow` / auto-mode interaction and customization guidance.
 
 **DEC-007 implementation (Option B — skills trial):**
 - [x] **Create `.claude/skills/` directory** — done 2026-04-17
@@ -487,3 +488,23 @@ Any of these can be inline or plan-and-execute in a fresh session. DEC-008 is a 
 **Next:** Phase 4 continues with remaining direct items. Suggested ordering: FB-037 (now unblocked — optional PreToolUse hook recipe in `setup-checklist.md`) is a natural follow-on since the auto-mode section just written is its documentation neighbor. Alternative: hot-file batches starting with `commands/work.md` (FB-015 + FB-017 + FB-027 + FB-036).
 
 **Open questions for later:** None blocking. Version bump tallies now include DEC-007 Option B + DEC-008 Option D — still deferred to Phase 5.
+
+### 2026-04-17 — Phase 4: FB-037 implementation (Optional Hooks recipe)
+
+**Done:**
+- Appended `## Optional Hooks` section to `.claude/support/reference/setup-checklist.md` (placed after `## Output`, end-of-file appendix).
+- Recipe content: a `PreToolUse` hook that matches Bash tool calls, pipes `tool_input.command` through `jq | grep -qE`, and exits 2 (hard block) with a stderr message when the regex matches `(npm|pnpm|yarn|bun)( run)? dev|next dev|vite( |$)`. Designed for copy-paste into `.claude/settings.local.json` per DEC-005 / DEC-008 layered model.
+- Explanatory text covers: how the hook fires (PreToolUse on every Bash invocation), the exit-code-2 contract, the `jq` dependency, composition with `permissions.allow` and auto mode (hooks run after classifier — can override classifier approval), `permissions.deny` vs hook decision (deny short-circuits hooks), and customization (regex, external script lift, alternative matchers like `Write`/`Edit`/`WebFetch`).
+- Did NOT migrate FB-037 entry in `.claude/support/feedback/feedback.md` to `archive.md`. Reason: feedback README's status flow has no "implemented" status; existing options (`promoted`, `absorbed`, `closed`, `archived`) are spec-incorporation or rejection-shaped. Direct-implementation closure for template-maintenance work is a new convention; deferring to Phase 5 cleanup. Tracker is the authoritative implementation record meanwhile.
+- Pre-commit hook will not warn — `setup-checklist.md` is not in the sync category (it's a reference doc, but the hook only watches sync-category template-owned files). Confirmed unchanged behavior expected.
+
+**Judgment calls:**
+- Picked the dev-server pattern from FB-037's source (Claude Code usage insights report) rather than expanding to a more general "long-running process" recipe. Source-faithful keeps the recipe small enough to read; users can extend per the customization notes.
+- Chose inline `jq | grep` one-liner over an external script. Trades readability for setup simplicity — single-file edit gets a working hook. Customization note covers the lift-to-script path for users who outgrow it.
+- Kept `vite( |$)` over `vite$` to match `vite serve` and similar invocations while still anchoring to "starts with vite as a subcommand" rather than mid-string `vite`.
+- Did not cross-link from `.claude/README.md § Auto Mode` → `setup-checklist.md § Optional Hooks`. Considered but skipped: the README section is about composition mechanics, not specific hook recipes; over-linking blurs the layers. Setup-checklist users discover the appendix locally.
+
+**Next:** Erik chooses the next Phase 4 unit. With FB-037 closed, the natural candidates are the hot-file batches (`commands/work.md`: FB-015 + FB-017 + FB-027 + FB-036, four items in one file; or `rules/session-management.md`: FB-023 + FB-024 + FB-025, three items in one file).
+
+**Open questions for later:**
+- Phase 5 cleanup: define an "implemented" status (or repurpose `closed` with positive language) for direct-implementation template-maintenance feedback items; sweep FB-037 (and any other ready→implemented items by then) into archive.md under that convention.
