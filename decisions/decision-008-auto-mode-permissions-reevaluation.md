@@ -1,10 +1,10 @@
 ---
 id: DEC-008
 title: Auto-mode reevaluation — should DEC-005's shipped allowlist be retired, narrowed, or kept?
-status: proposed
+status: approved
 category: process
 created: 2026-04-17
-decided:
+decided: 2026-04-17
 related:
   tasks: []
   decisions: [DEC-005]
@@ -25,7 +25,7 @@ Mark your selection by checking one box:
 - [ ] Option A: Full reversal — delete `.claude/settings.json`; rely entirely on auto mode
 - [ ] Option B: Narrow to 6–8 essential entries (keep layered two-file model from DEC-005)
 - [ ] Option C: Keep DEC-005 unchanged (15 entries)
-- [ ] Option D: Narrow AND document auto mode as the recommended primary layer in README + setup
+- [x] Option D: Narrow AND document auto mode as the recommended primary layer in README + setup
 
 *Check one box above, then fill in the Decision section below.*
 

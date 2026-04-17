@@ -1,10 +1,10 @@
 ---
 id: DEC-007
 title: Skills adoption scope — where Skills fit in the template
-status: proposed
+status: approved
 category: architecture
 created: 2026-04-17
-decided:
+decided: 2026-04-17
 related:
   tasks: []
   decisions: [DEC-004]
@@ -23,7 +23,7 @@ blocks: [FB-033]
 Mark your selection by checking one box:
 
 - [ ] Option A: Don't adopt Skills — keep status quo (commands + rules + subagents)
-- [ ] Option B: Adopt Skills for on-demand reference only (subset of `support/reference/`)
+- [x] Option B: Adopt Skills for on-demand reference only (subset of `support/reference/`)
 - [ ] Option C: Broader adoption — move eligible `rules/` content and domain packs to Skills; keep orchestration in commands; keep verify and agent flows in subagents
 - [ ] Option D: Defer — wait for a concrete use case or Skills API stabilization
 

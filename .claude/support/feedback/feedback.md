@@ -68,26 +68,6 @@ The template's `.claude/CLAUDE.md` currently lists rules files in a "Workflow Ru
 
 **Why:** Makes context loading explicit and predictable; aligns the template with the documented harness feature; surfaces accidental-load behavior. Low risk if rules are already short.
 
-## FB-020: Research Skills architectural limitations before template adoption
-
-**Status:** ready
-**Captured:** 2026-04-17
-**Assessed:** 2026-04-17 — Affects potentially new `.claude/skills/` dir, `.claude/CLAUDE.md`, `.claude/rules/agents.md`, commands, and subagent/skill context-window architecture. Scope: exploratory. Research-first: must resolve subagent-vs-skill context-window semantics (user's primary concern — would affect DEC-004 guarantees) plus distribution/override semantics and permissions inheritance before any migration. FB-033 depends on this outcome (subagent vs skill for spec-auditor). Route: Phase 3 research (candidate DEC-007). Do not begin any implementation.
-
-Source: Claude Code best-practices doc (fetched 2026-04-17) — presents Skills as the on-demand alternative to CLAUDE.md for "domain knowledge or workflows that are only relevant sometimes." User flagged adoption as **research-first**, not implementation.
-
-The template currently uses commands + rules + agents for everything. Skills could, in principle, carry domain-specific guidance (software vs. research vs. procurement vs. renovation patterns) loaded only when invoked, instead of bundling it in spec-checklist or rules. But before committing to any migration from commands/rules → skills or from subagents → skill-invocation, the architectural limitations need investigation.
-
-**Known concerns to investigate:**
-- Do subagents that run *through* a skill get their own context window, or does the skill's execution share the caller's context? (User's primary concern — would invalidate the separation-of-concerns guarantees underpinning DEC-004.)
-- What other constraints exist for replacing commands or rules with skills (e.g., invocation semantics, parameter passing, discoverability, scope of `disable-model-invocation`)?
-- Can skills be template-owned (ship in `.claude/skills/`) the same way commands ship, or do they carry different distribution/override semantics?
-- Interaction with the settings/permissions layer: do skills inherit `permissions.allow` from parent CLAUDE.md, or do they need their own?
-
-**Scope if pursued after research:** potentially large — new `.claude/skills/` directory, redistribution of content from `support/reference/`, possible refactor of some commands. Do not begin any migration until the above questions are answered.
-
-**Likely outcome:** this becomes a formal decision record (candidate DEC-007) once the research phase closes.
-
 ## FB-021: Use AskUserQuestion-driven interview in `/iterate distill`
 
 **Status:** ready
@@ -158,26 +138,6 @@ Template's resume-methods table in `session-management.md` doesn't mention this.
 
 **Why:** Useful when running this template across multiple long-running projects. Pure documentation, no behavior change.
 
-## FB-026: Reevaluate permissions story given auto-mode maturity (potential inflection — may impact DEC-005)
-
-**Status:** ready
-**Captured:** 2026-04-17
-**Assessed:** 2026-04-17 — Affects `.claude/settings.json`, `.claude/sync-manifest.json`, `.claude/commands/health-check.md` Part 5c, `.claude/CLAUDE.md` Critical Invariants, `system-overview.md`, `.claude/README.md` Settings section. Scope: corrective — may reverse portions of DEC-005. Inflection-point candidate DEC-008. Blocks FB-037 (hook recipe shape depends on outcome). Research can start immediately — no upstream dependencies. Route: Phase 3 research (candidate DEC-008).
-
-Source: Claude Code best-practices doc (fetched 2026-04-17) mentions auto mode (`--permission-mode auto`) and sandboxing as alternatives to explicit allowlists. User flagged this as more than a doc tweak — it may change the foundation DEC-005 was built on.
-
-**Context:** Auto mode is now available on the Max plan (user's plan) as of just a few days before 2026-04-17. Previously the template was designed on the assumption that auto mode was not available to the user, which led DEC-005 to ship a two-layer allowlist model (template-owned `settings.json` with base `permissions.allow` + user-owned `settings.local.json`). Under auto mode, a classifier model approves routine actions at runtime, which may make much of that allowlist machinery unnecessary.
-
-**Questions to resolve (likely via a decision record):**
-- Does auto mode reliably cover the set that DEC-005's base allowlist was protecting? Where does it fall back to prompting the user?
-- If the base allowlist becomes largely redundant under auto mode, should the template simplify or remove `settings.json`? What becomes the supported permissions model?
-- Do sandboxing (`/sandbox`, OS-level isolation) and auto mode compose cleanly, or is this an either/or choice?
-- How much of `commands/health-check.md` Part 5c (Settings Boundary Validation) is still useful if the allowlist simplifies?
-- What would downstream projects migrating from the current DEC-005 template structure experience?
-
-**Scope if acted upon:** potentially reverses portions of DEC-005. Likely an inflection-point decision record (candidate DEC-008). Affects `.claude/settings.json`, `sync-manifest.json`, `commands/health-check.md`, `.claude/CLAUDE.md` Critical Invariants, `system-overview.md`, `.claude/README.md` Settings section.
-
-**User's framing:** *"Auto mode actually runs quite smoothly and it might not be so necessary to bloat the documentation and rules with specifics about ways to handle permissions. We should explore the impact of both auto mode and what simplifying the docs might mean for how well the template runs."*
 
 ## FB-027: Skip-planning guidance for trivial tasks
 
@@ -267,7 +227,7 @@ Complements FB-021 (AskUserQuestion-driven interview in `/iterate distill`) — 
 
 **Status:** ready
 **Captured:** 2026-04-17
-**Assessed:** 2026-04-17 — Affects new `.claude/agents/spec-auditor.md` (or `.claude/skills/spec-auditor/` depending on FB-020 outcome), hook wiring, verify-agent integration. Scope: exploratory. Research-first AND trial-gated on FB-032 (only pursue if the structural output contract proves insufficient after real `/iterate` sessions under Opus 4.7). Also depends on FB-020 (skill-vs-subagent architecture) and FB-026 (permissions/hook surface). Route: Phase 3 research — **deferred** until FB-032 trial data exists (candidate DEC-009).
+**Assessed:** 2026-04-17 — Affects new `.claude/agents/spec-auditor.md` (subagent, not Skill — resolved by DEC-007), hook wiring, verify-agent integration. Scope: exploratory. Research-first AND trial-gated on FB-032 (only pursue if the structural output contract proves insufficient after real `/iterate` sessions under Opus 4.7). FB-020 dependency resolved by DEC-007 (subagent is the correct home). FB-026 dependency resolved by DEC-008 (layered settings stay; hook wiring goes in `settings.local.json` if pursued). Route: Phase 3 research — **deferred** until FB-032 trial data exists (candidate DEC-009).
 
 Source: Claude Code usage insights report (fetched 2026-04-17) — "On the Horizon" section proposes an adversarial-reviewer subagent that intercepts every `Write`/`Edit` to `spec*.md` or `decisions/*.md`. User edit on capture: *"wait until A1 is trialed properly before deciding"* — this item is explicitly gated on FB-032's trial outcome.
 
@@ -339,7 +299,7 @@ Note on auto mode: auto mode may actually *worsen* this friction by removing the
 
 **Status:** ready
 **Captured:** 2026-04-17
-**Assessed:** 2026-04-17 — Affects `.claude/support/reference/setup-checklist.md` (new "Optional Hooks" subsection/appendix). Scope: additive. **Blocked on FB-026 resolution (candidate DEC-008)** — hook recipe shape depends on whether DEC-008 keeps, simplifies, or retires the DEC-005 layered-settings model. Shares file with FB-028 (different subsection). Route: Phase 4 direct — **deferred** until FB-026 closes.
+**Assessed:** 2026-04-17 — Affects `.claude/support/reference/setup-checklist.md` (new "Optional Hooks" subsection/appendix). Scope: additive. **Unblocked 2026-04-17 by DEC-008 (Option D approved)** — layered two-file model from DEC-005 stays intact; hook recipe references `.claude/settings.local.json` under the `hooks` key. Shares file with FB-028 (different subsection). Route: Phase 4 direct — ready now.
 
 Source: Claude Code usage insights report (fetched 2026-04-17) — report recommends a PreToolUse hook blocking `next dev` / `npm run dev` / `pnpm dev` unless explicitly approved. Complements FB-034 (universal behavioral rule) by providing a structural hook recipe for users who want hard blocks.
 

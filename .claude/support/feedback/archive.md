@@ -111,6 +111,30 @@ Add a standardized set of accepted permissions (`allowedTools`) to the Claude Co
 
 Original capture: phase gate blocks Phase N+1 tasks until all Phase N complete — breaks for research/procurement/stakeholder work with long-running activities that naturally span phases. SIREN workshop recruitment was the surfacing case.
 
+## FB-020: Research Skills architectural limitations before template adoption
+
+**Status:** absorbed
+**Captured:** 2026-04-17
+**Absorbed:** 2026-04-17
+**Absorbed Into:** DEC-007
+**Reason:** DEC-007 (Skills adoption scope, approved 2026-04-17 Option B — reference-only adoption) resolved the user's blocking concern. Research finding: Skills inject into the caller's message stream (shared context), so orchestration/verify flows cannot live in Skills, but subagents spawned from within a Skill still get fresh context. DEC-004 isolation is preserved. Template will adopt Skills only for on-demand reference content; orchestration and verify flows stay in commands and subagents. Also resolves FB-033's Skill-vs-subagent sub-question: spec-auditor must be a subagent.
+
+**Assessed:** 2026-04-17 — Affects potentially new `.claude/skills/` dir, `.claude/CLAUDE.md`, `.claude/rules/agents.md`, commands, and subagent/skill context-window architecture. Scope: exploratory. Research-first: must resolve subagent-vs-skill context-window semantics (user's primary concern — would affect DEC-004 guarantees) plus distribution/override semantics and permissions inheritance before any migration. FB-033 depends on this outcome (subagent vs skill for spec-auditor). Route: Phase 3 research (candidate DEC-007). Do not begin any implementation.
+
+Source: Claude Code best-practices doc (fetched 2026-04-17) — presents Skills as the on-demand alternative to CLAUDE.md for "domain knowledge or workflows that are only relevant sometimes." User flagged adoption as research-first, not implementation. Primary concern: subagent context-window behavior when spawned from a Skill.
+
+## FB-026: Reevaluate permissions story given auto-mode maturity
+
+**Status:** absorbed
+**Captured:** 2026-04-17
+**Absorbed:** 2026-04-17
+**Absorbed Into:** DEC-008
+**Reason:** DEC-008 (auto-mode reevaluation, approved 2026-04-17 Option D — narrow to 8 entries + document auto mode) resolved the inflection question. Research finding: `permissions.allow` rules short-circuit the auto-mode classifier — the shipped allowlist is not dead code (saves latency, covers dontAsk/CI, supports hooks). Full reversal would break hooks and non-Opus-4.7 users. Option D narrows the shipped list from 15 to 8 essential entries and adds auto-mode documentation. The layered two-file model from DEC-005 stays intact. Unblocks FB-037.
+
+**Assessed:** 2026-04-17 — Affects `.claude/settings.json`, `.claude/sync-manifest.json`, `.claude/commands/health-check.md` Part 5c, `.claude/CLAUDE.md` Critical Invariants, `system-overview.md`, `.claude/README.md` Settings section. Scope: corrective — may reverse portions of DEC-005. Inflection-point candidate DEC-008. Blocks FB-037 (hook recipe shape depends on outcome). Research can start immediately — no upstream dependencies. Route: Phase 3 research (candidate DEC-008).
+
+Source: Claude Code best-practices doc (fetched 2026-04-17) mentioned auto mode (`--permission-mode auto`) as alternative to explicit allowlists. Auto mode became available on Max plan ~2026-04-13, post-dating DEC-005's assumptions. User flagged the potential inflection: if auto mode covers most of the base allowlist at runtime, the shipped file may be unnecessary complexity.
+
 ## FB-003: Template's subdirectory layout causes Turbopack CSS resolution failure in Next.js 16
 
 **Status:** promoted
