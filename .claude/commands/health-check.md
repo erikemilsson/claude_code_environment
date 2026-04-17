@@ -282,7 +282,7 @@ When a section exceeds the soft limit, offer these options:
 
 Validates that the expected template rule files exist in `.claude/rules/`.
 
-**Expected files:** `task-management.md`, `spec-workflow.md`, `decisions.md`, `dashboard.md`, `agents.md`, `archiving.md`
+**Expected files:** `task-management.md`, `spec-workflow.md`, `decisions.md`, `dashboard.md`, `agents.md`, `archiving.md`, `session-management.md`
 
 **Checks:**
 - Each expected file exists
