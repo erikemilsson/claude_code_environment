@@ -2,7 +2,7 @@
 
 **Purpose:** Coordinate multi-session template improvements from three inputs (Opus 4.7 upgrade, Claude Code best-practices doc, usage insights report) alongside the existing feedback backlog and approved decisions.
 
-**Status:** Phase 2 intake complete — `/feedback review` triage next
+**Status:** Phase 2 complete — Phase 3 research scope determined
 **Last updated:** 2026-04-17
 
 ---
@@ -37,9 +37,10 @@ User retains approval authority at every intake and edit point. Claude does not 
 
 ## Current State
 
-- **Active phase:** Phase 2 — intake complete; triage next
-- **Next action:** Fresh session reads `plan-feedback-review-triage.md` at root and executes. Triage covers 19 `new`-status items (FB-019–FB-037) plus re-examination of carryover `ready` items (FB-010/011/012/013/015/017 — some likely absorbed by closed DEC-004/005/006). Output: items routed to `ready` (with `**Assessed:**` lines), `absorbed`/`closed`/`archived` (moved to archive.md), Phase 3 research scope populated in tracker, Phase 4 direct-implementation list finalized, File Collision Map Best-prac/Usage columns filled in.
-- **Blocked on:** nothing — best-practices and usage-report intake bundles captured; both candidate files (`upgrade-candidates-best-practices.md`, `upgrade-candidates-usage-report.md`) live at root as DELETE-AFTER and will be removed in Phase 5 cleanup.
+- **Active phase:** Phase 2 closed — Phase 3 (research) or Phase 4 (direct implementation) can begin next.
+- **Triage outcome (2026-04-17):** 19 new items assessed (FB-019–FB-037); 3 carryover items archived as absorbed (FB-010→DEC-004, FB-012→DEC-005, FB-013→DEC-006). No duplicates, no rejects, no `refined` holds. Carryover `ready` items unchanged: FB-011, FB-015, FB-017. **Phase 3 research scope:** 3 items — FB-020 (Skills / candidate DEC-007), FB-026 (permissions-auto-mode / candidate DEC-008, inflection), FB-033 (spec-auditor / candidate DEC-009, deferred until FB-032 trialed). **Phase 4 direct-implementation:** 16 items ready now; FB-037 blocked until DEC-008 closes. Full list in the Phase 3 / Phase 4 sections below.
+- **Next action:** Erik chooses between (a) start Phase 3 research — write research plans for FB-020 and FB-026 (research is iterative; keep the conversation rather than fresh-session), decisions land in root `decisions/`; or (b) start Phase 4 direct implementation batched by file, hot files first (`commands/work.md`, `rules/agents.md`, `.claude/agents/implement-agent.md`, `rules/session-management.md`, `commands/iterate.md`). Do not assume.
+- **Blocked on:** nothing at the phase level. Within Phase 4, FB-037 blocks on FB-026; within Phase 3, FB-033 blocks on FB-032 trial (FB-032 is Phase 4 direct).
 
 ---
 
@@ -79,25 +80,48 @@ Intake control is explicit: Claude produces a candidate list first, user approve
 - [x] Claude captures approved items via `/feedback`
 
 **Triage:**
-- [ ] `/feedback review` — triage captured items
-  - Check overlap with existing ready items (FB-011 scripts, FB-015 action-required, FB-017 checkboxes especially) — absorb duplicates
-  - Update **File Collision Map** with new `**Assessed:**` entries
-- [ ] Decide which new items need `/research` (Phase 3) vs direct implementation (Phase 4)
+- [x] `/feedback review` — triage complete (2026-04-17). 19 new items assessed. 3 carryover archived as absorbed (FB-010→DEC-004, FB-012→DEC-005, FB-013→DEC-006). File Collision Map Best-prac / Usage columns populated below. No duplicates among FB-019–FB-037; no rejects; no items held for refinement.
+- [x] Phase 3 (research) vs Phase 4 (direct) classification — see sections below.
 
 ### Phase 3 — Cross-cutting research
 
-Only for new items that emerge as cross-file or inflection-point decisions.
+Only for new items that emerge as cross-file or inflection-point decisions. Research runs iteratively (keep conversation context rather than fresh-session). Decision records land in root `decisions/`.
 
-- [ ] (TBD — populate after Phase 2 triage)
+- [ ] **FB-020** — Skills architectural research → candidate **DEC-007**. Investigates subagent-vs-skill context-window semantics (primary concern: would affect DEC-004 guarantees), distribution/override semantics, permissions inheritance. **No upstream blocker.** FB-033 depends on this outcome. Can start immediately.
+- [ ] **FB-026** — Permissions story given auto-mode maturity → candidate **DEC-008** (inflection-point; may reverse portions of DEC-005). Affects 6 files including `.claude/settings.json` and DEC-005's layering model. **No upstream blocker.** Blocks FB-037 (hook recipe shape depends on outcome). Can start immediately.
+- [ ] **FB-033** — Spec-auditor subagent + PreToolUse gate → candidate **DEC-009**. **Deferred** — gated on FB-032 trial data. Depends on FB-020 (skill-vs-subagent) and FB-026 (hook surface) outcomes. Do not start until FB-032 has been implemented (Phase 4) and trialed across several real `/iterate` sessions.
+
+**Ordering constraints:**
+- FB-020 and FB-026 can start immediately and in parallel (no shared files during research phase; decision records are isolated).
+- Consider whether FB-020 and FB-026 should share a research session — both touch settings/subagent architecture, and FB-020's outcome affects where hooks could live (interacts with FB-026's DEC-005 reevaluation). Loose coupling; separate research is fine but the researcher should cross-reference.
+- FB-033 research starts only after FB-032 (Phase 4) has landed + generated trial data.
 
 ### Phase 4 — Implementation of remaining items
 
-Existing ready items + new items from Phases 2–3.
+Existing `ready` items + new items routed as direct implementation. Group by file (hot files first per implementation-grouping rule).
 
-- [ ] **FB-011** — Scripts as alternative (dashboard regen, checkbox detection). Depends on DEC-004 (subagent Bash sandbox).
-- [ ] **FB-015** — Action Required dashboard cleanup (direct template edit).
-- [ ] **FB-017** — Checkbox detection + finalization in `/work` Step 2b. May be partially resolved by FB-011 script extraction.
-- [ ] (Plus new items from Phase 2)
+**Hot files** (3+ in-flight items — do these first to avoid re-reads):
+
+- [ ] **`.claude/commands/work.md`** — FB-015 (Action Required cleanup), FB-017 (Step 2b checkbox detection), FB-027 (skip-planning callout in Step 3 routing), FB-036 (pre-dispatch confirm in Step 4).
+- [ ] **`.claude/rules/session-management.md`** — FB-023 (`/btw`), FB-024 (`/rewind`/Esc+Esc), FB-025 (`/rename`). Single bundled edit.
+- [ ] **`.claude/rules/agents.md`** and/or **`.claude/agents/implement-agent.md`** — FB-022 (root-cause rule), FB-034 (respect user kills), FB-035 (large-file Read guidance), FB-031 (Writer/Reviewer parallel-session mention — may alternatively go to `.claude/README.md`). Plus FB-011 call-sites if FB-011 implementation lands here.
+- [ ] **`.claude/commands/iterate.md`** — FB-021 (AskUserQuestion in distill), FB-032 (Decisions-in-Proposal output contract in propose). FB-032 should land first to start generating trial data for FB-033.
+
+**Single-item / single-file batches:**
+
+- [ ] **FB-011** — Scripts as alternative (dashboard regen, checkbox detection); starts with a candidates inventory doc. Consider after FB-029/FB-030 (some candidates may become `claude -p` one-liners instead of bash scripts).
+- [ ] **FB-019** — `@path` imports in `.claude/CLAUDE.md` (Workflow Rules section).
+- [ ] **FB-028** — CLI-tool installation hints in `.claude/support/reference/setup-checklist.md`.
+- [ ] **FB-029 + FB-030** — New `.claude/support/reference/automation.md`: `claude -p` primitive + fan-out pattern. Bundle (same file).
+
+**Blocked within Phase 4:**
+
+- [ ] **FB-037** — Optional PreToolUse hook in `setup-checklist.md`. **Blocked on FB-026 → DEC-008 closing** (hook recipe shape depends on whether DEC-008 keeps, simplifies, or retires DEC-005's settings model).
+
+**Notes:**
+- FB-034 + FB-036 share an "over-eager execution" theme but land in different files (`rules/agents.md` / `implement-agent.md` vs `commands/work.md` / `parallel-execution.md`). Implementer may choose to phrase them consistently, but they are not a single edit.
+- FB-032 implementation should precede FB-033 research dispatch (FB-033 is gated on FB-032 trial data).
+- FB-029/FB-030 should precede FB-011 implementation if pursued as bash scripts (some candidates may collapse to `claude -p` one-liners).
 
 ### Phase 5 — Cleanup
 
@@ -115,33 +139,46 @@ Rows = files. Columns = in-flight items. Cells = section/step affected (or `•`
 
 | File | DEC-004 | DEC-005 | DEC-006 | FB-011 | FB-015 | FB-017 | Opus 4.7 | Best-prac | Usage |
 |------|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| `commands/work.md` | ~~Step 4~~ ✓ | | ~~Step 2c summary~~ ✓ | | • | Step 2b | | TBD | FB-036 Step 4 |
-| `system-overview.md` | ~~atomic contract~~ ✓ | ~~file boundary~~ ✓ | ~~Pending Decisions~~ ✓ | | | | sweep | TBD | — |
-| `commands/health-check.md` | | ~~Part 5 merge~~ ✓ | ~~Part 1 boolean check~~ ✓ | | Part 6 | | | TBD | — |
-| `rules/agents.md` | ~~Context Separation~~ ✓ | | | | | | model req | TBD | FB-034 behavior; FB-035 Tool Prefs |
-| `.claude/agents/implement-agent.md` | ~~Steps 3, 6a-c~~ ✓ | | | Steps 3, 6a, 6c | | | frontmatter | TBD | FB-034 behavior; FB-035 Tool Prefs |
-| `.claude/agents/verify-agent.md` | ~~T6, T7~~ ✓ | | | | | | frontmatter | TBD | FB-032 decisions check |
-| `.claude/agents/research-agent.md` | | | | | | | frontmatter | TBD | — |
-| `.claude/CLAUDE.md` | | ~~file-boundary~~ ✓ | | | | | model req | TBD | FB-034 Critical Invariants |
-| `rules/task-management.md` | | | ~~• (stale — no edit needed)~~ | | | | | TBD | — |
-| `rules/spec-workflow.md` | | | ~~• (stale — no edit needed)~~ | | | | | TBD | FB-032 propose-approve-apply |
-| `rules/dashboard.md` | | | | • | Sections | | | TBD | — |
-| `commands/breakdown.md` | | | ~~subtask inherit~~ ✓ | | | | | TBD | — |
-| `commands/iterate.md` | | | ~~(stale — no edit needed)~~ | | | detection | | TBD | FB-032 propose output contract |
-| `support/reference/task-schema.md` | | | ~~`phase` row + new `cross_phase` row~~ ✓ | | | | | TBD | — |
-| `support/reference/phase-decision-gates.md` | | | ~~skip rule + Cross-Phase section~~ ✓ | | | • | | TBD | — |
-| `support/reference/dashboard-regeneration.md` | | | ~~`(cross-phase)` suffix~~ ✓ | • | Action Item Contract | | | TBD | — |
-| `support/reference/parallel-execution.md` | | | ~~OR clause in eligibility~~ ✓ | | | | | TBD | FB-036 pre-dispatch confirm |
-| `support/reference/decomposition.md` | | | ~~heuristic bullet~~ ✓ | | | | | TBD | — |
-| `support/reference/decisions.md` | | | | | | line 151 | | TBD | — |
-| `support/reference/workflow.md` | | | | | | lines 195-201 | | TBD | — |
-| `support/reference/setup-checklist.md` (new row) | | | | | | | | TBD | FB-037 Optional Hooks appendix |
-| `.claude/sync-manifest.json` | | ~~new `merge` cat~~ ✓ (used existing `sync`) | | | | | | TBD | — |
-| `.claude/settings.json` (new) | | ~~•~~ ✓ | | | | | | TBD | — |
-| `.claude/version.json` | | | | | | | bump | TBD | — |
-| `.claude/agents/spec-auditor.md` (if created) | | | | | | | | TBD | FB-033 research-first — defer |
+| `commands/work.md` | ~~Step 4~~ ✓ | | ~~Step 2c summary~~ ✓ | | • | Step 2b | | FB-027 Step 3 routing | FB-036 Step 4 |
+| `system-overview.md` | ~~atomic contract~~ ✓ | ~~file boundary~~ ✓ | ~~Pending Decisions~~ ✓ | | | | sweep | — | — |
+| `commands/health-check.md` | | ~~Part 5 merge~~ ✓ | ~~Part 1 boolean check~~ ✓ | | Part 6 | | | — | — |
+| `rules/agents.md` | ~~Context Separation~~ ✓ | | | | | | model req | FB-022 root-cause; FB-031 Writer/Reviewer | FB-034 behavior; FB-035 Tool Prefs |
+| `.claude/agents/implement-agent.md` | ~~Steps 3, 6a-c~~ ✓ | | | Steps 3, 6a, 6c | | | frontmatter | FB-022 root-cause | FB-034 behavior; FB-035 Tool Prefs |
+| `.claude/agents/verify-agent.md` | ~~T6, T7~~ ✓ | | | | | | frontmatter | FB-022 symptom-fix check | FB-032 decisions check |
+| `.claude/agents/research-agent.md` | | | | | | | frontmatter | — | — |
+| `.claude/CLAUDE.md` | | ~~file-boundary~~ ✓ | | | | | model req | FB-019 `@path` imports | FB-034 Critical Invariants |
+| `rules/task-management.md` | | | ~~• (stale — no edit needed)~~ | | | | | — | — |
+| `rules/spec-workflow.md` | | | ~~• (stale — no edit needed)~~ | | | | | — | FB-032 propose-approve-apply |
+| `rules/dashboard.md` | | | | • | Sections | | | — | — |
+| `rules/session-management.md` (new row) | | | | | | | | FB-023 `/btw`; FB-024 `/rewind`; FB-025 `/rename` | — |
+| `rules/decisions.md` (new row) | | | | | | | | FB-027 skip-planning (alt site) | — |
+| `commands/breakdown.md` | | | ~~subtask inherit~~ ✓ | | | | | — | — |
+| `commands/iterate.md` | | | ~~(stale — no edit needed)~~ | | | detection | | FB-021 distill interview | FB-032 propose output contract |
+| `commands/research.md` (new row) | | | | | | | | FB-027 trivial-skip callout | — |
+| `support/reference/task-schema.md` | | | ~~`phase` row + new `cross_phase` row~~ ✓ | | | | | — | — |
+| `support/reference/phase-decision-gates.md` | | | ~~skip rule + Cross-Phase section~~ ✓ | | | • | | — | — |
+| `support/reference/dashboard-regeneration.md` | | | ~~`(cross-phase)` suffix~~ ✓ | • | Action Item Contract | | | — | — |
+| `support/reference/parallel-execution.md` | | | ~~OR clause in eligibility~~ ✓ | | | | | — | FB-036 pre-dispatch confirm; FB-030 fan-out (alt site) |
+| `support/reference/decomposition.md` | | | ~~heuristic bullet~~ ✓ | | | | | — | — |
+| `support/reference/decisions.md` | | | | | | line 151 | | — | — |
+| `support/reference/workflow.md` | | | | | | lines 195-201 | | — | — |
+| `support/reference/setup-checklist.md` (new row) | | | | | | | | FB-028 CLI installs | FB-037 Optional Hooks appendix |
+| `support/reference/automation.md` (new file) | | | | | | | | FB-029 `claude -p`; FB-030 fan-out | — |
+| `.claude/README.md` (new row) | | ~~File Ownership + Settings~~ ✓ | | | | | | FB-031 Writer/Reviewer (alt site); FB-029 mention (alt site) | — |
+| `.claude/sync-manifest.json` | | ~~new `merge` cat~~ ✓ (used existing `sync`) | | | | | | — | — |
+| `.claude/settings.json` (new) | | ~~•~~ ✓ | | | | | | — | DEC-008 may reshape (FB-026) |
+| `.claude/version.json` | | | | | | | bump | — | — |
+| `.claude/agents/spec-auditor.md` (if created) | | | | | | | | — | FB-033 research-first — defer |
+| `.claude/skills/spec-auditor/` (if chosen over subagent) | | | | | | | | FB-020 outcome | FB-033 alternative home |
 
-**Hot files** (3+ in-flight items): `commands/work.md`, `system-overview.md`, `commands/health-check.md`, `.claude/agents/implement-agent.md`, `rules/agents.md` (now 3: model req + FB-034 + FB-035).
+**Hot files** (3+ in-flight items):
+- `commands/work.md` — `FB-015` (•) + `FB-017` (Step 2b) + `FB-027` (Step 3 routing) + `FB-036` (Step 4). 4 items.
+- `rules/agents.md` — model req + FB-022 + FB-031 + FB-034 + FB-035. 5 items.
+- `.claude/agents/implement-agent.md` — frontmatter + FB-011 + FB-022 + FB-034 + FB-035. 5 items.
+- `rules/session-management.md` — FB-023 + FB-024 + FB-025. 3 items; bundleable as one edit.
+- `commands/iterate.md` — Step 2b detection (FB-017) + FB-021 (distill) + FB-032 (propose). 3 items across two subcommands.
+
+**Notes on "alt site" markers:** FB-031 could land in `rules/agents.md` or `.claude/README.md`; FB-030 in `support/reference/automation.md` (primary) or as addendum to `support/reference/parallel-execution.md`; FB-027 in `commands/research.md` (callout) or `rules/decisions.md` (cross-reference). These are listed on multiple rows so a future editor sees the options; the implementer picks one during the Phase 4 edit.
 
 ---
 
@@ -316,3 +353,24 @@ Every working file for this upgrade is tagged. `DELETE-AFTER` items removed in P
 **Next:** Commit Phase 2 usage-report intake, then begin `/feedback review` triage across FB-019–FB-037. Triage overlap checks especially relevant: FB-034/FB-036/FB-037 with FB-015 (action-required) unlikely to overlap; FB-032/FB-033 with FB-020 (Skills) and FB-021 (AskUserQuestion) — complementary, not overlap; FB-037 with FB-028 (CLI-tool hints) — same file `setup-checklist.md`, different sections, worth noting during triage. Phase 2 ends with triage complete.
 
 **Open questions for later:** None for Phase 2 intake. Phase 3 research scope determined by triage outcomes.
+
+### 2026-04-17 — Phase 2 triage (close)
+
+**Done:**
+- Read `plan-feedback-review-triage.md` at root in fresh-session context and executed the single-pass triage (no interactive `/feedback review` invocation, consistent with how capture was done).
+- **Carryover absorbs (3 items):** Verified DEC-004/005/006 frontmatter `status: approved` + `decided: 2026-04-14`. Moved FB-010 (→DEC-004), FB-012 (→DEC-005), FB-013 (→DEC-006) from `feedback.md` to `archive.md` with `absorbed_into` pointers, absorption reasons, and preserved original body text. No ID collisions introduced.
+- **New-item triage (19 items, FB-019–FB-037):** Every item set `status: ready` and gained a `**Assessed:** 2026-04-17` line following the shared format (impact scope, scope classification, overlap notes, route). Zero duplicates (no `absorbed`), zero rejects (no `closed` or `archived`), zero holds (no `refined`). Overlap decisions: FB-029/FB-030 bundled to shared file but kept as two items; FB-023/024/025 kept as three items bundled to one file; FB-034/FB-036 kept separate (different files, related theme); FB-020/FB-033 kept separate with dependency note (FB-033 gated on FB-020 outcome + FB-032 trial).
+- **File Collision Map:** replaced all `TBD` placeholders with concrete item refs (e.g., `FB-027 Step 3 routing`). Added 5 new rows (`rules/session-management.md`, `rules/decisions.md`, `commands/research.md`, `support/reference/automation.md`, `.claude/skills/spec-auditor/`) for files that were not already listed. Hot-files list recomputed: `rules/agents.md` (5), `.claude/agents/implement-agent.md` (5), `commands/work.md` (4), `rules/session-management.md` (3), `commands/iterate.md` (3). Added "alt site" marker notes where an item has two plausible homes.
+- **Phase 3 scope:** FB-020 (Skills / DEC-007) + FB-026 (permissions auto-mode / DEC-008 inflection) ready to start immediately. FB-033 (spec-auditor / DEC-009) deferred until FB-032 is trialed. Ordering rationale written into the Phase 3 section.
+- **Phase 4 scope:** 16 items ready now; FB-037 blocked on FB-026 closure. Hot-file groupings and sequencing notes (FB-032 before FB-033 dispatch; FB-029/030 before FB-011) written into Phase 4 section.
+- **Tracker bookkeeping:** Current State updated to "Phase 2 closed — Phase 3 or Phase 4 next"; Phase 2 triage checkbox `[x]`; "Decide Phase 3 vs Phase 4" checkbox `[x]`.
+
+**Judgment calls worth surfacing:**
+- Kept FB-023/024/025 as three items rather than absorbing into one bundle — preserves per-feature citation in downstream docs even though all three land in the same file with one edit pass.
+- Kept FB-029/030 as two items for the same reason (distinct concepts: primitive vs pattern), with a Phase 4 note telling the implementer to bundle them.
+- FB-037 routed as Phase 4 direct rather than Phase 3 research because the *hook recipe* isn't a decision — it's a documented opt-in — but its shape depends on the DEC-008 outcome, so it's flagged "deferred until FB-026 closes". This keeps it out of the research queue.
+- Marked FB-031 and FB-030 with "alt site" notes in the collision map rather than forcing a primary location — the implementer can make the call with full context during the Phase 4 edit.
+
+**Next:** Commit Phase 2 close. Then Erik chooses between Phase 3 (research for FB-020 and/or FB-026; keep conversation rather than fresh-session; decision records land in root `decisions/`) and Phase 4 (direct implementation grouped by hot files). Do not assume — ask first.
+
+**Open questions for later:** None blocking. Version bump scope (Phase 5) pending total-change tally.

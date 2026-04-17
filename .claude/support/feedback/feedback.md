@@ -4,42 +4,6 @@ Items are captured via `/feedback` and triaged via `/feedback review`.
 
 ---
 
-## FB-010: Subagents spawned by /work cannot write `.claude/tasks/` or spawn nested Task tools
-
-**Status:** ready
-**Captured:** 2026-04-07
-**Refined:** 2026-04-14 — Reconcile the subagent-capability contract. First investigate what subagents are actually allowed to do in the current harness (writes to `.claude/tasks/`, nested `Task` tool). Then align either the permissions/sandbox or the agent-definition docs so the documented workflow matches execution reality. Preference: if subagents can be given the capability, let them own Steps 6a/6b as documented — orchestrator fallback only if the harness genuinely can't allow it. Primary concern is the workflow-contract violation.
-**Assessed:** 2026-04-14 — Affects `.claude/agents/implement-agent.md` (Steps 3, 6a, 6b, 6c), `.claude/agents/verify-agent.md` (T6, T7), `.claude/commands/work.md` (Step 4 dispatch), `.claude/rules/agents.md` (Context Separation), `system-overview.md` (atomic implement→verify contract). Scope: corrective. Conflict: current docs assert atomic agent-owned contract; if harness can't be fixed, orchestrator becomes co-owner — a non-trivial architectural shift. Best routed to a decision record (store at root `decisions/`, ephemeral) rather than a direct template edit, since "fix sandbox" vs "formalize orchestrator ownership" lead to different architectures.
-
-When `/work` dispatches implement-agents and verify-agents via the `Task` tool (both in parallel batches and sequentially), the spawned subagents run in a sandbox that:
-
-1. **Denies write access to `.claude/tasks/`** — Edit, Write, and even `Bash` (with `dangerouslyDisableSandbox: true`) all return permission-denied for any path under `.claude/tasks/`, despite the additional working directories listed in the agent env. Reads work; only writes are blocked. The implementation file edits inside `app/` succeed — only writes outside `app/` (the project's primary cwd) are blocked.
-
-2. **Does not expose the `Task` tool** — implement-agents cannot spawn the verify-agent subagent that Step 6b of `implement-agent.md` mandates. `Task` is not in the agent's tool list and `ToolSearch` cannot find it.
-
-The implement-agent and verify-agent workflows in `.claude/agents/*.md` both assume the agent can:
-- Step 6a: write `task.status = "Awaiting Verification"` and notes back to `task-{id}.json`
-- Step 6b: spawn verify-agent as a separate subagent
-- Verify-agent T-steps: write `task_verification` block back to the task JSON
-
-None of these are possible from within a spawned subagent in the current harness. Every parallel implement-agent returns a structured "I'm done, here's what I did, the coordinator needs to handle 6a/6b" report, and the orchestrator (parent `/work` agent) has to manually:
-1. Read the modified task file
-2. Edit status `In Progress → Awaiting Verification` + write notes
-3. Spawn verify-agent itself
-4. Read the verify-agent's structured report
-5. Manually persist the `task_verification` block + status `Awaiting Verification → Finished`
-
-This worked but added significant orchestrator overhead per task. In a recent Phase 10 session (7 tasks across 3 dispatch rounds), the coordinator handled 14 manual JSON edits + 7 verify-agent dispatches + 7 manual verification persistences. The cost is real: extra context window pressure on the coordinator, slower parallel batches (because re-serialization at the orchestrator), and a workflow contract violation (Steps 6a/6b are nominally the implement-agent's responsibility, not the coordinator's).
-
-**Possible directions to investigate (not decided — for triage):**
-- Document the limitation in `implement-agent.md` and `verify-agent.md` so the agents know to return structured reports rather than retrying writes
-- Update `/work` Step 4 "If Executing (Parallel)" to explicitly say "the coordinator handles 6a/6b for parallel agents in environments where subagents lack write access to `.claude/`"
-- Investigate whether the harness sandbox can be relaxed for subagents (additional working directories should propagate from parent to spawned Task agents — currently they don't seem to)
-- Add a coordinator helper procedure for "persist verify-agent structured report → task JSON" since the same edit shape is repeated for every task
-- Reconsider whether implement-agent should write task JSON at all — maybe the orchestrator should always own task state transitions, leaving agents to focus purely on code work
-
-Worth flagging: this issue is not visible from a single sequential dispatch (the user sees "task verified, marked Finished" without the orchestrator's manual work being obvious). It only becomes painful at parallel-batch scale, which is the workflow `/work` already optimizes for.
-
 ## FB-011: Explore scripts as alternative to commands or within skills folders
 
 **Status:** ready
@@ -48,56 +12,6 @@ Worth flagging: this issue is not visible from a single sequential dispatch (the
 **Assessed:** 2026-04-14 — Primary target is dashboard regeneration (touching `.claude/support/reference/dashboard-regeneration.md`, `.claude/rules/dashboard.md`, and call sites in implement-agent Steps 3, 6a, 6c). Shipping scripts needs a new home (likely `.claude/scripts/` — root `scripts/` is template-maintenance and does not ship). Conflict: `rules/agents.md` restricts Bash, and scripts depend on it — connects to FB-010 (subagent Bash sandbox limits). Dependencies: FB-017 (checkbox detection is a concrete second candidate). Scope: start with a workspace inventory doc (`.claude/support/workspace/scripts-candidates.md`) listing candidates with tradeoffs; first extraction targets dashboard regen.
 
 Look into where scripts could be used instead of commands, or even perhaps as part of skills folders if that is a valid use-case. Needs to be more robust or save tokens or minimize errors, improve quality etc.
-
-## FB-012: Standardized base allowedTools set in template with merge-aware health-check
-
-**Status:** ready
-**Captured:** 2026-04-08
-**Refined:** 2026-04-14 — Promoted without Q&A; capture text is the refined insight. Add a conservative template-owned "base" `allowedTools` set (safe for any project) to reduce permission prompts in `acceptEdits` mode. Projects extend via their own `.claude/settings.json` / `.claude/settings.local.json`. Health-check must merge the base set into existing projects without clobbering project-specific additions.
-**Assessed:** 2026-04-14 — Requires a new shipped `.claude/settings.json` (doesn't exist today — template policy is currently "doesn't ship settings"), reclassifying it in `.claude/sync-manifest.json` (probably to a new `merge` category), flipping `health-check.md` Part 5c (which currently asserts the opposite), adding key-granular merge logic to Part 5 Template Sync, and updating `system-overview.md` and root `CLAUDE.md` file-boundary table. Scope: additive + corrective. Open policy questions (merge strategy add-only vs remove-on-update, which Bash commands belong in base set, whole-file vs key-granular merge) warrant a decision record at root `decisions/` before implementation. Note: the reversal should be scoped to `allowedTools` only — hooks/env/theme stay user-owned, which forces key-granular merge logic.
-
-Add a standardized set of accepted permissions (`allowedTools`) to the Claude Code environment template. Goal: reduce permission prompts (especially in `acceptEdits` mode, since Max plan can't use auto mode) while keeping things safe and maintainable.
-
-**Context from a planning conversation:**
-
-- Claude Code settings layer additively: user-level (`~/.claude/settings.json`) → project-level (`.claude/settings.json`) → project-local (`.claude/settings.local.json`). `allowedTools` lists merge across levels.
-- The template should own a conservative "base" set of allowed tools that's safe for any project (e.g., safe git read commands, linting, formatting, the health-check command itself).
-- Individual projects can then extend permissions in their own `.claude/settings.json` or `.claude/settings.local.json` for project-specific tools.
-- The health-check/update command needs to handle this carefully — it should merge the base allowed tools into a project without clobbering any project-specific additions.
-
-**What needs to happen:**
-
-1. Look at the current template repo structure, especially anything related to permissions, `allowedTools`, settings files, and the health-check command.
-2. Assess: what permissions exist today? What does the health-check currently do when it updates a project?
-3. Propose how to implement a base `allowedTools` set in the template, including how the health-check would merge it into projects that may have added their own project-specific permissions.
-4. Do an impact assessment: what would change in the template, and what would change in existing projects that already use it?
-
-**Important:** Don't make implementation decisions silently. Present options with tradeoffs where choices exist, especially around which tools belong in the base set and how the merge strategy should work.
-
-## FB-013: Revisit hard phase transition dependencies for cross-phase parallel tasks
-
-**Status:** ready
-**Captured:** 2026-04-10
-**Refined:** 2026-04-14 — The hard phase gate is a software-centric assumption that breaks for research/procurement/stakeholder-engagement domains where long-running activities (often `owner: human`) must start before prior phases close. SIREN is representative, not a one-off, so a schema change is justified. Two viable mechanisms remain open and should go to a decision record: (a) add optional `cross_phase: true` on individual tasks, or (b) weaken the phase gate to only block on `owner: claude` / `owner: both`, letting `owner: human` tasks float. Other directions (spec-level phase-overlap declarations, document-the-workaround) are disfavored.
-**Assessed:** 2026-04-14 — Affects `task-schema.md` (`phase` field definition line 122), `phase-decision-gates.md` (enforcement procedure), `commands/work.md` Step 4, `rules/task-management.md` + `rules/spec-workflow.md`, `commands/health-check.md` Part 1, `commands/breakdown.md` (subtask inheritance under option a), `dashboard-regeneration.md` (cross-phase rendering), `system-overview.md` (invariant description). Scope: additive (option a) or corrective (option b reverses a documented invariant). Note: parallel-execution rules in `task-management.md` already use dependency+file-conflict eligibility without referencing phase — FB-013 is consistent with that model. Decision record at root `decisions/` (ephemeral) should resolve (a) vs (b); once decided, implementation is bounded.
-
-The current task schema enforces a hard phase gate: "Tasks in Phase N+1 are blocked until all Phase N tasks complete." This works for software projects where phases represent strict dependency boundaries (can't test until built), but breaks down for research, procurement, and other non-software projects where some activities naturally span phase boundaries.
-
-**Case that surfaced this:** In a research project (SIREN), workshop participant recruitment (Phase 2) needed to start weeks before all Phase 1 preparation tasks were done. Two remaining Phase 1 tasks (internal trial run, Teams Whiteboard test) were pre-session activities with no logical connection to recruitment, but the phase gate blocked all of Phase 2 until they were Finished. The workaround was to move those tasks to Phase 2, which solved the immediate problem but required reshuffling tasks to fit the environment's constraints rather than the project's natural structure.
-
-**What should be considered:**
-
-- Some tasks are inherently long-running and should start early regardless of phase (recruitment, procurement, approvals, stakeholder engagement). These are often `owner: "human"` tasks.
-- The current model forces a choice: either (a) put everything in one phase (losing the organizational benefit of phases) or (b) accept that some tasks will be artificially blocked.
-- A softer model might allow specific tasks to be tagged as "cross-phase eligible" or "early-start," meaning they can begin when their task-level dependencies are met, regardless of phase gate status.
-- Alternatively, the phase gate could be weakened to "all Phase N tasks with `owner: claude` must complete" while `owner: human` tasks are allowed to carry over, since human tasks often have external timelines that don't align with phase boundaries.
-
-**Possible directions (not decided):**
-- Add an optional `cross_phase: true` field to the task schema that exempts a task from the phase gate
-- Weaken the phase gate to only block on `owner: claude` and `owner: both` tasks, letting `owner: human` tasks float
-- Allow explicit "phase overlap" declarations in the spec (e.g., "Phase 2 recruitment may begin during Phase 1")
-- Keep the hard gate but document the "move tasks to unblock" pattern as a standard workaround
-- Some combination of the above
 
 ## FB-017: /work Step 2b doesn't detect checked decision checkboxes or finalize decisions
 
@@ -142,8 +56,9 @@ Proposed changes:
 
 ## FB-019: Adopt `@path` imports in `.claude/CLAUDE.md` for rules files
 
-**Status:** new
+**Status:** ready
 **Captured:** 2026-04-17
+**Assessed:** 2026-04-17 — Affects `.claude/CLAUDE.md` (Workflow Rules section). Scope: corrective. Makes existing rules-file loading declarative via `@path` imports instead of prose references. No cross-item overlap. Route: Phase 4 direct.
 
 Source: Claude Code best-practices doc (fetched 2026-04-17) — CLAUDE.md supports `@path/to/import` syntax; imports are auto-loaded by the harness.
 
@@ -155,8 +70,9 @@ The template's `.claude/CLAUDE.md` currently lists rules files in a "Workflow Ru
 
 ## FB-020: Research Skills architectural limitations before template adoption
 
-**Status:** new
+**Status:** ready
 **Captured:** 2026-04-17
+**Assessed:** 2026-04-17 — Affects potentially new `.claude/skills/` dir, `.claude/CLAUDE.md`, `.claude/rules/agents.md`, commands, and subagent/skill context-window architecture. Scope: exploratory. Research-first: must resolve subagent-vs-skill context-window semantics (user's primary concern — would affect DEC-004 guarantees) plus distribution/override semantics and permissions inheritance before any migration. FB-033 depends on this outcome (subagent vs skill for spec-auditor). Route: Phase 3 research (candidate DEC-007). Do not begin any implementation.
 
 Source: Claude Code best-practices doc (fetched 2026-04-17) — presents Skills as the on-demand alternative to CLAUDE.md for "domain knowledge or workflows that are only relevant sometimes." User flagged adoption as **research-first**, not implementation.
 
@@ -174,8 +90,9 @@ The template currently uses commands + rules + agents for everything. Skills cou
 
 ## FB-021: Use AskUserQuestion-driven interview in `/iterate distill`
 
-**Status:** new
+**Status:** ready
 **Captured:** 2026-04-17
+**Assessed:** 2026-04-17 — Affects `.claude/commands/iterate.md` (distill subcommand). Scope: additive. Complements FB-032 (decisions surfacing in `/iterate` propose): FB-021 surfaces decisions *before* writing, FB-032 forces them to surface *in* the proposal — the two together cover both directions of the silent-decisions failure mode. Route: Phase 4 direct.
 
 Source: Claude Code best-practices doc (fetched 2026-04-17) — recommends interviewing the user via the `AskUserQuestion` tool before writing a spec, to surface implementation, UX, edge-case, and tradeoff questions they haven't considered.
 
@@ -187,8 +104,9 @@ The template's `/iterate distill` already extracts a spec from a vision doc but 
 
 ## FB-022: Add "address root causes, not symptoms" rule to implement-agent
 
-**Status:** new
+**Status:** ready
 **Captured:** 2026-04-17
+**Assessed:** 2026-04-17 — Affects `.claude/rules/agents.md` and/or `.claude/agents/implement-agent.md`; optionally a matching check in `.claude/agents/verify-agent.md` per-task return schema so verify-agent has unambiguous grounds to reject symptom-only fixes. Scope: additive. Aligns with the template's verification-first design. Route: Phase 4 direct.
 
 Source: Claude Code best-practices doc (fetched 2026-04-17) — verification table entry: *"the build fails with this error: [paste]. fix it and verify the build succeeds. address the root cause, don't suppress the error."*
 
@@ -200,8 +118,9 @@ implement-agent does not currently codify this principle. Add a short explicit r
 
 ## FB-023: Document `/btw` for side questions in session-management
 
-**Status:** new
+**Status:** ready
 **Captured:** 2026-04-17
+**Assessed:** 2026-04-17 — Affects `.claude/rules/session-management.md` (Managing Context Pressure bullet). Scope: additive. Bundle with FB-024 and FB-025 (same file, three session-management tool additions). Route: Phase 4 direct.
 
 Source: Claude Code best-practices doc (fetched 2026-04-17) — `/btw` answers appear in a dismissible overlay and never enter conversation history.
 
@@ -213,8 +132,9 @@ Template's `.claude/rules/session-management.md` already documents `/clear` and 
 
 ## FB-024: Document `/rewind` and Esc+Esc checkpoint flow in session-management
 
-**Status:** new
+**Status:** ready
 **Captured:** 2026-04-17
+**Assessed:** 2026-04-17 — Affects `.claude/rules/session-management.md` (new short section, likely after "What Survives What" table). Scope: additive. Bundle with FB-023 and FB-025 (same file). Route: Phase 4 direct.
 
 Source: Claude Code best-practices doc (fetched 2026-04-17) — every Claude action creates a checkpoint; `Esc+Esc` or `/rewind` opens the menu; can restore conversation only, code only, or both; persists across sessions.
 
@@ -226,8 +146,9 @@ Template's `session-management.md` doesn't mention checkpointing at all — it f
 
 ## FB-025: Document `/rename` for naming sessions
 
-**Status:** new
+**Status:** ready
 **Captured:** 2026-04-17
+**Assessed:** 2026-04-17 — Affects `.claude/rules/session-management.md` (resume-methods section, one-liner). Scope: additive. Bundle with FB-023 and FB-024 (same file). Route: Phase 4 direct.
 
 Source: Claude Code best-practices doc (fetched 2026-04-17) — `/rename` gives sessions descriptive names (e.g., `oauth-migration`, `debugging-memory-leak`) so they're findable via `claude --resume`.
 
@@ -239,8 +160,9 @@ Template's resume-methods table in `session-management.md` doesn't mention this.
 
 ## FB-026: Reevaluate permissions story given auto-mode maturity (potential inflection — may impact DEC-005)
 
-**Status:** new
+**Status:** ready
 **Captured:** 2026-04-17
+**Assessed:** 2026-04-17 — Affects `.claude/settings.json`, `.claude/sync-manifest.json`, `.claude/commands/health-check.md` Part 5c, `.claude/CLAUDE.md` Critical Invariants, `system-overview.md`, `.claude/README.md` Settings section. Scope: corrective — may reverse portions of DEC-005. Inflection-point candidate DEC-008. Blocks FB-037 (hook recipe shape depends on outcome). Research can start immediately — no upstream dependencies. Route: Phase 3 research (candidate DEC-008).
 
 Source: Claude Code best-practices doc (fetched 2026-04-17) mentions auto mode (`--permission-mode auto`) and sandboxing as alternatives to explicit allowlists. User flagged this as more than a doc tweak — it may change the foundation DEC-005 was built on.
 
@@ -259,8 +181,9 @@ Source: Claude Code best-practices doc (fetched 2026-04-17) mentions auto mode (
 
 ## FB-027: Skip-planning guidance for trivial tasks
 
-**Status:** new
+**Status:** ready
 **Captured:** 2026-04-17
+**Assessed:** 2026-04-17 — Affects `.claude/commands/research.md` or `.claude/rules/decisions.md` (callout), possibly `.claude/commands/work.md` Step 3 routing. Scope: additive. Single-callout fix; aligns with existing "no premature abstraction" ethos. Route: Phase 4 direct.
 
 Source: Claude Code best-practices doc (fetched 2026-04-17): *"For tasks where the scope is clear and the fix is small (like fixing a typo, adding a log line, or renaming a variable) ask Claude to do it directly... If you could describe the diff in one sentence, skip the plan."*
 
@@ -270,8 +193,9 @@ Template's `/research` and decomposition flow don't currently distinguish trivia
 
 ## FB-028: Add CLI-tool installation hints to setup-checklist
 
-**Status:** new
+**Status:** ready
 **Captured:** 2026-04-17
+**Assessed:** 2026-04-17 — Affects `.claude/support/reference/setup-checklist.md` (CLI installs subsection). Scope: additive. Shares file with FB-037 (different subsection: FB-028 = CLI installs, FB-037 = Optional Hooks appendix) — not a conflict; file gains two independent additions. Route: Phase 4 direct.
 
 Source: Claude Code best-practices doc (fetched 2026-04-17) — recommends installing `gh`, `aws`, `gcloud`, `sentry-cli` etc. for context-efficient external interactions, noting unauthenticated API calls often hit rate limits.
 
@@ -283,8 +207,9 @@ Template's `.claude/support/reference/setup-checklist.md` could detect which CLI
 
 ## FB-029: Document non-interactive mode (`claude -p`) as automation primitive
 
-**Status:** new
+**Status:** ready
 **Captured:** 2026-04-17
+**Assessed:** 2026-04-17 — Affects new `.claude/support/reference/automation.md` or section in `.claude/README.md`. Scope: additive. Bundle with FB-030 (same target file; FB-030 uses `claude -p` as its primitive and belongs as a pattern section in the same doc). Connects to FB-011 — some FB-011 script candidates may be better expressed as `claude -p` one-liners than bash scripts, so sequence FB-029/030 before FB-011 implementation. Route: Phase 4 direct.
 
 Source: Claude Code best-practices doc (fetched 2026-04-17) — `claude -p "prompt"` runs without a session; with `--output-format json`/`stream-json` and `--allowedTools`, it's the building block for CI, pre-commit hooks, scripts, and fan-out patterns.
 
@@ -296,8 +221,9 @@ Worth a short reference for users automating template workflows (e.g., nightly `
 
 ## FB-030: Document fan-out pattern for batch task execution
 
-**Status:** new
+**Status:** ready
 **Captured:** 2026-04-17
+**Assessed:** 2026-04-17 — Affects `.claude/support/reference/automation.md` (shared with FB-029; new file) and/or addendum to `.claude/support/reference/parallel-execution.md`. Scope: additive. Bundle with FB-029 (depends on `claude -p` primitive). Route: Phase 4 direct.
 
 Source: Claude Code best-practices doc (fetched 2026-04-17) — `for file in $(...); do claude -p "Migrate $file..." --allowedTools "Edit,Bash(git commit *)"; done` pattern for large migrations.
 
@@ -309,8 +235,9 @@ Template's parallel execution is intra-session (multiple `Task` agents coordinat
 
 ## FB-031: Document Writer/Reviewer parallel-session pattern
 
-**Status:** new
+**Status:** ready
 **Captured:** 2026-04-17
+**Assessed:** 2026-04-17 — Affects `.claude/README.md` or `.claude/rules/agents.md` (short mention). Scope: additive. Reinforces existing implement-agent/verify-agent separation-of-concerns design — no behavioral change, just making an external scaling axis visible. Route: Phase 4 direct.
 
 Source: Claude Code best-practices doc (fetched 2026-04-17) — running parallel Claude sessions for quality: Session A writes, Session B reviews with fresh context, avoiding bias toward code it just wrote.
 
@@ -322,8 +249,9 @@ Template already enforces this via the implement-agent / verify-agent split with
 
 ## FB-032: Require explicit "Decisions in This Proposal" section in `/iterate` output
 
-**Status:** new
+**Status:** ready
 **Captured:** 2026-04-17
+**Assessed:** 2026-04-17 — Affects `.claude/commands/iterate.md` (propose subcommand output contract), `.claude/rules/spec-workflow.md` (propose-approve-apply), possibly `.claude/agents/verify-agent.md` matching check for spec-change tasks. Scope: additive. Complements FB-021 (before-proposal interview surfaces decisions; FB-032 forces them into the proposal itself). Under Opus 4.7 instruction-following, the structural contract should land more reliably than the report's Opus 4.6 window. Trial of this contract gates FB-033 (spec-auditor research). Route: Phase 4 direct — implement early to generate the trial data FB-033 needs.
 
 Source: Claude Code usage insights report (fetched 2026-04-17) — the report's #1 friction, with a concrete data point: *"You had to ask 'did you make any silent decisions' twice in one session to surface unapproved design choices in a spec proposal."* The report's fun-ending calls this out across 5+ sessions.
 
@@ -337,8 +265,9 @@ Complements FB-021 (AskUserQuestion-driven interview in `/iterate distill`) — 
 
 ## FB-033: Spec-auditor subagent + PreToolUse gate (research-first; trial FB-032 first; candidate DEC-009)
 
-**Status:** new
+**Status:** ready
 **Captured:** 2026-04-17
+**Assessed:** 2026-04-17 — Affects new `.claude/agents/spec-auditor.md` (or `.claude/skills/spec-auditor/` depending on FB-020 outcome), hook wiring, verify-agent integration. Scope: exploratory. Research-first AND trial-gated on FB-032 (only pursue if the structural output contract proves insufficient after real `/iterate` sessions under Opus 4.7). Also depends on FB-020 (skill-vs-subagent architecture) and FB-026 (permissions/hook surface). Route: Phase 3 research — **deferred** until FB-032 trial data exists (candidate DEC-009).
 
 Source: Claude Code usage insights report (fetched 2026-04-17) — "On the Horizon" section proposes an adversarial-reviewer subagent that intercepts every `Write`/`Edit` to `spec*.md` or `decisions/*.md`. User edit on capture: *"wait until A1 is trialed properly before deciding"* — this item is explicitly gated on FB-032's trial outcome.
 
@@ -358,8 +287,9 @@ A bigger-hammer version of FB-032. The spec-auditor would diff each proposed cha
 
 ## FB-034: "Respect user kills" — don't restart long-running processes without renewed approval
 
-**Status:** new
+**Status:** ready
 **Captured:** 2026-04-17
+**Assessed:** 2026-04-17 — Affects `.claude/CLAUDE.md` (Critical Invariants — template-owned, ships to projects), `.claude/rules/agents.md`, and/or `.claude/agents/implement-agent.md`. NOT root `./CLAUDE.md` (template-maintenance only). Scope: additive. Capture-time conflict (earlier broader framing vs root `CLAUDE.md`'s UI-testing guidance) already resolved via narrow restart-after-kill scope — no conflict remains. Related to FB-036 (both address over-eager execution, different trigger points). Auto mode does not absorb this (behavioral rule, not permission). Route: Phase 4 direct.
 
 Source: Claude Code usage insights report (fetched 2026-04-17) — documented a 140GB-RAM Ghostty/Turbopack crash traced to Claude restarting dev servers after being told to kill them: *"Claude started dev servers despite explicit memory warnings and restarted them after you said to kill them, contributing to a 140GB RAM Ghostty crash."*
 
@@ -375,8 +305,9 @@ Auto mode does **not** absorb this — the classifier approves or denies individ
 
 ## FB-035: Implement-agent file-reading guidance for large files (prefer Grep/Glob; use Read `offset`/`limit`)
 
-**Status:** new
+**Status:** ready
 **Captured:** 2026-04-17
+**Assessed:** 2026-04-17 — Affects `.claude/agents/implement-agent.md` (Tool Preferences section) or `.claude/rules/agents.md` § Tool Preferences. Scope: additive. Real quantified friction (61 file-too-large events, largest single tool-error category in the usage report). Single-paragraph fix, zero behavioral risk. Route: Phase 4 direct.
 
 Source: Claude Code usage insights report (fetched 2026-04-17) — "Tool Errors Encountered" chart flags **File Too Large (61 events)** as the single largest error category, larger than "Command Failed" (56) or "File Not Found" (19).
 
@@ -388,8 +319,9 @@ Current implement-agent Tool Preferences guidance says "use dedicated tools" but
 
 ## FB-036: "Confirm before dispatching parallel work" rule in implement-agent / `/work`
 
-**Status:** new
+**Status:** ready
 **Captured:** 2026-04-17
+**Assessed:** 2026-04-17 — Affects `.claude/commands/work.md` Step 4 (parallel dispatch path) and `.claude/support/reference/parallel-execution.md`. Scope: additive. Related to FB-034 (shared over-eager-execution theme; proactive vs reactive). Independent of FB-026 outcome — if auto mode removes permission-prompt checkpoints, pre-dispatch summary becomes *more* valuable, not less. Route: Phase 4 direct.
 
 Source: Claude Code usage insights report (fetched 2026-04-17) — *"You interrupted background bash and parallel agent dispatches multiple times across /onboard and /work sessions because Claude moved faster than your validation step."*
 
@@ -405,8 +337,9 @@ Note on auto mode: auto mode may actually *worsen* this friction by removing the
 
 ## FB-037: Optional PreToolUse hook example for dev-server guarding in `setup-checklist.md` (defer until FB-026 resolves)
 
-**Status:** new
+**Status:** ready
 **Captured:** 2026-04-17
+**Assessed:** 2026-04-17 — Affects `.claude/support/reference/setup-checklist.md` (new "Optional Hooks" subsection/appendix). Scope: additive. **Blocked on FB-026 resolution (candidate DEC-008)** — hook recipe shape depends on whether DEC-008 keeps, simplifies, or retires the DEC-005 layered-settings model. Shares file with FB-028 (different subsection). Route: Phase 4 direct — **deferred** until FB-026 closes.
 
 Source: Claude Code usage insights report (fetched 2026-04-17) — report recommends a PreToolUse hook blocking `next dev` / `npm run dev` / `pnpm dev` unless explicitly approved. Complements FB-034 (universal behavioral rule) by providing a structural hook recipe for users who want hard blocks.
 
