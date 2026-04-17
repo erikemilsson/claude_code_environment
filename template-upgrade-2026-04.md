@@ -2,7 +2,7 @@
 
 **Purpose:** Coordinate multi-session template improvements from three inputs (Opus 4.7 upgrade, Claude Code best-practices doc, usage insights report) alongside the existing feedback backlog and approved decisions.
 
-**Status:** Phase 2 in progress — best-practices intake complete; usage-report intake pending
+**Status:** Phase 2 intake complete — `/feedback review` triage next
 **Last updated:** 2026-04-17
 
 ---
@@ -37,9 +37,9 @@ User retains approval authority at every intake and edit point. Claude does not 
 
 ## Current State
 
-- **Active phase:** Phase 2 — New input intake (usage-report bundle remaining)
-- **Next action:** Fresh session reads `plan-usage-report-intake.md` at root and executes. Source is `file:///Users/erikemilsson/.claude/usage-data/report.html`; output is `upgrade-candidates-usage-report.md` at root (DELETE-AFTER) in the same A/B/C/D format as `upgrade-candidates-best-practices.md`. Approved captures continue the FB sequence from FB-032.
-- **Blocked on:** nothing — best-practices intake bundle committed; `plan-usage-report-intake.md` and Cleanup Manifest update committed as Phase 2 prep for fresh-context handoff.
+- **Active phase:** Phase 2 — intake complete; triage next
+- **Next action:** Run `/feedback review` to triage captured items (FB-019–FB-037). Check overlap with existing ready items (FB-011 scripts, FB-015 action-required, FB-017 checkbox detection). Absorb duplicates (mark `absorbed_into`). Update **File Collision Map** with `**Assessed:**`-style entries from the triage. Decide which new items need `/research` (Phase 3) vs direct implementation (Phase 4).
+- **Blocked on:** nothing — best-practices and usage-report intake bundles captured; both candidate files (`upgrade-candidates-best-practices.md`, `upgrade-candidates-usage-report.md`) live at root as DELETE-AFTER and will be removed in Phase 5 cleanup.
 
 ---
 
@@ -74,9 +74,9 @@ Intake control is explicit: Claude produces a candidate list first, user approve
 - [x] Claude captures approved items via `/feedback` (one per candidate), using any user edits
 
 **Usage insights report (`file:///Users/erikemilsson/.claude/usage-data/report.html`):**
-- [ ] Claude reads the report and produces `upgrade-candidates-usage-report.md` (root, `DELETE-AFTER`) in the same format
-- [ ] User reviews and approves/rejects
-- [ ] Claude captures approved items via `/feedback`
+- [x] Claude reads the report and produces `upgrade-candidates-usage-report.md` (root, `DELETE-AFTER`) in the same format
+- [x] User reviews and approves/rejects
+- [x] Claude captures approved items via `/feedback`
 
 **Triage:**
 - [ ] `/feedback review` — triage captured items
@@ -115,31 +115,33 @@ Rows = files. Columns = in-flight items. Cells = section/step affected (or `•`
 
 | File | DEC-004 | DEC-005 | DEC-006 | FB-011 | FB-015 | FB-017 | Opus 4.7 | Best-prac | Usage |
 |------|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| `commands/work.md` | ~~Step 4~~ ✓ | | ~~Step 2c summary~~ ✓ | | • | Step 2b | | TBD | TBD |
-| `system-overview.md` | ~~atomic contract~~ ✓ | ~~file boundary~~ ✓ | ~~Pending Decisions~~ ✓ | | | | sweep | TBD | TBD |
-| `commands/health-check.md` | | ~~Part 5 merge~~ ✓ | ~~Part 1 boolean check~~ ✓ | | Part 6 | | | TBD | TBD |
-| `rules/agents.md` | ~~Context Separation~~ ✓ | | | | | | model req | TBD | TBD |
-| `.claude/agents/implement-agent.md` | ~~Steps 3, 6a-c~~ ✓ | | | Steps 3, 6a, 6c | | | frontmatter | TBD | TBD |
-| `.claude/agents/verify-agent.md` | ~~T6, T7~~ ✓ | | | | | | frontmatter | TBD | TBD |
-| `.claude/agents/research-agent.md` | | | | | | | frontmatter | TBD | TBD |
-| `.claude/CLAUDE.md` | | ~~file-boundary~~ ✓ | | | | | model req | TBD | TBD |
-| `rules/task-management.md` | | | ~~• (stale — no edit needed)~~ | | | | | TBD | TBD |
-| `rules/spec-workflow.md` | | | ~~• (stale — no edit needed)~~ | | | | | TBD | TBD |
-| `rules/dashboard.md` | | | | • | Sections | | | TBD | TBD |
-| `commands/breakdown.md` | | | ~~subtask inherit~~ ✓ | | | | | TBD | TBD |
-| `commands/iterate.md` | | | ~~(stale — no edit needed)~~ | | | detection | | TBD | TBD |
-| `support/reference/task-schema.md` | | | ~~`phase` row + new `cross_phase` row~~ ✓ | | | | | TBD | TBD |
-| `support/reference/phase-decision-gates.md` | | | ~~skip rule + Cross-Phase section~~ ✓ | | | • | | TBD | TBD |
-| `support/reference/dashboard-regeneration.md` | | | ~~`(cross-phase)` suffix~~ ✓ | • | Action Item Contract | | | TBD | TBD |
-| `support/reference/parallel-execution.md` | | | ~~OR clause in eligibility~~ ✓ | | | | | TBD | TBD |
-| `support/reference/decomposition.md` | | | ~~heuristic bullet~~ ✓ | | | | | TBD | TBD |
-| `support/reference/decisions.md` | | | | | | line 151 | | TBD | TBD |
-| `support/reference/workflow.md` | | | | | | lines 195-201 | | TBD | TBD |
-| `.claude/sync-manifest.json` | | ~~new `merge` cat~~ ✓ (used existing `sync`) | | | | | | TBD | TBD |
-| `.claude/settings.json` (new) | | ~~•~~ ✓ | | | | | | TBD | TBD |
-| `.claude/version.json` | | | | | | | bump | TBD | TBD |
+| `commands/work.md` | ~~Step 4~~ ✓ | | ~~Step 2c summary~~ ✓ | | • | Step 2b | | TBD | FB-036 Step 4 |
+| `system-overview.md` | ~~atomic contract~~ ✓ | ~~file boundary~~ ✓ | ~~Pending Decisions~~ ✓ | | | | sweep | TBD | — |
+| `commands/health-check.md` | | ~~Part 5 merge~~ ✓ | ~~Part 1 boolean check~~ ✓ | | Part 6 | | | TBD | — |
+| `rules/agents.md` | ~~Context Separation~~ ✓ | | | | | | model req | TBD | FB-034 behavior; FB-035 Tool Prefs |
+| `.claude/agents/implement-agent.md` | ~~Steps 3, 6a-c~~ ✓ | | | Steps 3, 6a, 6c | | | frontmatter | TBD | FB-034 behavior; FB-035 Tool Prefs |
+| `.claude/agents/verify-agent.md` | ~~T6, T7~~ ✓ | | | | | | frontmatter | TBD | FB-032 decisions check |
+| `.claude/agents/research-agent.md` | | | | | | | frontmatter | TBD | — |
+| `.claude/CLAUDE.md` | | ~~file-boundary~~ ✓ | | | | | model req | TBD | FB-034 Critical Invariants |
+| `rules/task-management.md` | | | ~~• (stale — no edit needed)~~ | | | | | TBD | — |
+| `rules/spec-workflow.md` | | | ~~• (stale — no edit needed)~~ | | | | | TBD | FB-032 propose-approve-apply |
+| `rules/dashboard.md` | | | | • | Sections | | | TBD | — |
+| `commands/breakdown.md` | | | ~~subtask inherit~~ ✓ | | | | | TBD | — |
+| `commands/iterate.md` | | | ~~(stale — no edit needed)~~ | | | detection | | TBD | FB-032 propose output contract |
+| `support/reference/task-schema.md` | | | ~~`phase` row + new `cross_phase` row~~ ✓ | | | | | TBD | — |
+| `support/reference/phase-decision-gates.md` | | | ~~skip rule + Cross-Phase section~~ ✓ | | | • | | TBD | — |
+| `support/reference/dashboard-regeneration.md` | | | ~~`(cross-phase)` suffix~~ ✓ | • | Action Item Contract | | | TBD | — |
+| `support/reference/parallel-execution.md` | | | ~~OR clause in eligibility~~ ✓ | | | | | TBD | FB-036 pre-dispatch confirm |
+| `support/reference/decomposition.md` | | | ~~heuristic bullet~~ ✓ | | | | | TBD | — |
+| `support/reference/decisions.md` | | | | | | line 151 | | TBD | — |
+| `support/reference/workflow.md` | | | | | | lines 195-201 | | TBD | — |
+| `support/reference/setup-checklist.md` (new row) | | | | | | | | TBD | FB-037 Optional Hooks appendix |
+| `.claude/sync-manifest.json` | | ~~new `merge` cat~~ ✓ (used existing `sync`) | | | | | | TBD | — |
+| `.claude/settings.json` (new) | | ~~•~~ ✓ | | | | | | TBD | — |
+| `.claude/version.json` | | | | | | | bump | TBD | — |
+| `.claude/agents/spec-auditor.md` (if created) | | | | | | | | TBD | FB-033 research-first — defer |
 
-**Hot files** (3+ in-flight items): `commands/work.md`, `system-overview.md`, `commands/health-check.md`, `.claude/agents/implement-agent.md`.
+**Hot files** (3+ in-flight items): `commands/work.md`, `system-overview.md`, `commands/health-check.md`, `.claude/agents/implement-agent.md`, `rules/agents.md` (now 3: model req + FB-034 + FB-035).
 
 ---
 
@@ -293,3 +295,23 @@ Every working file for this upgrade is tagged. `DELETE-AFTER` items removed in P
 **Next:** Write the usage-report intake plan at root (`plan-usage-report-intake.md`) and commit it as Phase 2 prep. Fresh-context session then executes the plan: fetch `file:///Users/erikemilsson/.claude/usage-data/report.html`, produce `upgrade-candidates-usage-report.md`, collect Erik's decisions, capture approved items as FB-032+.
 
 **Open questions for later:** None for the best-practices intake. Phase 2 finishes with `/feedback review` triage after the usage-report bundle lands.
+
+### 2026-04-17 — Phase 2 usage-report intake
+
+**Done:**
+- Read `plan-usage-report-intake.md` at root in a fresh context session and executed. WebFetch rejected the `file://` URL, so fell back to Read on `/Users/erikemilsson/.claude/usage-data/report.html` (951 lines, 64KB HTML). Extracted the full insight set from "At a Glance", "Where Things Go Wrong", "Features to Try", "New Usage Patterns", and "On the Horizon" sections.
+- Produced `upgrade-candidates-usage-report.md` at root (DELETE-AFTER) with initial 9-item candidate list (A1/A2, B1/B2/B3, C1/C2/C3/C4) plus 5-item D section and a transparency "Already covered" section. Preemptive filter dropped 4 CLAUDE.md one-liner suggestions from the report (CM1 reshaped as A1; CM2/CM3 software-specific bits dropped; CM4 already in root `CLAUDE.md`).
+- **Second-pass scan (Erik's request):** Re-examined all candidates through three post-report filters — Opus 4.7 (better instruction-following), auto mode on Max (post-dates report), and best-practices intake (FB-019–FB-031 already captured). Applied 6 adjustments: B1 scope narrowed (restart-after-kill only, resolving conflict with root `CLAUDE.md`'s UI-testing guidance); C4 demoted to "Already covered" (Excessive-Changes / User-Rejected-Action covered by existing anti-scope-creep rule, follows more reliably under Opus 4.7); A2 framing sharpened (explicit trial-gate on FB-032 + FB-020 + FB-026 upstreams); C1 FB-026 dependency note added; C2 reframed as DEC-008 baseline measurement; top note gained timing disclosure. No new candidates added, no rejections.
+- Erik reviewed and marked decisions: 6 approved, 1 edited (A2 with "wait until A1 trialed properly" edit), 2 absorb-routes (C2→FB-026, C3→FB-020). No rejects.
+- Captured 6 items as **FB-032 through FB-037**:
+  - FB-032: "Decisions in This Proposal" structural output contract for `/iterate` propose
+  - FB-033: spec-auditor subagent + PreToolUse gate (research-first; trial-gated on FB-032; candidate DEC-009)
+  - FB-034: "Respect user kills" rule — don't restart long-running processes without renewed approval
+  - FB-035: implement-agent file-reading guidance for large files (prefer Grep/Glob; Read `offset`/`limit`)
+  - FB-036: confirm before dispatching parallel work in `/work`
+  - FB-037: optional PreToolUse hook example in setup-checklist.md (deferred until FB-026 resolves)
+- File Collision Map updated: Usage column populated for 8 files; two new rows added (`support/reference/setup-checklist.md`, `.claude/agents/spec-auditor.md` if created); `rules/agents.md` promoted to hot-files list (now 3 in-flight items).
+
+**Next:** Commit Phase 2 usage-report intake, then begin `/feedback review` triage across FB-019–FB-037. Triage overlap checks especially relevant: FB-034/FB-036/FB-037 with FB-015 (action-required) unlikely to overlap; FB-032/FB-033 with FB-020 (Skills) and FB-021 (AskUserQuestion) — complementary, not overlap; FB-037 with FB-028 (CLI-tool hints) — same file `setup-checklist.md`, different sections, worth noting during triage. Phase 2 ends with triage complete.
+
+**Open questions for later:** None for Phase 2 intake. Phase 3 research scope determined by triage outcomes.
