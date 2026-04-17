@@ -2,7 +2,7 @@
 
 **Purpose:** Coordinate multi-session template improvements from three inputs (Opus 4.7 upgrade, Claude Code best-practices doc, usage insights report) alongside the existing feedback backlog and approved decisions.
 
-**Status:** Phase 4 — FB-015 primary landed in dashboard-regeneration.md (FB-015 complete pending health-check secondary); remaining direct items next
+**Status:** Phase 4 — session-management.md group implemented (FB-023 + FB-024 + FB-025); remaining direct items next
 **Last updated:** 2026-04-17
 
 ---
@@ -47,7 +47,8 @@ User retains approval authority at every intake and edit point. Claude does not 
 - **FB-037 implemented 2026-04-17:** new `## Optional Hooks` section added to `.claude/support/reference/setup-checklist.md` with a `PreToolUse` recipe blocking dev-server starts (`npm/pnpm/yarn/bun run? dev`, `next dev`, `vite`) via `jq` + `grep` exit-2 hard-block. Documents composition with `permissions.allow` and auto-mode classifier (hooks run last; can override classifier-approved actions). Includes customization guidance and pointer to Claude Code's hooks docs.
 - **work.md hot-file batch implemented 2026-04-17:** Step 2b inlines the checkbox-detection trigger so `/work` reliably auto-finalizes checked decisions (FB-017 primary fix; resolves styler-project regression). Step 2 spec-check tree's "Minor/trivial addition" branch now explicitly says "no spec change, no formal planning" with a new paragraph routing one-sentence diffs around `/research` (FB-027 work.md slice). New `## Pre-Dispatch Confirmation` section in `parallel-execution.md` (referenced from work.md § "If Executing (Parallel)" Key Rules) gates parallel batches ≥ 3 behind a `[D]`/`[S]`/`[1]` prompt (FB-036 primary). "If Completing" dashboard-regen bullet rephrased from "completion summary" to "completion state" (FB-015 work.md audit slice). Out-of-file primary edits remain: dashboard-regeneration.md § Action Item Contract negative rule for FB-015; phase-decision-gates.md restructure (optional) and decisions.md/workflow.md audit (likely no edit) for FB-017; alt-site callouts (research.md, rules/decisions.md) for FB-027.
 - **FB-015 primary implemented 2026-04-17:** `dashboard-regeneration.md § "Action Item Contract"` gained a `**Must NOT include:**` block listing work summaries, completion reports, and recent-activity recaps as out-of-scope for Action Required. Explicitly bars a "Recent Activity" / "Work Summary" / "Completed This Session" sub-section and cross-references the canonical Sections list in `rules/dashboard.md` (which already omits these). Confirms git log + task JSON as the authoritative history source. FB-015 is now complete except for the optional `health-check.md` Part 6 check #4 secondary (extend summary-shaped-content detection if feasible) — folded into the eventual health-check edit batch. Existing Action Item Contract positives remain unchanged.
-- **Next action:** Erik chooses the next Phase 4 unit. Suggested: (1) `rules/session-management.md` group (FB-023 + FB-024 + FB-025) — three items, one bundled edit; (2) `rules/agents.md` / `implement-agent.md` group (FB-022 + FB-034 + FB-035 + FB-031); (3) `commands/iterate.md` group (FB-021 + FB-032).
+- **session-management.md group implemented 2026-04-17:** Three session-management tools documented in `.claude/rules/session-management.md`: `/btw` bullet added to § "Managing Context Pressure" (FB-023); new `## Checkpointing and Rewind` section after § "What Survives What" covering `Esc+Esc`/`/rewind` with conversation/code/both restore options (FB-024); `/rename` paragraph after the § "Resuming Sessions" table covering named-session discovery in `claude --resume` (FB-025). All three bundled in one commit per the file-grouping rule.
+- **Next action:** Erik chooses the next Phase 4 unit. Suggested: (1) `commands/iterate.md` group (FB-021 + FB-032); (2) `rules/agents.md` / `implement-agent.md` group (FB-022 + FB-034 + FB-035 + FB-031).
 - **Blocked on:** nothing. FB-033 remains deferred on FB-032 trial (Phase 4 direct item).
 
 ---
@@ -111,7 +112,7 @@ Existing `ready` items + new items routed as direct implementation. Group by fil
 **Hot files** (3+ in-flight items — do these first to avoid re-reads):
 
 - [x] **`.claude/commands/work.md`** — FB-015 (work.md audit only — primary edit deferred to dashboard-regeneration.md), FB-017 (Step 2b inlining — primary done), FB-027 (Step 2 spec-check skip-planning callout — work.md slice; alt-sites in research.md/decisions.md deferred), FB-036 (work.md callout + parallel-execution.md primary done). Implemented 2026-04-17.
-- [ ] **`.claude/rules/session-management.md`** — FB-023 (`/btw`), FB-024 (`/rewind`/Esc+Esc), FB-025 (`/rename`). Single bundled edit.
+- [x] **`.claude/rules/session-management.md`** — FB-023 (`/btw` bullet), FB-024 (Checkpointing and Rewind section), FB-025 (`/rename` paragraph). Implemented 2026-04-17.
 - [ ] **`.claude/rules/agents.md`** and/or **`.claude/agents/implement-agent.md`** — FB-022 (root-cause rule), FB-034 (respect user kills), FB-035 (large-file Read guidance), FB-031 (Writer/Reviewer parallel-session mention — may alternatively go to `.claude/README.md`). Plus FB-011 call-sites if FB-011 implementation lands here.
 - [ ] **`.claude/commands/iterate.md`** — FB-021 (AskUserQuestion in distill), FB-032 (Decisions-in-Proposal output contract in propose). FB-032 should land first to start generating trial data for FB-033.
 
@@ -175,7 +176,7 @@ Rows = files. Columns = in-flight items. Cells = section/step affected (or `•`
 | `rules/task-management.md` | | | ~~• (stale — no edit needed)~~ | | | | | — | — |
 | `rules/spec-workflow.md` | | | ~~• (stale — no edit needed)~~ | | | | | — | FB-032 propose-approve-apply |
 | `rules/dashboard.md` | | | | • | Sections | | | — | — |
-| `rules/session-management.md` (new row) | | | | | | | | FB-023 `/btw`; FB-024 `/rewind`; FB-025 `/rename` | — |
+| `rules/session-management.md` (new row) | | | | | | | | ~~FB-023 `/btw`~~ ✓; ~~FB-024 `/rewind`/Esc+Esc~~ ✓; ~~FB-025 `/rename`~~ ✓ | — |
 | `rules/decisions.md` (new row) | | | | | | | | FB-027 skip-planning (alt site) | — |
 | `commands/breakdown.md` | | | ~~subtask inherit~~ ✓ | | | | | — | — |
 | `commands/iterate.md` | | | ~~(stale — no edit needed)~~ | | | detection | | FB-021 distill interview | FB-032 propose output contract |
@@ -566,3 +567,23 @@ Any of these can be inline or plan-and-execute in a fresh session. DEC-008 is a 
 **Open questions for later:**
 - `commands/status.md` line 28 inaccurate framing ("recent activity" as dashboard content) — low-priority follow-on.
 - Version bump tally now: DEC-007 + DEC-008 + FB-037 + work.md batch + FB-015 primary. Still Phase 5.
+
+### 2026-04-17 — Phase 4: session-management.md group (FB-023 + FB-024 + FB-025)
+
+**Done:**
+- **FB-023 (`/btw`):** New bullet added to `§ "Managing Context Pressure"` explaining `/btw` as a dismissible-overlay side-question tool that doesn't enter conversation history.
+- **FB-024 (Checkpointing):** New `## Checkpointing and Rewind` section added after `§ "What Survives What"` covering `Esc+Esc` / `/rewind` flow, three restore modes (conversation / code / both), cross-session persistence, and relationship to `/work pause` (complementary, not overlapping).
+- **FB-025 (`/rename`):** New paragraph after the Resuming Sessions table covering `/rename {name}` for findable sessions in `claude --resume`.
+- Tracker bookkeeping: status line, Current State, Phase 4 Hot files `[x]`, File Collision Map strikes, Cleanup Manifest row (pre-added with plan), Session Log entry.
+- Pre-commit hook: `rules/session-management.md` is sync-category — hook will warn about version.json (expected).
+
+**Judgment calls:**
+- Chose bullet placement for FB-023 between `/clear` and "CLAUDE.md and rules files" rather than at the end of the list — groups with the other slash-command context tools (/compact, /clear) rather than the passive survival mechanisms.
+- FB-024 as a new section rather than a bullet in "What Survives What" — it's a recovery mechanism, not a survival matrix entry. Different shape.
+- FB-025 as a short paragraph after the resume table rather than a new row in the table — the table columns (Method / What you get / When to use) don't fit `/rename` (which isn't a resume method but a naming-for-findability). Paragraph reads better.
+
+**Next:** Erik chooses the next Phase 4 unit. Strong candidates: `commands/iterate.md` group (FB-021 + FB-032); `rules/agents.md` + `implement-agent.md` group (FB-022 + FB-034 + FB-035 + FB-031).
+
+**Open questions for later:**
+- Whether to cross-reference the new Checkpointing section from the "Which Persistence Mechanism When" table (checkpoints could be a fourth row). Deferred — would require re-architecting the table; current 3-mechanism framing is cleaner. Revisit if users confuse checkpoints with handoff.
+- Version bump tally now: DEC-007 + DEC-008 + FB-037 + work.md batch + FB-015 primary + session-management.md group. Still Phase 5.
