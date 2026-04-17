@@ -2,6 +2,8 @@
 
 Procedures for assessing parallelism eligibility, detecting file conflicts, building conflict-free batches, and dispatching/collecting parallel agents. These run inline during `/work` Steps 2c and 4.
 
+**Scope:** this doc covers *intra-session* parallelism — multiple `Task` agents coordinated by one `/work` orchestrator within a single conversation. For *inter-session* parallelism (many independent `claude` processes for batch workloads), see `.claude/support/reference/automation.md`.
+
 ---
 
 ## Parallelism Eligibility Assessment

@@ -2,7 +2,7 @@
 
 **Purpose:** Coordinate multi-session template improvements from three inputs (Opus 4.7 upgrade, Claude Code best-practices doc, usage insights report) alongside the existing feedback backlog and approved decisions.
 
-**Status:** Phase 4 — agents group implemented (FB-022 + FB-031 + FB-034 + FB-035 + FB-032 verify-agent matching check carryover); FB-019 + FB-028 + FB-029/030 + FB-011 remaining
+**Status:** Phase 4 — FB-029/030 implemented (new support/reference/automation.md); FB-011 ready next (scripts inventory can now route to claude -p primitive); FB-019 + FB-028 also remaining
 **Last updated:** 2026-04-17
 
 ---
@@ -50,7 +50,8 @@ User retains approval authority at every intake and edit point. Claude does not 
 - **session-management.md group implemented 2026-04-17:** Three session-management tools documented in `.claude/rules/session-management.md`: `/btw` bullet added to § "Managing Context Pressure" (FB-023); new `## Checkpointing and Rewind` section after § "What Survives What" covering `Esc+Esc`/`/rewind` with conversation/code/both restore options (FB-024); `/rename` paragraph after the § "Resuming Sessions" table covering named-session discovery in `claude --resume` (FB-025). All three bundled in one commit per the file-grouping rule.
 - **iterate.md group implemented 2026-04-17:** `/iterate` Step 1a now inlines the same checkbox-detection trigger that work.md Step 2b got — the FB-017 fix applies at both entry points, closing the gap where running `/iterate` (not `/work`) on checked decisions left them `proposed`. Distill mode's sub-step 3 restructured to use `AskUserQuestion` for structured interview (FB-021) — explicit option lists force decisions to be visible instead of accepting flat text and silently interpreting. Step 4's change declaration now ends with a mandatory `## Decisions in This Proposal` section tagging each non-trivial choice `[NEEDS APPROVAL]` / `[FROM EXISTING SPEC]` / `[USER REQUESTED]`; Step 5 gates apply on zero-unchecked `[NEEDS APPROVAL]` (FB-032). `rules/spec-workflow.md § "Propose-Approve-Apply"` gains one sentence making the contract visible at the rules layer. Unblocks FB-033 trial-gate data generation.
 - **agents group implemented 2026-04-17:** Four rules/agents.md + implement-agent.md + CLAUDE.md additions. Root-cause-over-symptom rule: new § in rules/agents.md (primary) + sub-section in implement-agent Implementation Guidelines (reinforcement) + matching check in verify-agent per-task checklist (FB-022). Respect-prior-kills behavioral rule: new § in rules/agents.md + new 9th Critical Invariant bullet in `.claude/CLAUDE.md` pointing to the rules file (FB-034). Large-file Read guidance: new paragraph in implement-agent § Tool Preferences covering Grep/Glob preference, offset/limit usage, and file-too-large recovery (FB-035). Writer/Reviewer parallel-session pattern: one-paragraph mention in rules/agents.md § Separated Concerns (FB-031). Also landed the deferred FB-032 verify-agent matching check for spec-change tasks requiring the Decisions section contract. Auto mode does not absorb any of these — all are behavioral or rule-layer, not permission-layer.
-- **Next action:** Erik chooses the next Phase 4 unit. Remaining single-file items: FB-019 (`@path` imports in `.claude/CLAUDE.md`), FB-028 (CLI-tool hints in `setup-checklist.md`), FB-029 + FB-030 (new `automation.md`), FB-011 (scripts inventory). FB-033 research can also be dispatched once `/iterate` has run on real projects under the FB-032 contract.
+- **FB-029/030 implemented 2026-04-17:** New `.claude/support/reference/automation.md` documenting the `claude -p` primitive (FB-029) and fan-out pattern (FB-030). Doc clarifies the intra- vs inter-session parallelism distinction, scopes `claude -p` with concrete examples (output formats, allowedTools scoping, working-dir/model flags), and covers fan-out with concurrency caps and the shared-state coordination rule (workers produce artifacts, main collects; never shared-write). Cross-referenced from `support/reference/parallel-execution.md` (one-paragraph scope note) and added to `support/reference/README.md § Guides` + `sync-manifest.json § sync`. Template itself does not adopt fan-out — this is user-facing reference.
+- **Next action:** Erik chooses the next Phase 4 unit. FB-011 is now unblocked (automation primitive available for routing scripts-inventory candidates — some may collapse to `claude -p` one-liners rather than bash scripts). Other remaining single-file items: FB-019 (`@path` imports in `.claude/CLAUDE.md`), FB-028 (CLI-tool hints in `setup-checklist.md`). FB-033 research can also be dispatched once `/iterate` has run on real projects under the FB-032 contract.
 - **Blocked on:** nothing. FB-033 remains deferred on FB-032 trial (Phase 4 direct item).
 
 ---
@@ -123,7 +124,7 @@ Existing `ready` items + new items routed as direct implementation. Group by fil
 - [ ] **FB-011** — Scripts as alternative (dashboard regen, checkbox detection); starts with a candidates inventory doc. Consider after FB-029/FB-030 (some candidates may become `claude -p` one-liners instead of bash scripts).
 - [ ] **FB-019** — `@path` imports in `.claude/CLAUDE.md` (Workflow Rules section).
 - [ ] **FB-028** — CLI-tool installation hints in `.claude/support/reference/setup-checklist.md`.
-- [ ] **FB-029 + FB-030** — New `.claude/support/reference/automation.md`: `claude -p` primitive + fan-out pattern. Bundle (same file).
+- [x] **FB-029 + FB-030** — New `.claude/support/reference/automation.md`: `claude -p` primitive + fan-out pattern. Bundle (same file). *(Implemented 2026-04-17.)*
 
 **Blocked within Phase 4:**
 
@@ -186,12 +187,12 @@ Rows = files. Columns = in-flight items. Cells = section/step affected (or `•`
 | `support/reference/task-schema.md` | | | ~~`phase` row + new `cross_phase` row~~ ✓ | | | | | — | — |
 | `support/reference/phase-decision-gates.md` | | | ~~skip rule + Cross-Phase section~~ ✓ | | | • | | — | — |
 | `support/reference/dashboard-regeneration.md` | | | ~~`(cross-phase)` suffix~~ ✓ | • | ~~FB-015 Action Item Contract negative rule~~ ✓ | | | — | — |
-| `support/reference/parallel-execution.md` | | | ~~OR clause in eligibility~~ ✓ | | | | | — | ~~FB-036 Pre-Dispatch Confirmation section~~ ✓; FB-030 fan-out (alt site) |
+| `support/reference/parallel-execution.md` | | | ~~OR clause in eligibility~~ ✓ | | | | | — | ~~FB-036 Pre-Dispatch Confirmation section~~ ✓; ~~FB-030 landed in automation.md; parallel-execution.md gained scope pointer~~ ✓ |
 | `support/reference/decomposition.md` | | | ~~heuristic bullet~~ ✓ | | | | | — | — |
 | `support/reference/decisions.md` | | | | | | line 151 | | — | — |
 | `support/reference/workflow.md` | | | | | | lines 195-201 | | — | — |
 | `support/reference/setup-checklist.md` (new row) | | | | | | | | FB-028 CLI installs | FB-037 Optional Hooks appendix |
-| `support/reference/automation.md` (new file) | | | | | | | | FB-029 `claude -p`; FB-030 fan-out | — |
+| `support/reference/automation.md` (new file) | | | | | | | | ~~FB-029 `claude -p`~~ ✓; ~~FB-030 fan-out~~ ✓ | — |
 | `.claude/README.md` (new row) | | ~~File Ownership + Settings~~ ✓ | | | | | | FB-031 Writer/Reviewer (alt site); FB-029 mention (alt site) | — |
 | `.claude/sync-manifest.json` | | ~~new `merge` cat~~ ✓ (used existing `sync`) | | | | | | — | — |
 | `.claude/settings.json` (new) | | ~~•~~ ✓ | | | | | | — | DEC-008 may reshape (FB-026) |
@@ -649,3 +650,31 @@ FB-033 research can also be dispatched once `/iterate` has run on real projects 
 - Whether to add a reciprocal `rules/agents.md` pointer from the "Tool Preferences" section to the implement-agent large-file block. Deferred — the current arrangement (agent file owns agent-level strategy) is cleaner. Revisit if users ask "why isn't this in the rules file."
 - Whether the FB-034 Critical Invariant bullet should live in the project-root `CLAUDE.md` instead of `.claude/CLAUDE.md`. Decided: `.claude/CLAUDE.md` is correct per FB-034 Assessed line (template-owned, ships to projects; root `./CLAUDE.md` is template-maintenance-only and gets replaced on project setup).
 - Version bump tally now: DEC-007 + DEC-008 + FB-037 + work.md batch + FB-015 primary + session-management.md group + iterate.md group + agents group. Still Phase 5.
+
+### 2026-04-17 — Phase 4: FB-029 + FB-030 automation.md bundle
+
+**Done:**
+- **FB-029 + FB-030 (primary):** New `.claude/support/reference/automation.md` bundling both items in one doc. Intro frames the intra- vs inter-session scaling axes — template's `/work`-coordinated `Task` dispatch stays the default for spec tasks; fan-out is the user's tool for ad-hoc or scheduled batch work outside the spec.
+- **`claude -p` section (FB-029):** Basic form, structured output (`--output-format json` / `stream-json`), tool scoping (`--allowedTools "Bash(git *)"`, comma-separated toolsets, glob patterns), working-dir/model flags. Two decision tables: When-to-reach-for (CI, pre-commit, batch sweeps, fan-out) and When-NOT (conversational tasks, in-flight `/work` awareness, approval-required tasks).
+- **Fan-out section (FB-030):** Minimal `for/&/wait` pattern and concurrency-capped `xargs -P 4` pattern. Fit / no-fit enumeration (large migrations / report generation / scheduled sweeps vs. interacting tasks / shared-file writes / `.claude/` updates). Explicit coordination-at-the-boundary rule with Good (workers write to isolated artifacts; main collects after `wait`) and Bad (workers append to shared.log — concurrent-write race) code blocks.
+- **Interaction-with-template section:** Three-line summary of when to use intra-session parallel, fan-out, or `claude -p` directly. Explicit note that the template itself does not adopt fan-out — this is user-facing reference only.
+- **Cross-reference from `parallel-execution.md`:** One-paragraph Scope block inserted between the opening intro and the first `---` separator, making the intra-vs-inter-session distinction visible at the top of the existing parallelism doc and pointing to `automation.md`.
+- **`support/reference/README.md § Guides`:** New row for `automation.md` placed between `setup-checklist.md` and `desktop-project-prompt.md`.
+- **`sync-manifest.json § sync`:** `.claude/support/reference/automation.md` inserted after `setup-checklist.md`.
+- **Skipped Step 5 (optional `.claude/README.md` row):** The "Where to Find Things" table uses high-level categories ("Reference documentation → support/reference/"), not per-doc rows. A single `automation.md`-specific row would be inconsistent with the table shape. Discovery path remains `support/reference/README.md § Guides`. `.claude/README.md` FB-029 alt-site marker in the File Collision Map stays un-struck.
+- Tracker bookkeeping: status line, Current State (new bullet + next-action refresh), Phase 4 single-item row → `[x]`, File Collision Map strikes (automation.md row primary + parallel-execution.md alt-site), Cleanup Manifest row was pre-added with the plan, Session Log entry.
+- Pre-commit hook: `parallel-execution.md`, `automation.md`, `support/reference/README.md`, and `sync-manifest.json` touched. `parallel-execution.md` and `automation.md` are sync-category — hook will warn about `version.json` not being bumped (expected per Phase 5 deferral).
+
+**Judgment calls:**
+- **Doc shape (primitive first, then pattern):** Fan-out depends on understanding `claude -p`, so the doc puts the primitive first even though both FB items are bundled. Readers unfamiliar with `claude -p` get the building block before the composition pattern.
+- **Intra- vs inter-session framing:** Made the axis distinction explicit at the top of both `automation.md` (intro) and `parallel-execution.md` (new scope block). The two docs cover different scaling directions; explicit framing prevents future readers from treating them as overlapping.
+- **Tool scoping in examples:** Every `claude -p` example uses restrictive `--allowedTools` (e.g., `Read,Edit,Bash(git add *),Bash(git commit *)` for migration). No permissive `*` examples. Automation examples should model secure defaults — unattended runs are exactly where sloppy tool scoping does damage.
+- **Shared-state rule surfaced as good/bad code blocks:** Abstract "don't write to shared state" guidance tends to be ignored; showing a `shared.log` race next to a `out/*.json` + `jq -s` alternative makes the rule operational. Chose shell examples that anyone with bash literacy can read.
+- **Optional `.claude/README.md` row skipped:** Per the plan's explicit allowance. The table's shape doesn't fit per-doc rows. Adding one would either look out of place or force restructuring the table — restructuring exceeds the bundle's scope.
+- **"Interaction with the template" section placed before "Related":** Answers the natural follow-up question ("Should the template itself adopt fan-out?") with a direct "no — user-facing reference." Prevents future maintainers from reading this doc and thinking it's a feature-backlog item.
+
+**Next:** Erik chooses the next Phase 4 unit. Remaining: FB-019 (`.claude/CLAUDE.md` `@path` imports), FB-028 (CLI-tool hints in `setup-checklist.md`), FB-011 (scripts inventory — now unblocked; some candidates can route to `claude -p` one-liners rather than bash scripts).
+
+**Open questions for later:**
+- Whether any template command (e.g., `/health-check`) should grow a "run non-interactively via `claude -p`" section in its own doc. Deferred — the automation doc covers the general pattern; per-command CI recipes are a separate shape and would be their own bundle if pursued.
+- Version bump tally now: DEC-007 + DEC-008 + FB-037 + work.md batch + FB-015 primary + session-management.md group + iterate.md group + agents group + FB-029/030 automation.md. Still Phase 5.
