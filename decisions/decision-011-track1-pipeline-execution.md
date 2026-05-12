@@ -20,7 +20,17 @@ blocks: []
 
 ## Select an Option
 
-*(populated after research completes; final selection gated on real downstream telemetry availability)*
+Mark your selection by checking one box:
+
+- [ ] Option A: Tier A only — behavioral nudge (tighter wording in `work.md:543` + `parallel-execution.md`)
+- [ ] Option B: Tier B only — idempotent catchup (no wording change)
+- [ ] Option C: Tier C only — structural PostToolUse / SubagentStop hook (per-project install)
+- [ ] Option D: Tier D only — deterministic `.claude/scripts/append-markers.py`
+- [ ] Option AB: Hybrid A+B — behavioral nudge + idempotent catchup (recommended)
+- [ ] Option ABp: Hybrid A+B + `.pending-markers.jsonl` transient buffer (recommended + abrupt-kill protection)
+- [ ] Option E: Defer — wait for first downstream session export before deciding
+
+*Check one box above, then fill in the Decision section below.*
 
 ---
 
