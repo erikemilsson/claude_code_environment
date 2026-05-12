@@ -407,3 +407,386 @@ Outcomes:
 - If all three contribute: combine fixes
 
 Discovered while implementing FB-040 (Option D bridge). FB-040 shipped in `template_version 3.1.0`; this entry tracks the separate Option C execution question and does not block any current work.
+
+## FB-042: Phase-restoration audit task descriptions need literal-ID cross-check
+
+**Status:** new
+**Captured:** 2026-04-27
+**Migrated:** 2026-05-13 — originally captured as FB-002 in `.claude/support/feedback/feedback.md` (shipped path; misroute predates the v3.1.0 `/feedback template:` bridge).
+
+Phase-restoration / pre-flight audit task descriptions (e.g., a "Phase N prereq audit" task that checks whether downstream registry edits are needed) tend to produce false-positive "stale" or "no-op" findings when they compare against task target sets via name-matching or count-matching rather than literal-ID matching.
+
+Concrete example from a downstream styler project's Phase 20 prereq audit:
+
+- Audit reported "measurements_core ALREADY=10 sub_fields, all 7 spec-named present" → orchestrator broadcast "T429 will be a verify-only no-op" to the user. Reality: T429's 7 measurements (across_back, bicep, wrist, torso_length, outseam, calf, head_circumference) are entirely different IDs from the 10 already present (height, weight, chest, waist, hips, shoulder_width, arm_length, inseam, neck, thigh). T429 was real work.
+- Same audit reported "winter_months — likely single_enum, should become multi_enum" → reality: already multi_enum, but spec body actually said "render-as-enum" (UI bug), not "type-as-enum" (schema bug). The audit's hypothesis didn't match the spec's actual claim.
+
+Both findings caused downstream confusion: the orchestrator told the user "T429 is a no-op" then T429 turned out to be real work; same pattern with T431.
+
+Suggested template improvement: when a phase-restoration / pre-flight audit task description includes "verify whether downstream task X is needed", require it to:
+
+1. Read X's task description (the actual target IDs / values / shapes).
+2. Compare literally against current state (by ID, not by count or semantic name match).
+3. Only report "stale/no-op" if the literal IDs match exactly.
+4. If similar-but-different (semantic match without ID match), report as "scope_clarification_needed" rather than "stale".
+
+This could live as a guideline in implement-agent.md's audit-task pattern, or as a sentence in the task-management.md rules around audit tasks.
+
+## FB-043: implement-agent prompt should emphasize "extend ALL enum/union locations"
+
+**Status:** new
+**Captured:** 2026-04-27
+**Migrated:** 2026-05-13 — originally captured as FB-003 in `.claude/support/feedback/feedback.md` (shipped path; misroute predates the v3.1.0 `/feedback template:` bridge).
+
+When an implement-agent task adds a new enum value (e.g., a new capture method, status, or any string-literal union member), the implementation typically needs to extend multiple synchronized locations:
+
+- TypeScript union type (e.g., `CaptureMethod` in types.ts)
+- Zod enum schema (e.g., `CaptureMethodSchema` in schema-zod.ts)
+- Dispatcher case handlers (e.g., onboard.md case statements)
+- Validator handlers (loader.ts switch arms, if any)
+
+Concrete example from a downstream styler project's T424 (add Zod + TS types for `split_strategy` per DEC-047): agent added `SplitBucketSchema` + `SplitStrategySchema` + extended `FieldCaptureSchema` with new optional fields, but **missed adding `'ask_user_question_split'` to `CaptureMethodSchema` enum AND `CaptureMethod` TS union**. T425 (the next task) absorbed the fix (5-line addition across two files), no harm done — but the gap delayed T425's start by ~5 minutes of root-cause investigation, and surfaced as a friction marker at session pause.
+
+Suggested template improvement: add a Step 2.5 (after planning, before editing) to implement-agent.md — "When adding a new enum value or string-literal union member, list ALL locations that enumerate this value across the codebase (TS union, Zod enum, dispatcher cases, validator switch arms) and extend each one. Don't trust the task description's `files_affected` list to be exhaustive for enum-related work — search for the existing enum's name with grep first to find all extension points."
+
+Even a one-line note in implement-agent.md's "Common pitfalls" section would catch this.
+
+## FB-044: Heavy editorial verify-agent prompts may benefit from structural+content split
+
+**Status:** new
+**Captured:** 2026-04-27
+**Migrated:** 2026-05-13 — originally captured as FB-004 in `.claude/support/feedback/feedback.md` (shipped path; misroute predates the v3.1.0 `/feedback template:` bridge).
+
+Verify-agents on heavy editorial content tasks (rewriting style principles, restructuring documentation, multi-file prose changes) approach the per-agent budget ceiling.
+
+Concrete example from a downstream styler project's T447 verify-agent (rewrite 3 universal style principles + add 3 feminine-gated rules + delete archetype framework section, 6 files modified):
+
+- 32 tool calls; ran out of Anthropic usage quota mid-verification.
+- Verification target included: read 6 modified markdown files end-to-end; run 4 test suites (registry-consistency 62/62, completeness 41/41, prompt-render 23/23, suggestions-context 10/10); run tsc --noEmit; multiple greps to verify cross-refs + archetype residue; judge editorial content quality (axis vocabulary, voice consistency, ID cross-ref integrity, scope expansion sensibility).
+- Verify-agent was actively working when quota exhausted — not stuck — but ran past quota.
+
+Suggested template improvement: for editorial-content tasks (heuristic: difficulty ≥ 5 AND files_affected includes prose/markdown), consider one of:
+
+1. **Split verify-agent into two passes** — structural (files exist, scope clean, cross-refs resolve, tests pass, no out-of-scope edits) + content (read prose, judge tone/voice, semantic correctness). Sub-verifications can run in parallel.
+2. **Document a budget guideline in verify-agent.md** — "If verification target includes ≥3 substantial markdown files, plan ≤25 tool calls — heavy editorial review may need to be split or invoke a separate content-only sub-agent."
+3. **Add a `verify_strategy: structural+content` field** to task JSON — the orchestrator reads this at dispatch and routes to a different agent template when set.
+
+Option 2 is the lightest-touch — a sentence in verify-agent.md prompts the agent to budget-aware itself.
+
+## FB-045: Orchestrator should append friction markers eagerly, not at /work pause
+
+**Status:** new
+**Captured:** 2026-04-27
+**Migrated:** 2026-05-13 — originally captured as FB-005 in `.claude/support/feedback/feedback.md` (shipped path; misroute predates the v3.1.0 `/feedback template:` bridge).
+
+The "After implement-agent returns" protocol in /work command (Step 2) says: "Append friction markers: for each marker in report.friction_markers, add task_id and append as a JSON line to .claude/support/workspace/.session-log.jsonl".
+
+Observation from a downstream styler project's Phase 20 work session: the orchestrator (Claude Code, executing /work in auto mode) skipped this step throughout the session — friction markers from agent reports were captured in task notes (task-XXX.json) but NOT appended to .session-log.jsonl in real-time. At /work pause time, the orchestrator caught up and batch-appended 8 markers from the session.
+
+The risk: if the session terminates abruptly (compaction, crash, usage limit before pause is invoked), friction markers from that session are lost — only the task notes survive, and task notes aren't structured for cross-project Track 1 telemetry consumption.
+
+Suggested template improvements (any of):
+
+- **Document a clearer protocol** in /work or implement-agent.md — "Append marker via single bash call (`cat >> file <<JSON`) immediately after agent return; do not batch."
+- **Make catchup idempotent** — if the orchestrator (or PreCompact hook) sees task notes with friction markers but no corresponding .session-log entry, append the missing markers automatically.
+- **Move append responsibility into a hook** (PostAgentReturn or PostToolUse hook gated on Task subagent) so it can't be skipped by the orchestrator.
+
+This is partly a behavioral nudge for the orchestrator — the "skip" was a judgment call to focus on user-facing communication, with the cost being post-hoc reconstruction at pause time. But making it harder to skip (Option 3, hooks) closes the gap structurally rather than relying on prompt discipline.
+
+**Related:** FB-041 cause #2 (orchestrator-side marker append is documented but not reliably executed) — this is the same observation. FB-045's evidence informs FB-041's investigation.
+
+## FB-046: Parallel-batch cross-task scaffolding contracts need single composed brief
+
+**Status:** new
+**Captured:** 2026-04-27
+**Migrated:** 2026-05-13 — originally captured as FB-006 in `.claude/support/feedback/feedback.md` (shipped path; misroute predates the v3.1.0 `/feedback template:` bridge).
+**Source project:** styler (Personal Style Intelligence System)
+
+When `/work` Step 2c builds a parallel batch of tasks that share cross-task synchronization contracts (test allowlists, fixture scaffolding, expected-violation lists), the orchestrator currently writes independent briefs that can contradict each other on file boundaries.
+
+**Concrete repro (styler Phase 20 batch 13, 2026-04-27):**
+
+The orchestrator dispatched **T462** (close § 20.4 split-strategy debt) + **T463** (broaden T460 validator) in parallel. Both modify allowlist scaffolding spread across `schema-zod.ts` and `registry-consistency.test.ts`.
+
+- T462's brief said: "do NOT touch `registry-consistency.test.ts` (T463's territory; T463 may modify fixtures)".
+- T463's actual implementation wrote scaffolding into `registry-consistency.test.ts` containing a self-documenting `EXPECTED_T463_VIOLATIONS` array AND a failing-test message reading `"drop them now"` whenever the array still listed entries that T462 had supposedly drained.
+- Result: T462 was **forced** to drain `EXPECTED_T463_VIOLATIONS` to keep `npm test` green, violating its own brief. The friction marker (`type: template_gap`) was logged.
+
+Final state was correct (both edits cleanly merged on disk and tests passed), but the brief contradicted the runtime contract.
+
+**Proposed fix:** When `/work` Step 2c builds a parallel batch and detects a shared scaffolding contract (e.g., both tasks touch the same allowlist file, or one task writes test scaffolding that another task is responsible for draining), compose a **single shared briefing block** that both implement-agents receive verbatim, naming who-drains-what and why.
+
+Schema sketch for an additional `shared_contract` field in the parallel-batch dispatch payload:
+
+```json
+{
+  "shared_contract": {
+    "type": "allowlist_drain",
+    "file": "registry-consistency.test.ts",
+    "constants": ["EXPECTED_T463_VIOLATIONS"],
+    "owner": "T463 (writes scaffolding)",
+    "drainer": "T462 (drops entries when violations resolve)",
+    "test_signal": "failing-test message 'drop them now'"
+  }
+}
+```
+
+Each agent's brief inherits the shared block; neither agent gets a contradicting "do not touch" instruction. Detection heuristic: if two parallel tasks have overlapping `files_affected` AND one task's description mentions `expected`/`allowlist`/`fixture` while the other's mentions `drain`/`drop`/`close`, surface the contract for the orchestrator to compose.
+
+## FB-047: Files_affected drift — decomposition should auto-enumerate ripple-affected fixture files
+
+**Status:** new
+**Captured:** 2026-04-27
+**Migrated:** 2026-05-13 — originally captured as FB-007 in `.claude/support/feedback/feedback.md` (shipped path; misroute predates the v3.1.0 `/feedback template:` bridge).
+**Source project:** styler
+
+Across 12+ tasks in styler's Phase 20 alone, ~40% of friction markers cite some form of "files_affected was under-counted because the change rippled into a fixture / downstream caller / npm-test-chain entry that the task's declared scope didn't include." Implementations were correct in every case; the friction was purely scope-bookkeeping.
+
+This is broader than FB-051 (path drift): FB-051 catches "task referenced a wrong path"; FB-047 catches "task referenced the right path, but missing collateral files."
+
+**Concrete examples from one styler session (2026-04-27):**
+
+- **T428** (retire `life_stage` registry field): files_affected = `[field-definitions.json]`. Reality: 2 test files hard-coded `life_stage` in fixtures — both had to be updated.
+- **T435** (DEC-048 cap relax `.max(4)` → `.max(6)`): files_affected = 6 files. Reality: `loader.test.ts` had 2 fixtures (test 5 + test 10) hard-coded to a 5-bucket trip threshold — the cap change broke them and they had to be updated to 7-bucket fixtures. Friction marker logged.
+- **T439** (derivation pipeline writeback): files_affected = `[derivation.ts, derivation.test.ts, onboard.md]`. Reality: also added `derivation-pipeline.ts` + `derivation-pipeline.test.ts` (new files) and edited `package.json` to chain the new test. 3 friction markers logged.
+- **T460** (extend validator to list_builder item_fields): files_affected = `[schema-zod.ts, registry-consistency.test.ts]`. Reality: every downstream caller of `RegistrySchemaZ.parse()` broke — extended to 4 files. Mitigation was a centralized allowlist helper, but the file list was still under-counted.
+
+**Proposed fix:** During `decomposition.md` (or its sub-procedure for setting `files_affected`), run a static-analysis pre-pass:
+
+1. **For field/type retirements** ("remove `X`", "retire `X`"): `grep -r "X"` across `**/__tests__/**`, `**/*.test.{ts,py,js}`, fixture directories, and any path matching `*fixture*`/`*mock*`. Add matches to files_affected.
+2. **For schema-cap or threshold changes** (e.g., `.max(N)` → `.max(M)`): `grep -r "{old_threshold_value}"` in fixture files; flag any matches that share the schema constant's name as candidates for files_affected.
+3. **For new test files added under a `__tests__` or sibling-test convention:** check `package.json` `scripts.test` for chain-style invocation (`tsx ... && tsx ...`); if the chain is explicit-path-listing (vs glob-based), add `package.json` to files_affected automatically.
+4. **For validator-walk extensions** (changes to a Zod / Pydantic / similar schema's superRefine or strict-parse logic): `grep -r "{ParserSchemaName}\.parse\\|\.{ParserSchemaName}\.safeParse"` to find downstream callers; add their files.
+
+Implementation note: this is the same kind of pre-pass FB-051 proposes for path validation, just generalized to ripple-affected files. Could ship as a single decomposition-validation enhancement covering both.
+
+## FB-048: Inline-command pattern — extract a shared template reference doc
+
+**Status:** new
+**Captured:** 2026-04-27
+**Migrated:** 2026-05-13 — originally captured as FB-008 in `.claude/support/feedback/feedback.md` (shipped path; misroute predates the v3.1.0 `/feedback template:` bridge).
+**Source project:** styler
+
+When a project has multiple slash commands that can be invoked **inline within a parent command** (e.g., `/coloring` invoked from inside `/onboard`, `/grooming` from inside `/onboard`, `/wardrobe` from inside `/onboard`), the integration pattern is non-trivial: named subroutines, idempotency contracts, standalone-only step flagging, retired-delegate-framing callouts, vestigial-key handling for backward compat, etc.
+
+**Observation from styler (2026-04-27):**
+
+Three tasks landed the same pattern in close succession — T449 (`/coloring` inline), T450 (`/grooming` inline), T454 (`/wardrobe` inline). Each implement-agent re-derived the pattern from the prior task as a precedent. The result is **near-duplicated** structure across the three command markdown files (`coloring.md`, `grooming.md`, `wardrobe.md`):
+
+- Same "Inline Invocation from /onboard" section header
+- Same contract-table column shape (Inputs / Outputs / Standalone wrapper / Inline call site)
+- Same Idempotency Contract clause **with slightly different dedup tuples** — selfie+date for coloring/grooming, item-file-path for wardrobe
+- Same Standalone-only flag convention on standalone-analysis steps
+- Same retirement-callout format for the now-retired delegate framing
+
+This is correctness-by-precedent, but each future inline command will pay the same duplication cost, and the dedup-tuple drift (across already three commands) is a foot-gun.
+
+**Proposed fix:** Add a template reference doc, e.g., `.claude/support/reference/inline-command-pattern.md`, that describes the canonical pattern:
+
+1. The named-subroutine contract table format (Inputs / Outputs / Standalone wrapper / Inline call site columns)
+2. The Idempotency Contract structure with explicit guidance on choosing the dedup tuple ("a stable identity that re-running with the same inputs and same wall-clock day should not regenerate" — selfie path, item file path, etc.)
+3. The Standalone-only flag convention for steps that don't run inline
+4. The retirement callout format for legacy delegate-and-stop framing
+5. The progress-state vestigial-key handling for backward compat with existing on-disk progress JSON
+
+Then individual command markdowns can `@reference` the template doc instead of re-deriving it from a peer. Future inline commands inherit the pattern by reference, not by copy.
+
+This is template-side because the **pattern itself** is generic — any project with composable slash commands will hit the same shape.
+
+## FB-049: Anthropic usage-limit partial-completion structured resume contract
+
+**Status:** new
+**Captured:** 2026-04-27
+**Migrated:** 2026-05-13 — originally captured as FB-009 in `.claude/support/feedback/feedback.md` (shipped path; misroute predates the v3.1.0 `/feedback template:` bridge).
+**Source project:** styler
+
+Anthropic usage-limit cuts mid-implement-agent or mid-verify-agent are recurring (twice in one styler session: T433's first dispatch was cut at 41 tool uses with no structured report; T454's verify-agent dispatch in the same session never started before the limit hit). Current handoff is via free-form task notes + dashboard prose + `.last-clean-exit.json` — entirely manual. Subsequent invocations have to audit partial work and reason about resumption.
+
+**Concrete repro (styler T433, 2026-04-27 13:25 UTC):**
+
+First implement-agent dispatch hit usage limit at 41 tool uses / 297s, returned no structured report. Working tree had partial edits across 3 of the task's ~18 declared sub-targets. Second invocation had to:
+
+1. Read git diff to infer what landed
+2. Read task notes for partial-progress hints (none present — orchestrator had only logged "dispatch cut by limit")
+3. Audit which sub-targets within the cluster sweep were already done vs remaining
+4. Compose a unified report covering both invocations once it finished the rest
+
+Workflow handled it gracefully but the cross-invocation reasoning is fragile and adds ~10–15 minutes of audit overhead.
+
+**Proposed fix:** Extend the implement-agent return schema with a `partial_completion` envelope that the agent can fill if it senses approaching limit AND has not finished:
+
+```json
+{
+  "implementation_status": "partial_resume_pending",
+  "completed_subtargets": ["field_X (4 buckets)", "field_Y (3 buckets)"],
+  "remaining_subtargets": ["field_Z", "field_W", "field_V"],
+  "partial_state_notes": "Stopped mid-sweep at field_Z; no edits to field_Z yet. Bucket taxonomy precedent: field_X = activity-family (indoor/outdoor/...).",
+  "resume_instructions": "Resume from field_Z. Follow same bucket-taxonomy precedent as field_X. After all remaining, sweep audit to confirm 0 violations."
+}
+```
+
+The orchestrator persists this to task JSON. Next dispatch reads it and brokers a "resume from where you stopped" prompt — the agent doesn't have to re-derive context from git diff + task notes.
+
+`/work pause` already has graceful wind-down for user-initiated halts; this would mirror the pattern for the rate-limit case (which the agent itself can detect by approaching `max_turns` or by Anthropic's rate-limit response surface). The `.handoff.json` schema could be extended to include task-level partial state alongside session-level state.
+
+Detection heuristic for the agent: if `tool_uses` count exceeds 75% of typical session budget AND remaining subtargets > 0, return `partial_resume_pending` instead of pushing through.
+
+## FB-050: /iterate spec-vs-registry hygiene pass — grep-validate spec claims
+
+**Status:** new
+**Captured:** 2026-04-27
+**Migrated:** 2026-05-13 — originally captured as FB-010 in `.claude/support/feedback/feedback.md` (shipped path; misroute predates the v3.1.0 `/feedback template:` bridge).
+**Source project:** styler
+
+Spec text drifts from registry/schema state over time. Each drift triggers a `spec_drift` friction marker but is otherwise resolvable inline by the implement-agent — meaning the drift accumulates silently until a future spec edit is needed.
+
+**Two concrete examples from one session:**
+
+1. **Spec § 20.2** said the `extremities` subsection was "previously-empty" — registry actually had `feet` / `hands` / `head` / `glasses_sunglasses` / `everyday_jewelry` already populated. Implementer (T430) had to interpret intent and add new fields under the existing `head` composite rather than treating the subsection as truly empty. Friction marker logged.
+
+2. **Spec § 20.2** instruction "update the extremities subsection description" — `SubsectionDefSchema` has only `id` / `label` / `order` / `storage_file` (no `description` field). Instruction was unimplementable as written; implementer worked around by updating `head.description` (the composite field's description) instead. Friction marker logged.
+
+Each case caused avoidable confusion and post-hoc workaround. Both would have been caught at spec-revision time by a static cross-check.
+
+**Proposed fix:** Add a `/iterate hygiene` sub-command (or fold into existing `/iterate`) that runs at spec-revision time:
+
+1. **Parse the spec** for noun-phrase claims about registry/schema state — patterns like:
+   - "the X subsection / field / type"
+   - "previously-empty / previously-X / now-X"
+   - "field Y under section Z"
+2. **Cross-reference against the actual structured artifact** (project-specific: `field-definitions.json`, `schema.ts`, etc. — could be parameterized via a config field in `.claude/version.json`).
+3. **Flag drift:** "Spec § 20.2 says 'previously-empty extremities' but registry has 5 top-level fields under `extremities`." Surface as a `[NEEDS APPROVAL]` item in `/iterate`'s "Decisions in This Proposal" section.
+4. **Cross-reference spec instructions** like "update the X description" against the schema (`SubsectionDefSchema`, `FieldDefSchema`) to verify the target attribute exists. Flag unimplementable instructions before they reach decomposition.
+
+This is generally useful even outside styler: any spec-driven project with a structured artifact (registry, schema, config) accumulates this drift over many revisions.
+
+Alternative (lighter): add this to `/health-check` as a per-spec consistency audit, run on demand rather than as a separate `/iterate` mode.
+
+## FB-051: Validate file paths during /work decomposition (originally styler FB-053)
+
+**Status:** new
+**Captured:** 2026-04-27
+**Migrated:** 2026-05-13 — originally captured as FB-011 in `.claude/support/feedback/feedback.md` (shipped path; misroute predates the v3.1.0 `/feedback template:` bridge).
+**Source project:** styler — originally captured locally as FB-053, lifted here because it's template-improvement (per styler's own dashboard note: "FB-053 is template-improvement, not Phase 20 scope").
+
+Decomposition step in `/work` should validate that file paths referenced in task descriptions and `files_affected` actually exist before the task is created.
+
+**Concrete repro (styler T453 implementation, 2026-04-27):**
+
+- `files_affected` listed `src/components/grooming/GroomingSection.tsx`
+- Actual file lives at `src/components/style/GroomingSection.tsx`
+- Implementer correctly grep'd and found the actual file; orchestrator updated metadata post-hoc (and the implementer wasted ~3 tool uses searching the wrong directory first)
+
+**Proposed fix:** When decomposition references a path that doesn't resolve, flag it inline so the human reviewing decomposition output can correct it before tasks ship. Low-cost addition to the decomposition checklist (or `/health-check`); high-value preventing wasted implementer cycles searching wrong directories.
+
+Could also catch related drift — task body mentioning a function name that no longer exists, etc. — but path validation alone covers the most common case.
+
+**Relationship to FB-047:** FB-047 is broader ("ripple-affected fixture files missing from `files_affected`"); FB-051 is the narrower path-correctness check. They could ship as one decomposition-validation pre-pass enhancement covering both: (1) declared paths must resolve; (2) implied collateral paths (fixtures matching grep patterns) should be auto-suggested for inclusion.
+
+## FB-052: implement-agent.md:223 grants subagent decision-record write that agents.md § State Ownership forbids
+
+**Status:** new
+**Captured:** 2026-04-28
+**Migrated:** 2026-05-13 — originally captured as FB-012 in `.claude/support/feedback/feedback.md` (shipped path; misroute predates the v3.1.0 `/feedback template:` bridge).
+**Source project:** styler — multi-agent template audit, 2026-04-28. `agents/` files are byte-identical to template.
+
+`implement-agent.md:223` instructs the subagent to: *"Create a `decision-*.md` file in `.claude/support/decisions/` using that template (decision records live outside `.claude/tasks/`, so subagent writes there are permitted)."*
+
+This contradicts `rules/agents.md § State Ownership`, which states subagents *"do not write to `.claude/` paths"* and cites this as *"a hard constraint of the Claude Code harness (subagents are sandboxed from `.claude/` writes per Anthropic issue #38806) and is not expected to change."* The path `.claude/support/decisions/` is under `.claude/`, so the carve-out in implement-agent.md describes a write the harness may not actually permit at runtime.
+
+`agents.md § Tool Preferences` already states the canonical pattern: *"When an agent's documented workflow describes a state transition, it means 'include in return report'; the orchestrator performs the actual write."* And `research-agent.md:181` follows this correctly — it generates decision content, reports it, and lets the caller (`/research` or `/work`/`/iterate`) write the file.
+
+Only `implement-agent.md` violates the pattern.
+
+**Suggested fix (option a, preferred):** rewrite `implement-agent.md:219-225` to match research-agent's pattern — agent generates the decision content, includes it in the return report under a new field (e.g., `decisions_to_record`), orchestrator writes the file. Consistent with the rest of the template and respects the harness sandbox.
+
+**Suggested fix (option b):** verify whether Anthropic issue #38806 still applies; if subagents now CAN write under `.claude/support/decisions/`, update `agents.md § State Ownership` to carve out the exception explicitly rather than burying it in implement-agent.md. Requires evidence that the harness actually permits the write — current docs say it doesn't.
+
+Either way, the two files should agree.
+
+## FB-053: Tool Preferences block duplicated verbatim across 3 agent files
+
+**Status:** new
+**Captured:** 2026-04-28
+**Migrated:** 2026-05-13 — originally captured as FB-013 in `.claude/support/feedback/feedback.md` (shipped path; misroute predates the v3.1.0 `/feedback template:` bridge).
+**Source project:** styler — multi-agent template audit, 2026-04-28. `agents/` files are byte-identical to template.
+
+`implement-agent.md:24-32`, `verify-agent.md:34-42`, and `research-agent.md:23-31` each contain a near-identical Tool Preferences block (~9 lines × 3). The same content already exists canonically in `rules/agents.md § Tool Preferences` (lines 51-60). Four sources of truth for the same rule.
+
+Drift hazard: a future edit will likely land in `rules/agents.md` (the canonical home) and skip the three agent files, leaving the per-agent restatements stale. Or vice versa.
+
+**Suggested fix:** delete the per-agent restatements; replace each with a one-line pointer like *"Tool preferences: see `rules/agents.md § Tool Preferences`."* Saves ~30 lines of duplicated context per multi-agent flow and removes the drift risk.
+
+Lighter alternative: keep the per-agent pointers but add a comment in `rules/agents.md` reminding maintainers to ripple any change to the three agent files. Less robust but lower-disruption.
+
+Same pattern likely exists in downstream forks for product-specific commands (e.g., styler's six product commands all duplicate an "Output Formatting" block) — that's a fork-side issue, but the agent-side fix here would model the right pattern.
+
+## FB-054: breakdown.md:17-18 numbered list skips step 2
+
+**Status:** new
+**Captured:** 2026-04-28
+**Migrated:** 2026-05-13 — originally captured as FB-014 in `.claude/support/feedback/feedback.md` (shipped path; misroute predates the v3.1.0 `/feedback template:` bridge).
+**Source project:** styler — multi-agent template audit, 2026-04-28. `commands/breakdown.md` byte-identical to template.
+
+`commands/breakdown.md` Process section is numbered 1, 3, 4, 5 — there is no step 2:
+
+```markdown
+## Process
+
+1. Identify logical components (aim for 3-6 subtasks)
+3. Create subtask files (inheriting spec provenance from parent):
+   ...
+4. Update parent task:
+   ...
+```
+
+Likely a step that got deleted without renumbering the survivors. Cosmetic but reads as broken in markdown viewers that auto-renumber lists.
+
+**Suggested fix:** renumber 3 → 2, 4 → 3, 5 → 4 throughout the section. Or, if a step is missing, restore it.
+
+## FB-055: subagent_type "general-purpose" used to dispatch specialist agents in work.md / research.md
+
+**Status:** new
+**Captured:** 2026-04-28
+**Migrated:** 2026-05-13 — originally captured as FB-015 in `.claude/support/feedback/feedback.md` (shipped path; misroute predates the v3.1.0 `/feedback template:` bridge).
+**Source project:** styler — multi-agent template audit, 2026-04-28. `commands/work.md` and `commands/research.md` byte-identical to template.
+
+Three call sites dispatch named specialist agents (implement-agent, verify-agent, research-agent) but with `subagent_type: "general-purpose"`:
+
+- `work.md:603` (implement-agent dispatch)
+- `work.md:686` (verify-agent dispatch)
+- `research.md:74` (research-agent dispatch)
+
+The agent definitions live at `.claude/agents/{implement,verify,research}-agent.md` but the dispatch shape doesn't reference them as named subagent types. This works because the dispatched agent's prompt directs it to read its own definition file — but it bypasses any per-agent configuration that Claude Code's `.claude/agents/` discovery would otherwise apply (e.g., per-agent model default, per-agent tool allowlist if/when the harness supports them via frontmatter).
+
+Two paths:
+
+- **(a) Switch to named subagent_types** — `subagent_type: "implement-agent"`, `"verify-agent"`, `"research-agent"`. Relies on Claude Code's auto-discovery of `.claude/agents/*.md`. Aligns dispatch with definition.
+- **(b) Document that "general-purpose" is intentional** — perhaps for portability across harness versions where named subagents might not auto-discover, or to keep the persona-via-prompt-content pattern. Add a one-line note in `rules/agents.md` explaining the choice.
+
+Either is defensible; the current state is "neither documented nor uniformly applied." Worth picking one and being explicit. (a) seems cleaner if Claude Code's `.claude/agents/` discovery is stable, which the template implicitly assumes by shipping definition files there.
+
+## FB-056: Playwright MCP UI inspection doesn't parallelize across subagents — document the limit and the sequential pattern
+
+**Status:** new
+**Captured:** 2026-04-28
+**Migrated:** 2026-05-13 — originally captured as FB-016 in `.claude/support/feedback/feedback.md` (shipped path; misroute predates the v3.1.0 `/feedback template:` bridge).
+**Source project:** styler
+
+User asked whether multiple subagents could simultaneously drive Playwright MCP to inspect the running app. The honest answer is no: the Playwright MCP server holds a single browser session, so subagents that all call `mcp__playwright__browser_*` would be driving the *same* tab — navigations, clicks, snapshots, and console reads interleave instead of running in parallel. That's contention, not parallelism, and the failure mode is silent (snapshots that look fine but reflect another agent's mid-action state).
+
+This question will recur in any project that uses Playwright MCP for UI verification (the styler template explicitly pre-authorizes Playwright MCP for implement/verify agents, per `feedback_playwright_mcp_preauthorized` in user memory). It's worth a one-paragraph callout in the template so future orchestrators don't fan out Playwright work into a parallel batch and assume it'll behave like file-edit parallelism.
+
+**Concrete usage patterns that *do* work** — worth naming so the orchestrator has a default:
+
+1. **Sequential Playwright agents, shared browser** — dispatch one Playwright-driving agent per route/flow, in series. Each gets a tight scope ("audit /coloring", "audit /wardrobe"). One browser session, no contention.
+2. **Parallel agents, only one drives Playwright** — the second agent does code reads / greps / test runs while the first agent drives the browser. Parallelism without collision.
+3. **True parallel browser inspection** — would need multiple Playwright MCP server instances on different ports (or separate user-data dirs); not how the template ships and not trivial to set up. Out of scope for most projects.
+
+**Suggested template improvement:** add a short subsection to `rules/agents.md` (probably under a new "MCP and Parallel Execution" heading, or appended to "Tool Preferences") that says:
+
+> **Single-session MCP servers don't parallelize.** Playwright MCP, browser automation MCPs, and any MCP that exposes a stateful single-instance resource (one browser, one auth session, one connection) cannot be safely fanned out across parallel subagents — concurrent calls share the underlying state and interleave silently. When `/work` builds a parallel batch involving such tools, route the MCP-driving work through one agent and parallelize the rest. For multi-route UI inspection, dispatch sequential agents with focused scopes rather than a parallel batch.
+
+Could also be worth a one-line caveat in `agents/implement-agent.md` and `agents/verify-agent.md` near where Playwright MCP is mentioned, but the rule belongs in `rules/agents.md` so it's discoverable from the rules-index.
+
+**Adjacent observation:** auto mode's parallel-batch heuristic (Step 2c in `commands/work.md`) currently keys on `files_affected` overlap. For MCP-shared-state contention, that signal won't fire — two tasks with disjoint `files_affected` can still both want the browser. If the template ever wants to be precise here, the parallel-batch builder could also check for `mcp_resource_overlap` (any pair of tasks both expected to use the same single-instance MCP server). Lower priority than the documentation fix above.
