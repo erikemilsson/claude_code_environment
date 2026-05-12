@@ -75,39 +75,6 @@ The orchestrator persists this to task JSON. Next dispatch reads it and brokers 
 
 Detection heuristic for the agent: if `tool_uses` count exceeds 75% of typical session budget AND remaining subtargets > 0, return `partial_resume_pending` instead of pushing through.
 
-## FB-050: /iterate spec-vs-registry hygiene pass — grep-validate spec claims
-
-**Status:** ready
-**Captured:** 2026-04-27
-**Migrated:** 2026-05-13 — originally captured as FB-010 in `.claude/support/feedback/feedback.md` (shipped path; misroute predates the v3.1.0 `/feedback template:` bridge).
-**Source project:** styler
-**Refined:** 2026-05-13 — Add an `/iterate hygiene` pass that grep-validates spec noun-phrase claims about registry/schema state. Patterns: 'previously-empty X', 'field Y under section Z', 'update the X description'. Cross-reference against project's structured artifact (path configurable in `.claude/version.json`). Flag drift as `[NEEDS APPROVAL]` in the 'Decisions in This Proposal' section. Lighter alternative: fold into `/health-check` as per-spec consistency audit. Scope: `commands/iterate.md` OR `commands/health-check.md`.
-**Assessed:** 2026-05-13 — Affects `.claude/commands/iterate.md` (new hygiene sub-command). Scope: additive. Complements FB-032 (Decisions in This Proposal — drift findings surface there). New config field needed: `structured_artifact_path` in `.claude/version.json` (project-configurable). Route: Phase 4 direct. The 'lighter alternative' (fold into `/health-check`) is a sub-decision worth flagging at implementation time — pick one before writing.
-
-Spec text drifts from registry/schema state over time. Each drift triggers a `spec_drift` friction marker but is otherwise resolvable inline by the implement-agent — meaning the drift accumulates silently until a future spec edit is needed.
-
-**Two concrete examples from one session:**
-
-1. **Spec § 20.2** said the `extremities` subsection was "previously-empty" — registry actually had `feet` / `hands` / `head` / `glasses_sunglasses` / `everyday_jewelry` already populated. Implementer (T430) had to interpret intent and add new fields under the existing `head` composite rather than treating the subsection as truly empty. Friction marker logged.
-
-2. **Spec § 20.2** instruction "update the extremities subsection description" — `SubsectionDefSchema` has only `id` / `label` / `order` / `storage_file` (no `description` field). Instruction was unimplementable as written; implementer worked around by updating `head.description` (the composite field's description) instead. Friction marker logged.
-
-Each case caused avoidable confusion and post-hoc workaround. Both would have been caught at spec-revision time by a static cross-check.
-
-**Proposed fix:** Add a `/iterate hygiene` sub-command (or fold into existing `/iterate`) that runs at spec-revision time:
-
-1. **Parse the spec** for noun-phrase claims about registry/schema state — patterns like:
-   - "the X subsection / field / type"
-   - "previously-empty / previously-X / now-X"
-   - "field Y under section Z"
-2. **Cross-reference against the actual structured artifact** (project-specific: `field-definitions.json`, `schema.ts`, etc. — could be parameterized via a config field in `.claude/version.json`).
-3. **Flag drift:** "Spec § 20.2 says 'previously-empty extremities' but registry has 5 top-level fields under `extremities`." Surface as a `[NEEDS APPROVAL]` item in `/iterate`'s "Decisions in This Proposal" section.
-4. **Cross-reference spec instructions** like "update the X description" against the schema (`SubsectionDefSchema`, `FieldDefSchema`) to verify the target attribute exists. Flag unimplementable instructions before they reach decomposition.
-
-This is generally useful even outside styler: any spec-driven project with a structured artifact (registry, schema, config) accumulates this drift over many revisions.
-
-Alternative (lighter): add this to `/health-check` as a per-spec consistency audit, run on demand rather than as a separate `/iterate` mode.
-
 ## FB-057: DEC-001 Option C execution gaps — friction-marker append + end-to-end pipeline
 
 **Status:** ready
