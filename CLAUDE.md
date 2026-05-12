@@ -38,8 +38,16 @@ These are template-maintenance artifacts that don't ship to projects.
 
 Template-maintenance work staged for later sessions. Read these first if resuming template work after a gap:
 
-- **FB-011 scripts extraction.** Families A + B landed in v3.0.0 (`.claude/scripts/fingerprint.py` + `validate-tasks.py`). Families C (dashboard regen), D (parallel-plan), E (decision finalization) are tiered per observed need. Inventory: `template-maintenance/scripts-candidates.md` — includes trigger criteria and a 30-day trial window for Family E that started 2026-04-17.
-- **Feedback backlog.** `template-maintenance/feedback.md` holds assessed-but-unimplemented template improvements. FB-033 (spec-auditor subagent) is gated on FB-032 trial data from real `/iterate` sessions. Triage manually by reading the file and re-assessing; do not run `/feedback review` against it (that command targets the shipped `.claude/support/feedback/` path).
+- **FB-011 scripts extraction.** Families A + B landed in v3.0.0 (`.claude/scripts/fingerprint.py` + `validate-tasks.py`); bug-fixed in v3.1.1 (FB-039: `task_id` → `id` field). Families C/D/E remain deferred per `template-maintenance/scripts-candidates.md`:
+  - **Family C (dashboard regen):** new trigger (2026-05-13) — escalate if `health-check.md` Part 6 check 4b (FB-038 ship) fires repeatedly across downstream projects.
+  - **Family D (parallel-plan):** trigger on observed real conflicts the LLM misses.
+  - **Family E (decision finalization):** 30-day trial window 2026-04-17 → 2026-05-17. Re-assess on or after 2026-05-17.
+- **Feedback backlog.** `template-maintenance/feedback.md` currently holds 4 active items after the May 2026 Phase 4 pass:
+  - **FB-011 / FB-033** (special-case): scripts tracker + spec-auditor (trial-gated on FB-032).
+  - **FB-049** → **DEC-010** (`decisions/decision-010-partial-completion-envelope.md`): research populated 2026-05-13. Awaiting user option selection.
+  - **FB-057** → **DEC-011** (`decisions/decision-011-track1-pipeline-execution.md`): research populated 2026-05-13. Final selection gated on real downstream Track-1 telemetry.
+  - Triage manually by reading the file and re-assessing; do not run `/feedback review` against it (that command targets the shipped `.claude/support/feedback/` path).
+- **DEC-009 / FB-033 trial gate.** FB-032 (Decisions in This Proposal structural contract) shipped 2026-04-17 in `.claude/commands/iterate.md`. Trial accumulates as downstream projects run `/iterate propose` sessions. If silent-decisions friction persists despite FB-032, escalate to DEC-009 (spec-auditor subagent research).
 
 ## Version Bumping
 
