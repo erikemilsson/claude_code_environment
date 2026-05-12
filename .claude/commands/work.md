@@ -160,6 +160,26 @@ When Step 0a found no handoff and Step 0b found no recovery issues (clean start)
 
 Note: This reads task files and dashboard META before Step 1, but Step 1 reads the same data. The summary re-uses data that would be loaded regardless — it's surfaced earlier for user orientation.
 
+#### Step 0d: Friction-Marker Catchup
+
+Reconcile any friction markers persisted to the transient pending buffer in a prior session that never reached the canonical log (DEC-011 Option ABp). Runs once per `/work` invocation, before any agent dispatch.
+
+**Procedure:**
+
+1. If `.claude/support/workspace/.pending-markers.jsonl` does not exist, this step is a no-op — proceed to Step 1.
+2. Read both files (create `.session-log.jsonl` empty if missing):
+   - `.pending-markers.jsonl` — append-only buffer dual-written at agent-return time
+   - `.session-log.jsonl` — canonical log
+3. Build a dedup set from `.session-log.jsonl` entries using the composite key: `(task_id, timestamp, type, sha256(details))`. For entries missing any of these fields, fall back to `sha256(full_json_line)`.
+4. Iterate `.pending-markers.jsonl` entries. For each entry NOT already in the dedup set, append to `.session-log.jsonl`.
+5. Count appended entries. If count > 0, surface inline: `Step 0d: Caught up {N} friction markers from prior session.` (Inform — not an error.)
+6. After successful merge, truncate `.pending-markers.jsonl` (write empty file) — the canonical log now holds the entries.
+7. If the merge fails (read error, write error), do NOT truncate. Surface inline: `Step 0d: Catchup failed ({error}). Pending buffer preserved for retry.`
+
+**Why this exists:** The "After implement-agent returns" protocol Step 2 dual-writes markers to both the pending buffer and the canonical log immediately upon agent return. The pending buffer's purpose is purely the sub-second window where the orchestrator could be terminated between agent return and writes completing. Step 0d guarantees that any markers in the pending buffer that didn't make it to the canonical log are reconciled before the next agent dispatch.
+
+**Composability with PreCompact hook:** `.claude/hooks/pre-compact-handoff.sh` runs the same catchup before its Track 1 export compile. The two entry points (here + PreCompact) cover both "normal /work resume" and "compaction-triggered wind-down" paths.
+
 ### Step 1: Gather Context
 
 **Version discovery:** Determine the current spec version:
@@ -541,7 +561,12 @@ After any agent (implement-agent or verify-agent) returns a structured report, t
    - `blocked`: write `{ "status": "Blocked", "notes": "...", "updated_date": today }`; surface `issues_discovered[]` to user
    - `misaligned`: do not advance status; route to spec-alignment flow with `issues_discovered[]` context
 
-2. **Append friction markers:** for each marker in `report.friction_markers`, add `task_id: report.task_id` and append as a JSON line to `.claude/support/workspace/.session-log.jsonl` (Read existing content, then Write with appended line; if file doesn't exist, create it)
+2. **Append friction markers (DEC-011 Option ABp).** For each marker in `report.friction_markers`, add `task_id: report.task_id` and **dual-write the marker as a JSON line to BOTH** `.claude/support/workspace/.pending-markers.jsonl` (transient buffer; survives abrupt termination) **AND** `.claude/support/workspace/.session-log.jsonl` (canonical log; consumed by PreCompact + Track 1 export). Append immediately within this step — **do NOT defer to `/work pause` or batch across multiple agent returns**. Markers between an agent return and the next sync point are at risk of permanent loss if the session terminates abruptly; the dual-write narrows that loss window to sub-second.
+
+   - Pending-buffer write is append-only: open in append mode, write `{...}\n`, close. No read-modify-write cycle.
+   - Session-log write also appends. If file doesn't exist, create it.
+   - The next `/work` invocation (or PreCompact hook) will reconcile the two files via the catchup procedure in § "Step 0d: Friction-Marker Catchup" below.
+   - If `report.friction_markers` is empty, this step is a no-op — skip both writes.
 
 3. **Persist decisions:** for each entry in `report.decisions_to_record[]`, scan `.claude/support/decisions/decision-*.md` for the highest existing DEC-NNN, assign the next available ID (zero-padded to 3 digits), and Write a new `decision-NNN-{slug}.md` file using the template in `.claude/support/reference/decisions.md`. Populate the Selected/Rationale/Options sections from the report entry. Set frontmatter `status: approved`, `decided: today`, `decided_by: implement-agent`. Subagents cannot write under `.claude/`, so this step is the orchestrator's responsibility — implement-agent only generates content (DEC-004; `rules/agents.md § State Ownership`).
 

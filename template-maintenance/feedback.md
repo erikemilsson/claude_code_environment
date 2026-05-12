@@ -34,37 +34,3 @@ A bigger-hammer version of FB-032. The spec-auditor would diff each proposed cha
 **Impact scope if pursued:** potentially large — new `.claude/agents/spec-auditor.md` (or `.claude/skills/spec-auditor/`), hook wiring, integration with verify-agent contract.
 
 **Likely outcome:** candidate DEC-009 after FB-032 trial, FB-020 research, and FB-026 resolution all close.
-
-## FB-057: DEC-001 Option C execution gaps — friction-marker append + end-to-end pipeline
-
-**Status:** ready
-**Captured:** 2026-05-13
-**Combined from:** FB-041 + FB-045
-**Refined:** 2026-05-13 — Audit DEC-001 Option C pipeline execution. Cause 1 (template_inbox_path discoverability) resolved by FB-040 Part 5d. Causes 2 (orchestrator marker-append skipped under load — styler Phase 20 batch-appended at pause; abrupt termination would have lost all markers) and 3 (`/work pause` Track 2 + Session Export not reliably run) remain. Tiered fix: behavioral nudge → idempotent catchup → structural PostAgentReturn hook → deterministic script (FB-011 Family D/E candidate). Investigation steps documented (real downstream session probes). Scope: `commands/work.md`, `pre-compact-handoff.sh`, possibly new scripts.
-**Assessed:** 2026-05-13 — Affects (investigation phase first): `.claude/commands/work.md` (marker-append protocol or hook), `.claude/hooks/pre-compact-handoff.sh` (idempotent catchup), possibly new `.claude/scripts/` script (FB-011 Family D/E). Scope: corrective. Gates on (a) empirical data from real downstream sessions — currently blocked because no downstream project has `template_inbox_path` set (next downstream `/health-check` will surface this via FB-040 Part 5d), and (b) FB-011 Family D/E decision per `scripts-candidates.md`. **Route: Phase 3 research → candidate DEC-011** for fix-tier selection after investigation. Cannot proceed to Phase 4 direct without telemetry.
-
-DEC-001 Option C (Track 1 friction markers + Track 2 retrospective + Phase 3 ingest) is documented end-to-end across `implement-agent.md`, `verify-agent.md`, `work.md`, `pre-compact-handoff.sh`, and `health-check.md`, but empirical evidence suggests the pipeline isn't reliably executed.
-
-**Observed gaps:**
-
-1. **(from FB-041)** `interaction-logs/inbox/` empty as of 2026-05-13. Three causes:
-   - Cause 1 (**resolved 2026-05-13**): no downstream project had `template_inbox_path` set — discoverability gap closed by `/health-check` Part 5d (FB-040 ship).
-   - Cause 2: orchestrator-side marker append (`work.md:543,559`) documented but not reliably executed during `/work` runs.
-   - Cause 3: `/work pause` Track 2 + Session Export step not reliably run (users close without pause; Claude may skip under context pressure).
-
-2. **(from FB-045 — concrete repro for cause 2)** Styler Phase 20: orchestrator skipped the marker-append step throughout the session — markers from agent reports landed in task notes but NOT in `.session-log.jsonl` in real-time. At `/work pause` the orchestrator batch-appended 8 markers. Abrupt termination (compaction, crash, usage limit) would have silently lost those markers from Track 1 telemetry — task notes aren't structured for cross-project consumption.
-
-**Investigation steps:**
-
-- Run `/work` in a downstream project with markers expected to fire; inspect `.session-log.jsonl`.
-- Run `/work pause`; confirm `.session-export-YYYY-MM-DD.json` appears in workspace and reaches `template_inbox_path`.
-- Audit whether marker-append happens real-time vs catchup at pause.
-
-**Proposed fixes (tiered):**
-
-- Behavioral nudge: tighter protocol — append via single bash call immediately after agent return; do not batch.
-- Idempotent catchup: if task notes contain markers without corresponding `.session-log` entries, orchestrator (or PreCompact hook) auto-appends.
-- Structural: move append into a PostAgentReturn / PostToolUse hook gated on Task subagent — un-skippable.
-- Or extract into a deterministic script (FB-011 Family D/E candidate) — removes the LLM reliability layer entirely.
-
-Sources: FB-041 (2026-05-13, Option C audit) + FB-045 (2026-04-27, styler Phase 20).

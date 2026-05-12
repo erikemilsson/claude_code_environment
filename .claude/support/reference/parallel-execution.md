@@ -282,7 +282,8 @@ WHILE active_agents or active_verifiers is non-empty:
     1. Read implement-agent's return report (structured schema per implement-agent.md § Step 6)
     2. Apply "After implement-agent returns" protocol from work.md § State Persistence Protocol:
        - Status transition on task JSON per implementation_status
-       - Append friction_markers to .claude/support/workspace/.session-log.jsonl
+       - Dual-write friction_markers to .pending-markers.jsonl AND .session-log.jsonl
+         immediately upon agent return (per DEC-011 Option ABp — do NOT defer or batch)
     3. If implementation_status == "completed":
        Dispatch verify-agent for this task (Task tool, model: "opus[1m]", max_turns: 30)
        Add to active_verifiers. Verify-agent dispatch is individual — one per completed
@@ -303,7 +304,7 @@ WHILE active_agents or active_verifiers is non-empty:
     2. Apply "After verify-agent returns (per-task mode)" protocol from work.md § State Persistence Protocol:
        - Write task_verification, append verification_history, increment verification_attempts
        - Transition status (Finished / In Progress retry / Blocked escalate)
-       - Append friction_markers
+       - Dual-write friction_markers (per DEC-011 Option ABp — see work.md § State Persistence Protocol step 2)
        - Check parent auto-completion
     3. Remove verify-agent from active_verifiers
 
