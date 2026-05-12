@@ -2,7 +2,7 @@
 
 **Purpose:** Identify template procedures where a deterministic script would outperform LLM-executed natural-language instructions, propose extraction order, and surface the decisions needed before any script lands.
 
-**Status:** Stage 1 (inventory) — awaiting user review before any Stage 2 extraction.
+**Status:** Stage 2 partial — Tier 1 (Families A + B) shipped in `template_version 3.0.0` and bug-fixed in `3.1.1` (FB-039). Tier 2 (Family C) and Tier 3 (Families D + E) remain deferred per the trigger criteria below. Last updated: 2026-05-13.
 
 **Scope:** Audit-only. No code written. No files outside this inventory touched.
 
@@ -36,7 +36,10 @@ Procedures that fail these tests (writing action items, summarizing activity, dr
 
 Nine candidates grouped into five families. Each row: current home, current shape, failure mode, script shape, `.claude/` write (Y/N), tradeoff summary.
 
-### Family A — Fingerprint / hash computation
+### Family A — Fingerprint / hash computation ✅ SHIPPED
+
+**Shipped in `template_version 3.0.0`** (`.claude/scripts/fingerprint.py`). Bug-fixed in `3.1.1` (FB-039: field-name `task_id` → `id`).
+
 
 | # | What | Current home | Writes `.claude/`? |
 |---|------|--------------|--------------------|
@@ -60,7 +63,10 @@ Nine candidates grouped into five families. Each row: current home, current shap
 
 ---
 
-### Family B — Task JSON validation & health-check checks
+### Family B — Task JSON validation & health-check checks ✅ SHIPPED
+
+**Shipped in `template_version 3.0.0`** (`.claude/scripts/validate-tasks.py`). Bug-fixed in `3.1.1` (FB-039: field-name `task_id` → `id`).
+
 
 | # | What | Current home | Writes `.claude/`? |
 |---|------|--------------|--------------------|
@@ -109,6 +115,8 @@ Nine candidates grouped into five families. Each row: current home, current shap
 
 **Recommendation:** Medium — defer until Families A and B land and are stable. Dashboard regen benefits most but is also the highest-risk extraction. Best tackled with a small proof-of-concept on one section (e.g., Tasks-by-phase only) before the full port.
 
+**Trigger (added 2026-05-13 via FB-038 ship):** `commands/health-check.md` Part 6 check 4b detects retrospective summary content leaking into Action Required despite the FB-015 negative rule. If 4b fires repeatedly across `/health-check` runs on the same project (≥2 different projects, OR ≥3 runs on one project), the LLM-emitter approach is structurally unreliable — escalate to Family C extraction. Track via downstream `/health-check` reports once telemetry exists.
+
 ---
 
 ### Family D — Parallel-execution orchestration
@@ -155,20 +163,22 @@ Nine candidates grouped into five families. Each row: current home, current shap
 
 **Recommendation:** **Defer pending trial.** Explicitly hold this one for 30–60 days of observed `/work` + `/iterate` runs. If FB-017 recurs, extract immediately; if not, leave as LLM-executed and save the maintenance burden.
 
+**Trial window:** 2026-04-17 to 2026-05-17 (30-day mark; 4 days remaining as of 2026-05-13). No FB-017 regression observed during this template-repo session. Re-assess on or after 2026-05-17 — if no recurrence in downstream projects either, drop the candidate.
+
 ---
 
 ## Recommended extraction order
 
-**Tier 1 — extract now** (low risk, high ROI, minimal scope):
-1. **Family A** — fingerprinting (A1, A2, A3 as one script)
-2. **Family B** — task validation + verification debt (B1, B2 as one script; consider `task-schema.json` alongside)
+**Tier 1 — extracted ✅** (low risk, high ROI, minimal scope):
+1. **Family A** — fingerprinting (A1, A2, A3 as one script) — shipped in `template_version 3.0.0` (`fingerprint.py`); bug-fixed in `3.1.1`
+2. **Family B** — task validation + verification debt (B1, B2 as one script) — shipped in `template_version 3.0.0` (`validate-tasks.py`); bug-fixed in `3.1.1`. `task-schema.json` deferred as separate decision.
 
 **Tier 2 — extract after Tier 1 stabilizes** (medium scope or dependency on Tier 1):
-3. **Family C** — dashboard regeneration, hybrid (script for structural sections, LLM for synthesis). Start with Tasks-by-phase as proof-of-concept.
+3. **Family C** — dashboard regeneration, hybrid (script for structural sections, LLM for synthesis). Start with Tasks-by-phase as proof-of-concept. **Trigger (2026-05-13):** `health-check.md` Part 6 check 4b firing repeatedly indicates the LLM emitter is structurally unreliable — proceed with Family C extraction.
 
 **Tier 3 — extract on observed need** (low frequency or overlaps with just-landed fixes):
-4. **Family D** — parallel-plan computation. Only if real conflicts surface.
-5. **Family E** — decision auto-finalization. Only if FB-017 regresses.
+4. **Family D** — parallel-plan computation. Only if real conflicts surface in downstream parallel-batch sessions.
+5. **Family E** — decision auto-finalization. Trial window closes 2026-05-17. Only extract if FB-017 recurs.
 
 ---
 
@@ -229,9 +239,16 @@ Recommended file layout:
 
 ## Next action
 
-Awaiting user review of:
-- The candidate list (any missing? any to drop?)
-- The tiered extraction order (Tier 1 now? together or separately?)
-- The seven open questions above (particularly #1 scope and #6 testing story).
+**Tier 1 complete.** Families A + B shipped in `template_version 3.0.0`, bug-fixed in `3.1.1` (FB-039).
 
-Once decisions are made, Stage 2 proceeds with a per-extraction plan (fresh-session executable), one commit per family.
+**Tier 2 (Family C) — watch for trigger.** Track downstream `/health-check` Part 6 check 4b reports; escalate to Family C extraction if 4b fires across ≥2 projects or ≥3 runs on one project.
+
+**Tier 3 (Families D + E) — observed-need gates.**
+- Family D: trigger if real parallel-batch conflicts surface that the LLM missed (low frequency expected; FB-036 Pre-Dispatch Confirmation reduces this risk).
+- Family E: re-assess on or after 2026-05-17 (30-day trial mark). If no FB-017 regression observed in this template repo or downstream projects, drop the candidate.
+
+**Remaining open questions** (from "Open questions for user review" above):
+- #2 `task-schema.json` alongside Family B — still open. Could land as a separate Stage 2 extension.
+- #4 Skill-trial interaction (Family C) — defers with Family C trigger.
+- #5 `rules/agents.md` Bash exception wording — still open, low priority.
+- #6 Testing story — still open; would land with Family C if extracted.
