@@ -812,3 +812,83 @@ Each agent's brief inherits the shared block; neither agent gets a contradicting
 Could extend later to function-name drift detection; path + ripple covers the dominant friction.
 
 Sources: FB-051 (originally styler FB-053) + FB-047 (styler Phase 20 friction-marker analysis, 2026-04-27).
+
+## FB-042: Phase-restoration audit task descriptions need literal-ID cross-check
+
+**Status:** promoted
+**Captured:** 2026-04-27
+**Migrated:** 2026-05-13 — originally captured as FB-002 in `.claude/support/feedback/feedback.md` (shipped path; misroute predates the v3.1.0 `/feedback template:` bridge).
+**Refined:** 2026-05-13 — Audit-task descriptions of the form 'verify whether downstream task X is needed' must compare target IDs literally, not by count or semantic name match. Required behavior: (1) read X's task body for literal target IDs, (2) compare against current state by ID, (3) only report 'stale/no-op' on literal match, (4) report 'scope_clarification_needed' on semantic-without-ID match. Scope: `implement-agent.md` audit-task pattern OR `rules/task-management.md`.
+**Assessed:** 2026-05-13 — Affects `.claude/rules/task-management.md` (new audit-task guidance subsection — implement-agent.md has no dedicated audit-task section, so the rule belongs here). Scope: additive. No cross-conflicts with active items; only loosely related to FB-058 (different lifecycle phase: audit vs decomposition). Route: Phase 4 direct.
+**Promoted:** 2026-05-13 — Added '## Audit Tasks' section to `.claude/rules/task-management.md` (after Parallel Execution, before References) requiring literal-ID comparison in audit tasks of the form 'verify whether downstream task X is needed'. Specifies 4-step required behavior and the `scope_clarification_needed` reporting path for semantic-without-literal-ID matches. Calibrated against the styler Phase 20 T429 false-positive 'no-op' finding. Shipped in template_version 3.2.1.
+
+Phase-restoration / pre-flight audit task descriptions (e.g., a "Phase N prereq audit" task that checks whether downstream registry edits are needed) tend to produce false-positive "stale" or "no-op" findings when they compare against task target sets via name-matching or count-matching rather than literal-ID matching.
+
+Concrete example from a downstream styler project's Phase 20 prereq audit:
+
+- Audit reported "measurements_core ALREADY=10 sub_fields, all 7 spec-named present" → orchestrator broadcast "T429 will be a verify-only no-op" to the user. Reality: T429's 7 measurements (across_back, bicep, wrist, torso_length, outseam, calf, head_circumference) are entirely different IDs from the 10 already present (height, weight, chest, waist, hips, shoulder_width, arm_length, inseam, neck, thigh). T429 was real work.
+- Same audit reported "winter_months — likely single_enum, should become multi_enum" → reality: already multi_enum, but spec body actually said "render-as-enum" (UI bug), not "type-as-enum" (schema bug). The audit's hypothesis didn't match the spec's actual claim.
+
+Both findings caused downstream confusion: the orchestrator told the user "T429 is a no-op" then T429 turned out to be real work; same pattern with T431.
+
+Suggested template improvement: when a phase-restoration / pre-flight audit task description includes "verify whether downstream task X is needed", require it to:
+
+1. Read X's task description (the actual target IDs / values / shapes).
+2. Compare literally against current state (by ID, not by count or semantic name match).
+3. Only report "stale/no-op" if the literal IDs match exactly.
+4. If similar-but-different (semantic match without ID match), report as "scope_clarification_needed" rather than "stale".
+
+This could live as a guideline in implement-agent.md's audit-task pattern, or as a sentence in the task-management.md rules around audit tasks.
+
+## FB-044: Heavy editorial verify-agent prompts may benefit from structural+content split
+
+**Status:** promoted
+**Captured:** 2026-04-27
+**Migrated:** 2026-05-13 — originally captured as FB-004 in `.claude/support/feedback/feedback.md` (shipped path; misroute predates the v3.1.0 `/feedback template:` bridge).
+**Refined:** 2026-05-13 — Add a budget guideline to verify-agent.md for heavy editorial tasks: 'if verification target includes ≥3 substantial markdown files, plan ≤25 tool calls; consider splitting or invoking a content-only sub-agent.' Lightest-touch of 3 body options (option 2); defer structural splits (separate structural+content passes; task-JSON `verify_strategy` field) until guideline proves insufficient. Scope: `verify-agent.md`.
+**Assessed:** 2026-05-13 — Affects `.claude/agents/verify-agent.md` (new budget guideline subsection). Scope: additive. Complements FB-049 (proactive budget prevention vs reactive graceful resume). Route: Phase 4 direct. The '≤25 tool calls for ≥3 prose files' heuristic is calibratable post-trial — start with the guideline, tighten later if budget overruns continue.
+**Promoted:** 2026-05-13 — Added '## Editorial-Content Budget Guideline' section to `.claude/agents/verify-agent.md` (between Turn Budget Protocol and Wind-Down Protocol). Heuristic: ≥3 substantial markdown files (or single file >500 lines prose) → plan ≤25 tool calls; three options (split structural+content / reduce scope / tighten reads). Calibrated against styler T447's 32-call quota exhaustion 2026-04-27. Shipped in template_version 3.2.1.
+
+Verify-agents on heavy editorial content tasks (rewriting style principles, restructuring documentation, multi-file prose changes) approach the per-agent budget ceiling.
+
+Concrete example from a downstream styler project's T447 verify-agent (rewrite 3 universal style principles + add 3 feminine-gated rules + delete archetype framework section, 6 files modified):
+
+- 32 tool calls; ran out of Anthropic usage quota mid-verification.
+- Verification target included: read 6 modified markdown files end-to-end; run 4 test suites (registry-consistency 62/62, completeness 41/41, prompt-render 23/23, suggestions-context 10/10); run tsc --noEmit; multiple greps to verify cross-refs + archetype residue; judge editorial content quality (axis vocabulary, voice consistency, ID cross-ref integrity, scope expansion sensibility).
+- Verify-agent was actively working when quota exhausted — not stuck — but ran past quota.
+
+Suggested template improvement: for editorial-content tasks (heuristic: difficulty ≥ 5 AND files_affected includes prose/markdown), consider one of:
+
+1. **Split verify-agent into two passes** — structural (files exist, scope clean, cross-refs resolve, tests pass, no out-of-scope edits) + content (read prose, judge tone/voice, semantic correctness). Sub-verifications can run in parallel.
+2. **Document a budget guideline in verify-agent.md** — "If verification target includes ≥3 substantial markdown files, plan ≤25 tool calls — heavy editorial review may need to be split or invoke a separate content-only sub-agent."
+3. **Add a `verify_strategy: structural+content` field** to task JSON — the orchestrator reads this at dispatch and routes to a different agent template when set.
+
+Option 2 is the lightest-touch — a sentence in verify-agent.md prompts the agent to budget-aware itself.
+
+## FB-056: Playwright MCP UI inspection doesn't parallelize across subagents — document the limit and the sequential pattern
+
+**Status:** promoted
+**Captured:** 2026-04-28
+**Migrated:** 2026-05-13 — originally captured as FB-016 in `.claude/support/feedback/feedback.md` (shipped path; misroute predates the v3.1.0 `/feedback template:` bridge).
+**Source project:** styler
+**Refined:** 2026-05-13 — Add a 'MCP and Parallel Execution' subsection to `rules/agents.md` documenting that single-session MCP servers (Playwright, browser automation, any stateful single-instance resource) cannot be safely fanned out across parallel subagents — concurrent calls share underlying state and interleave silently. Orchestrator pattern: route MCP-driving work through one agent, parallelize the rest; for multi-route UI inspection, dispatch sequential agents with focused scopes. Adjacent (lower priority): `/work` Step 2c parallel-batch heuristic could extend to `mcp_resource_overlap` detection. Scope: `rules/agents.md`.
+**Assessed:** 2026-05-13 — Affects `.claude/rules/agents.md` (new 'MCP and Parallel Execution' subsection). Scope: additive. Adjacent connection to FB-046: FB-056's lower-priority `mcp_resource_overlap` heuristic could land at the same call site as FB-046's `shared_contract` work — worth bundling implementation if both go in the same pass. Route: Phase 4 direct.
+**Promoted:** 2026-05-13 — Added '## MCP and Parallel Execution' section to `.claude/rules/agents.md` (between Behavioral Rules and Tool Preferences). Documents single-session MCP server constraint (Playwright, browser automation, auth-session MCPs) — concurrent calls share state and interleave silently. Three-pattern orchestrator response: route MCP-driving work through one agent / parallelize the rest / dispatch sequential agents for multi-route inspection. Notes lower-priority `mcp_resource_overlap` heuristic for future /work Step 2c extension. Shipped in template_version 3.2.1.
+
+User asked whether multiple subagents could simultaneously drive Playwright MCP to inspect the running app. The honest answer is no: the Playwright MCP server holds a single browser session, so subagents that all call `mcp__playwright__browser_*` would be driving the *same* tab — navigations, clicks, snapshots, and console reads interleave instead of running in parallel. That's contention, not parallelism, and the failure mode is silent (snapshots that look fine but reflect another agent's mid-action state).
+
+This question will recur in any project that uses Playwright MCP for UI verification (the styler template explicitly pre-authorizes Playwright MCP for implement/verify agents, per `feedback_playwright_mcp_preauthorized` in user memory). It's worth a one-paragraph callout in the template so future orchestrators don't fan out Playwright work into a parallel batch and assume it'll behave like file-edit parallelism.
+
+**Concrete usage patterns that *do* work** — worth naming so the orchestrator has a default:
+
+1. **Sequential Playwright agents, shared browser** — dispatch one Playwright-driving agent per route/flow, in series. Each gets a tight scope ("audit /coloring", "audit /wardrobe"). One browser session, no contention.
+2. **Parallel agents, only one drives Playwright** — the second agent does code reads / greps / test runs while the first agent drives the browser. Parallelism without collision.
+3. **True parallel browser inspection** — would need multiple Playwright MCP server instances on different ports (or separate user-data dirs); not how the template ships and not trivial to set up. Out of scope for most projects.
+
+**Suggested template improvement:** add a short subsection to `rules/agents.md` (probably under a new "MCP and Parallel Execution" heading, or appended to "Tool Preferences") that says:
+
+> **Single-session MCP servers don't parallelize.** Playwright MCP, browser automation MCPs, and any MCP that exposes a stateful single-instance resource (one browser, one auth session, one connection) cannot be safely fanned out across parallel subagents — concurrent calls share the underlying state and interleave silently. When `/work` builds a parallel batch involving such tools, route the MCP-driving work through one agent and parallelize the rest. For multi-route UI inspection, dispatch sequential agents with focused scopes rather than a parallel batch.
+
+Could also be worth a one-line caveat in `agents/implement-agent.md` and `agents/verify-agent.md` near where Playwright MCP is mentioned, but the rule belongs in `rules/agents.md` so it's discoverable from the rules-index.
+
+**Adjacent observation:** auto mode's parallel-batch heuristic (Step 2c in `commands/work.md`) currently keys on `files_affected` overlap. For MCP-shared-state contention, that signal won't fire — two tasks with disjoint `files_affected` can still both want the browser. If the template ever wants to be precise here, the parallel-batch builder could also check for `mcp_resource_overlap` (any pair of tasks both expected to use the same single-instance MCP server). Lower priority than the documentation fix above.

@@ -80,6 +80,20 @@ When spawned, your caller specifies a turn limit via `max_turns`. Plan your work
 
 The `/work` coordinator handles timeout detection, retry logic, and all persistence. Your job is to prioritize returning a valid report before running out of turns.
 
+## Editorial-Content Budget Guideline
+
+Heavy editorial verification tasks — those involving prose review across multiple markdown files — approach the per-agent budget ceiling. Plan accordingly.
+
+**Heuristic:** If the verification target includes ≥3 substantial markdown/prose files (or any single file >500 lines of prose), plan ≤25 tool calls and consider one of:
+
+- **Split the verification** into a structural pass (file existence, scope clean, cross-refs resolve, tests pass) + a content pass (read prose, judge tone/voice, semantic correctness). Each runs as a separate verify-agent dispatch.
+- **Reduce scope** by returning early with `result: "fail"` and `notes: "Editorial scope exceeds single-pass budget — recommend splitting per § Editorial-Content Budget Guideline"`, allowing the orchestrator to re-decompose into structural + content tasks.
+- **Tighten per-file reads** using `Read` `offset`/`limit` to spot-check rather than full-read substantial files; reserve full reads for files where structural checks suggest content issues.
+
+Default behavior for tasks NOT matching this heuristic: full single-pass verification per the standard workflow.
+
+This guideline calibrates against observed budget overruns (styler T447 verify-agent at 32 tool calls; quota exhausted mid-verification, 2026-04-27). The 25-call / 3-file threshold is a starting point — tighten or relax if observed sessions shift the typical-task budget.
+
 ## Wind-Down Protocol
 
 When `/work pause` is triggered during verification, return an empty report with `result: null` and `notes: "Intentional pause — verification not completed"`. The orchestrator leaves task status as "Awaiting Verification" — session recovery Case 1 handles re-spawn. Do not treat intentional pause as a failed attempt (orchestrator does not increment `verification_attempts` for pause-triggered halts).
