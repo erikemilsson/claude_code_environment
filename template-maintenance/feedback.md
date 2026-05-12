@@ -310,3 +310,100 @@ Per DEC-005, hooks belong in `settings.local.json` (user-owned) and the template
 **Impact scope:** `.claude/support/reference/setup-checklist.md` (new "Optional Hooks" subsection or appendix).
 
 **Why:** Opt-in advice for users who want structural dev-server protection. Keeps the domain-agnostic template clean while giving frontend users a working example to copy into their own `settings.local.json`.
+
+## FB-038: Action Required regression — completion summaries still clutter section despite FB-015 fix
+
+**Status:** new
+**Captured:** 2026-04-22
+
+The dashboard's Action Required section is again dominated by non-actionable content even after FB-015 (currently `ready`) was supposed to address exactly this. Observed in the styler project dashboard export (`dashboard_export_styler.pdf`, 2026-04-22).
+
+**What the section contains (none of which is user-action):**
+- Paragraph-long closure summary for § 17.15 Phone Layout Remediation ("2 BLOCKERs + 12 HIGHs → [OK]")
+- Bulleted shipped-tasks list (321–330) with one-line descriptions
+- Multi-paragraph Task 331 completion report (fix details, verification method, "suggest bundling into a commit")
+- Repo state narrative (committed vs uncommitted, untracked PNGs to discard)
+- "Phase 5 still On Hold" reminder and "Residual follow-ups from earlier phases" with accepted spec drift
+
+The only arguably-actionable fragment — "Change is uncommitted" — is buried inside a paragraph, not surfaced as an action item.
+
+**User-reported phrasing:** *"even more cluttered with stuff that isn't actionable now after we implemented a fix. Something is going on"* — pattern appears to be regressing, not just failing to improve.
+
+**Possible root causes** (to refine):
+1. FB-015 is `ready` but not yet promoted via `/iterate` — the rule edit may never have landed in `dashboard-regeneration.md` § Action Item Contract. Verify before anything else.
+2. Rule landed but generators (`/work complete`, phase-closure regen, implement-agent post-completion emission) bypass the Action Item Contract in practice.
+3. LLM interprets completion summaries as "actionable" because they imply follow-ups (commit change, discard PNGs, resume On Hold phase).
+4. Action Required is being used as a catch-all narrative slot because the dashboard has no dedicated "recent activity" or "session recap" section — matter removed from Action Required has nowhere else to go.
+
+**Possible direction:** reopen/extend FB-015 rather than treat this as a new independent item. Also consider whether FB-011's deterministic generator is the only reliable backstop for a contract the LLM persistently violates.
+
+Source: `dashboard_export_styler.pdf` (styler project, 2026-04-22).
+
+## FB-039: validate-tasks.py and fingerprint.py read `data['task_id']` but schema field is `id`
+
+**Status:** new
+**Captured:** 2026-04-29
+
+The two FB-011 scripts shipped in v3.0.0 use the wrong key when reading task JSONs. They reference `task_id`, but the canonical schema and every existing task file use `id`. Surfaced by `/health-check` in the nordgrid-data-engineering project (27 tasks, all valid; both scripts mis-flagged or skipped them all).
+
+**The mismatch:**
+
+- `.claude/support/reference/task-schema.md:89` — required field is `id`: `| id | String | Number for top-level ("1"), underscore for subtasks ("1_1") |`. Examples on lines 6, 18 also use `"id": "1"`.
+- All task JSONs in real projects use `id` (verified across nordgrid-data-engineering, and likely styler, siren, etc. — anything decomposed against the documented schema).
+- `.claude/scripts/validate-tasks.py` lines 14, 104, 127 — references `task_id`. `REQUIRED_FIELDS` includes `"task_id"`, so the validator emits `missing required field: task_id` for every conformant task.
+- `.claude/scripts/fingerprint.py` lines 49, 55, 73 — `hash_dashboard_rollup` does `entries.append(f"{data['task_id']}:{data['status']}")`. Hits a `KeyError`, prints a warning, skips the task — output is the SHA-256 of an empty string for any project using the documented schema.
+
+**Effect:**
+
+- `/health-check` Part 1 Check 1 (when delegated to the script) reports false-positive "missing required field" for every task. Manual verification has to step in to confirm the schema is actually fine.
+- `/work` Step 1a / `/status` dashboard-freshness check: if it ever calls `fingerprint.py --dashboard-rollup`, it gets a constant hash regardless of task state — meaning content-staleness detection silently always-or-never fires.
+- The bug is invisible in the template's own test suite if the suite uses fixtures with `task_id` (worth checking).
+
+**Fix:** in both scripts, replace `task_id` with `id` to match the schema doc and existing task corpus.
+
+- `validate-tasks.py:14` — `REQUIRED_FIELDS = {"id", "title", "description", "status", "difficulty", "owner", "dependencies", "files_affected"}`
+- `validate-tasks.py:104, 127` — read `data["id"]` (and rename the dict key in the summary if you want, but the schema is the authority)
+- `fingerprint.py:49, 55, 73` — same; update the docstring and `--help` text
+
+Also worth a quick audit of any test fixtures in `tests/` that may have been written using `task_id` and would mask the bug.
+
+**Secondary observation (not strictly part of this fix):** `fingerprint.py`'s `hash_dashboard_rollup` formula is `task_id:status` (2 fields), but `dashboard-regeneration.md:253` specifies the dashboard `task_hash` as `task_id:status:difficulty:owner` (4 fields). The script and the regen rule compute different hashes — reasonable if the script is intended for a separate purpose (per its docstring it mirrors `commands/status.md:36`), but worth confirming the two formulas aren't supposed to converge.
+
+**Why it slipped through:** introduced in `d0c15e4` ("Phase 4: FB-011 Families A + B"). The failure mode is silent — `validate-tasks.py` exits 1 with structured errors that look like real schema violations, and `fingerprint.py` returns a real-looking hash (just always the same one). Neither crashes loudly enough to be obvious without comparing against actual task data.
+
+Source: `/health-check` run in nordgrid-data-engineering, 2026-04-29.
+
+## FB-041: Verify DEC-001 Option C executes end-to-end in real downstream sessions
+
+**Status:** new
+**Captured:** 2026-05-13
+**Update 2026-05-13:** Cause 1 (unset `template_inbox_path`) is now surfaced by `/health-check` Part 5d in downstream projects — discoverability gap closed; the bridge is now opt-in via an explicit prompt rather than an empty slot. Investigation remains for cause 2 (orchestrator-side marker append in `work.md:543,559`) and cause 3 (`/work pause` Session Export step), both of which require empirical observation from real downstream sessions to diagnose.
+
+DEC-001 Option C (Track 1 friction markers + Track 2 Claude retrospective + Phase 3 ingest pipeline) is documented end-to-end across:
+
+- `.claude/agents/implement-agent.md:142-149,235-260` — `friction_markers[]` in return schema + taxonomy + emission guidance
+- `.claude/agents/verify-agent.md:335,679-694` — same for verify-agent return schemas (per-task + phase-level)
+- `.claude/commands/work.md:543,559` — orchestrator appends markers to `.claude/support/workspace/.session-log.jsonl`
+- `.claude/commands/work.md:913-970` — `/work pause` Track 2 assessment + Session Export step
+- `.claude/hooks/pre-compact-handoff.sh:138-208` — PreCompact bundles markers, copies to `template_inbox_path`
+- `.claude/commands/health-check.md:695-735` — Part 7 ingest (now `kind`-dispatched per FB-040)
+
+But `interaction-logs/inbox/` is empty as of 2026-05-13. Three possible causes (or a mix):
+
+1. **No downstream project has set `template_inbox_path`** in its `.claude/version.json`. The slot ships empty by default, and no `/health-check` substep prompts the user to set it.
+2. **The orchestrator-side "append marker to `.session-log.jsonl`" step (`work.md:543,559`) is documented but not reliably executed** by Claude during `/work` runs. FB-017-class doc-vs-execution gap.
+3. **`/work pause` Track 2 + Session Export step is not reliably run.** Users may close sessions without running `/work pause`, or Claude may skip the export step under context pressure.
+
+Investigation steps:
+
+- Check if any downstream project has `template_inbox_path` set
+- Run a `/work` session in a downstream project with markers expected to fire (e.g., a verification failure on first attempt) — inspect `.session-log.jsonl` afterwards to confirm the orchestrator appended
+- Run `/work pause` in a downstream project, confirm `.session-export-YYYY-MM-DD.json` appears in workspace and is copied to the configured inbox
+
+Outcomes:
+
+- If cause 1: add a `/health-check` substep that surfaces unset `template_inbox_path` as a configuration gap (low effort, high value)
+- If cause 2 or 3: extract the marker-append + export steps into a deterministic script (FB-011 Family D/E candidate) to remove the LLM reliability layer
+- If all three contribute: combine fixes
+
+Discovered while implementing FB-040 (Option D bridge). FB-040 shipped in `template_version 3.1.0`; this entry tracks the separate Option C execution question and does not block any current work.

@@ -825,17 +825,45 @@ Use `/work complete` for manual task completion outside of implement-agent's wor
      ```
    - If deliverables pass validation: proceed silently to step 3c
 3c. **Collect completion notes (interactive):**
-   Ask the user for feedback inline in the CLI conversation:
+
+   Ask for two clearly-separated kinds of notes so the user does not have to context-switch between project-focused and template-focused thinking. The two prompts run in sequence; each is independently skippable with Enter.
+
+   **First prompt — Project notes (always shown):**
 
    ```
-   Task {id}: "{title}" — any notes on how this went?
-   (Type your notes, or press Enter to skip)
+   Task {id}: "{title}" — any notes about the work itself? (Enter to skip)
+   (decisions made, follow-ups, gotchas, anything worth remembering for this task)
+   >
    ```
 
-   - If the user provides feedback → store in `user_feedback` field
-   - If the user skips → proceed without feedback
-   - This is the PRIMARY feedback path for `/work complete`
-   - Dashboard FEEDBACK markers remain as an ASYNC alternative — if the user wrote feedback in the dashboard before running `/work complete`, Step 4b captures it as fallback
+   - If non-empty: store in the task's `user_feedback` field
+   - If empty: proceed without setting `user_feedback`
+
+   **Second prompt — Template notes (shown only if `template_inbox_path` is configured in `.claude/version.json`):**
+
+   ```
+   Any notes about how Claude or the workflow handled this? (Enter to skip — bridges to template repo)
+   (e.g. a step that felt off, an instruction that was unclear, something the template could do better)
+   >
+   ```
+
+   - If non-empty: invoke the `/feedback template:` Mode 1 procedure with these notes as the capture body. Prepend a source line to the body so the template-side FB entry carries task context:
+     ```
+     Captured during /work complete on Task {id}: "{title}".
+
+     [user's template notes]
+     ```
+     Mode 1 writes the local `FB-NNN` entry and, since `template_inbox_path` is set, writes the bridge export to the template inbox.
+   - If empty: proceed without creating a template feedback item.
+
+   **Why the conditional second prompt:** When `template_inbox_path` is unset, capturing template notes would create local-only FB entries in the downstream project that the user then has to carry over manually — the same friction the bridge was built to eliminate. Skipping the prompt when the bridge is disabled keeps the UX honest: we only ask the user to write template feedback when there is a destination for it.
+
+   **Language principles for both prompts:**
+   - Plain English only. Do not use template-internal terminology in user-facing prompt text (no "spec drift", "friction signal", "scope creep", "user_feedback signal", etc.).
+   - Each label states what the prompt is for AND where the input lands. The user should not have to guess.
+   - The two prompts are visually adjacent but clearly labeled — the user can tell at a glance which slot they are filling in.
+
+   This is the PRIMARY feedback path for `/work complete`. Dashboard FEEDBACK markers remain as an ASYNC alternative for project notes — if the user wrote feedback in the dashboard before running `/work complete`, Step 4b captures it as fallback. (A template-side dashboard marker is not yet implemented; the second prompt is currently the only path for template notes during `/work complete`.)
 4. **Check work** - Review all changes made for this task
    - Look for bugs, edge cases, inefficiencies
    - If issues found, fix them before proceeding

@@ -1,9 +1,9 @@
 {
-  "template_version": "3.0.0",
-  "template_release_date": "2026-04-17",
+  "template_version": "3.1.0",
+  "template_release_date": "2026-05-13",
   "template_repo": "https://github.com/erikemilsson/claude_code_environment",
   "project_version": "0.1.0",
   "project_initialized": "",
   "template_inbox_path": "",
-  "notes": "template_repo: upstream template URL (used by /health-check sync). Update if you forked. template_inbox_path: optional path to template repo's interaction-logs/inbox/ for cross-project feedback."
+  "notes": "template_repo: upstream template URL (used by /health-check sync). Update if you forked. template_inbox_path: optional path to template repo's interaction-logs/inbox/ for cross-project feedback (used by /feedback template: bridge and PreCompact session export)."
 }

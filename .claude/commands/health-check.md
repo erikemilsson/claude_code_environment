@@ -612,6 +612,67 @@ Claude Code's runtime concatenates `permissions.allow[]` across all settings lay
 
 ---
 
+## Part 5d: Cross-Project Bridge Configuration (downstream projects only)
+
+Validates the `template_inbox_path` configuration that powers the cross-project feedback bridge. Skipped in the template repo (mirror of Part 7's detection: `system-overview.md` at project root indicates the template repo, where bridging to itself is not meaningful).
+
+### Process
+
+1. **Repo-type detection:** If `system-overview.md` exists at project root, skip Part 5d entirely.
+
+2. **Read configuration:** Read `.claude/version.json` → `template_inbox_path`.
+
+3. **If `template_inbox_path` is empty string (unconfigured):**
+
+   This is not an error — the bridge is optional. Inform the user once per `/health-check` run:
+   ```
+   Cross-project feedback bridge: not configured.
+
+   The bridge lets `/feedback template: <text>` carry template-relevant feedback
+   back to the template repo's inbox automatically. `/health-check` in the template
+   repo then routes those entries into `template-maintenance/feedback.md`.
+
+   Configure now? (You can do this any time later.)
+     [Y] Yes — enter the absolute path to the template repo's interaction-logs/inbox/
+     [N] No — keep the bridge disabled
+   ```
+
+   - On `[Y]`:
+     - Prompt: `Path to template inbox (absolute path, e.g. /Users/you/Developer/claude_code_environment/interaction-logs/inbox):`
+     - Expand `~` and `$HOME` if present in the user's input
+     - Validate that the path exists and is a directory
+     - If valid: update `.claude/version.json` `template_inbox_path` field with the absolute path. Report: `✓ template_inbox_path configured: {path}`
+     - If invalid: report the specific issue (not a directory / doesn't exist) and offer `[R] Retry | [S] Skip`
+   - On `[N]`: silent pass — proceed to next Part
+
+4. **If `template_inbox_path` is set and the path exists as a directory:**
+
+   Silent pass. In the final `/health-check` report, include: `✓ Cross-project bridge: enabled ({path})`
+
+5. **If `template_inbox_path` is set but the path doesn't exist or isn't a directory:**
+
+   Surface as a fixable issue:
+   ```
+   ⚠️  template_inbox_path is set to '{path}' but that path doesn't exist (or is not a directory).
+
+   Options:
+     [F] Fix — enter a corrected path (validated against filesystem)
+     [C] Clear — set to empty string (disables the bridge)
+     [S] Skip — leave as-is, surface again on next /health-check
+   ```
+
+   Apply the chosen action. On `[F]`, follow the same validation flow as step 3 `[Y]`.
+
+### When to Run
+
+Runs on every `/health-check` in downstream projects. Cost is one JSON read + one directory stat — negligible compared to other parts. Surfacing the unset state once per run keeps the bridge discoverable without being noisy (Quick capture and `/work` paths are unaffected).
+
+### Rationale
+
+The bridge is purely opt-in (per `/feedback template:` semantics — silently no-ops when unset). Without surface area in `/health-check`, the configuration is invisible to most users — the `template_inbox_path` slot ships empty, and nothing else prompts the user to set it. Part 5d closes that discoverability gap without imposing the bridge on users who don't want it.
+
+---
+
 ## Part 6: UX Evaluation
 
 Assesses dashboard readability, project structure clarity, and interaction quality. Findings contribute to the overall health-check status (HEALTHY / NEEDS ATTENTION / CRITICAL ISSUES).
@@ -703,16 +764,36 @@ Processes cross-project session exports when `/health-check` runs in the templat
 1. **Check inbox:** Read `interaction-logs/inbox/` for `.json` files
 2. **If empty:** Report "No pending interaction logs" and continue
 3. **For each export file:**
-   a. Validate format (`export_version`, required fields)
-   b. Parse friction markers by template area:
-      - `verify-agent` — verification failures, false positives, verification gaps
-      - `implement-agent` — workflow deviations, scope creep, template gaps
-      - `/work` — routing issues, session recovery problems
-      - `/iterate` — spec change friction, drift issues
-      - `design-guidance` — pushback opportunities, scope pivot detection
-      - `user-experience` — dashboard issues, interaction mode mismatches
-   c. If Claude assessment is present (`export_quality: "full"`), extract design pushback opportunities and workflow friction notes
-   d. Move processed file to `interaction-logs/processed/`
+   a. Validate format (`export_version` required)
+   b. **Dispatch by `kind` field:**
+      - `kind: "user_feedback"` → go to step 3c (user-tagged feedback bridge from `/feedback template:`)
+      - Otherwise (no `kind`, or other value) → go to step 3d (session export with markers + optional assessment)
+   c. **User-feedback routing:**
+      - Read `template-maintenance/feedback.md` AND `template-maintenance/feedback-archive.md`
+      - Parse all `## FB-NNN:` headings to find the highest `FB-NNN`; next ID is `FB-{N+1}` (zero-padded to 3 digits)
+      - Construct the proposed entry:
+        ```markdown
+        ## FB-NNN: [feedback.title]
+
+        **Status:** new
+        **Captured:** [captured_date]
+        **Source:** Bridged from {source_project} {feedback.source_fb_id} (template_version {template_version}) via /feedback template:
+
+        [feedback.body]
+        ```
+      - Present the proposed entry to the user and ask for confirmation before appending — never append silently (preserves the "Claude does not make decisions for the user" rule).
+      - On confirmation: append to `template-maintenance/feedback.md`; move processed file to `interaction-logs/processed/`.
+      - On decline: leave the file in `inbox/` so the user can re-run `/health-check` later.
+   d. **Session-export marker parsing:**
+      - Parse friction markers by template area:
+        - `verify-agent` — verification failures, false positives, verification gaps
+        - `implement-agent` — workflow deviations, scope creep, template gaps
+        - `/work` — routing issues, session recovery problems
+        - `/iterate` — spec change friction, drift issues
+        - `design-guidance` — pushback opportunities, scope pivot detection
+        - `user-experience` — dashboard issues, interaction mode mismatches
+      - If Claude assessment is present (`export_quality: "full"`), extract design pushback opportunities and workflow friction notes
+      - Move processed file to `interaction-logs/processed/`
 
 4. **Aggregate across processed exports:**
    - Count recurring friction types (same `template_area` + similar `type` across multiple sessions/projects)
@@ -722,7 +803,9 @@ Processes cross-project session exports when `/health-check` runs in the templat
    - Write insight documents to `interaction-logs/insights/`
    - Format: `YYYY-MM-DD_{template-area}_{slug}.md`
 
-6. **Route to `/feedback`:** For insights above confidence threshold, auto-create feedback items in `.claude/support/feedback/feedback.md` (status: `new`, body references the insight document). Present to user for confirmation before creating.
+6. **Route to `template-maintenance/feedback.md`:** For high-confidence patterns from step 5, construct proposed feedback items as new `FB-NNN` entries in `template-maintenance/feedback.md` (status: `new`, body references the insight document). Present each proposed entry to the user for confirmation before appending.
+
+   When `/health-check` runs in the template repo, `template-maintenance/feedback.md` is the destination per root `CLAUDE.md` — `.claude/support/feedback/feedback.md` is the *shipped* path reserved for downstream projects only. (User-feedback bridges from step 3c also land here.)
 
 7. **Report:**
    ```
