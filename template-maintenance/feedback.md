@@ -65,41 +65,6 @@ The only arguably-actionable fragment — "Change is uncommitted" — is buried 
 
 Source: `dashboard_export_styler.pdf` (styler project, 2026-04-22).
 
-## FB-048: Inline-command pattern — extract a shared template reference doc
-
-**Status:** ready
-**Captured:** 2026-04-27
-**Migrated:** 2026-05-13 — originally captured as FB-008 in `.claude/support/feedback/feedback.md` (shipped path; misroute predates the v3.1.0 `/feedback template:` bridge).
-**Source project:** styler
-**Refined:** 2026-05-13 — Extract a canonical inline-command pattern doc at `.claude/support/reference/inline-command-pattern.md`: named-subroutine contract table, idempotency contract with dedup-tuple guidance, standalone-only step flag, retirement callout format, vestigial-key handling. Individual command markdowns reference it instead of re-deriving from a peer (styler observed 3 inline commands with already-drifting dedup tuples). Scope: new reference doc + light edits to inline-capable command markdowns.
-**Assessed:** 2026-05-13 — Affects new `.claude/support/reference/inline-command-pattern.md` (file doesn't yet exist; verified). Scope: additive. The template itself doesn't ship inline-capable commands — this is a pattern reference for downstream projects (like styler) that compose slash commands. No conflict with template-side changes. Route: Phase 4 direct. Worth marking the doc as 'pattern reference, not enforced behavior' so users know it's optional guidance.
-
-When a project has multiple slash commands that can be invoked **inline within a parent command** (e.g., `/coloring` invoked from inside `/onboard`, `/grooming` from inside `/onboard`, `/wardrobe` from inside `/onboard`), the integration pattern is non-trivial: named subroutines, idempotency contracts, standalone-only step flagging, retired-delegate-framing callouts, vestigial-key handling for backward compat, etc.
-
-**Observation from styler (2026-04-27):**
-
-Three tasks landed the same pattern in close succession — T449 (`/coloring` inline), T450 (`/grooming` inline), T454 (`/wardrobe` inline). Each implement-agent re-derived the pattern from the prior task as a precedent. The result is **near-duplicated** structure across the three command markdown files (`coloring.md`, `grooming.md`, `wardrobe.md`):
-
-- Same "Inline Invocation from /onboard" section header
-- Same contract-table column shape (Inputs / Outputs / Standalone wrapper / Inline call site)
-- Same Idempotency Contract clause **with slightly different dedup tuples** — selfie+date for coloring/grooming, item-file-path for wardrobe
-- Same Standalone-only flag convention on standalone-analysis steps
-- Same retirement-callout format for the now-retired delegate framing
-
-This is correctness-by-precedent, but each future inline command will pay the same duplication cost, and the dedup-tuple drift (across already three commands) is a foot-gun.
-
-**Proposed fix:** Add a template reference doc, e.g., `.claude/support/reference/inline-command-pattern.md`, that describes the canonical pattern:
-
-1. The named-subroutine contract table format (Inputs / Outputs / Standalone wrapper / Inline call site columns)
-2. The Idempotency Contract structure with explicit guidance on choosing the dedup tuple ("a stable identity that re-running with the same inputs and same wall-clock day should not regenerate" — selfie path, item file path, etc.)
-3. The Standalone-only flag convention for steps that don't run inline
-4. The retirement callout format for legacy delegate-and-stop framing
-5. The progress-state vestigial-key handling for backward compat with existing on-disk progress JSON
-
-Then individual command markdowns can `@reference` the template doc instead of re-deriving it from a peer. Future inline commands inherit the pattern by reference, not by copy.
-
-This is template-side because the **pattern itself** is generic — any project with composable slash commands will hit the same shape.
-
 ## FB-049: Anthropic usage-limit partial-completion structured resume contract
 
 **Status:** ready
