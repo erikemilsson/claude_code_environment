@@ -1,10 +1,10 @@
 ---
 id: DEC-010
 title: partial_completion envelope — schema and threshold for usage-limit graceful resume
-status: draft
+status: approved
 category: architecture
 created: 2026-05-13
-decided:
+decided: 2026-05-13
 related:
   tasks: []
   decisions: [DEC-004]
@@ -24,7 +24,7 @@ Mark your selection by checking one box:
 
 - [ ] Option A: Minimal envelope — three fields, implement-only, in-handoff
 - [ ] Option B: Full envelope — five fields + integrity hash, implement-only, dedicated sidecar
-- [ ] Option C: Middle path — four fields, implement-only, in-handoff (recommended)
+- [x] Option C: Middle path — four fields, implement-only, in-handoff (recommended)
 - [ ] Option D: Symmetric envelope — Option C + matching verify-agent contract
 - [ ] Option E: Defer — rely on SDK `error_max_turns` + existing `[PARTIAL]` notes; do nothing template-side
 
@@ -375,9 +375,3 @@ This is essentially free — it's the same git query verify-agent already runs i
 ## Your Notes & Constraints
 
 *(user notes go here)*
-
----
-
-## Decision
-
-*(populated after user selects an option)*

@@ -1,10 +1,10 @@
 ---
 id: DEC-011
 title: Track 1 / Track 2 pipeline execution — fix tier for marker-append + session-export reliability
-status: draft
+status: approved
 category: architecture
 created: 2026-05-13
-decided:
+decided: 2026-05-13
 related:
   tasks: []
   decisions: [DEC-001]
@@ -27,7 +27,7 @@ Mark your selection by checking one box:
 - [ ] Option C: Tier C only — structural PostToolUse / SubagentStop hook (per-project install)
 - [ ] Option D: Tier D only — deterministic `.claude/scripts/append-markers.py`
 - [ ] Option AB: Hybrid A+B — behavioral nudge + idempotent catchup (recommended)
-- [ ] Option ABp: Hybrid A+B + `.pending-markers.jsonl` transient buffer (recommended + abrupt-kill protection)
+- [x] Option ABp: Hybrid A+B + `.pending-markers.jsonl` transient buffer (recommended + abrupt-kill protection)
 - [ ] Option E: Defer — wait for first downstream session export before deciding
 
 *Check one box above, then fill in the Decision section below.*
@@ -355,9 +355,3 @@ Audit of `/work pause` flow (`work.md:932-998`):
 ## Your Notes & Constraints
 
 *(user notes go here)*
-
----
-
-## Decision
-
-*(populated after user selects an option, post-telemetry)*
