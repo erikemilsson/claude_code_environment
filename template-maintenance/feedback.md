@@ -138,30 +138,6 @@ This is generally useful even outside styler: any spec-driven project with a str
 
 Alternative (lighter): add this to `/health-check` as a per-spec consistency audit, run on demand rather than as a separate `/iterate` mode.
 
-## FB-055: subagent_type "general-purpose" used to dispatch specialist agents in work.md / research.md
-
-**Status:** ready
-**Captured:** 2026-04-28
-**Migrated:** 2026-05-13 — originally captured as FB-015 in `.claude/support/feedback/feedback.md` (shipped path; misroute predates the v3.1.0 `/feedback template:` bridge).
-**Source project:** styler — multi-agent template audit, 2026-04-28. `commands/work.md` and `commands/research.md` byte-identical to template.
-**Refined:** 2026-05-13 — Three call sites (`work.md:603,686`; `research.md:74`) dispatch named specialist agents with `subagent_type: 'general-purpose'`. Switch to named subagent_types (`implement-agent`, `verify-agent`, `research-agent`) — aligns dispatch with definition, leverages `.claude/agents/` auto-discovery the template implicitly assumes by shipping definition files. Alternative (b) — document 'general-purpose' as intentional in `rules/agents.md` for portability — is the fallback if auto-discovery proves harness-version-fragile. Scope: `commands/work.md`, `commands/research.md`.
-**Assessed:** 2026-05-13 — Affects `.claude/commands/work.md` (lines 603, 686 — implement-agent + verify-agent dispatch), `.claude/commands/research.md` (line 74 — research-agent dispatch). Scope: corrective. Dependency on DEC-004 (subagent capability contract — must verify named subagent_type doesn't change sandbox behavior relative to general-purpose; low risk but check first with a smoke test). Route: Phase 4 direct. Small change (3 sites + smoke test).
-
-Three call sites dispatch named specialist agents (implement-agent, verify-agent, research-agent) but with `subagent_type: "general-purpose"`:
-
-- `work.md:603` (implement-agent dispatch)
-- `work.md:686` (verify-agent dispatch)
-- `research.md:74` (research-agent dispatch)
-
-The agent definitions live at `.claude/agents/{implement,verify,research}-agent.md` but the dispatch shape doesn't reference them as named subagent types. This works because the dispatched agent's prompt directs it to read its own definition file — but it bypasses any per-agent configuration that Claude Code's `.claude/agents/` discovery would otherwise apply (e.g., per-agent model default, per-agent tool allowlist if/when the harness supports them via frontmatter).
-
-Two paths:
-
-- **(a) Switch to named subagent_types** — `subagent_type: "implement-agent"`, `"verify-agent"`, `"research-agent"`. Relies on Claude Code's auto-discovery of `.claude/agents/*.md`. Aligns dispatch with definition.
-- **(b) Document that "general-purpose" is intentional** — perhaps for portability across harness versions where named subagents might not auto-discover, or to keep the persona-via-prompt-content pattern. Add a one-line note in `rules/agents.md` explaining the choice.
-
-Either is defensible; the current state is "neither documented nor uniformly applied." Worth picking one and being explicit. (a) seems cleaner if Claude Code's `.claude/agents/` discovery is stable, which the template implicitly assumes by shipping definition files there.
-
 ## FB-057: DEC-001 Option C execution gaps — friction-marker append + end-to-end pipeline
 
 **Status:** ready

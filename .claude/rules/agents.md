@@ -80,6 +80,16 @@ Subagents cannot write to `.claude/` paths, cannot spawn nested `Task` tool call
 
 **Scripts under `.claude/scripts/`** are deterministic helpers that ship with the template and are intended to be invoked by the orchestrator via the Bash tool. They have their own invocation contract (see `.claude/scripts/README.md`): stdlib only, read-only, structured stdout, clear exit codes. Subagents should not invoke them — the scripts return computed values for the orchestrator to write to `.claude/` state, which subagents cannot do. When a script is present, it is an advisory alternative to the matching prose procedure; when absent, the prose procedure still works.
 
+## Dispatch Convention
+
+When dispatching implement-agent, verify-agent, or research-agent via the `Task` tool, set `subagent_type: "general-purpose"` and direct the agent persona via prompt content ("You are the verify-agent. Read `.claude/agents/verify-agent.md`..."). The three current dispatch sites — `commands/work.md` (per-task verify, line ~605; phase-level verify, line ~688) and `commands/research.md` (research-agent, line ~74) — follow this convention.
+
+**Why not named subagent_types?** Claude Code can auto-discover `.claude/agents/*.md` and expose each definition file as a named subagent_type (`implement-agent`, `verify-agent`, etc.), which would align dispatch shape with definition shape. As of 2026-05-13, the runtime availability of named-from-disk subagent types is not uniform across Claude Code harness versions — relying on auto-discovery risks dispatch failures in harnesses where it's absent. The persona-via-prompt-content pattern is portable across all current harness versions.
+
+**Future migration:** When Claude Code's `.claude/agents/*.md` auto-discovery is stable across all supported harness versions, switch the three dispatch sites to named types. Validation gate: smoke-test by dispatching a single task with `subagent_type: "verify-agent"` and confirming the agent returns a per-task verification report (vs an error). Once validated, sweep all three sites and remove this rationale.
+
+Until then, keep all three call sites uniform on `subagent_type: "general-purpose"` — the rule exists to prevent the previous state where the choice was neither documented nor uniformly applied.
+
 ## Model Requirement
 
 All agents must run on Claude Opus 4.7 (`claude-opus-4-7[1m]`).

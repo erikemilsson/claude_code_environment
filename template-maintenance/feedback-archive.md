@@ -928,3 +928,28 @@ This is correctness-by-precedent, but each future inline command will pay the sa
 Then individual command markdowns can `@reference` the template doc instead of re-deriving it from a peer. Future inline commands inherit the pattern by reference, not by copy.
 
 This is template-side because the **pattern itself** is generic — any project with composable slash commands will hit the same shape.
+
+## FB-055: subagent_type "general-purpose" used to dispatch specialist agents in work.md / research.md
+
+**Status:** promoted
+**Captured:** 2026-04-28
+**Migrated:** 2026-05-13 — originally captured as FB-015 in `.claude/support/feedback/feedback.md` (shipped path; misroute predates the v3.1.0 `/feedback template:` bridge).
+**Source project:** styler — multi-agent template audit, 2026-04-28. `commands/work.md` and `commands/research.md` byte-identical to template.
+**Refined:** 2026-05-13 — Three call sites (`work.md:603,686`; `research.md:74`) dispatch named specialist agents with `subagent_type: 'general-purpose'`. Switch to named subagent_types (`implement-agent`, `verify-agent`, `research-agent`) — aligns dispatch with definition, leverages `.claude/agents/` auto-discovery the template implicitly assumes by shipping definition files. Alternative (b) — document 'general-purpose' as intentional in `rules/agents.md` for portability — is the fallback if auto-discovery proves harness-version-fragile. Scope: `commands/work.md`, `commands/research.md`.
+**Assessed:** 2026-05-13 — Affects `.claude/commands/work.md` (lines 603, 686 — implement-agent + verify-agent dispatch), `.claude/commands/research.md` (line 74 — research-agent dispatch). Scope: corrective. Dependency on DEC-004 (subagent capability contract — must verify named subagent_type doesn't change sandbox behavior relative to general-purpose; low risk but check first with a smoke test). Route: Phase 4 direct. Small change (3 sites + smoke test).
+**Promoted:** 2026-05-13 — Added '## Dispatch Convention' section to `.claude/rules/agents.md` (between Behavioral Rules/Tool Preferences area and Model Requirement). Documents the intentional `subagent_type: "general-purpose"` + persona-via-prompt-content pattern at the three call sites (work.md:605 per-task verify, work.md:688 phase-level verify, research.md:74 research-agent). Rationale: Claude Code's `.claude/agents/*.md` auto-discovery is not uniform across harness versions; named subagent_types would risk dispatch failures. Future migration gate documented — switch only after smoke-test validates named-from-disk auto-discovery is stable. Chose body Option (b) over Option (a) because the AVAILABLE AGENT TYPES list in the current harness (Opus 4.7) does NOT auto-include `.claude/agents/*.md` definitions; a flipped dispatch shape would currently regress. Shipped in template_version 3.2.3.
+
+Three call sites dispatch named specialist agents (implement-agent, verify-agent, research-agent) but with `subagent_type: "general-purpose"`:
+
+- `work.md:603` (implement-agent dispatch)
+- `work.md:686` (verify-agent dispatch)
+- `research.md:74` (research-agent dispatch)
+
+The agent definitions live at `.claude/agents/{implement,verify,research}-agent.md` but the dispatch shape doesn't reference them as named subagent types. This works because the dispatched agent's prompt directs it to read its own definition file — but it bypasses any per-agent configuration that Claude Code's `.claude/agents/` discovery would otherwise apply (e.g., per-agent model default, per-agent tool allowlist if/when the harness supports them via frontmatter).
+
+Two paths:
+
+- **(a) Switch to named subagent_types** — `subagent_type: "implement-agent"`, `"verify-agent"`, `"research-agent"`. Relies on Claude Code's auto-discovery of `.claude/agents/*.md`. Aligns dispatch with definition.
+- **(b) Document that "general-purpose" is intentional** — perhaps for portability across harness versions where named subagents might not auto-discover, or to keep the persona-via-prompt-content pattern. Add a one-line note in `rules/agents.md` explaining the choice.
+
+Either is defensible; the current state is "neither documented nor uniformly applied." Worth picking one and being explicit. (a) seems cleaner if Claude Code's `.claude/agents/` discovery is stable, which the template implicitly assumes by shipping definition files there.
