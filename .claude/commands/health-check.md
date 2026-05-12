@@ -716,12 +716,28 @@ Check if the Notes section in `dashboard.md` contains only the default placehold
 
 #### 4. Action Required Actionability (H4 — Navigation)
 
-Every item in the Action Required section should have a file link and a completion command or checkbox.
+**4a. Actionability.** Every item in the Action Required section should have a file link and a completion command or checkbox.
 
 | Condition | Result | Severity |
 |-----------|--------|----------|
 | All items have links | Pass | — |
 | Item missing link or action | Error per item: "Action Required item '{title}' has no link or completion command." | 3 |
+
+**4b. Summary-shape content (FB-015 / FB-038).** Scan the Action Required section for retrospective content that violates the rule in `support/reference/dashboard-regeneration.md` § Action Item Contract ("must NOT include work summaries, completion reports, or recent-activity recaps").
+
+Detection heuristics — flag if ANY match within the Action Required section:
+
+- **Past-tense completion verbs** in item title or body (not in the imperative form): `finished`, `completed`, `shipped`, `fixed`, `Task {N} finished/completed`, `successfully added/removed`. Watch for false positives — "Complete the form" is imperative (OK); "Form completed" is retrospective (flag).
+- **Forbidden sub-section headings:** `Recent Activity`, `Work Summary`, `Completed This Session`, `Recently Completed`, `Done` (as a section name, not a checkbox label).
+- **Long prose items:** any single item with more than 2 paragraphs of prose. Legitimate actionable items rarely need that much explanation — the contract requires "just enough context to act."
+- **Bulleted lists of finished work:** any bulleted list inside Action Required where >2 consecutive items start with past-tense verbs (e.g., "✅ Task 5 added X", "✅ Task 6 fixed Y").
+
+| Condition | Result | Severity |
+|-----------|--------|----------|
+| No summary-shape content | Pass | — |
+| Summary-shape match found | Error per match: "Action Required contains retrospective content: '{excerpt}'. Belongs in git log / task notes / nowhere — not the dashboard." | 3 |
+
+When `4b` fires repeatedly across `/health-check` runs on the same project, the root cause is likely LLM emitter compliance rather than a documentation gap — escalate to FB-011 Family C (extract dashboard regeneration into a deterministic script, tracked in `template-maintenance/scripts-candidates.md`).
 
 #### 5. Dashboard Length (H1 — Readability)
 

@@ -953,3 +953,34 @@ Two paths:
 - **(b) Document that "general-purpose" is intentional** — perhaps for portability across harness versions where named subagents might not auto-discover, or to keep the persona-via-prompt-content pattern. Add a one-line note in `rules/agents.md` explaining the choice.
 
 Either is defensible; the current state is "neither documented nor uniformly applied." Worth picking one and being explicit. (a) seems cleaner if Claude Code's `.claude/agents/` discovery is stable, which the template implicitly assumes by shipping definition files there.
+
+## FB-038: Action Required regression — completion summaries still clutter section despite FB-015 fix
+
+**Status:** promoted
+**Captured:** 2026-04-22
+**Refined:** 2026-05-13 — Audit whether FB-015's Action Item Contract negative rule (now at `dashboard-regeneration.md:333`) actually fires during regeneration. Styler 2026-04-22 evidence shows completion summaries still clutter Action Required despite FB-015 promoted 2026-04-17. Two follow-ups: (a) audit dashboard-emission call sites for compliance; (b) if violations persist, escalate to FB-011 Family C (extract regen into a script — enforced by construction). Scope: `dashboard-regeneration.md`, `commands/work.md` post-completion emission paths, `health-check.md` Part 6 check #4.
+**Assessed:** 2026-05-13 — Affects `.claude/support/reference/dashboard-regeneration.md` (verify rule landed and is well-formed; already at line 333), `.claude/commands/work.md` post-completion emission paths, `.claude/commands/health-check.md` Part 6 check #4 (extend to detect summary-shaped content if feasible). Scope: corrective. Two-step: (a) audit downstream emitters for compliance with FB-015's negative rule; (b) if LLM compliance keeps failing, escalate to FB-011 Family C (extract dashboard regen to a script — tracked in `template-maintenance/scripts-candidates.md`). Direct dependency on FB-015 (just promoted; freshness risk that the rule was added but emitters bypass it). Route: Phase 4 direct for the audit; FB-011 Family C escalation is a separate gate.
+**Promoted:** 2026-05-13 — Audit findings: FB-015's negative rule is in place at `.claude/support/reference/dashboard-regeneration.md:333`; `commands/work.md:724` reflects it (Action Required clears post-completion); the canonical Action Required sub-section order (line 372) intentionally omits 'Recent Activity'/'Work Summary'. **The gap:** `commands/health-check.md` Part 6 check #4 only validated actionability — did not detect summary-shape violations. **Fix:** split check #4 into 4a (existing actionability check) + 4b (new summary-shape detection) with four heuristics: past-tense completion verbs, forbidden sub-section headings, long-prose items, bulleted lists of finished work. Each match emits a severity-3 error per occurrence. **Escalation note in the check:** if 4b fires repeatedly across runs on the same project, root cause is likely LLM emitter compliance — escalate to FB-011 Family C (script extraction, tracked in scripts-candidates.md). Shipped in template_version 3.2.4.
+
+The dashboard's Action Required section is again dominated by non-actionable content even after FB-015 (currently `ready`) was supposed to address exactly this. Observed in the styler project dashboard export (`dashboard_export_styler.pdf`, 2026-04-22).
+
+**What the section contains (none of which is user-action):**
+- Paragraph-long closure summary for § 17.15 Phone Layout Remediation ("2 BLOCKERs + 12 HIGHs → [OK]")
+- Bulleted shipped-tasks list (321–330) with one-line descriptions
+- Multi-paragraph Task 331 completion report (fix details, verification method, "suggest bundling into a commit")
+- Repo state narrative (committed vs uncommitted, untracked PNGs to discard)
+- "Phase 5 still On Hold" reminder and "Residual follow-ups from earlier phases" with accepted spec drift
+
+The only arguably-actionable fragment — "Change is uncommitted" — is buried inside a paragraph, not surfaced as an action item.
+
+**User-reported phrasing:** *"even more cluttered with stuff that isn't actionable now after we implemented a fix. Something is going on"* — pattern appears to be regressing, not just failing to improve.
+
+**Possible root causes** (to refine):
+1. FB-015 is `ready` but not yet promoted via `/iterate` — the rule edit may never have landed in `dashboard-regeneration.md` § Action Item Contract. Verify before anything else.
+2. Rule landed but generators (`/work complete`, phase-closure regen, implement-agent post-completion emission) bypass the Action Item Contract in practice.
+3. LLM interprets completion summaries as "actionable" because they imply follow-ups (commit change, discard PNGs, resume On Hold phase).
+4. Action Required is being used as a catch-all narrative slot because the dashboard has no dedicated "recent activity" or "session recap" section — matter removed from Action Required has nowhere else to go.
+
+**Possible direction:** reopen/extend FB-015 rather than treat this as a new independent item. Also consider whether FB-011's deterministic generator is the only reliable backstop for a contract the LLM persistently violates.
+
+Source: `dashboard_export_styler.pdf` (styler project, 2026-04-22).
