@@ -537,6 +537,7 @@ After any agent (implement-agent or verify-agent) returns a structured report, t
 1. **Status transition** based on `implementation_status`:
    - `completed`: write `{ "status": "Awaiting Verification", "completion_date": report.completion_date, "updated_date": today, "notes": report.notes }` to task JSON
    - `partial`: leave status "In Progress"; prepend `[PARTIAL]` to notes
+   - `partial_resume_pending` (per DEC-010): leave status "In Progress"; write `{ "partial_completion": report.partial_completion, "updated_date": today, "notes": "[PARTIAL_RESUME_PENDING] " + report.notes }` to task JSON. Surface inline: `Task {id} returned partial — resume scheduled. Confidence: {confidence}. Run /work again to re-dispatch.` Do NOT dispatch verify-agent — verification is gated on `completed`.
    - `blocked`: write `{ "status": "Blocked", "notes": "...", "updated_date": today }`; surface `issues_discovered[]` to user
    - `misaligned`: do not advance status; route to spec-alignment flow with `issues_discovered[]` context
 
@@ -573,6 +574,26 @@ After any agent (implement-agent or verify-agent) returns a structured report, t
 #### If Executing
 
 **Before dispatch:** orchestrator sets task JSON to `{"status": "In Progress", "updated_date": today}`.
+
+**Resume-pending check (per DEC-010):** if the selected task JSON has a `partial_completion` field from a previous dispatch:
+
+1. Read the envelope's `completed_subtargets`, `remaining_subtargets`, `resume_instructions`, `confidence`
+2. Run a git-diff audit on the task's declared `files_affected`:
+   - `git diff --name-only` (combined with `--cached` if needed)
+   - If files in `files_affected` show no diff since the partial dispatch, surface inline: `⚠ Task {id} resume: declared-completed sub-targets show no file changes since partial. Audit may have rolled back. Continue? [Y/N]`
+   - If files outside `files_affected` show diffs, surface inline: `⚠ Task {id} resume: {N} files modified since partial — review before resuming.`
+3. When `confidence: low`, surface: `⚠ Task {id} resume: previous dispatch flagged low confidence in partial state. Spot-check before continuing.`
+4. Inject the envelope content into the dispatch prompt for the re-dispatched implement-agent:
+   ```
+   RESUME-PENDING TASK. Previously completed sub-targets: {completed_subtargets}.
+   Remaining sub-targets: {remaining_subtargets}.
+   Resume instructions from previous dispatch: {resume_instructions}.
+   Confidence in prior state: {confidence}.
+   Before continuing, spot-check that the declared completed sub-targets are
+   actually present in the deliverable. If any are missing, treat them as
+   remaining_subtargets instead.
+   ```
+5. **After re-dispatch returns** `completed` or a fresh `partial_resume_pending`: clear the `partial_completion` field from the task JSON. (For fresh `partial_resume_pending`, the new envelope replaces the old.)
 
 Dispatch implement-agent (Task tool with `model: "opus[1m]"`) instructing it to read `.claude/agents/implement-agent.md` and follow Steps 1-6. Agent returns a structured report.
 

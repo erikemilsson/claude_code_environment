@@ -1018,3 +1018,44 @@ Each case caused avoidable confusion and post-hoc workaround. Both would have be
 This is generally useful even outside styler: any spec-driven project with a structured artifact (registry, schema, config) accumulates this drift over many revisions.
 
 Alternative (lighter): add this to `/health-check` as a per-spec consistency audit, run on demand rather than as a separate `/iterate` mode.
+
+## FB-049: Anthropic usage-limit partial-completion structured resume contract
+
+**Status:** promoted
+**Captured:** 2026-04-27
+**Migrated:** 2026-05-13 — originally captured as FB-009 in `.claude/support/feedback/feedback.md` (shipped path; misroute predates the v3.1.0 `/feedback template:` bridge).
+**Source project:** styler
+**Refined:** 2026-05-13 — Extend implement-agent return schema with a `partial_completion` envelope the agent fills when sensing usage-limit approach with unfinished sub-targets: `implementation_status: partial_resume_pending`, `completed_subtargets[]`, `remaining_subtargets[]`, `partial_state_notes`, `resume_instructions`. Orchestrator persists to task JSON; next dispatch brokers a 'resume from where you stopped' prompt instead of re-deriving from git diff. Detection heuristic: tool_uses > 75% of budget AND remaining sub-targets > 0. Extend `.handoff.json` schema for task-level partial state. Scope: `implement-agent.md` schema + `work.md` dispatch.
+**Assessed:** 2026-05-13 — Affects `.claude/agents/implement-agent.md` (return schema fields), `.claude/commands/work.md` (dispatch + persistence), `.claude/tasks/.handoff.json` schema. Possibly `.claude/agents/verify-agent.md` (matching envelope?). Scope: additive. No conflict with DEC-004 state ownership (orchestrator persists; agent reports). Multiple non-trivial design choices remain: minimal envelope vs full, detection threshold (75% of budget — arbitrary), whether verify-agent gets a matching envelope, `.handoff.json` schema impact. **Route: Phase 3 research → candidate DEC-010.** Trial-gated on real usage-limit incidents (already observed twice in styler session per body — sufficient empirical basis to research now).
+**Promoted:** 2026-05-13 — Implemented DEC-010 Option C (middle path): added `partial_completion` envelope to `.claude/agents/implement-agent.md` return schema (4 fields + `confidence` discriminator). Added `partial_resume_pending` to `implementation_status` enum with detection guidance (75% heuristic OR SDK wrap-up signal). Added new '### Approaching Usage Limits' section under Handling Issues. Orchestrator-side handler added to `.claude/commands/work.md` § 'After implement-agent returns' protocol (Status transition step) and a resume-pending check at the start of 'If Executing' (git-diff audit + envelope-injected dispatch prompt). `.claude/support/reference/context-transitions.md` handoff schema updated to document the string-or-object union for `active_work[].partial_notes` (backward-compatible). Decision record: `decisions/decision-010-partial-completion-envelope.md`. Shipped in template_version 3.4.0.
+
+Anthropic usage-limit cuts mid-implement-agent or mid-verify-agent are recurring (twice in one styler session: T433's first dispatch was cut at 41 tool uses with no structured report; T454's verify-agent dispatch in the same session never started before the limit hit). Current handoff is via free-form task notes + dashboard prose + `.last-clean-exit.json` — entirely manual. Subsequent invocations have to audit partial work and reason about resumption.
+
+**Concrete repro (styler T433, 2026-04-27 13:25 UTC):**
+
+First implement-agent dispatch hit usage limit at 41 tool uses / 297s, returned no structured report. Working tree had partial edits across 3 of the task's ~18 declared sub-targets. Second invocation had to:
+
+1. Read git diff to infer what landed
+2. Read task notes for partial-progress hints (none present — orchestrator had only logged "dispatch cut by limit")
+3. Audit which sub-targets within the cluster sweep were already done vs remaining
+4. Compose a unified report covering both invocations once it finished the rest
+
+Workflow handled it gracefully but the cross-invocation reasoning is fragile and adds ~10–15 minutes of audit overhead.
+
+**Proposed fix:** Extend the implement-agent return schema with a `partial_completion` envelope that the agent can fill if it senses approaching limit AND has not finished:
+
+```json
+{
+  "implementation_status": "partial_resume_pending",
+  "completed_subtargets": ["field_X (4 buckets)", "field_Y (3 buckets)"],
+  "remaining_subtargets": ["field_Z", "field_W", "field_V"],
+  "partial_state_notes": "Stopped mid-sweep at field_Z; no edits to field_Z yet. Bucket taxonomy precedent: field_X = activity-family (indoor/outdoor/...).",
+  "resume_instructions": "Resume from field_Z. Follow same bucket-taxonomy precedent as field_X. After all remaining, sweep audit to confirm 0 violations."
+}
+```
+
+The orchestrator persists this to task JSON. Next dispatch reads it and brokers a "resume from where you stopped" prompt — the agent doesn't have to re-derive context from git diff + task notes.
+
+`/work pause` already has graceful wind-down for user-initiated halts; this would mirror the pattern for the rate-limit case (which the agent itself can detect by approaching `max_turns` or by Anthropic's rate-limit response surface). The `.handoff.json` schema could be extended to include task-level partial state alongside session-level state.
+
+Detection heuristic for the agent: if `tool_uses` count exceeds 75% of typical session budget AND remaining subtargets > 0, return `partial_resume_pending` instead of pushing through.

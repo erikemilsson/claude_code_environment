@@ -127,7 +127,7 @@ After self-review (Step 5), construct and return the structured implementation r
 ```json
 {
   "task_id": "string (e.g., '7' or '7.2')",
-  "implementation_status": "completed | partial | blocked | misaligned",
+  "implementation_status": "completed | partial | partial_resume_pending | blocked | misaligned",
   "completion_date": "YYYY-MM-DD (null if not completed)",
   "notes": "one-paragraph summary including [Multi-file: N] flag when N>=2 files modified",
   "files_modified": ["relative/path/to/file"],
@@ -155,13 +155,22 @@ After self-review (Step 5), construct and return the structured implementation r
       "rationale": "why this option over the others",
       "related_task_ids": ["7"]
     }
-  ]
+  ],
+  "partial_completion": {
+    "completed_subtargets": ["short label per work unit done in this dispatch"],
+    "remaining_subtargets": ["short label per work unit still pending"],
+    "resume_instructions": "brief prose for the next dispatch — where to start, what precedent to follow",
+    "confidence": "high | moderate | low"
+  }
 }
 ```
+
+**`partial_completion` is only set when `implementation_status == "partial_resume_pending"`.** Omit the field entirely for other status values. See "Approaching Usage Limits" under Handling Issues for detection triggers and field semantics (per DEC-010 Option C).
 
 **Completion status values:**
 - `completed` — all work done per spec, ready for verification
 - `partial` — wind-down triggered mid-implementation; orchestrator leaves status as "In Progress" with `[PARTIAL]` notes
+- `partial_resume_pending` — usage-limit-driven graceful cut with a structured `partial_completion` envelope (see "Approaching Usage Limits"). Orchestrator persists the envelope, leaves status as "In Progress", and re-dispatches on next `/work` with the envelope content injected.
 - `blocked` — cannot proceed; orchestrator sets status to "Blocked"
 - `misaligned` — implementation revealed spec conflict; orchestrator handles spec-check conversation
 
@@ -170,6 +179,7 @@ After self-review (Step 5), construct and return the structured implementation r
 **What the orchestrator does with your report:**
 - For `completed`: sets status to "Awaiting Verification", writes your notes/completion_date, dispatches verify-agent
 - For `partial`: leaves status "In Progress", prepends `[PARTIAL]` to notes, returns control to `/work`
+- For `partial_resume_pending`: leaves status "In Progress", persists `partial_completion` envelope on the task JSON, prepends `[PARTIAL_RESUME_PENDING]` to notes. Next `/work` reads the envelope, runs a git-diff audit, and re-dispatches with the envelope injected into the prompt
 - For `blocked`: sets status to "Blocked", returns control with your `issues_discovered` list
 - For `misaligned`: does not advance status, routes to spec-alignment flow
 
@@ -247,6 +257,38 @@ If during implementation you realize something doesn't align with spec:
 2. Describe the misalignment in `notes` and in an `issues_discovered` entry (type: `spec_misalignment`)
 3. The orchestrator handles the spec-check conversation with the user
 4. Don't proceed with misaligned work
+
+### Approaching Usage Limits
+
+When you sense an approaching usage limit AND have unfinished sub-targets, return a structured `partial_completion` envelope instead of pushing through. The envelope lets the next dispatch resume cleanly without re-deriving context from git diff + task notes. See DEC-010 for the design rationale.
+
+**Detection signals (either triggers the envelope):**
+
+- `tool_uses` count > 75% of your `max_turns` AND remaining sub-targets > 0
+- The Claude Agent SDK has emitted an in-band wrap-up message ("wrap up immediately — provide your final answer now"). Treat that message as authoritative — it precedes the `error_max_turns` terminal signal
+
+**To return a partial-resume envelope:**
+
+1. Set `implementation_status: "partial_resume_pending"` (not `partial` — that's for `/work pause`-triggered wind-downs)
+2. Populate the `partial_completion` object:
+   - `completed_subtargets`: short labels (~5-15 words each) for work units done in this dispatch. Examples: `"field_X (4 buckets, validated against precedent)"`, `"auth-flow integration test setup"`. Sub-targets are named work items the agent decomposed mentally — not files, not workflow steps
+   - `remaining_subtargets`: short labels for work units still pending. Same shape as completed
+   - `resume_instructions`: brief prose (1-3 sentences) telling the next dispatch where to start and what precedent to follow. Example: `"Resume from field_Z. Follow same bucket-taxonomy precedent established for field_X. After all remaining sub-targets, sweep audit to confirm 0 violations."`
+   - `confidence`:
+     - `high` — clean boundary: finished a logical unit; declared remaining work has not been started
+     - `moderate` — mid-unit boundary: declared completed sub-targets verified by self-review; remaining sub-targets are in flux
+     - `low` — rushed boundary: SDK wrap-up fired before self-review; declared completed sub-targets not independently re-checked
+3. Do NOT include `completion_date` (work is incomplete)
+4. List every file you modified during this dispatch in `files_modified[]`. Orchestrator audits at re-dispatch via `git diff` — declared-completed sub-targets that don't show up in the diff surface as warnings
+
+**Sub-targets vs files vs steps:** sub-targets are the right unit. File-level under-counts work (one file may host 18 named sub-targets — T433 reference). Step-level over-counts (you're always mid-Step 4 when this fires). Sub-targets match the agent's own mental decomposition.
+
+**Failure modes if the envelope is wrong:**
+- Over-claim (declared `completed`, actually half-done) — orchestrator's git-diff audit catches missing edits before re-dispatch starts work
+- Under-claim (declared `remaining`, actually done) — re-dispatched agent re-does the work; cost is duplicate effort, not corruption
+- Phantom files (declared sub-target complete but Bash call failed silently) — orchestrator's audit catches this; the spot-check instruction in the re-dispatch prompt asks the agent to verify before continuing
+
+When `confidence: low`, the orchestrator surfaces a "Resume cautiously" warning to the user rather than silently re-dispatching.
 
 ## Friction Markers
 
