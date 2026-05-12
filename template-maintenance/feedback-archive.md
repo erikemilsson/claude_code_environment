@@ -613,3 +613,106 @@ Decomposition step in `/work` should validate that file paths referenced in task
 Could also catch related drift — task body mentioning a function name that no longer exists, etc. — but path validation alone covers the most common case.
 
 **Relationship to FB-047:** FB-047 is broader ("ripple-affected fixture files missing from `files_affected`"); FB-051 is the narrower path-correctness check. They could ship as one decomposition-validation pre-pass enhancement covering both: (1) declared paths must resolve; (2) implied collateral paths (fixtures matching grep patterns) should be auto-suggested for inclusion.
+
+## FB-039: validate-tasks.py and fingerprint.py read `data['task_id']` but schema field is `id`
+
+**Status:** promoted
+**Captured:** 2026-04-29
+**Assessed:** 2026-05-13 — Affects `.claude/scripts/validate-tasks.py` (lines 14, 104, 127) and `.claude/scripts/fingerprint.py` (lines 49, 55, 73). Scope: corrective. Replace `task_id` with `id` to match `task-schema.md` and the existing task corpus; audit `tests/` fixtures for any that mask the bug before shipping. Secondary: decide whether `fingerprint.py`'s 2-field rollup should match `dashboard-regeneration.md:253`'s 4-field `task_hash`, or document the divergence. Bug introduced in `d0c15e4`; failure mode is silent (false-positive schema errors + constant hash). Route: Phase 4 direct.
+**Promoted:** 2026-05-13 — Fixed `task_id` → `id` field-read in `.claude/scripts/validate-tasks.py` (REQUIRED_FIELDS line 14; data.get call line 104) and `.claude/scripts/fingerprint.py` (line 55). Schema label key in debt output kept as `task_id` (label, not JSON-field). Smoke-tested via `validate-tasks.py` against the (empty) template repo `.claude/tasks/` — exits clean. Shipped in template_version 3.1.1.
+
+The two FB-011 scripts shipped in v3.0.0 use the wrong key when reading task JSONs. They reference `task_id`, but the canonical schema and every existing task file use `id`. Surfaced by `/health-check` in the nordgrid-data-engineering project (27 tasks, all valid; both scripts mis-flagged or skipped them all).
+
+**The mismatch:**
+
+- `.claude/support/reference/task-schema.md:89` — required field is `id`: `| id | String | Number for top-level ("1"), underscore for subtasks ("1_1") |`. Examples on lines 6, 18 also use `"id": "1"`.
+- All task JSONs in real projects use `id` (verified across nordgrid-data-engineering, and likely styler, siren, etc. — anything decomposed against the documented schema).
+- `.claude/scripts/validate-tasks.py` lines 14, 104, 127 — references `task_id`. `REQUIRED_FIELDS` includes `"task_id"`, so the validator emits `missing required field: task_id` for every conformant task.
+- `.claude/scripts/fingerprint.py` lines 49, 55, 73 — `hash_dashboard_rollup` does `entries.append(f"{data['task_id']}:{data['status']}")`. Hits a `KeyError`, prints a warning, skips the task — output is the SHA-256 of an empty string for any project using the documented schema.
+
+**Effect:**
+
+- `/health-check` Part 1 Check 1 (when delegated to the script) reports false-positive "missing required field" for every task. Manual verification has to step in to confirm the schema is actually fine.
+- `/work` Step 1a / `/status` dashboard-freshness check: if it ever calls `fingerprint.py --dashboard-rollup`, it gets a constant hash regardless of task state — meaning content-staleness detection silently always-or-never fires.
+- The bug is invisible in the template's own test suite if the suite uses fixtures with `task_id` (worth checking).
+
+**Fix:** in both scripts, replace `task_id` with `id` to match the schema doc and existing task corpus.
+
+- `validate-tasks.py:14` — `REQUIRED_FIELDS = {"id", "title", "description", "status", "difficulty", "owner", "dependencies", "files_affected"}`
+- `validate-tasks.py:104, 127` — read `data["id"]` (and rename the dict key in the summary if you want, but the schema is the authority)
+- `fingerprint.py:49, 55, 73` — same; update the docstring and `--help` text
+
+Also worth a quick audit of any test fixtures in `tests/` that may have been written using `task_id` and would mask the bug.
+
+**Secondary observation (not strictly part of this fix):** `fingerprint.py`'s `hash_dashboard_rollup` formula is `task_id:status` (2 fields), but `dashboard-regeneration.md:253` specifies the dashboard `task_hash` as `task_id:status:difficulty:owner` (4 fields). The script and the regen rule compute different hashes — reasonable if the script is intended for a separate purpose (per its docstring it mirrors `commands/status.md:36`), but worth confirming the two formulas aren't supposed to converge.
+
+**Why it slipped through:** introduced in `d0c15e4` ("Phase 4: FB-011 Families A + B"). The failure mode is silent — `validate-tasks.py` exits 1 with structured errors that look like real schema violations, and `fingerprint.py` returns a real-looking hash (just always the same one). Neither crashes loudly enough to be obvious without comparing against actual task data.
+
+Source: `/health-check` run in nordgrid-data-engineering, 2026-04-29.
+
+## FB-052: implement-agent.md:223 grants subagent decision-record write that agents.md § State Ownership forbids
+
+**Status:** promoted
+**Captured:** 2026-04-28
+**Migrated:** 2026-05-13 — originally captured as FB-012 in `.claude/support/feedback/feedback.md` (shipped path; misroute predates the v3.1.0 `/feedback template:` bridge).
+**Source project:** styler — multi-agent template audit, 2026-04-28. `agents/` files are byte-identical to template.
+**Assessed:** 2026-05-13 — Affects `.claude/agents/implement-agent.md` (line 223 carve-out) and `.claude/rules/agents.md` § State Ownership (forbids subagent `.claude/` writes per harness sandbox + Anthropic issue #38806). Scope: corrective. Preferred fix (option a): rewrite implement-agent's decision-creation step to mirror `research-agent.md:181` — agent generates decision content, includes it in return report under a new field (e.g., `decisions_to_record`), orchestrator writes the file. Aligns all three agents and respects the documented sandbox. Route: Phase 4 direct.
+**Promoted:** 2026-05-13 — Rewrote `.claude/agents/implement-agent.md` § 'Decisions Made During Implementation' to match research-agent's report-pattern: agent generates decision content in new `decisions_to_record` return-schema field, orchestrator writes the file. Added matching handler step (new step 3) in `.claude/commands/work.md` § 'After implement-agent returns'. Shipped in template_version 3.1.1.
+
+`implement-agent.md:223` instructs the subagent to: *"Create a `decision-*.md` file in `.claude/support/decisions/` using that template (decision records live outside `.claude/tasks/`, so subagent writes there are permitted)."*
+
+This contradicts `rules/agents.md § State Ownership`, which states subagents *"do not write to `.claude/` paths"* and cites this as *"a hard constraint of the Claude Code harness (subagents are sandboxed from `.claude/` writes per Anthropic issue #38806) and is not expected to change."* The path `.claude/support/decisions/` is under `.claude/`, so the carve-out in implement-agent.md describes a write the harness may not actually permit at runtime.
+
+`agents.md § Tool Preferences` already states the canonical pattern: *"When an agent's documented workflow describes a state transition, it means 'include in return report'; the orchestrator performs the actual write."* And `research-agent.md:181` follows this correctly — it generates decision content, reports it, and lets the caller (`/research` or `/work`/`/iterate`) write the file.
+
+Only `implement-agent.md` violates the pattern.
+
+**Suggested fix (option a, preferred):** rewrite `implement-agent.md:219-225` to match research-agent's pattern — agent generates the decision content, includes it in the return report under a new field (e.g., `decisions_to_record`), orchestrator writes the file. Consistent with the rest of the template and respects the harness sandbox.
+
+**Suggested fix (option b):** verify whether Anthropic issue #38806 still applies; if subagents now CAN write under `.claude/support/decisions/`, update `agents.md § State Ownership` to carve out the exception explicitly rather than burying it in implement-agent.md. Requires evidence that the harness actually permits the write — current docs say it doesn't.
+
+Either way, the two files should agree.
+
+## FB-053: Tool Preferences block duplicated verbatim across 3 agent files
+
+**Status:** promoted
+**Captured:** 2026-04-28
+**Migrated:** 2026-05-13 — originally captured as FB-013 in `.claude/support/feedback/feedback.md` (shipped path; misroute predates the v3.1.0 `/feedback template:` bridge).
+**Source project:** styler — multi-agent template audit, 2026-04-28. `agents/` files are byte-identical to template.
+**Assessed:** 2026-05-13 — Affects `.claude/agents/implement-agent.md` (lines 24-32), `.claude/agents/verify-agent.md` (lines 34-42), `.claude/agents/research-agent.md` (lines 23-31); canonical home `.claude/rules/agents.md` § Tool Preferences (lines 51-60). Scope: corrective. Replace per-agent blocks with one-line pointer ("Tool preferences: see `rules/agents.md § Tool Preferences`"). Removes drift risk; saves ~30 lines per multi-agent flow. Bundle with FB-052 — both touch the same three agent files. Route: Phase 4 direct.
+**Promoted:** 2026-05-13 — Extracted canonical Tool Preferences table to `.claude/rules/agents.md` § Tool Preferences; replaced duplicated table in `.claude/agents/{implement,verify,research}-agent.md` with pointers + agent-specific bash-usage notes. Preserved agent-specific guidance (implement-agent's editing strategy + large-file strategy). Shipped in template_version 3.1.1.
+
+`implement-agent.md:24-32`, `verify-agent.md:34-42`, and `research-agent.md:23-31` each contain a near-identical Tool Preferences block (~9 lines × 3). The same content already exists canonically in `rules/agents.md § Tool Preferences` (lines 51-60). Four sources of truth for the same rule.
+
+Drift hazard: a future edit will likely land in `rules/agents.md` (the canonical home) and skip the three agent files, leaving the per-agent restatements stale. Or vice versa.
+
+**Suggested fix:** delete the per-agent restatements; replace each with a one-line pointer like *"Tool preferences: see `rules/agents.md § Tool Preferences`."* Saves ~30 lines of duplicated context per multi-agent flow and removes the drift risk.
+
+Lighter alternative: keep the per-agent pointers but add a comment in `rules/agents.md` reminding maintainers to ripple any change to the three agent files. Less robust but lower-disruption.
+
+Same pattern likely exists in downstream forks for product-specific commands (e.g., styler's six product commands all duplicate an "Output Formatting" block) — that's a fork-side issue, but the agent-side fix here would model the right pattern.
+
+## FB-054: breakdown.md:17-18 numbered list skips step 2
+
+**Status:** promoted
+**Captured:** 2026-04-28
+**Migrated:** 2026-05-13 — originally captured as FB-014 in `.claude/support/feedback/feedback.md` (shipped path; misroute predates the v3.1.0 `/feedback template:` bridge).
+**Source project:** styler — multi-agent template audit, 2026-04-28. `commands/breakdown.md` byte-identical to template.
+**Assessed:** 2026-05-13 — Affects `.claude/commands/breakdown.md` Process section (lines 17-18). Scope: corrective. Renumber surviving steps 3 → 2, 4 → 3, 5 → 4; OR restore the deleted step 2 if its removal was unintentional. Cosmetic but reads as broken in markdown viewers that don't auto-renumber. Route: Phase 4 direct.
+**Promoted:** 2026-05-13 — Renumbered `.claude/commands/breakdown.md` Process section from 1, 3, 4, 5 → 1, 2, 3, 4. Shipped in template_version 3.1.1.
+
+`commands/breakdown.md` Process section is numbered 1, 3, 4, 5 — there is no step 2:
+
+```markdown
+## Process
+
+1. Identify logical components (aim for 3-6 subtasks)
+3. Create subtask files (inheriting spec provenance from parent):
+   ...
+4. Update parent task:
+   ...
+```
+
+Likely a step that got deleted without renumbering the survivors. Cosmetic but reads as broken in markdown viewers that auto-renumber lists.
+
+**Suggested fix:** renumber 3 → 2, 4 → 3, 5 → 4 throughout the section. Or, if a step is missing, restore it.

@@ -21,17 +21,9 @@ Match reasoning depth to task complexity. This agent benefits from Opus 4.7's ad
 
 ## Tool Preferences
 
-When running as a subagent, always prefer dedicated tools over Bash for file operations:
+See `.claude/rules/agents.md § Tool Preferences` for the canonical tool/operation mapping that applies to all subagents.
 
-| Operation | Use | NOT |
-|-----------|-----|-----|
-| Read files | `Read` tool | `cat`, `head`, `tail` |
-| Search by filename | `Glob` tool | `find`, `ls` |
-| Search file content | `Grep` tool | `grep`, `rg` |
-| Edit files | `Edit` tool | `sed`, `awk` |
-| Write files | `Write` tool | `echo >`, heredoc |
-
-**Only use Bash for operations that genuinely require shell execution:** running build commands, executing scripts, installing dependencies, git operations. When multiple Bash commands are needed, combine them into a single call where possible to minimize permission prompts.
+**Bash usage:** running build commands, executing scripts, installing dependencies, git operations. When multiple Bash commands are needed, combine them into a single call where possible to minimize permission prompts.
 
 **Editing strategy for structured documents (Markdown, JSON, YAML):**
 - **Surgical single-point change** → use `Edit` tool (targeted replacement)
@@ -153,6 +145,16 @@ After self-review (Step 5), construct and return the structured implementation r
       "description": "one-sentence description",
       "suggested_action": "create new task | flag for human | proceed | stop and report"
     }
+  ],
+  "decisions_to_record": [
+    {
+      "title": "short title for the decision",
+      "summary": "one-sentence summary of what was decided",
+      "options_considered": ["Option A", "Option B"],
+      "selected_option": "Option A",
+      "rationale": "why this option over the others",
+      "related_task_ids": ["7"]
+    }
   ]
 }
 ```
@@ -219,10 +221,10 @@ If task grows larger than expected:
 ### Decisions Made During Implementation
 
 If you make a significant choice during implementation:
-1. Read `.claude/support/reference/decisions.md` for the format and example
-2. Create a `decision-*.md` file in `.claude/support/decisions/` using that template (decision records live outside `.claude/tasks/`, so subagent writes there are permitted)
-3. Add an `issues_discovered` entry (type: `decision_made`) referencing the decision ID — the orchestrator ensures the decision is surfaced on the dashboard
-4. **Rule:** Never reference a decision ID without a corresponding file
+1. Read `.claude/support/reference/decisions.md` for the decision record format and required fields
+2. Generate the decision content (title, summary, options considered, selected option, rationale, related task IDs) and include it in your return report under the `decisions_to_record` array (see Return schema above)
+3. Add an `issues_discovered` entry (type: `decision_made`, suggested_action: `flag for human`) noting that a decision was recorded — the orchestrator assigns the DEC-NNN ID when it creates the file and surfaces it on the dashboard
+4. **Never write `decision-*.md` files yourself.** Subagents are sandboxed from `.claude/` writes (DEC-004; `rules/agents.md § State Ownership`). The orchestrator owns this write. Follows the same report-pattern as research-agent (see `research-agent.md` § "If no decision record exists").
 
 ### Spec Misalignment Discovered
 

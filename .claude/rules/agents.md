@@ -52,6 +52,16 @@ Note: starting a dev server for UI verification is a feature (per root `CLAUDE.m
 
 All agents use dedicated tools (Read, Glob, Grep, Edit, Write) for file operations. Bash is reserved for operations requiring shell execution: git commands, running tests, executing deliverables, network requests. This minimizes permission prompts when agents run as subagents.
 
+| Operation | Use | NOT |
+|-----------|-----|-----|
+| Read files | `Read` tool | `cat`, `head`, `tail` |
+| Search by filename | `Glob` tool | `find`, `ls` |
+| Search file content | `Grep` tool | `grep`, `rg` |
+| Edit files | `Edit` tool | `sed`, `awk` |
+| Write files | `Write` tool | `echo >`, heredoc |
+
+Per-agent files reference this canonical mapping rather than restating it; bash-usage specifics, editing strategy, and large-file strategy live in each agent's own `## Tool Preferences` section.
+
 Subagents cannot write to `.claude/` paths, cannot spawn nested `Task` tool calls, and do not inherit parent `permissions.allow` rules. When an agent's documented workflow describes a state transition, it means "include in return report"; the orchestrator performs the actual write.
 
 **Scripts under `.claude/scripts/`** are deterministic helpers that ship with the template and are intended to be invoked by the orchestrator via the Bash tool. They have their own invocation contract (see `.claude/scripts/README.md`): stdlib only, read-only, structured stdout, clear exit codes. Subagents should not invoke them — the scripts return computed values for the orchestrator to write to `.claude/` state, which subagents cannot do. When a script is present, it is an advisory alternative to the matching prose procedure; when absent, the prose procedure still works.

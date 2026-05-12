@@ -542,9 +542,11 @@ After any agent (implement-agent or verify-agent) returns a structured report, t
 
 2. **Append friction markers:** for each marker in `report.friction_markers`, add `task_id: report.task_id` and append as a JSON line to `.claude/support/workspace/.session-log.jsonl` (Read existing content, then Write with appended line; if file doesn't exist, create it)
 
-3. **Dashboard regeneration:** in sequential mode, regenerate `dashboard.md` per `.claude/support/reference/dashboard-regeneration.md`. In parallel mode, defer — handled at batch-end.
+3. **Persist decisions:** for each entry in `report.decisions_to_record[]`, scan `.claude/support/decisions/decision-*.md` for the highest existing DEC-NNN, assign the next available ID (zero-padded to 3 digits), and Write a new `decision-NNN-{slug}.md` file using the template in `.claude/support/reference/decisions.md`. Populate the Selected/Rationale/Options sections from the report entry. Set frontmatter `status: approved`, `decided: today`, `decided_by: implement-agent`. Subagents cannot write under `.claude/`, so this step is the orchestrator's responsibility — implement-agent only generates content (DEC-004; `rules/agents.md § State Ownership`).
 
-4. **For `completed` status:** dispatch verify-agent (see "If Verifying (Per-Task)" section) and then apply the "After verify-agent returns" protocol below.
+4. **Dashboard regeneration:** in sequential mode, regenerate `dashboard.md` per `.claude/support/reference/dashboard-regeneration.md` — newly persisted decisions surface in the Decisions section. In parallel mode, defer — handled at batch-end.
+
+5. **For `completed` status:** dispatch verify-agent (see "If Verifying (Per-Task)" section) and then apply the "After verify-agent returns" protocol below.
 
 **After verify-agent returns (per-task mode):**
 

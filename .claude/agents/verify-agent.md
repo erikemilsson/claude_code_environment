@@ -31,17 +31,9 @@ When `/work` invokes this agent, it specifies the mode. Follow the corresponding
 
 ## Tool Preferences
 
-When running as a subagent, always prefer dedicated tools over Bash for file operations:
+See `.claude/rules/agents.md § Tool Preferences` for the canonical tool/operation mapping that applies to all subagents.
 
-| Operation | Use | NOT |
-|-----------|-----|-----|
-| Read files | `Read` tool | `cat`, `head`, `tail` |
-| Search by filename | `Glob` tool | `find`, `ls` |
-| Search file content | `Grep` tool | `grep`, `rg` |
-| Edit files | `Edit` tool | `sed`, `awk` |
-| Write files | `Write` tool | `echo >`, heredoc |
-
-**Only use Bash for operations that genuinely require shell execution:** git commands, running test suites, running CLI/script deliverables, `curl` for API testing. When a Bash call is needed, combine related commands into a single call (e.g., `git diff --name-only && git status --short`) to minimize permission prompts.
+**Bash usage:** git commands, running test suites, running CLI/script deliverables, `curl` for API testing. When a Bash call is needed, combine related commands into a single call (e.g., `git diff --name-only && git status --short`) to minimize permission prompts.
 
 ## When to Follow This Workflow
 
