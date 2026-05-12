@@ -91,27 +91,6 @@ Suggested template improvement: when a phase-restoration / pre-flight audit task
 
 This could live as a guideline in implement-agent.md's audit-task pattern, or as a sentence in the task-management.md rules around audit tasks.
 
-## FB-043: implement-agent prompt should emphasize "extend ALL enum/union locations"
-
-**Status:** ready
-**Captured:** 2026-04-27
-**Migrated:** 2026-05-13 — originally captured as FB-003 in `.claude/support/feedback/feedback.md` (shipped path; misroute predates the v3.1.0 `/feedback template:` bridge).
-**Refined:** 2026-05-13 — Add a Step 2.5 to implement-agent: when adding a new enum value or string-literal union member, grep for ALL synchronized extension points (TS union, Zod enum, dispatcher cases, validator switch arms) BEFORE editing. Don't trust `files_affected` for enum-related work. A one-line 'Common pitfalls' note suffices. Scope: `implement-agent.md`.
-**Assessed:** 2026-05-13 — Affects `.claude/agents/implement-agent.md` (new 'Common Pitfalls' subsection, or extension of existing). Scope: additive. Complements FB-058 ripple-inference leg (FB-058 catches the ripple at decomposition time; FB-043 catches it at implementation time — belt-and-braces, no conflict). Route: Phase 4 direct.
-
-When an implement-agent task adds a new enum value (e.g., a new capture method, status, or any string-literal union member), the implementation typically needs to extend multiple synchronized locations:
-
-- TypeScript union type (e.g., `CaptureMethod` in types.ts)
-- Zod enum schema (e.g., `CaptureMethodSchema` in schema-zod.ts)
-- Dispatcher case handlers (e.g., onboard.md case statements)
-- Validator handlers (loader.ts switch arms, if any)
-
-Concrete example from a downstream styler project's T424 (add Zod + TS types for `split_strategy` per DEC-047): agent added `SplitBucketSchema` + `SplitStrategySchema` + extended `FieldCaptureSchema` with new optional fields, but **missed adding `'ask_user_question_split'` to `CaptureMethodSchema` enum AND `CaptureMethod` TS union**. T425 (the next task) absorbed the fix (5-line addition across two files), no harm done — but the gap delayed T425's start by ~5 minutes of root-cause investigation, and surfaced as a friction marker at session pause.
-
-Suggested template improvement: add a Step 2.5 (after planning, before editing) to implement-agent.md — "When adding a new enum value or string-literal union member, list ALL locations that enumerate this value across the codebase (TS union, Zod enum, dispatcher cases, validator switch arms) and extend each one. Don't trust the task description's `files_affected` list to be exhaustive for enum-related work — search for the existing enum's name with grep first to find all extension points."
-
-Even a one-line note in implement-agent.md's "Common pitfalls" section would catch this.
-
 ## FB-044: Heavy editorial verify-agent prompts may benefit from structural+content split
 
 **Status:** ready
@@ -135,46 +114,6 @@ Suggested template improvement: for editorial-content tasks (heuristic: difficul
 3. **Add a `verify_strategy: structural+content` field** to task JSON — the orchestrator reads this at dispatch and routes to a different agent template when set.
 
 Option 2 is the lightest-touch — a sentence in verify-agent.md prompts the agent to budget-aware itself.
-
-## FB-046: Parallel-batch cross-task scaffolding contracts need single composed brief
-
-**Status:** ready
-**Captured:** 2026-04-27
-**Migrated:** 2026-05-13 — originally captured as FB-006 in `.claude/support/feedback/feedback.md` (shipped path; misroute predates the v3.1.0 `/feedback template:` bridge).
-**Source project:** styler (Personal Style Intelligence System)
-**Refined:** 2026-05-13 — When `/work` Step 2c builds a parallel batch with shared test scaffolding (allowlists, fixtures), compose a single shared briefing block both implement-agents receive verbatim — names who-owns-what, who-drains-what, and the mediating test signal. Detection heuristic: overlapping `files_affected` where one task description mentions `expected`/`allowlist`/`fixture` and another mentions `drain`/`drop`/`close`. Add `shared_contract` field to dispatch payload. Scope: `commands/work.md` Step 2c, `parallel-execution.md`.
-**Assessed:** 2026-05-13 — Affects `.claude/commands/work.md` Step 2c (parallel-batch dispatch), `.claude/support/reference/parallel-execution.md`. Scope: additive. Complementary to FB-058 (different concerns: FB-058 enumerates files at decomposition; FB-046 mediates contracts between parallel tasks at dispatch). Route: Phase 4 direct. The detection heuristic ('expected/allowlist/fixture' vs 'drain/drop/close') may need refinement after trial — not blocking initial implementation.
-
-When `/work` Step 2c builds a parallel batch of tasks that share cross-task synchronization contracts (test allowlists, fixture scaffolding, expected-violation lists), the orchestrator currently writes independent briefs that can contradict each other on file boundaries.
-
-**Concrete repro (styler Phase 20 batch 13, 2026-04-27):**
-
-The orchestrator dispatched **T462** (close § 20.4 split-strategy debt) + **T463** (broaden T460 validator) in parallel. Both modify allowlist scaffolding spread across `schema-zod.ts` and `registry-consistency.test.ts`.
-
-- T462's brief said: "do NOT touch `registry-consistency.test.ts` (T463's territory; T463 may modify fixtures)".
-- T463's actual implementation wrote scaffolding into `registry-consistency.test.ts` containing a self-documenting `EXPECTED_T463_VIOLATIONS` array AND a failing-test message reading `"drop them now"` whenever the array still listed entries that T462 had supposedly drained.
-- Result: T462 was **forced** to drain `EXPECTED_T463_VIOLATIONS` to keep `npm test` green, violating its own brief. The friction marker (`type: template_gap`) was logged.
-
-Final state was correct (both edits cleanly merged on disk and tests passed), but the brief contradicted the runtime contract.
-
-**Proposed fix:** When `/work` Step 2c builds a parallel batch and detects a shared scaffolding contract (e.g., both tasks touch the same allowlist file, or one task writes test scaffolding that another task is responsible for draining), compose a **single shared briefing block** that both implement-agents receive verbatim, naming who-drains-what and why.
-
-Schema sketch for an additional `shared_contract` field in the parallel-batch dispatch payload:
-
-```json
-{
-  "shared_contract": {
-    "type": "allowlist_drain",
-    "file": "registry-consistency.test.ts",
-    "constants": ["EXPECTED_T463_VIOLATIONS"],
-    "owner": "T463 (writes scaffolding)",
-    "drainer": "T462 (drops entries when violations resolve)",
-    "test_signal": "failing-test message 'drop them now'"
-  }
-}
-```
-
-Each agent's brief inherits the shared block; neither agent gets a contradicting "do not touch" instruction. Detection heuristic: if two parallel tasks have overlapping `files_affected` AND one task's description mentions `expected`/`allowlist`/`fixture` while the other's mentions `drain`/`drop`/`close`, surface the contract for the orchestrator to compose.
 
 ## FB-048: Inline-command pattern — extract a shared template reference doc
 
@@ -367,35 +306,3 @@ DEC-001 Option C (Track 1 friction markers + Track 2 retrospective + Phase 3 ing
 - Or extract into a deterministic script (FB-011 Family D/E candidate) — removes the LLM reliability layer entirely.
 
 Sources: FB-041 (2026-05-13, Option C audit) + FB-045 (2026-04-27, styler Phase 20).
-
-## FB-058: Decomposition pre-pass — validate paths + auto-enumerate ripple-affected files
-
-**Status:** ready
-**Captured:** 2026-05-13
-**Combined from:** FB-047 + FB-051
-**Refined:** 2026-05-13 — Unified decomposition pre-pass covering two failure modes: (1) path resolution (FB-051 leg) — verify every declared path exists, surface non-resolvers inline before decomposition completes; (2) ripple inference (FB-047 leg, ~40% of styler Phase 20 friction) — auto-enumerate collateral fixtures/callers via 4 heuristics: field/type retirement grep, schema-cap value grep, `package.json` test-chain detection, validator-walk caller grep. Scope: `decomposition.md` or sub-procedure.
-**Assessed:** 2026-05-13 — Affects `.claude/support/reference/decomposition.md` (or its sub-procedure), possibly `.claude/skills/decomposition-heuristics/` (the skill that owns the decomposition logic), possibly `.claude/commands/work.md` Step 1c (decomposition step), possibly `.claude/commands/health-check.md` (if integrated as a health-check). Scope: additive. Coheres with FB-043 (implementation-time enum ripple) and FB-046 (cross-task allowlist contracts) — together form a 'files_affected correctness suite.' Route: Phase 4 direct. The 4 ripple-inference heuristics are concrete enough to ship in one pass.
-
-`/work` decomposition currently produces `files_affected` lists that either reference paths that don't resolve OR miss ripple-affected files (fixtures, downstream callers, test-chain entries). Both modes cause implementer friction — ~3 wasted tool uses per path-correction case; friction markers across ~40% of styler Phase 20 tasks for under-counted scopes. FB-047 and FB-051 propose a unified pre-pass.
-
-**Failure mode 1 — declared path doesn't resolve (FB-051):** Task references a path that doesn't exist. Example styler T453: declared `src/components/grooming/GroomingSection.tsx`; actual at `src/components/style/GroomingSection.tsx`.
-
-**Failure mode 2 — declared paths correct but missing ripples (FB-047):** ~40% of styler Phase 20 friction markers cite under-counted `files_affected`. Examples:
-
-- T428 (retire `life_stage`): declared `[field-definitions.json]`; missed 2 test files hard-coding the value.
-- T435 (`.max(4)` → `.max(6)`): declared 6 files; missed `loader.test.ts` with hard-coded threshold fixtures.
-- T439: declared 3 files; missed 2 new files + `package.json` chain edit.
-- T460: declared 2 files; missed 4 downstream `RegistrySchemaZ.parse()` callers.
-
-**Proposed unified pre-pass (decomposition.md or sub-procedure):**
-
-1. **Path resolution check (FB-051 leg):** verify every path in `files_affected` and any path-shaped reference in task body exists. Surface non-resolving paths inline for human correction before decomposition completes.
-2. **Ripple inference (FB-047 leg):**
-   - Field/type retirement ("remove X" / "retire X") → `grep -r "X"` across `**/__tests__/**`, fixtures, mocks → add matches.
-   - Schema-cap / threshold change (`.max(N)` → `.max(M)`) → `grep -r "{old_value}"` in fixtures → flag schema-constant-name matches.
-   - New test files under sibling/`__tests__` conventions → if `package.json` `scripts.test` chains explicit paths → add `package.json`.
-   - Validator-walk extension (Zod/Pydantic schema change) → `grep -r "{SchemaName}\.parse\|\.{SchemaName}\.safeParse"` → add downstream caller files.
-
-Could extend later to function-name drift detection; path + ripple covers the dominant friction.
-
-Sources: FB-051 (originally styler FB-053) + FB-047 (styler Phase 20 friction-marker analysis, 2026-04-27).

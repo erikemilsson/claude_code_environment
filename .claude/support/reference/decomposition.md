@@ -30,10 +30,64 @@ Procedure for breaking a spec into granular tasks. Run as `/work` Step 4 "If Dec
    - `section_snapshot_ref` — Snapshot filename (e.g., "spec_v1_decomposed.md")
    - **Important:** Create all task JSON files before regenerating the dashboard. Every task must have a `task-*.json` file — the dashboard is generated from these files, never the other way around.
    - **Script alternative:** Capture hashes via `.claude/scripts/fingerprint.py --spec` / `--sections`; orchestrator writes the `sha256:...` strings into task JSON `spec_fingerprint` and `section_fingerprint` fields.
+   - **After creating task JSONs:** run the Decomposition Pre-Pass Validation (below) to catch declared-path drift and under-counted `files_affected` before tasks ship to `/work` Step 2c.
 
 9. **Map dependencies** — What must complete before what.
 
 10. **Regenerate dashboard** — Follow `.claude/support/reference/dashboard-regeneration.md` in full.
+
+---
+
+## Decomposition Pre-Pass Validation
+
+Runs after step 8 (Create task files). Catches two recurring failure modes that surface as implementer-side friction (~3 wasted tool uses per path-correction; friction markers across ~40% of large-batch sessions).
+
+### Leg 1: Path Resolution Check
+
+For each task JSON just created, verify that every path in `files_affected` exists. Also scan the task `description` for path-shaped tokens (matches like `src/components/.../*.tsx`, `tests/.../*.test.py`) and verify those resolve too.
+
+For any non-resolving path, surface inline:
+
+```
+Decomposition warning: Task {id} references non-existent path
+  declared: src/components/grooming/GroomingSection.tsx
+  closest match: src/components/style/GroomingSection.tsx
+  → fix the task before continuing? [Y/N]
+```
+
+Use a fuzzy-match (e.g., `Glob` for the basename) to suggest the closest existing path. If no match, leave the warning and let the user correct. Do not auto-rewrite — the suggestion may be wrong.
+
+### Leg 2: Ripple Inference
+
+For each task, run targeted greps to surface ripple-affected files the declared `files_affected` may miss. Four detection heuristics:
+
+| Pattern in task description | Grep target | Add to candidates |
+|----------------------------|-------------|-------------------|
+| `remove X` / `retire X` / `deprecate X` (where X is a field, type, or constant) | `grep -r "X"` across `**/__tests__/**`, `**/*.test.{ts,py,js}`, paths matching `*fixture*` / `*mock*` | Test/fixture files containing the value |
+| `.max(N)` → `.max(M)` or any threshold change | `grep -r "{old_threshold}"` in fixture files | Fixtures with hard-coded values that share the schema-constant's name |
+| New test files under `__tests__` / sibling-test convention | Read `package.json` `scripts.test` — if it chains explicit paths (vs glob), suggest `package.json` | `package.json` for chain-style test runners |
+| Validator-walk extension (Zod/Pydantic `superRefine`, strict-parse) | `grep -r "{ParserSchemaName}\.parse\|\.{ParserSchemaName}\.safeParse"` | Downstream callers |
+
+For each candidate, surface:
+
+```
+Decomposition note: Task {id} may be under-counting files_affected
+  declared: [field-definitions.json]
+  candidates from ripple grep: registry-loader.test.ts (matches "life_stage" in fixture)
+  → add to files_affected? [Y/N]
+```
+
+Like Leg 1, do not auto-add — present and ask. Both legs are advisory: they reduce implementer friction without blocking decomposition if the user disagrees.
+
+### When to Run
+
+- Always after step 8 of the standard procedure
+- Optionally as a standalone check on existing task files (via `/health-check` integration — see future scope)
+- Skip for trivial decompositions (≤3 tasks, all touching disjoint single files)
+
+### Limits
+
+The heuristics are deliberately narrow — they catch the dominant friction patterns (verified across styler Phase 20: 12+ tasks, ~40% with files_affected under-counts) without trying to be exhaustive. Function-name drift, deep import-graph ripples, and runtime-only dependencies remain implementer-side discovery work; that's acceptable given the alternative (full static analysis at decomposition time) is much more expensive.
 
 ---
 

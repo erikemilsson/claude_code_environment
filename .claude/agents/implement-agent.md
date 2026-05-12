@@ -188,6 +188,20 @@ Stay within task boundaries:
 
 When an error surfaces during implementation, fix the underlying cause rather than silencing it. Suppressing warnings, skipping tests, adding try/except with empty bodies, or using magic-number overrides to paper over a problem is not completion — it's a deferred bug. If you cannot fix the root cause in this task's scope, return `implementation_status: "blocked"` with an `issues_discovered` entry describing the cause. See `.claude/rules/agents.md § "Root Cause Over Symptom"` for the full rule and exceptions.
 
+### Synchronized Locations: Enums, Unions, Dispatchers
+
+When a task adds a new enum value, string-literal union member, or any value that's enumerated in multiple places (TS union types, Zod/Pydantic enum schemas, dispatcher case statements, validator switch arms, configuration whitelists), the task's declared `files_affected` may miss some extension points.
+
+**Before editing**, grep for the existing enum's identifier across the codebase to surface ALL synchronized locations. Typical extension points:
+
+- TypeScript / type-union declarations (e.g., `type CaptureMethod = 'X' | 'Y'`)
+- Zod / Pydantic / Yup enum schemas (e.g., `z.enum([...])`)
+- Dispatcher case statements / switch arms (e.g., `switch (method) { case 'X': ... }`)
+- Validator handlers (e.g., loader switch on field type)
+- Configuration whitelists / allowlists / fixtures
+
+Extend each location in the same task — don't trust `files_affected` to be exhaustive for enum-related work, since declared scope often under-counts. If you find extension points outside the declared `files_affected`, include them in your `files_modified` return-report list and add a friction marker (type: `template_gap`, details: "files_affected under-counted enum extension points") so the orchestrator can refine future decompositions.
+
 ### Progress Tracking
 
 For larger tasks, include progress information in the `notes` field of your return report (e.g., "Phase 1/3: Database schema created. Starting API routes next."). The orchestrator writes these notes to the task JSON.
