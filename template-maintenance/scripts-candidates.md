@@ -250,5 +250,5 @@ Recommended file layout:
 **Remaining open questions** (from "Open questions for user review" above):
 - #2 `task-schema.json` alongside Family B — still open. Could land as a separate Stage 2 extension.
 - #4 Skill-trial interaction (Family C) — defers with Family C trigger.
-- #5 `rules/agents.md` Bash exception wording — still open, low priority.
-- #6 Testing story — still open; would land with Family C if extracted.
+- ~~#5 `rules/agents.md` Bash exception wording — still open, low priority.~~ ✅ Closed 2026-05-13 in v3.5.1: added `Bash(python3 .claude/scripts/*.py:*)` to template-owned `settings.json` (9 entries total) + reference in `rules/agents.md` § Tool Preferences scripts paragraph.
+- ~~#6 Testing story — still open; would land with Family C if extracted.~~ ✅ Closed 2026-05-13 in v3.5.1: minimal CLI-level test harness at `.claude/scripts/tests/` (12 tests, all passing). Run with `python3 -m unittest discover .claude/scripts/tests/`. Tests include explicit FB-039 regression coverage. Comprehensive coverage for Family C can be added when/if extracted.
