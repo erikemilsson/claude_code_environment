@@ -8,7 +8,8 @@
       "Bash(grep:*)",
       "Bash(test:*)",
       "Bash(head:*)",
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "Bash(python3 .claude/scripts/*.py:*)"
     ]
   }
 }

@@ -9,6 +9,7 @@
       ".claude/skills/*/SKILL.md",
       ".claude/scripts/*.py",
       ".claude/scripts/README.md",
+      ".claude/scripts/tests/*.py",
       ".claude/rules/task-management.md",
       ".claude/rules/spec-workflow.md",
       ".claude/rules/decisions.md",
