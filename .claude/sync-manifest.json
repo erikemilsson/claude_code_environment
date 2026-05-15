@@ -17,6 +17,7 @@
       ".claude/rules/agents.md",
       ".claude/rules/archiving.md",
       ".claude/rules/session-management.md",
+      ".claude/rules/feature-retirement.md",
       ".claude/support/reference/shared-definitions.md",
       ".claude/support/reference/task-schema.md",
       ".claude/support/reference/workflow.md",
@@ -45,6 +46,7 @@
       ".claude/support/previous_specifications/README.md",
       ".claude/vision/README.md",
       ".claude/support/feedback/README.md",
+      ".claude/support/retired/README.md",
       ".claude/hooks/pre-compact-handoff.sh"
     ],
     "customize": [

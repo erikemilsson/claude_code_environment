@@ -175,6 +175,32 @@ mcp, mcp-server-git, git-lock, stale-lock, claude-code-environment, crash-cleanu
 
 ---
 
+## FB-003: Promote `feature-retirement.md` from Styler to template (generally-useful workflow rule)
+
+**Status:** promoted
+**Captured:** 2026-05-15
+**Promoted:** 2026-05-16 — Shipped in template_version 3.14.0. Genericized port of Styler's project-local rule. Two new files: (1) `.claude/rules/feature-retirement.md` documenting the 5-step retirement procedure (snapshot, commit pin, archive placement, spec annotation, discoverability), restore path (manual cherry-pick + optional project-side `/restore`), edge cases (application state, multi-file, merged spec sections, shared helpers, graduation to permanent deletion); (2) `.claude/support/retired/README.md` documenting the directory convention and `manifest.json` schema. Imports added to `.claude/CLAUDE.md` (rule + summary row); both files added to `sync-manifest.json`. Styler-specific references stripped (FB-070/071, T504/T497, DEC-055/050/051, spec § 27.1/13/21/22, foundation/* paths, Next.js-specific extensions, playwright dep removal example); replaced with generic examples. Worked example shifted from the rule file to the README schema doc. No changes to `audit-coherence.md` — Lens 5 (`retired-features`) already keys on the documented directory convention and reads manifests generically. After ship + sync, Styler's project-owned copy of `.claude/rules/feature-retirement.md` and `.claude/support/retired/README.md` can be retired (the template versions become the canonical home).
+**Source:** discovered as a Styler-local rule file during investigation of `/health-check` Part 5 sync friction (template-maintenance FB-059 + FB-060). Originally captured at `template-maintenance/feedback.md` as FB-061; relocated to shipped queue 2026-05-15.
+
+**Observation:** Styler had a project-local rule file at `.claude/rules/feature-retirement.md` that codifies a generally-useful workflow: how to retire a feature in a frozen, restorable state. The workflow shape:
+- Snapshot lives at the retirement commit (no orphaned state)
+- Spec keeps a "Retired (YYYY-MM-DD)" marker (discoverability for future readers)
+- Directory convention (`.claude/support/retired/{slug}/manifest.json`) enables mechanical restoration
+
+Not fashion-domain-specific. Any project doing iterative feature work that occasionally retires surfaces (renamed routes, removed components, sunset features) benefits. Integrates cleanly with the template's existing patterns (spec-as-source-of-truth, decision records, audit family's `retired-features` lens which already greps `.claude/support/retired/*/manifest.json`).
+
+The audit family's `audit-coherence` lens for `retired-features` already assumed this file structure exists — it scans `.claude/support/retired/*/manifest.json` and flags retired features missing spec markers. Promoting `feature-retirement.md` to the template makes the audit lens fully legible to downstream projects.
+
+**Counterpart not promoted:** Styler's `brand-mention-provenance.md` (when Claude can name brands vs substitute attributes per DEC-060) is fashion/retail-domain-specific. Stays Styler-only.
+
+**Open question (resolved at promotion):** the workflow rule did reference a `.claude/support/retired/README.md` sibling doc holding the manifest schema. Styler's schema field names (`feature_slug`, `successor_feature`, `rationale`) were kept verbatim during promotion — they correctly populate the conceptual fields the audit-coherence Lens 5 prompt names (`slug`, `replaced_by`, `retirement_reason`). The audit lens prompt's conceptual field names are descriptive, not strict JSON keys; the lens reads the manifest contents and maps them. No schema migration needed.
+
+### Tags
+
+rule-file-promotion, feature-retirement, audit-coherence, retired-features-lens, derived-from-styler
+
+---
+
 ## FB-004: Promote "Audit Tasks: literal-ID comparison" rule from Styler to template (`task-management.md`)
 
 **Status:** absorbed (duplicate)
