@@ -174,3 +174,51 @@ If Claude Code keeps logs of MCP server lifecycle events (start/crash/exit), che
 mcp, mcp-server-git, git-lock, stale-lock, claude-code-environment, crash-cleanup
 
 ---
+
+## FB-004: Promote "Audit Tasks: literal-ID comparison" rule from Styler to template (`task-management.md`)
+
+**Status:** absorbed (duplicate)
+**Captured:** 2026-05-15
+**Closed:** 2026-05-16 — Duplicate of `template-maintenance/feedback-archive.md` § FB-042 (promoted 2026-05-13, shipped in template v3.2.1 via commit 18951e8). The `## Audit Tasks` section was already present in `.claude/rules/task-management.md` at the time FB-004 was captured. No template change needed.
+**Absorbed into:** FB-042 (`template-maintenance/feedback-archive.md`).
+**Source:** discovered in styler-local addition to template-owned `.claude/rules/task-management.md` during ownership-boundary audit (counterpart to FB-003 + FB-005). Surfaced during cross-project capture session 2026-05-15.
+
+### Why it slipped past the Styler-side dedup check
+
+The dedup check probed four template-side feedback locations and concluded no prior item touched audit-task literal-ID comparison. The miss was caused by a **filename mismatch**: the check looked for `template-maintenance/archive.md` and reported "does not exist." The actual template-maintenance archive file is `template-maintenance/feedback-archive.md`, which contains FB-042 (the predecessor). Captured separately under FB-062 (template-maintenance) as an empirical instance of the dual-location convention gap.
+
+### What FB-042 already shipped (and FB-004 redundantly proposed)
+
+- A `## Audit Tasks` section in `.claude/rules/task-management.md` (between `## Parallel Execution` and `## References`) requiring 4-step literal-ID comparison in audit tasks of the form "verify whether downstream task X is needed."
+- `scope_clarification_needed` reporting path for semantic-match-without-literal-ID-match (a partial match should not be reported as `stale` / `no-op`).
+- Calibrated against the Styler Phase 20 T429 false-positive `no-op` finding.
+
+### Tags
+
+rule-file-promotion, task-management, audit-tasks, literal-id-comparison, derived-from-styler, duplicate
+
+---
+
+## FB-005: Promote "MCP and Parallel Execution" rule from Styler to template (`agents.md`)
+
+**Status:** absorbed (duplicate)
+**Captured:** 2026-05-15
+**Closed:** 2026-05-16 — Duplicate of `template-maintenance/feedback-archive.md` § FB-056 (promoted 2026-05-13, shipped in template v3.2.1 via commit 18951e8). The `## MCP and Parallel Execution` section was already present in `.claude/rules/agents.md` at the time FB-005 was captured. No template change needed.
+**Absorbed into:** FB-056 (`template-maintenance/feedback-archive.md`).
+**Source:** discovered in styler-local addition to template-owned `.claude/rules/agents.md` during ownership-boundary audit (counterpart to FB-003 + FB-004). Surfaced during cross-project capture session 2026-05-15.
+
+### Why it slipped past the Styler-side dedup check
+
+Same root cause as FB-004 above: the dedup check looked for `template-maintenance/archive.md` rather than the actual `template-maintenance/feedback-archive.md` and missed the predecessor (FB-056). See FB-062 (template-maintenance) for the convention-gap empirical-instance note.
+
+### What FB-056 already shipped (and FB-005 redundantly proposed)
+
+- A `## MCP and Parallel Execution` section in `.claude/rules/agents.md` (between `## Behavioral Rules` and `## Tool Preferences`) documenting single-session MCP server constraint (Playwright, browser automation, auth-session MCPs).
+- Three-pattern orchestrator response: route MCP-driving work through one agent / parallelize the rest / dispatch sequential agents for multi-route inspection.
+- Notes a lower-priority `mcp_resource_overlap` heuristic for a future `/work` Step 2c extension (parallel to FB-046's `shared_contract` detection).
+
+### Tags
+
+rule-file-promotion, agents-rules, mcp, parallel-execution, playwright-mcp, single-session-resource, derived-from-styler, duplicate
+
+---
