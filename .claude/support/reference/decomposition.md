@@ -134,6 +134,46 @@ These are organizational stages for tasks within the Execute phase, not workflow
 
 ---
 
+## Research-spike Pattern
+
+Some tasks have the shape **methodology → empirical loop → analysis**: research spikes investigating a library's behavior, perceptual A/Bs (pick design A vs B), onboarding sniff tests, dogfood cycles. The empirical step requires a human-only sensor (taste, perception, paste-an-image, run-and-observe) that Claude cannot substitute for; the surrounding methodology and analysis are Claude work. Filing the whole spike as `owner: claude` leaves the human loop invisible to dispatch and the dashboard; `owner: both` is documented for review-shaped work (Claude drafts → human refines), not for empirical apparatus.
+
+### Trigger
+
+The task shape combines (a) a methodology Claude can author, (b) an empirical loop only the human can run, and (c) an analysis Claude can synthesize once results come back. If any leg is absent (e.g., pure code change, pure design review), this pattern doesn't apply.
+
+### Decomposition
+
+For spikes where the empirical loop is independently worth tracking on the dashboard, use `/breakdown` to split into 2–3 sub-tasks:
+
+```
+TXXXa (owner: claude)                       — authors methodology, drafts empirical-prompt, stubs analysis shell
+   ↓ blocks
+TXXXb (owner: human, deps: [TXXXa])         — runs empirical loop, reports inline, self-attests via /work complete
+   ↓ blocks
+TXXXc (owner: claude, deps: [TXXXa, TXXXb]) — synthesizes results into the final report  ← optional
+```
+
+### Collapse rule
+
+If the empirical step is a single user action with no iteration (e.g., "paste one image", "click one button"), collapse to a single `owner: claude` task with an in-prose hand-off. The paired structure is for spikes whose human loop is independently worth tracking — multi-step protocols, multiple trials, or branching observation paths.
+
+### Description discipline
+
+- **TXXXb's description** must include the empirical-prompt template TXXXa drafted, so the user knows exactly what to test without re-reading TXXXa.
+- **TXXXc's description** must include the analysis shell TXXXa stubbed, so the synthesis step has its scaffold ready when its deps unblock.
+
+### Verification convention
+
+- **TXXXa / TXXXc** — verified normally by verify-agent. TXXXa's acceptance question is *"did Claude produce a methodology that matches the spike's directional question?"* — NOT *"did the empirical loop produce a specific answer?"* The empirical outcome is TXXXb's content; TXXXa is judged on methodology quality alone.
+- **TXXXb** — self-attests via `/work complete` (the standard `owner: human` path; see `.claude/agents/verify-agent.md` § "Human-owned tasks"). The user IS the experimental apparatus; verify-agent has no surface to evaluate beyond the human's report.
+
+### Why this shape
+
+The 3-value `owner` enum conflates "who is responsible" with "who executes." For most tasks these match. Research spikes split them: methodology is Claude-shaped (author + self-verify), the empirical loop is human-shaped (only the human can run it), the analysis is Claude-shaped again. Decomposing surfaces the human loop as a first-class dashboard artifact (TXXXb appears in "Your Tasks") instead of hiding it inside a Claude-owned umbrella, and routes each sub-task to its native verification path. Pattern origin: styler `DEC-082` Option ε.
+
+---
+
 ## Decomposition Quality Checks
 
 Each task must have:
