@@ -37,7 +37,7 @@ A bigger-hammer version of FB-032. The spec-auditor would diff each proposed cha
 
 ## FB-059: `/health-check` Part 5 selective sync conflates unsynced template content with genuine local additions (false-positive SKIP)
 
-**Status:** new
+**Status:** structural fix deferred (Phases 2-4 of `template-maintenance/plan-fb059-fb060.md`); docs partially shipped via FB-060 Phase 5
 **Captured:** 2026-05-15
 **Source:** observed during downstream Styler `/health-check` after audit family v3.12.0 ship.
 
@@ -62,8 +62,9 @@ The current algorithm can't distinguish these without per-file last-synced state
 
 ## FB-060: Template-owned vs project-owned file ownership boundary not enforced or discoverable
 
-**Status:** new
+**Status:** Phases 1 + 5 shipped (behavioral + discoverability); Phases 2-4 (structural fix) tracked in `template-maintenance/plan-fb059-fb060.md`
 **Captured:** 2026-05-15
+**Phase 1 + Phase 5 shipped 2026-05-16 (v3.14.2):** (Phase 1) Cross-Project Capture Protocol section added to `.claude/rules/agents.md` — codifies the pre-sync boundary check + finding-routing rules (generically-applicable → project→template promotion; project-specific → migration to project-owned location). (Phase 5) New `.claude/support/reference/extension-hooks.md` with canonical map of extension need → project-owned location, linked from `setup-checklist.md` preamble + `.claude/CLAUDE.md` navigation. Closes the "behavioral complement" follow-up and the "discoverability gap" sub-concern. Structural Phases 2-4 (sync_strict category, `.sync-state.json` sidecar, Part 5 algorithm refinement) remain deferred per the plan — candidate for DEC-NNN before implementation.
 **Source:** surfaced during FB-059 root-cause investigation. The Styler local-additions case wasn't a one-off — it exposes a structural gap: the template documents file ownership as a convention but ships no enforcement, no detection, and no documented extension pattern.
 
 **Observation:** Template files are conceptually split into ownership categories but the template doesn't make this machine-readable or user-discoverable. Three concrete failure modes observed via Styler:

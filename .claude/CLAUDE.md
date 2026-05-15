@@ -25,6 +25,7 @@ This environment is designed for **Claude Opus 4.7** (`claude-opus-4-7[1m]`). Al
 | Workspace (scratch) | `.claude/support/workspace/` |
 | Reference documents (inputs) | `.claude/support/documents/` |
 | Feedback | `.claude/support/feedback/` |
+| Project extension hooks | `.claude/support/reference/extension-hooks.md` |
 | Project instructions | `./CLAUDE.md` (root) |
 
 ## Critical Invariants

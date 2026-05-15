@@ -48,6 +48,30 @@ This complements DEC-005's permission-layer gate (which stops unauthorized tool 
 
 Note: starting a dev server for UI verification is a feature (per root `CLAUDE.md` guidance on UI testing), not a violation. The rule applies to *restarting after a kill*, not to initial starts.
 
+## Cross-Project Capture Protocol
+
+When a session is about to recommend the **template→sync flow** — typically after surfacing a generally-useful rule, command, agent, skill, or reference doc in the current project that could ship to the template — run a boundary check FIRST. The template→sync flow can silently lose local additions to template-owned files if those additions weren't reconciled before the sync.
+
+**Template-owned file globs** (sync-manifest `sync` category — projects should NOT modify these directly):
+
+- `.claude/CLAUDE.md`
+- `.claude/rules/*.md` (template-shipped names — not `project-*.md` which is project-owned)
+- `.claude/skills/*/SKILL.md`
+- `.claude/support/reference/*.md` (template-shipped names — not `project-*.md`)
+- `.claude/agents/*.md`
+- `.claude/commands/*.md` (template-shipped names — project commands like `audit-{name}.md` are project-owned)
+
+Before recommending the sync, enumerate the project's local additions to any of the above (diff against last-synced template state, OR explicitly walk each known-template-owned file looking for project-specific content).
+
+**Routing the findings:**
+
+- **Generically-applicable additions** (rule clarifications, agent guidance, command refinements that any project could benefit from) → recommend **project→template promotion first** (FB-002/FB-003-style: capture as feedback in the template repo, ship via `/feedback review`, then sync). The promoted content lands in the template; the subsequent sync becomes a no-op convergence rather than a conflict.
+- **Project-specific additions** (domain-specific rules, vocabulary, behaviors that don't generalize) → recommend **migration to a project-owned location first**. See `.claude/support/reference/extension-hooks.md` for the canonical map of extension need → project-owned location (rule imports → root `./CLAUDE.md`; project rules → `.claude/rules/project-*.md` gitignored; etc.).
+
+Either way, surface the boundary check at suggestion time, not at sync time. Catching the violation at sync exit (after the user has already integrated local additions into a template-owned file) means manual reconciliation is the only path forward. Catching it upstream means clean ship paths.
+
+**Why behavioral, not permission-layer:** the sync layer can structurally detect "local additions to template-owned file" at sync time (FB-059 / FB-060 structural fix, not yet shipped — see `template-maintenance/feedback.md` § FB-059 + FB-060). This rule reduces the *frequency* of the violation by preventing the upstream condition. Both layers compound.
+
 ## MCP and Parallel Execution
 
 Single-session MCP servers cannot be safely fanned out across parallel subagents. Servers that expose stateful single-instance resources — Playwright MCP (one browser session), browser-automation MCPs, auth-session MCPs, connection-pooled MCPs — share their underlying state across all concurrent calls. Two parallel subagents calling the same MCP drive the **same** tab / session / connection; navigations, clicks, snapshots, and reads interleave silently. The failure mode is invisible — snapshots look fine but reflect another agent's mid-action state.
