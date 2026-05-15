@@ -15,6 +15,8 @@ This command is part of the audit family (proposal: `template-maintenance/audit-
 
 **Hard rule (Component 6 of proposal):** the spec, decision records, and vision documents are read-only outside `/iterate`. Any finding whose `files_to_touch` includes a spec/decision/vision file path is auto-classified `kind: decision` — the synthesizer enforces this. Most UI audit findings are `decision` kind anyway (copy changes, IA decisions), so the hard rule cleanly applies.
 
+**Background-session note:** this command writes only to a gitignored audit dir under `.claude/support/audits/{cmd}-{ts}/`. **Do not enter a worktree before running it** — the worktree dance is wasted overhead and severs access to whatever gitignored state the lenses inspect alongside the running dev server. Run in the main working tree (`cwd` outside `.claude/worktrees/`). The audit dir's timestamp prevents same-second collisions across parallel sessions.
+
 ---
 
 ## Usage

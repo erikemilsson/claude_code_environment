@@ -29,7 +29,13 @@ When making changes to the template, use the `.claude/` command definitions as r
 
 - **Source of truth:** `system-overview.md` (root) describes the template's design intent
 - **Decision records:** `decisions/` (root) — for formal decisions about template changes via `/research`
-- **Feedback:** `template-maintenance/feedback.md` (root) — template-maintenance FB-NNN items. Append manually; do NOT use `/feedback` in this repo. `/feedback` writes to `.claude/support/feedback/feedback.md`, which is the shipped location reserved for downstream projects using the template.
+- **Feedback (four files; see FB-062 for the convention):**
+  - `.claude/support/feedback/feedback.md` (shipped, active) + `archive.md` (shipped, resolved) — `/feedback review` triages.
+  - `template-maintenance/feedback.md` (maintenance, active) + `feedback-archive.md` (maintenance, resolved) — manual triage. Append manually; do NOT use `/feedback` here.
+
+  **Naming-asymmetry trap:** the maintenance archive is `feedback-archive.md`, NOT `archive.md`. Dedup checks that probe `template-maintenance/archive.md` will silently report "does not exist" and miss predecessors (observed 2026-05-15: FB-004 + FB-005 captured as duplicates of already-shipped FB-042 + FB-056 because of this exact miss; see FB-062 § "Observed empirical instances").
+
+  **Cross-project capture pattern:** downstream-project sessions write template-fix items to the **shipped** location (`.claude/support/feedback/feedback.md`) where template-side `/feedback review` picks them up. Template-side sessions append maintenance items to `template-maintenance/feedback.md`. Before assigning a new `FB-NNN`, scan **all four files by exact filename** — they share one ID namespace.
 - **Staged work inventories:** `template-maintenance/` (root) — deferred extractions and multi-stage plans (e.g., `scripts-candidates.md`)
 
 These are template-maintenance artifacts that don't ship to projects.

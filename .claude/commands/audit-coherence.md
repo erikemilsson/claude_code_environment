@@ -13,6 +13,8 @@ This command is the first audit shipped by the audit family (proposal: `template
 
 **Hard rule (Component 6 of proposal):** the spec, decision records, and vision documents are read-only outside `/iterate`. Any finding whose `files_to_touch` includes a spec/decision/vision file path is auto-classified `kind: decision` — Stage 3 surfaces it for promotion to `/iterate`; Stages 6/7 will route [Fix it] to `/iterate` for these without ever editing the file inline.
 
+**Background-session note:** this command reads gitignored project state (spec, decisions, feedback, friction register, tasks, retired manifests) and writes only to a gitignored audit dir under `.claude/support/audits/{cmd}-{ts}/`. **Do not enter a worktree before running it** — the worktree's HEAD will not contain the gitignored inputs, and the command's reads will fail. Run in the main working tree (`cwd` outside `.claude/worktrees/`). The audit dir's timestamp prevents same-second collisions across parallel sessions, so worktree isolation is unnecessary.
+
 ---
 
 ## Usage

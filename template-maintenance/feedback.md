@@ -123,8 +123,9 @@ The structural fixes catch the violation at sync time. A behavioral guideline ca
 
 ## FB-062: Two FB-NNN locations in template repo with overlapping purposes + namespace collision risk
 
-**Status:** new
+**Status:** cheap action shipped (medium/higher remain as options)
 **Captured:** 2026-05-15
+**Cheap action shipped 2026-05-16 (v3.14.1):** root `CLAUDE.md` § File Boundary's "Feedback" bullet replaced with a four-file enumeration that explicitly names `feedback-archive.md` (not `archive.md`), surfaces the naming-asymmetry trap with a concrete observed-instance pointer (FB-004 + FB-005 dedup miss), and documents the cross-project capture pattern. Medium (rename maintenance archive + IDs to `TM-NNN`) and Higher (consolidate to one location with `track:` field) remain as future options if the documented convention still produces dedup misses.
 **Source:** surfaced during FB-060/FB-061 capture; recognized after Erik shared context from prior Styler session that authored FB-002 in shipped location (which then shipped as v3.13.0). The location convention is undocumented and the two namespaces could collide.
 
 **Observation:** The template repo has two distinct files holding `FB-NNN` items, with overlapping but unclear purposes:
@@ -170,8 +171,9 @@ The naming asymmetry (`feedback-archive.md` vs `archive.md`) is the structural b
 
 ## FB-063: Background-session auto-worktree breaks commands that read gitignored project state
 
-**Status:** new
+**Status:** cheap action shipped (medium/higher remain as options)
 **Captured:** 2026-05-16
+**Cheap action shipped 2026-05-16 (v3.14.1):** added `## Background-session note` sub-sections above `## Usage` in `.claude/commands/audit-coherence.md` and `.claude/commands/audit-ui.md`, instructing not to enter a worktree before running the command (worktree's HEAD won't contain gitignored inputs, and the audit dir's timestamp prevents same-second collisions across parallel sessions, so isolation is unnecessary). Medium (extend background-session preamble carve-out to "writes only to gitignored locations") and Higher (worktree-level bind-mount of gitignored files) remain as future options if other commands hit the same trap.
 **Source:** observed mid-run during `/audit-coherence` in the Styler downstream project (background session, 2026-05-15). The audit aborted its initial write attempt with `InputValidationError` ("This background session hasn't isolated its changes yet. Call EnterWorktree first"). Entering the worktree then revealed the worktree's HEAD did not contain the gitignored inputs the audit needs (spec, decisions, feedback, tasks, dashboard — all gitignored under `.claude/**` in Styler's `.gitignore`).
 
 **Observation:** The background-session preamble auto-routes any tool that writes files into an `EnterWorktree` call before "code changes." The current carve-out reads:
