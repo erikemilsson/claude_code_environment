@@ -59,3 +59,68 @@ The current algorithm can't distinguish these without per-file last-synced state
 **Workaround for affected projects (until Part 5 is refined):** when Part 5 offers selective sync, manually review the diff for each "skip" candidate via `diff <template-path> <project-path>`. If the diff is purely template content (lines present in template but not project), override the skip or manually copy the new template content into the project's file.
 
 **Likely route:** scope-add to a new `/health-check` Part 5 refinement (not FB-058 — that's about `/work` decomposition path validation). Worth a research-light to confirm the proposed sidecar-based detection is feasible without restructuring the sync engine. Could also incorporate a "show me the diff" sub-action in the Part 5 menu so users can manually adjudicate per file.
+
+## FB-060: Template-owned vs project-owned file ownership boundary not enforced or discoverable
+
+**Status:** new
+**Captured:** 2026-05-15
+**Source:** surfaced during FB-059 root-cause investigation. The Styler local-additions case wasn't a one-off — it exposes a structural gap: the template documents file ownership as a convention but ships no enforcement, no detection, and no documented extension pattern.
+
+**Observation:** Template files are conceptually split into ownership categories but the template doesn't make this machine-readable or user-discoverable. Three concrete failure modes observed via Styler:
+
+1. **`.claude/CLAUDE.md` (template-owned) was modified by Styler** to add 2 project-specific rule imports + summary rows. The file's own preamble says `"This file is template-owned — do not edit directly. Project-specific instructions belong in ./CLAUDE.md (project root)."` — but nothing prevents or warns against the violation. Convention exists; enforcement doesn't.
+2. **`.claude/skills/dashboard-style/SKILL.md` (template-owned)** got the same false-positive treatment from `/health-check` Part 5 even though it had zero local additions (FB-059) — because Part 5 doesn't know which files are template-owned vs project-extensible.
+3. **Discoverability gap:** nowhere in the template is the extension pattern explicitly documented. A user wanting to add project-specific rule imports has to infer that root `./CLAUDE.md` is the right home (rather than `.claude/CLAUDE.md`). The template's `setup-checklist.md`, README, and rules files don't surface this.
+
+**Three sub-concerns to address:**
+
+- **Detection (machine-readable ownership).** `sync-manifest.json` currently lists files in flat arrays without tagging ownership category. Proposed schema extension: each file (or file pattern) carries a `category` field — `template_owned` (sync overwrites, never preserves diffs), `project_extensible` (sync respects local additions per FB-059 refinement), or `template_shipped_then_project_owned` (template ships once at setup, then project takes ownership; sync skips entirely). Existing files like `.claude/CLAUDE.md`, `.claude/rules/*.md`, `.claude/skills/*/SKILL.md`, `.claude/commands/*.md` (template-shipped variants) become `template_owned`. Project-extensible: `.claude/dashboard.md` (mostly template-generated but has user notes section). Template-shipped-then-project-owned: `.claude/spec_v1.md` (placeholder shipped, project replaces).
+- **Enforcement / warning behavior.** Part 5 uses the category to decide sync behavior:
+  - `template_owned` + project-side diff detected → warn user "your local additions to {file} violate the file-ownership convention; the file is being overwritten. Recommended migration: move additions to {root CLAUDE.md / .claude/rules/ / etc.}"
+  - `project_extensible` → use FB-059's per-file last-synced-version detection
+  - `template_shipped_then_project_owned` → skip sync entirely
+- **Discoverability of extension hooks.** Add a "Project extension hooks" section to README or `setup-checklist.md` documenting where projects should add: rule imports (root `./CLAUDE.md`), project-specific rule files (`.claude/rules/` — auto-loaded if imported), project-specific commands (`.claude/commands/audit-{name}.md` per Component 9 of audit family proposal), project-specific skills (`.claude/skills/`), etc. One canonical map. Could live alongside the file-ownership category map.
+
+**Practical impact observed in Styler:** modified `.claude/CLAUDE.md` caused FB-059's false-positive sync friction; no warning when the violation happened; user didn't know the right alternative. Took a multi-message investigation to surface the structural concern.
+
+**Proposed actions:**
+1. Extend `sync-manifest.json` schema with `category` per file/pattern. One-time data entry pass.
+2. Refine `/health-check` Part 5 to honor categories (combines with FB-059's per-file last-synced-version detection for `project_extensible` files).
+3. Add "Project Extension Hooks" section to `setup-checklist.md` and/or root README. Maps each common extension need to its canonical home.
+4. Add a one-line preamble check to template-owned files: if user edits detected at sync time, surface the migration recommendation prominently (not buried in the offered-fixes menu).
+
+**Dependencies / interactions:**
+- FB-059 (sync detection refinement for `project_extensible`) is a precondition for the Part 5 refinement here.
+- Component 9 of audit family proposal (project-to-template graduation) overlaps — both want clear conventions for "what's project, what's template."
+
+**Likely route:** research-light scope. Could be one DEC covering both FB-059 and FB-060 (the ownership system + sync refinement together), since they're tightly coupled. Or two ships: FB-059's per-file last-synced-version mechanism first; FB-060's category schema + Part 5 refinement second.
+
+## FB-061: Promote `feature-retirement.md` from Styler to template (generally-useful workflow rule)
+
+**Status:** new
+**Captured:** 2026-05-15
+**Source:** discovered as a Styler-local rule file during FB-059/FB-060 investigation.
+
+**Observation:** Styler has a project-local rule file at `.claude/rules/feature-retirement.md` that codifies a generally-useful workflow: how to retire a feature in a frozen, restorable state. The workflow shape:
+- Snapshot lives at the retirement commit (no orphaned state)
+- Spec keeps a "Retired (YYYY-MM-DD)" marker (discoverability for future readers)
+- Directory convention (`.claude/support/retired/{slug}/manifest.json`) enables mechanical restoration
+
+This is not fashion-domain-specific. Any project doing iterative feature work that occasionally retires surfaces (renamed routes, removed components, sunset features) could benefit. The workflow integrates cleanly with the template's existing patterns (spec-as-source-of-truth, decision records, audit family's `retired-features` lens which already greps for `.claude/support/retired/*/manifest.json`).
+
+The audit family's `audit-coherence` lens for `retired-features` already assumes this file structure exists — it scans `.claude/support/retired/*/manifest.json` and flags retired features missing spec markers. Without the workflow rule shipped in the template, downstream projects would hit the lens but have no guidance on the convention. So promoting `feature-retirement.md` makes the audit lens more legible.
+
+**Counterpart not promoted:** Styler's `brand-mention-provenance.md` (when Claude can name brands vs substitute attributes per DEC-060) is fashion/retail-domain-specific. Stays Styler-only.
+
+**Proposed action (small ship):**
+1. Copy `styler/.claude/rules/feature-retirement.md` to `claude_code_environment/.claude/rules/feature-retirement.md`. Edit lightly to remove Styler-specific language (e.g., FB-070 references → generic "feedback item") if any.
+2. Add the file to `sync-manifest.json` (rules category).
+3. Add the import to template's `.claude/CLAUDE.md` (workflow rules section) + summary row.
+4. Update template's `audit-coherence.md` lens-retired-features prompt to reference the workflow rule (improves the lens's "what counts as a finding" precision).
+5. Bump template_version (minor — new feature: workflow rule shipped).
+
+**Risk:** low. Pure additive — no breaking changes to existing template files. Downstream projects that don't use feature retirement see the rule but don't act on it.
+
+**Dependencies:** none.
+
+**Open question:** does the workflow rule depend on a specific `.claude/support/retired/` directory structure that Styler defined? Need to verify the manifest.json schema is template-shippable or whether it carries Styler-specific fields. If Styler-specific, document the abstract structure in the rule and let projects define their own manifest fields.
