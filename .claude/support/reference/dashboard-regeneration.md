@@ -73,6 +73,11 @@ User-authored content is persisted in `.claude/dashboard-state.json` as a durabl
   "phase_gates": {},
   "inline_feedback": {},
   "custom_views_instructions": "",
+  "audit_digest": {
+    "latest_audit": "",
+    "items": [],
+    "dismissed_ids": []
+  },
   "updated": "2026-01-28T14:30:00Z"
 }
 ```
@@ -86,6 +91,7 @@ User-authored content is persisted in `.claude/dashboard-state.json` as a durabl
 | `phase_gates` | Object | Keyed by transition (e.g., `"1→2"`). Value: `{ "status": "active"\|"approved", "content": "full markdown between markers" }` |
 | `inline_feedback` | Object | Keyed by task ID. Value: string content between `<!-- FEEDBACK:{id} -->` markers |
 | `custom_views_instructions` | String | Content between `<!-- CUSTOM VIEWS INSTRUCTIONS -->` markers |
+| `audit_digest` | Object | `latest_audit` (string, e.g. `"coherence-2026-05-15-1430"`), `items[]` (digest item objects, projection of latest digest.json), `dismissed_ids[]` (item IDs the user dismissed via dashboard). See `.claude/support/reference/audit-fix-workflow.md` for the dashboard digest section spec. |
 | `updated` | String | ISO 8601 timestamp of last write |
 
 **Lifecycle:**
@@ -161,6 +167,7 @@ For each marker type, check that both open and close markers exist:
 | Phase gate approved | `<!-- PHASE GATE:{X}→{Y} APPROVED -->` | *(single marker, no close)* |
 | Custom views | `<!-- CUSTOM VIEWS INSTRUCTIONS -->` | `<!-- END CUSTOM VIEWS INSTRUCTIONS -->` |
 | Section toggles | `<!-- SECTION TOGGLES -->` | `<!-- END SECTION TOGGLES -->` |
+| Audit digest | `<!-- AUDIT DIGEST -->` | `<!-- END AUDIT DIGEST -->` |
 
 For each type:
 - If both markers present → extract content (marker is intact)
@@ -292,6 +299,8 @@ Read `.claude/dashboard-state.json` and inject content into the generated dashbo
 
 **5e. Section toggles:** The toggle checklist is generated from `section_toggles` in the sidecar. The `<details>` wrapper and marker format remain unchanged.
 
+**5f. Audit digest:** Read sidecar's `audit_digest`. Then scan `.claude/support/audits/*/digest.json` for the most recent file by `ran_at`. If newer than `audit_digest.latest_audit`, replace `audit_digest.items` with the new digest's `items[]` (preserving `dismissed_ids`). Render the `🔍 Audit Findings` sub-section per Section Display Rules — see audit-fix-workflow.md for the action-protocol details. Items with `id` in `dismissed_ids` OR `status != "pending"` are filtered out (resolved / promoted / dismissed items don't render). If `audit_digest.items` is empty after filtering AND `latest_audit` is non-empty, render the empty-state line. If `latest_audit` is empty (no audits ever run), skip the section entirely.
+
 ### 6. Add Footer Line
 
 At very end:
@@ -388,7 +397,24 @@ The user selects an option when prompted, and `/work` updates the task according
 ### Section Display Rules
 
 - Action Required sub-sections: only render when they have content (omit empty categories entirely)
-- Action Required sub-section order: Phase Transitions, Verification Pending, Verification Debt, Spec Drift, Feedback, Decisions, Your Tasks, Reviews
+- Action Required sub-section order: Phase Transitions, Verification Pending, Verification Debt, Spec Drift, **Audit Findings**, Feedback, Decisions, Your Tasks, Reviews
+- **Audit Findings sub-section in Action Required** (auto-renders when sidecar's `audit_digest.items` has any item with `status: pending` and `id` not in `dismissed_ids`):
+  - Header line: `*Last audit: {audit_name} {ran_at} ({N} pending · {K} promoted · {M} dismissed since last audit)*`
+  - Marker-bracketed for sidecar persistence:
+    ```
+    <!-- AUDIT DIGEST -->
+    - [ ] **{C-NN}** {title} — [Promote to FB] / [Dismiss]
+    <!-- END AUDIT DIGEST -->
+    ```
+  - One bullet per item where `status == "pending"` AND `id NOT IN dismissed_ids`. Items resolved by promote (`status: resolved` or `status: promoted`) or dismissed are filtered out at render time.
+  - **Action labels (Stage 6a — promote-only):** `[Promote to FB] / [Dismiss]` for ALL kinds. Stage 6 (full) extends with `[Fix it]` per kind — see audit-fix-workflow.md for the kind→action table.
+  - **Annotations footer** (when the source digest has `annotations[]`): rendered as a separate italicized sub-list outside the marker pair:
+    ```
+    *Already covered by in-flight work:*
+    - C-NN → T{id} ({status}) — "{what}"
+    ```
+  - **Empty state** (no `pending` items but `latest_audit` is non-empty): `*No pending audit findings. Last audit: {date}. Run /health-check to refresh.*`
+  - **Section toggle defaults:** `[x]` if any audit command in `.claude/commands/audit-*.md` is applicable to the project (per its `applies_when`); `[ ]` otherwise.
 - Phase Transitions: only render when a phase boundary has been reached (all Phase N tasks Finished, Phase N+1 exists) AND no APPROVED marker exists for that transition
 - Verification Pending: only render when all spec tasks are Finished with passing per-task verification but no valid verification-result.json
 - Spec Drift: only render when drift-deferrals.json has active entries
@@ -434,6 +460,7 @@ The user selects an option when prompted, and `/work` updates the task according
 | Action Required → Verification Pending | Plain text status message |
 | Action Required → Verification Debt | `Task \| Title \| Issue` |
 | Action Required → Spec Drift | `- ⚠️ **{section}** — {N} tasks affected, deferred {M} days ago` |
+| Action Required → Audit Findings | `- [ ] **{C-NN}** {title} — [Promote to FB] / [Dismiss]` (Stage 6a; Stage 6 full extends per kind. See audit-fix-workflow.md.) |
 | Action Required → Feedback | `- 📝 **{N} feedback items** awaiting attention ({X} new, {Y} refined, {Z} ready) → /feedback review` |
 | Action Required → Decisions | `Decision \| Question \| Doc` |
 | Action Required → Your Tasks | `Task \| What To Do \| Where` |
