@@ -834,6 +834,95 @@ Processes cross-project session exports when `/health-check` runs in the templat
 
 ---
 
+## Part 8: Audit Dispatch
+
+Discovers and dispatches project-applicable audit commands. Audits live in `.claude/commands/audit-*.md` (template-shipped or project-local) and self-declare their applicability via `applies_when` frontmatter. This Part is the user-facing entry point for running audits — it surveys what's applicable, presents a menu, and dispatches the user's selection.
+
+Audits complement Parts 1-7: where Parts 1-7 are automated validation/processing that runs unconditionally, Part 8 is interactive — the user picks which audits to run based on what they want to investigate. See `template-maintenance/audit-command-family-proposal.md` for the full audit family design (commands, friction register, dashboard digest, [Fix it] mechanism, bundled apply).
+
+### Discovery
+
+1. Glob `.claude/commands/audit-*.md`. For each, parse YAML frontmatter:
+   ```yaml
+   ---
+   applies_when:
+     any_file_exists: ["..."]               # at least one glob pattern must match a real file
+     # OR
+     package_json_has_dep: ["..."]          # at least one listed dep must appear in package.json
+   estimated_runtime: "..."                  # informational, e.g., "2-3 min"
+   prerequisites: ["..."]                    # informational, e.g., ["dev server reachable at {url}"]
+   ---
+   ```
+2. Evaluate each `applies_when` against project state:
+   - `any_file_exists`: true if at least one glob pattern matches a real file
+   - `package_json_has_dep`: true if at least one listed dep appears in `dependencies` or `devDependencies` of any `package.json` in the project tree
+3. Build the applicable-audits list. Audits whose `applies_when` evaluates false are silently skipped (not shown in menu).
+
+### Menu Presentation
+
+If 0 applicable audits: print `No audits applicable for this project shape.` and skip Part 8.
+
+If 1+ applicable audits: present the menu inline:
+
+```
+Audits available for this project:
+
+  [1] coherence  — spec/decision/path drift detection (~2-3 min)
+  [2] ui         — web app surface walk + 7 quality lenses (~5-7 min, requires dev server)
+  [A] all applicable
+  [S] skip
+
+Pick one or more (e.g., "1,2"), or skip:
+```
+
+Prompt the user. Accept comma-separated numbers, "A" / "all", or "S" / "skip" (default).
+
+### Dispatch
+
+For each selected audit:
+
+1. **Pre-flight prerequisites.** If the audit's `prerequisites` list mentions "dev server reachable at {url}" or similar, attempt verification (curl the URL). If unreachable, print the audit's pre-flight error and SKIP this audit (continue with others, don't fail Part 8).
+2. **Invoke the audit command.** The audit runs in the same conversation context (commands are loaded as instructions). Sequence: dispatch one at a time — audits are internally parallel via lens sub-agents; sequencing across audits keeps output legible and avoids MCP collisions (per `.claude/rules/agents.md` § "MCP and Parallel Execution" — `/audit-ui` uses Playwright MCP which can't be safely fanned out across parallel command invocations either).
+3. **Capture digest.** Each audit writes `findings.md` and `digest.json` to `.claude/support/audits/{audit}-{ts}/`. Record the digest path for the aggregate summary.
+
+### Aggregate Output
+
+After all selected audits complete, print a combined summary:
+
+```
+Audit results:
+
+  /audit-coherence (2026-05-15 14:30Z):
+    23 raw findings → 8 clustered (3 bundle-eligible, 5 promote-eligible, 2 deduped to pending tasks)
+    Report: .claude/support/audits/coherence-2026-05-15-1430/findings.md
+
+  /audit-ui (2026-05-15 14:35Z):
+    47 raw findings → 18 clustered (1 bundle-eligible, 17 promote-eligible, 4 deduped to pending tasks)
+    Report: .claude/support/audits/ui-2026-05-15-1435/findings.md
+
+To act on findings:
+  Promote to feedback: /audit-{name} promote {audit-ts}
+  (Stages 6-7 will add [Fix it] inline + bundled-apply batch UX — see audit family proposal)
+```
+
+When Stage 6 of the audit family ships, the digest items will surface automatically on the dashboard's `🔍 Audit Findings` section with `[Fix it] / [Promote] / [Dismiss]` actions per item. Until then, the inline summary + manual review of `findings.md` + `/audit-{name} promote {ts}` is the surface.
+
+### Skip Conditions
+
+Part 8 is skipped entirely if:
+- 0 applicable audits exist (silent — print one line, no menu)
+- The user selects `[S]` from the menu
+- (Future) Running with a `--no-audits` flag — not implemented yet; defer until pattern observed
+
+### Edge Cases
+
+- **Audit command malformed.** If `applies_when` parsing fails for a specific audit file, log a warning to chat (`Audit command audit-{name}.md has malformed applies_when — skipping.`) and continue. Don't fail the entire health-check.
+- **Audit invocation fails mid-run.** If an audit errors out (capture phase fails, lens agent fails, etc.), the audit's own error handling kicks in. Part 8 captures the failure (which audits succeeded vs failed) and continues to the next selected audit.
+- **Project-local audits.** A project may have its own `.claude/commands/audit-{custom}.md`. Part 8 discovers and surfaces these alongside template-shipped audits — no special treatment in the menu (just labeled by the audit name from the file). See Component 9 of the audit family proposal for the project→template graduation pattern.
+- **Sub-mode invocations like `/audit-coherence promote {ts}`.** Part 8 only dispatches the audit-run mode (no positional args); it does NOT dispatch promote / fix-it / etc. Those are direct user invocations of the audit command, outside Part 8's scope.
+
+---
+
 ## Process
 
 ### Step 1: Scan
@@ -863,6 +952,7 @@ FETCH template remote and diff sync files (skip if offline)
 - Part 5: Template sync + collision + settings checks
 - Part 6: UX evaluation (checks 1-6)
 - Part 7: Interaction log processing (template repo only)
+- Part 8: Audit dispatch (interactive — present applicable audits, dispatch user selection)
 
 ### Step 3: Report
 

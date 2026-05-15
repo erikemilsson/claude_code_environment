@@ -11,7 +11,7 @@
 ## Constraints (load-bearing)
 
 - **No new top-level commands.** `/health-check` is the only user surface. Maintainer is at the edge of how many commands they want.
-- **Audits are commands** (`.claude/commands/audit-*.md`) — single markdown file per audit, mirroring Styler's existing `/audit-ui` shape. Template-shipped audits ship with the template; project-local audits live in the project's `.claude/commands/` and are auto-discovered by `/health-check` Part 6 (Component 1). See Component 9 for the project→template graduation pattern.
+- **Audits are commands** (`.claude/commands/audit-*.md`) — single markdown file per audit, mirroring Styler's existing `/audit-ui` shape. Template-shipped audits ship with the template; project-local audits live in the project's `.claude/commands/` and are auto-discovered by `/health-check` Part 8 (Component 1). See Component 9 for the project→template graduation pattern.
 - **Specification is read-only outside `/iterate`.** The spec (`.claude/spec_v*.md`), decision records (`.claude/support/decisions/decision-*.md`), and vision documents (`.claude/vision/**/*.md`) are **never** modified by [Fix it] or bundled-apply. The only path that mutates these files is `/iterate`. Audits read these files to detect drift; only `/iterate` writes them. Enforced structurally at the file-path level (Component 6 hard exclusion + Component 8 action table). The user's load-bearing instinct ("only reading it, no writing at all, unless we go through the iterate command") is the rule.
 - **Implementation-file edits via [Fix it] / bundled-apply are gated on at-apply-time source re-read**, not Claude's first-pass confidence. Audit synthesizer's classification is not trusted; orchestrator re-verifies before any write.
 - **Dashboard digest persists across regens** until each item is promoted, dismissed, or resolved by a subsequent audit run.
@@ -30,7 +30,7 @@ Part 1-5: [existing structural checks run as today]
   ✓ Archive: clean
   ✓ Template sync: in sync
 
-Part 6: Audit dispatch
+Part 8: Audit dispatch
 
   Audits available for this project:
     [1] coherence  — spec/decision/path drift detection (~2 min)
@@ -86,7 +86,7 @@ The dashboard's `🔍 Audit Findings` section then shows those 5 items with `[Pr
 ```
 /health-check
 ├── Parts 1-5: existing structural checks (unchanged)
-└── Part 6: Audit Dispatch (NEW)
+└── Part 8: Audit Dispatch (NEW)
     ├── detect applicable audits via command frontmatter (`applies_when`)
     ├── present menu
     ├── dispatch selected audits (sequentially — each is internally parallel via lens sub-agents)
@@ -96,10 +96,10 @@ The dashboard's `🔍 Audit Findings` section then shows those 5 items with `[Pr
     └── update dashboard digest section
 
 .claude/commands/                    ← audits are commands (single .md per audit)
-├── health-check.md                  # existing, now with Part 6 dispatch
+├── health-check.md                  # existing, now with Part 8 dispatch
 ├── audit-coherence.md               # NEW — frontmatter + capture procedure + 6 lens prompts + synthesizer prompt + digest schema, all in one file
 ├── audit-ui.md                      # migrated from Styler (was Styler-local; now template-shipped)
-└── (future audit-* commands; project-local audits in project's .claude/commands/audit-*.md also auto-detected by Part 6)
+└── (future audit-* commands; project-local audits in project's .claude/commands/audit-*.md also auto-detected by Part 8)
 
 .claude/support/
 ├── friction.jsonl                   # NEW: persistent register, append-only
@@ -119,9 +119,9 @@ The dashboard's `🔍 Audit Findings` section then shows those 5 items with `[Pr
 
 ## Components
 
-### 1. `/health-check` Part 6: Audit Dispatch
+### 1. `/health-check` Part 8: Audit Dispatch
 
-After existing Parts 1-5 complete, the new Part 6:
+After existing Parts 1-5 complete, the new Part 8:
 
 1. **Detect applicable audits.** Scan `.claude/commands/audit-*.md` for `applies_when` frontmatter declarations. Each audit command self-declares its trigger conditions (e.g., `audit-coherence` applies when any `.claude/spec_v*.md` exists; `audit-ui` applies when project `package.json` declares Next.js / React / Vue / Svelte / Vite as a dep). Both template-shipped audits and project-local audits live at the same path (`.claude/commands/audit-*.md`) and are surfaced together — covers the "I built a project-specific audit and want it surfaced through `/health-check`" case (see Component 9, graduation path).
 2. **Present menu** with rough time estimates, prerequisites, and source (template-shipped vs project-local).
@@ -437,7 +437,7 @@ The template should formalize this graduation pattern so users don't have to rei
 - User identifies a recurring quality concern in their project
 - Creates `.claude/commands/audit-{name}.md` in the project, modeled on the template-shipped audit-command skeleton (see below)
 - Implements lens prompts + synthesizer + digest output
-- `applies_when` frontmatter declares conditions (so `/health-check` Part 6 picks it up)
+- `applies_when` frontmatter declares conditions (so `/health-check` Part 8 picks it up)
 - Runs the audit several times, refines lens prompts based on real findings
 - Promotes findings via existing [Fix it] / [Promote to FB] mechanisms — same as template-shipped audits
 
@@ -457,7 +457,7 @@ The template should formalize this graduation pattern so users don't have to rei
 
 1. **`.claude/support/reference/audit-template-pattern.md`** — canonical reference doc. Documents the lens/synthesizer/digest interface, `digest.json` schema, `applies_when` frontmatter, `[Fix it]` integration. Anyone building a new audit (project-local or template-shipped) reads this first.
 2. **`.claude/support/templates/audit-skeleton.md`** — copy-paste skeleton for new audits. Contains placeholder `audit-{NAME}.md` with frontmatter, lens prompt structure, synthesizer prompt, digest schema. User clones into their project's `.claude/commands/` (renaming to their audit name) and fills in lens prompts + synthesizer logic.
-3. **`/health-check` Part 6 detection** (already in Component 1) — picks up project-local `.claude/commands/audit-*.md` audits as first-class citizens, so they're discoverable through the same surface as template-shipped ones.
+3. **`/health-check` Part 8 detection** (already in Component 1) — picks up project-local `.claude/commands/audit-*.md` audits as first-class citizens, so they're discoverable through the same surface as template-shipped ones.
 
 This pattern keeps experimentation fast (no template ceremony to try a new audit) while providing a clear upgrade path when an audit proves valuable beyond a single project.
 
@@ -485,7 +485,7 @@ Define schema, document write protocol, add return-report fields to implement-ag
 
 ### Stage 3 — `audit-coherence` command
 
-The command itself, including all 6 lenses and the synthesizer prompt. Initially exercised by direct invocation (`/audit-coherence` callable directly during development; `/health-check` Part 6 dispatch is Stage 5).
+The command itself, including all 6 lenses and the synthesizer prompt. Initially exercised by direct invocation (`/audit-coherence` callable directly during development; `/health-check` Part 8 dispatch is Stage 5).
 
 **Ships:** `.claude/commands/audit-coherence.md` (single file with frontmatter, capture procedure, 6 lens prompts as sections, synthesizer prompt as section, digest schema as section).
 **Validates:** dry run on Styler produces a digest with at least 1 bundle-eligible finding (e.g., the react-native-pager-view orphan dep) and several promote-eligible spec-drift findings (DEC-010, foundation path divergences). Confirm hard-exclusion fires for any finding whose `files_to_touch` includes a spec/decision/vision path (those land in `decision` kind, not `bundle-eligible`).
@@ -499,7 +499,7 @@ Generalize Styler's `/audit-ui` command into the template's `.claude/commands/au
 **Validates:** running on Styler produces equivalent output to the current Styler-local `/audit-ui` command.
 **Risk:** low — mostly relocation + generalization. Styler's command file can stay until template version is verified equivalent, then deleted from Styler.
 
-### Stage 5 — `/health-check` Part 6 (audit dispatch)
+### Stage 5 — `/health-check` Part 8 (audit dispatch)
 
 The router. Detects applicable audits (`.claude/commands/audit-*.md`), presents menu, dispatches selected audits.
 
@@ -521,7 +521,7 @@ The persistent `🔍 Audit Findings` sub-section in Action Required, plus the pe
 
 The batch UX over Stage 6's [Fix it] mechanism. **No new autonomy expansion** — same at-apply re-read invariant — just a different prompting flow that handles N findings in one approval and one combined commit. Lower-risk because the autonomy boundary was established in Stage 6.
 
-**Ships:** edits to `health-check.md` Part 6 to detect bundle-eligible findings post-audit and present the bulk approval prompt; combined-commit logic with per-finding `digest.json` updates; rejection-falls-through-to-individual-review path.
+**Ships:** edits to `health-check.md` Part 8 to detect bundle-eligible findings post-audit and present the bulk approval prompt; combined-commit logic with per-finding `digest.json` updates; rejection-falls-through-to-individual-review path.
 **Depends on:** Stage 6.
 **Validates:** dry-run on Styler — confirm 3 bundle-eligible findings present together, single approval applies all 3 in one commit; rejection of any one falls through to per-finding [Fix it] for the rest; spec re-read happens once per finding (not collapsed across the batch).
 **Risk:** low (autonomy already established in Stage 6; this is UX layer only).
@@ -536,7 +536,7 @@ The batch UX over Stage 6's [Fix it] mechanism. **No new autonomy expansion** �
 
 1. Create `.claude/commands/audit-coherence.md` (Stage 3).
 2. Migrate audit-ui from Styler to `.claude/commands/audit-ui.md` in the template (Stage 4).
-3. Add Part 6 to `.claude/commands/health-check.md` (Stage 5).
+3. Add Part 8 to `.claude/commands/health-check.md` (Stage 5).
 4. Update `.claude/support/reference/dashboard-regeneration.md` per Stages 1 + 7.
 5. Update `.claude/rules/agents.md` with friction-flag return-report convention.
 6. New reference doc: `.claude/support/reference/friction-register.md` (schema + write protocol).
@@ -544,7 +544,7 @@ The batch UX over Stage 6's [Fix it] mechanism. **No new autonomy expansion** �
 
 ### Styler-specific
 
-- Existing `/audit-ui` command at `styler/.claude/commands/audit-ui.md` stays until the template-shipped version is verified equivalent. Then delete Styler's local copy — the template's `audit-ui.md` is auto-discovered by `/health-check` Part 6 (same `applies_when` trigger).
+- Existing `/audit-ui` command at `styler/.claude/commands/audit-ui.md` stays until the template-shipped version is verified equivalent. Then delete Styler's local copy — the template's `audit-ui.md` is auto-discovered by `/health-check` Part 8 (same `applies_when` trigger).
 - Existing audit artifact dirs at `.claude/support/workspace/audit-*/` — leave alone (history). New audits land at `.claude/support/audits/`.
 - Friction register starts empty — no backfill from existing dashboard prose (too messy; let next implementation cycles populate it organically).
 - Existing dashboard prose stays until next regen, which slims it per new rules.
@@ -553,9 +553,9 @@ The batch UX over Stage 6's [Fix it] mechanism. **No new autonomy expansion** �
 
 - `audit-coherence` ships and triggers automatically (any project with a spec).
 - `audit-ui` ships but only triggers on web-app projects (per `applies_when`).
-- `/health-check` Part 6 runs on next invocation; first run shows audit menu.
+- `/health-check` Part 8 runs on next invocation; first run shows audit menu.
 - No data migration; new behavior on next run.
-- **Project-local audits in `.claude/commands/audit-*.md` are auto-discovered** by Part 6 — no further action required to surface them through `/health-check`. See Component 9 for the graduation pattern from project-local to template-shipped.
+- **Project-local audits in `.claude/commands/audit-*.md` are auto-discovered** by Part 8 — no further action required to surface them through `/health-check`. See Component 9 for the graduation pattern from project-local to template-shipped.
 
 ---
 
