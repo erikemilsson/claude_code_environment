@@ -1,10 +1,10 @@
 ---
 id: DEC-014
 title: Sync-state mechanism + file-ownership category schema (FB-059 + FB-060 structural fix)
-status: proposed
+status: approved
 category: architecture
 created: 2026-05-16
-decided:
+decided: 2026-05-16
 related:
   tasks: []
   decisions: [DEC-005, DEC-008, DEC-013]
@@ -27,7 +27,7 @@ Mark your selection by checking one box:
 - [ ] Option C: Aggressive consolidation — rename `sync` → `template_owned` per FB-060's preferred terminology; add `project_extensible` and `template_shipped_then_project_owned` as empty categories with documented criteria; all other Phase 2-4 work per plan. Downstream-breaking.
 - [ ] Option D: Inverted — behavioral + UX only, no schema change. Add "Show me the diff" sub-action in Part 5 menu (Phase 4c only). Solve FB-059 via better UX, not structural fix. Doesn't address FB-060's category-tagging gap.
 - [ ] Option E: Defer indefinitely — document FB-059 + FB-060 structural fix as "known issue" with manual workaround. Revisit only if dedup-or-sync-miss recurs frequently across projects.
-- [ ] Option F: Sidecar-first + algorithm-second, no category change — ship Phase 3 (sidecar) AND Phase 4 (algorithm refinement) in one decision but skip Phase 2 (no new `sync_strict` category). The sidecar's `local_hash == synced_hash` check classifies "pure template movement" generically without needing per-file ownership tagging. Defer the category schema until a real `project_extensible` member emerges.
+- [x] Option F: Sidecar-first + algorithm-second, no category change — ship Phase 3 (sidecar) AND Phase 4 (algorithm refinement) in one decision but skip Phase 2 (no new `sync_strict` category). The sidecar's `local_hash == synced_hash` check classifies "pure template movement" generically without needing per-file ownership tagging. Defer the category schema until a real `project_extensible` member emerges.
 
 *Check one box above, then fill in the Decision section below.*
 
@@ -260,29 +260,66 @@ Plan: `template-maintenance/plan-fb059-fb060.md` (canonical reference for the fu
 
 ## Decision
 
-**Selected:** _to be filled when option selected_
+**Selected:** Option F — Sidecar + algorithm, no category change.
 
 **Rationale:**
-_to be filled_
+
+Option F closes the actual user-visible bug (FB-059's false-positive SKIP) at the lowest scaffolding cost. Every current `sync` member is uniformly template-owned, so the sidecar's `local_hash == synced_hash` check classifies "pure template movement" without needing per-file category tagging. Adding `sync_strict` alongside would ship a label without a function — the category doesn't gate anything; the hash comparison is what drives classification.
+
+The `project_extensible` shape is unproven (zero current members; `.claude/dashboard.md` is in `ignore`, not a sync member). Shipping the category as forward-compat scaffolding before a real member exists is premature. If/when a member materializes, adding the category later is purely additive — no migration cost, no downstream breakage.
+
+FB-060's category-tagging gap remains open structurally, but Phases 1 + 5 (behavioral + discoverability, already shipped) cover the high-friction surfaces. The remaining gap is a future DEC, not a now-blocker.
+
+### Decisions on the 6 implementation questions
+
+- **Q1 Hash format:** Full SHA-256 with `sha256:` prefix. Aligns with existing template convention (`fingerprint.py`, `task_hash`, spec/section fingerprints, dashboard META). ~2KB storage cost is worth the consistency.
+- **Q2 Sidecar location:** Separate `.claude/.sync-state.json`. Keeps `version.json` focused on provenance + config. Single-purpose file is easier to debug and evolve.
+- **Q3 First-sync UX:** Silent populate. Sidecar appears on first sync; no user-facing announcement. Reduces noise across the ecosystem of downstream projects on first-sync-after-this.
+- **Q4 Git visibility:** Gitignored. Project state, not template content. Mirrors `version.json` being in `ignore`. Forensic loss is minimal (last-synced state is recoverable by re-syncing).
+- **Q5 Forward-compat for `project_extensible`:** Deferred (this is the core of choosing F over A).
+- **Q6 Phase 4 default for `sync_strict` local mods:** N/A under Option F (no `sync_strict` category to drive per-category defaults). When `local_hash != sidecar.synced_hash`, Part 5 presents the diff and lets the user choose; no auto-default to revert or keep.
 
 ## Trade-offs
 
 **Gaining:**
-- _to be filled_
+- Closes FB-059 (no more false-positive SKIP for unsynced template content masquerading as "local additions").
+- Per-file sync state substrate available for future decisions (algorithm refinement, audit-coherence cross-checks, drift detection).
+- Forward-compatible: adding `sync_strict` or `project_extensible` later is purely additive.
+- No downstream breakage; existing tooling continues to work.
+- Aligned hash convention across template (one sha256 format everywhere).
 
 **Giving Up:**
-- _to be filled_
+- FB-060's category-tagging gap remains open (no machine-readable "template-owned" label on files yet). Acceptable because Phases 1 + 5 already shipped the behavioral + discoverability surfaces that cover the highest-friction symptoms.
+- No migration-warning UX for users who locally modify template-owned files. The Part 5 menu presents the diff and lets the user decide; the explicit "you violated the file-ownership boundary" warning is deferred to a future DEC (if/when category schema lands).
+- Two DEC records likely instead of one if `project_extensible` later emerges (DEC-014 = F; future DEC-NNN = category schema). Bookkeeping cost is small.
 
 ## Impact
 
 **Implementation Notes:**
-_to be filled_
+
+Two phases, shipped together:
+
+- **Phase 3 (sidecar write-only):** Part 5's Step 4 ("Apply Updates") computes `sha256:` per accepted file post-sync and writes `.claude/.sync-state.json`. Schema: `{ "schema_version": "1.0", "last_full_sync_version": "<template_version>", "last_full_sync_date": "<ISO>", "files": { "<path>": { "synced_hash": "sha256:<full hex>" } } }`. First sync populates silently; subsequent syncs update per-file.
+- **Phase 4 (algorithm refinement):** Part 5's Step 2 ("Compare Sync Files") and Step 3 ("Present Changes") read the sidecar and apply 2-condition classification:
+  - `local_hash == sidecar.synced_hash` → "Template content not yet applied" → default APPLY (was previously presented uniformly as "Modified upstream" which seeded user confusion).
+  - `local_hash != sidecar.synced_hash` OR sidecar entry missing → "Modified upstream" (current behavior) + "Show me the diff" sub-action available for the user to inspect.
+- Sidecar added to `.claude/sync-manifest.json` `ignore` array (alongside `.claude/version.json`, `.claude/dashboard.md`) — sync engine never touches it.
+- Graceful migration: projects without `.claude/.sync-state.json` fall through to current behavior on first run, populate sidecar on first successful sync.
+- `template_version` bump: minor (3.14.2 → 3.15.0 — new feature in sync subsystem).
 
 **Affected Areas:**
-- _to be filled_
+- `.claude/commands/health-check.md` (Part 5 algorithm — Steps 2, 3, 4)
+- `.claude/sync-manifest.json` (add `.claude/.sync-state.json` to `ignore` array)
+- `.claude/version.json` (template_version bump)
+- `template-maintenance/feedback.md` (FB-059 + FB-060 status notes — FB-059 closed; FB-060 partially closed)
+- `template-maintenance/plan-fb059-fb060.md` (note Option F selected; Phase 2 deferred)
+- This decision record (`status` → `implemented` after ship, `implementation_anchors` populated)
 
 **Risks:**
-- _to be filled_
+- **Migration noise:** projects on older template versions sync for the first time post-DEC-014 and silently get a sidecar. If a project has accumulated drift across many template versions, the sidecar's "first hash" might mark currently-divergent state as "synced" — locking in the drift. **Mitigation:** sidecar only populates files that the sync run actually accepts; files the user explicitly skipped are NOT recorded. Drift remains visible at every subsequent sync.
+- **Hash collisions:** SHA-256 collisions are not a practical concern; included only as a thoroughness note.
+- **Schema versioning:** `schema_version: "1.0"` commits us to the sidecar shape. Future schema changes need migration logic. **Mitigation:** keep the v1.0 shape minimal so 2.0 can extend without breaking 1.0 readers.
+- **First-sync silent UX:** users may not notice the sidecar's existence and wonder later "what is `.claude/.sync-state.json`?". **Mitigation:** the sidecar is gitignored, so it won't surface in `git status` confusion. Discoverability via `/health-check`'s own output if it ever needs to explain a classification.
 
 ---
 
