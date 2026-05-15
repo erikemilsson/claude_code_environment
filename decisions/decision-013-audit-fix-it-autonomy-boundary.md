@@ -1,15 +1,22 @@
 ---
 id: DEC-013
 title: Audit family Stage 6 full — [Fix it] inline-apply autonomy boundary
-status: approved
+status: implemented
 category: architecture
 created: 2026-05-15
 decided: 2026-05-15
+implemented: 2026-05-15
 related:
   tasks: []
   decisions: [DEC-004, DEC-005, DEC-008, DEC-010, DEC-011]
   feedback: []
-implementation_anchors: []
+implementation_anchors:
+  - .claude/support/reference/audit-fix-workflow.md
+  - .claude/support/reference/dashboard-regeneration.md
+  - .claude/skills/dashboard-style/SKILL.md
+  - .claude/commands/audit-coherence.md
+  - .claude/commands/audit-ui.md
+  - template-maintenance/audit-command-family-proposal.md
 inflection_point: false
 spec_revised:
 spec_revised_date:
