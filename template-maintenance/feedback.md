@@ -95,32 +95,38 @@ The current algorithm can't distinguish these without per-file last-synced state
 
 **Likely route:** research-light scope. Could be one DEC covering both FB-059 and FB-060 (the ownership system + sync refinement together), since they're tightly coupled. Or two ships: FB-059's per-file last-synced-version mechanism first; FB-060's category schema + Part 5 refinement second.
 
-## FB-061: Promote `feature-retirement.md` from Styler to template (generally-useful workflow rule)
+## FB-061: [RELOCATED — promoted to shipped feedback as FB-003]
+
+**Status:** relocated 2026-05-15
+**Source:** originally captured here; moved to `.claude/support/feedback/feedback.md` as **FB-003** to match the FB-002 cross-project capture precedent (small + additive + ready for `/feedback review` triage). See FB-062 below for the rationale on the dual-location convention.
+
+**Cross-link:** the active item is `.claude/support/feedback/feedback.md` § FB-003 — promote `feature-retirement.md` from Styler to template. Triage via `/feedback review` will land the SKILL.md + `.claude/CLAUDE.md` + `audit-coherence.md` edits + version bump.
+
+## FB-062: Two FB-NNN locations in template repo with overlapping purposes + namespace collision risk
 
 **Status:** new
 **Captured:** 2026-05-15
-**Source:** discovered as a Styler-local rule file during FB-059/FB-060 investigation.
+**Source:** surfaced during FB-060/FB-061 capture; recognized after Erik shared context from prior Styler session that authored FB-002 in shipped location (which then shipped as v3.13.0). The location convention is undocumented and the two namespaces could collide.
 
-**Observation:** Styler has a project-local rule file at `.claude/rules/feature-retirement.md` that codifies a generally-useful workflow: how to retire a feature in a frozen, restorable state. The workflow shape:
-- Snapshot lives at the retirement commit (no orphaned state)
-- Spec keeps a "Retired (YYYY-MM-DD)" marker (discoverability for future readers)
-- Directory convention (`.claude/support/retired/{slug}/manifest.json`) enables mechanical restoration
+**Observation:** The template repo has two distinct files holding `FB-NNN` items, with overlapping but unclear purposes:
 
-This is not fashion-domain-specific. Any project doing iterative feature work that occasionally retires surfaces (renamed routes, removed components, sunset features) could benefit. The workflow integrates cleanly with the template's existing patterns (spec-as-source-of-truth, decision records, audit family's `retired-features` lens which already greps for `.claude/support/retired/*/manifest.json`).
+1. **`.claude/support/feedback/feedback.md`** (shipped) — `/feedback review` operates on it. Currently holds FB-003 (feature-retirement promotion). Archive holds FB-001 + FB-002 (both shipped). Used historically for: actionable items captured via `/feedback` in downstream projects OR direct edits from cross-project sessions when the target is a template-owned file (e.g., FB-002 was authored by Styler-side Claude targeting the template's `decomposition-heuristics/SKILL.md`).
+2. **`template-maintenance/feedback.md`** (this file) — manual maintainer triage. Currently holds FB-011 + FB-033 (special-case trackers) + FB-058/059/060/061→relocated/062 (recent additions). Per root `CLAUDE.md`: *"Append manually; do NOT use `/feedback` in this repo."*
 
-The audit family's `audit-coherence` lens for `retired-features` already assumes this file structure exists — it scans `.claude/support/retired/*/manifest.json` and flags retired features missing spec markers. Without the workflow rule shipped in the template, downstream projects would hit the lens but have no guidance on the convention. So promoting `feature-retirement.md` makes the audit lens more legible.
+**Three concrete problems:**
 
-**Counterpart not promoted:** Styler's `brand-mention-provenance.md` (when Claude can name brands vs substitute attributes per DEC-060) is fashion/retail-domain-specific. Stays Styler-only.
+1. **Namespace collision risk.** Both files use `FB-NNN`. FB-002 (shipped, archived) is a different item than FB-011 (maintenance, active). If shipped grows back into the 060s organically, it would collide with FB-058+ in maintenance. No enforcement against ID overlap; no shared counter.
+2. **Convention boundary undocumented.** No clear rule for *"when does an item go in shipped vs maintenance?"* Implicit pattern (observed, not documented):
+   - **Shipped:** actionable, ready or near-ready, can be triaged via `/feedback review` → ship → archive (e.g., FB-001 stale lock, FB-002 research-spike, FB-003 feature-retirement promotion).
+   - **Maintenance:** special-case trackers (FB-011 scripts inventory tracking shipped families A+B + deferred C/D/E), trial gates (FB-033 spec-auditor gated on FB-032 outcome), items requiring design discussion before triage-able (FB-058 decomp pre-pass, FB-059 sync detection, FB-060 ownership boundary).
+3. **Cross-project capture pattern unclear.** FB-002 demonstrated a working pattern: surface in project (Styler) → decide in project (DEC-082) → capture FB in template repo (shipped location) → template-side `/feedback review` triages → ship. But the choice of "shipped vs maintenance" for the template-side capture is itself implicit; a downstream user has to infer.
 
-**Proposed action (small ship):**
-1. Copy `styler/.claude/rules/feature-retirement.md` to `claude_code_environment/.claude/rules/feature-retirement.md`. Edit lightly to remove Styler-specific language (e.g., FB-070 references → generic "feedback item") if any.
-2. Add the file to `sync-manifest.json` (rules category).
-3. Add the import to template's `.claude/CLAUDE.md` (workflow rules section) + summary row.
-4. Update template's `audit-coherence.md` lens-retired-features prompt to reference the workflow rule (improves the lens's "what counts as a finding" precision).
-5. Bump template_version (minor — new feature: workflow rule shipped).
+**Proposed actions (ranked by cost):**
 
-**Risk:** low. Pure additive — no breaking changes to existing template files. Downstream projects that don't use feature retirement see the rule but don't act on it.
+- **Cheap (recommended start):** document the convention in root `CLAUDE.md`. Replace the current "do NOT use `/feedback` in this repo" line with a fuller two-location description with examples + the cross-project capture pattern explicitly. Possibly also add a one-line preamble to each FB file explaining its scope and pointing at the other.
+- **Medium:** namespace the IDs differently — e.g., `TM-NNN` for template-maintenance items (no collision with `FB-NNN` shipped). Requires renaming existing maintenance items (FB-011, FB-033, FB-058, FB-059, FB-060, FB-062). Backward-compatibility cost in any external references.
+- **Higher:** consolidate to one location with a `track:` field (`shipped` / `maintenance`). Single namespace, single source of truth. Requires schema migration, `/feedback review` update to honor `track:`, and a one-time merge of existing items.
 
-**Dependencies:** none.
+**Likely route:** start cheap (documentation). Re-evaluate medium/higher only if observed friction warrants. The current dual-location pattern works in practice (FB-002 → v3.13.0 proves end-to-end), it just isn't legible without the mental model.
 
-**Open question:** does the workflow rule depend on a specific `.claude/support/retired/` directory structure that Styler defined? Need to verify the manifest.json schema is template-shippable or whether it carries Styler-specific fields. If Styler-specific, document the abstract structure in the rule and let projects define their own manifest fields.
+**Dependencies:** none — orthogonal to FB-058/059/060.
