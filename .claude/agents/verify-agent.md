@@ -684,9 +684,9 @@ Include a verification report summary as text output alongside your structured r
 
 ## Friction Markers
 
-During verification, observe situations that suggest template improvement opportunities. Include observations in the `friction_markers[]` of your return report. The orchestrator appends each marker to `.claude/support/workspace/.session-log.jsonl`.
+During verification, observe situations that suggest template improvement OR project coherence issues. Include observations in the `friction_markers[]` of your return report. The orchestrator appends each marker to `.claude/support/workspace/.session-log.jsonl` (canonical session log) AND, for audit-eligible kinds, to `.claude/support/friction.jsonl` (audit register — see `.claude/support/reference/friction-register.md`).
 
-**When to emit markers:**
+### Template-improvement kinds (write to session log only)
 
 | Event | Marker type | What to capture |
 |-------|-------------|-----------------|
@@ -695,9 +695,21 @@ During verification, observe situations that suggest template improvement opport
 | Missing verification capability (can't test something that should be testable) | `verification_gap` | What couldn't be verified, what capability would be needed |
 | Spec ambiguity discovered during verification | `spec_ambiguity` | Which spec section, what's unclear |
 
-**Marker object shape (within your return report):** `{"type": "...", "timestamp": "...", "details": "...", "template_area": "..."}`. Note: `task_id` is added by the orchestrator — do not include it yourself.
+### Audit-eligible kinds (also written to friction register)
 
-**Rules:** Same as implement-agent — only emit for template-improvement signals, keep concise, don't interrupt verification flow.
+| Event | Marker type | What to capture |
+|-------|-------------|-----------------|
+| Spec uses term X but implementation (or another spec section) uses term Y for the same concept | `vocab_drift` | The two terms, the spec/code locations of each. Set `source_anchor` to the spec section that needs reconciliation. |
+| Spec mentions a path that doesn't exist on disk, or implementation uses a different path than spec specifies | `path_drift` | Both paths, the spec section. Set `source_anchor` to the spec section that needs updating. |
+| Same concept named differently across spec / decisions / code | `terminology_mismatch` | The variant names, the files. Set `source_anchor` to the canonical reference. |
+| Spec or vision contains contradictory claims you had to navigate around | `design_contradiction` | The conflicting statements, with file refs. Set `source_anchor` to the section needing resolution (usually spec). |
+| Implementation deviates from spec to ship correctly (and spec text wasn't updated) | `spec_implementation_gap` | What deviated, why. Set `source_anchor` to the spec section that no longer matches reality. |
+
+**Marker object shape (within your return report):** `{"type": "...", "timestamp": "...", "details": "...", "template_area": "..." (template-kinds only), "source_anchor": "..." (REQUIRED for audit-eligible kinds)}`. Note: `task_id` and `id` (FR-NNN for audit-eligible) are added by the orchestrator — do not include either yourself.
+
+**Rules:**
+- Template-improvement kinds: same as implement-agent — only emit for genuine template-level signals, keep concise.
+- Audit-eligible kinds: emit when the friction is structural (spec vs reality) and could be cleanup work the user addresses async via `audit-coherence`. Don't emit for in-task fixes you're flagging via `issues[]` — those are verification feedback, not coherence drift.
 
 ## Separation of Concerns
 

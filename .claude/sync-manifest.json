@@ -25,6 +25,7 @@
       ".claude/support/reference/extension-patterns.md",
       ".claude/support/reference/dashboard-regeneration.md",
       ".claude/support/reference/drift-reconciliation.md",
+      ".claude/support/reference/friction-register.md",
       ".claude/support/reference/parallel-execution.md",
       ".claude/support/reference/session-recovery.md",
       ".claude/support/reference/context-transitions.md",

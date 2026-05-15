@@ -133,10 +133,11 @@ After self-review (Step 5), construct and return the structured implementation r
   "files_modified": ["relative/path/to/file"],
   "friction_markers": [
     {
-      "type": "workflow_deviation | spec_drift | informal_decision | scope_creep | user_feedback_signal | template_gap",
+      "type": "workflow_deviation | spec_drift | informal_decision | scope_creep | user_feedback_signal | template_gap | vocab_drift | path_drift | design_contradiction | terminology_mismatch | spec_implementation_gap",
       "timestamp": "ISO 8601",
-      "details": "one-sentence summary",
-      "template_area": "which template file/section the marker applies to"
+      "details": "one-sentence summary (plain English; no template jargon)",
+      "template_area": "which template file/section the marker applies to (template-improvement kinds only)",
+      "source_anchor": "file + section reference, e.g. 'spec_v13.md § 42.5' (REQUIRED for audit-eligible kinds: vocab_drift, path_drift, design_contradiction, terminology_mismatch, spec_implementation_gap)"
     }
   ],
   "issues_discovered": [
@@ -183,7 +184,9 @@ After self-review (Step 5), construct and return the structured implementation r
 - For `blocked`: sets status to "Blocked", returns control with your `issues_discovered` list
 - For `misaligned`: does not advance status, routes to spec-alignment flow
 
-In all cases, the orchestrator appends your `friction_markers` to `.claude/support/workspace/.session-log.jsonl` and regenerates the dashboard (per phase-end policy). You do not perform any of these persistence steps yourself.
+In all cases, the orchestrator appends your `friction_markers` to `.claude/support/workspace/.session-log.jsonl` (canonical session log) AND, for audit-eligible kinds (`vocab_drift`, `path_drift`, `design_contradiction`, `terminology_mismatch`, `spec_implementation_gap`), to `.claude/support/friction.jsonl` (audit register, consumed by `audit-coherence` — see `.claude/support/reference/friction-register.md`). The orchestrator assigns `FR-NNN` ids and `status: open` for register entries. You do not perform any of these persistence steps yourself.
+
+**When to emit audit-eligible friction markers:** during implementation, when you notice (a) the spec uses one term but the existing implementation uses a different one (`vocab_drift` / `terminology_mismatch`), (b) the spec references a path that doesn't exist or differs from canonical filesystem state (`path_drift`), (c) the spec or vision contains contradictory claims you had to navigate around (`design_contradiction`), or (d) implementation needed to deviate from the spec to ship correctly (`spec_implementation_gap`). Set `source_anchor` to the file + section that needs updating. The orchestrator persists; `audit-coherence` later surfaces these as cleanup work.
 
 ## Implementation Guidelines
 

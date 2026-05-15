@@ -98,8 +98,20 @@ All agents must run on Claude Opus 4.7 (`claude-opus-4-7[1m]`).
 
 **Effort defaults:** Max/Team subscriptions default to medium reasoning effort. Use "ultrathink" in prompts when deeper reasoning is needed (phase-level verification, complex design decisions).
 
+## Friction Register
+
+Both `implement-agent` and `verify-agent` emit a `friction_markers[]` array in their return reports. The orchestrator (`/work`) routes markers based on `type`:
+
+- **Template-improvement kinds** (`workflow_deviation`, `informal_decision`, `scope_creep`, `user_feedback_signal`, `template_gap`, `verification_failure`, `false_positive`, `verification_gap`, `spec_ambiguity`) → appended to `.claude/support/workspace/.session-log.jsonl` only.
+- **Audit-eligible kinds** (`vocab_drift`, `path_drift`, `design_contradiction`, `terminology_mismatch`, `spec_implementation_gap`) → appended to `.session-log.jsonl` AND to `.claude/support/friction.jsonl` with an assigned `FR-NNN` id and `status: open`. Consumed by the future `audit-coherence` command (audit family Stage 3+).
+
+Audit-eligible markers REQUIRE a `source_anchor` field (file + section reference, e.g. `spec_v13.md § 42.5`) so the audit's [Fix it] mechanism can re-read the cited source at apply time.
+
+See `.claude/support/reference/friction-register.md` for the full schema, write protocol, status update protocol, and relationship between the two persistence stores.
+
 ## References
 
 - implement-agent: `.claude/agents/implement-agent.md`
 - verify-agent: `.claude/agents/verify-agent.md`
 - research-agent: `.claude/agents/research-agent.md`
+- friction-register: `.claude/support/reference/friction-register.md`

@@ -561,12 +561,23 @@ After any agent (implement-agent or verify-agent) returns a structured report, t
    - `blocked`: write `{ "status": "Blocked", "notes": "...", "updated_date": today }`; surface `issues_discovered[]` to user
    - `misaligned`: do not advance status; route to spec-alignment flow with `issues_discovered[]` context
 
-2. **Append friction markers (DEC-011 Option ABp).** For each marker in `report.friction_markers`, add `task_id: report.task_id` and **dual-write the marker as a JSON line to BOTH** `.claude/support/workspace/.pending-markers.jsonl` (transient buffer; survives abrupt termination) **AND** `.claude/support/workspace/.session-log.jsonl` (canonical log; consumed by PreCompact + Track 1 export). Append immediately within this step — **do NOT defer to `/work pause` or batch across multiple agent returns**. Markers between an agent return and the next sync point are at risk of permanent loss if the session terminates abruptly; the dual-write narrows that loss window to sub-second.
+2. **Append friction markers (DEC-011 Option ABp + audit register).** For each marker in `report.friction_markers`, add `task_id: report.task_id` and **dual-write the marker as a JSON line to BOTH** `.claude/support/workspace/.pending-markers.jsonl` (transient buffer; survives abrupt termination) **AND** `.claude/support/workspace/.session-log.jsonl` (canonical log; consumed by PreCompact + Track 1 export). Append immediately within this step — **do NOT defer to `/work pause` or batch across multiple agent returns**. Markers between an agent return and the next sync point are at risk of permanent loss if the session terminates abruptly; the dual-write narrows that loss window to sub-second.
 
    - Pending-buffer write is append-only: open in append mode, write `{...}\n`, close. No read-modify-write cycle.
    - Session-log write also appends. If file doesn't exist, create it.
    - The next `/work` invocation (or PreCompact hook) will reconcile the two files via the catchup procedure in § "Step 0d: Friction-Marker Catchup" below.
-   - If `report.friction_markers` is empty, this step is a no-op — skip both writes.
+   - If `report.friction_markers` is empty, this step is a no-op — skip all writes.
+
+   **Friction register projection (audit-eligible kinds):** For each marker whose `type` is one of `vocab_drift`, `path_drift`, `design_contradiction`, `terminology_mismatch`, or `spec_implementation_gap`, ALSO append to `.claude/support/friction.jsonl` (the audit register — see `.claude/support/reference/friction-register.md`). The register entry has additional structure beyond the session-log raw marker:
+   - `id`: assigned at append time. Read existing `friction.jsonl` (create if missing), find max existing `FR-NNN`, increment by 1 (zero-padded to 3 digits, starting at FR-001).
+   - `captured`: ISO timestamp from the marker.
+   - `captured_in`: `{"agent": "{agent_type}", "task": "{task_id}", "command": "/work"}`.
+   - `kind`: copy from marker `type`.
+   - `what`: copy from marker `details`.
+   - `source_anchor`: copy from marker `source_anchor` (REQUIRED — if missing on an audit-eligible kind, log a warning and skip the register write; session-log write still happens).
+   - `status`: `"open"`.
+
+   Register write is append-only at insert time. Status updates (later, by `audit-coherence` or user dismissal) use a read-modify-write of the entire file keyed by `id` — see friction-register.md § "Status update protocol".
 
 3. **Persist decisions:** for each entry in `report.decisions_to_record[]`, scan `.claude/support/decisions/decision-*.md` for the highest existing DEC-NNN, assign the next available ID (zero-padded to 3 digits), and Write a new `decision-NNN-{slug}.md` file using the template in `.claude/support/reference/decisions.md`. Populate the Selected/Rationale/Options sections from the report entry. Set frontmatter `status: approved`, `decided: today`, `decided_by: implement-agent`. Subagents cannot write under `.claude/`, so this step is the orchestrator's responsibility — implement-agent only generates content (DEC-004; `rules/agents.md § State Ownership`).
 
