@@ -247,19 +247,36 @@ This ensures user content is always persisted in a structured file before the da
 ### 4. Compute and Add Metadata Block
 
 Add after `# Dashboard` title:
+
 ```markdown
 <!-- DASHBOARD META
 generated: [ISO timestamp]
-task_hash: sha256:[hash of sorted task_id:status:difficulty:owner tuples]
 task_count: [number]
+task_hash: sha256:[hash of sorted task_id:status:difficulty:owner tuples]
+spec_version: [e.g., "spec_v13"]
+spec_status: [active|finalized|archived]
 spec_fingerprint: sha256:[hash of spec file content]
 template_version: [value from .claude/version.json template_version field]
 verification_debt: [count of tasks needing verification]
 drift_deferrals: [count from drift-deferrals.json]
+decision_count: [total count of decision-*.md files]
+decisions_approved: [count where status == approved or implemented]
+decisions_superseded: [count where status == superseded]
+decisions_partially_superseded: [count where status == partially_superseded]
 -->
 ```
 
-The `template_version` field enables **format staleness detection**: when template sync updates `version.json`, the dashboard META's `template_version` no longer matches, flagging the dashboard as format-stale even if task data hasn't changed. See § "Format Staleness" below.
+The `template_version` field enables **format staleness detection**: when template sync updates `version.json`, the dashboard META's `template_version` no longer matches, flagging the dashboard as format-stale even if task data hasn't changed. See § "Format Staleness" above.
+
+#### Field whitelist (strict)
+
+ONLY the 13 fields listed above may appear in the META block. Specifically forbidden:
+
+- **`session_*` keys of any kind.** Session-handoff content (what just happened, what's next) belongs in `.claude/tasks/.handoff.json` (written by `/work pause`), git log, or auto-memory — never in dashboard META. The META block exists for state-fingerprinting and freshness checks, not narrative.
+- **Free-form notes, status messages, commentary, or session journals.** The META block is machine-readable; only structural fields belong here.
+- **Per-task or per-decision details.** Those belong in the body of the dashboard, not META.
+
+**Migration on existing dashboards:** When regenerating a dashboard whose existing META contains `session_*` keys or other non-whitelist fields, **drop them silently**. They were added in error or under older rules. Do not preserve to sidecar; do not warn the user. Session content has its own canonical homes (handoff file, git log, auto-memory) and is not duplicated in the dashboard.
 
 ### 5. Inject User Content from Sidecar
 
@@ -302,6 +319,8 @@ Claude Code caps output at 32K tokens per response (thinking + tool arguments + 
 - Action Required sub-sections only render when they have content
 - Project Overview diagram: omitted when <4 tasks remain; critical-path-only mode when >15 active nodes
 - Critical path truncation (>5 steps → first 3 + "... N more → Done")
+- **META block field whitelist (Step 4):** no `session_*` keys, no narrative content, only the 13 structural fields
+- **Recent Activity cap (Section Display Rules):** max 7 entries, 1 line each; prose paragraphs forbidden — they belong in handoff file / git log / friction register
 
 **If the dashboard still risks exceeding the limit** (50+ active tasks, complex parallel structure, many phases):
 - Write the dashboard in two passes: first the structural sections (metadata, action required, progress), then the data-heavy sections (tasks, decisions) as an Edit append
@@ -382,6 +401,12 @@ The user selects an option when prompted, and `/work` updates the task according
 - Reviews sub-section format: `- [ ] **Item title** — what to do → [link to file](path)`
 - Reviews appear for: out_of_spec tasks without approval, draft/proposed decisions
 - Timeline sub-section in Progress: only render when tasks have `due_date` or `external_dependency.expected_date` (part of Progress, not an independent toggle)
+- **Recent Activity sub-section in Progress** (auto-renders when ≥3 tasks transitioned status in the last 7 days):
+  - **Strict cap: max 7 entries, each ≤1 line.**
+  - Format per entry: `- **YYYY-MM-DD** — {Task ID or short commit ref} — {one-line outcome}`
+  - **Strictly forbidden in entries:** prose paragraphs (>1 line per entry), friction markers, session-summary blocks, scope contradictions, design-thesis narratives, embedded "captured for /iterate" notes, multi-part outcome lists. All of those belong in the friction register (`.claude/support/friction.jsonl` once Stage 2 lands), task JSON `notes`, handoff file, or git log. Dashboard Recent Activity is a chronological pointer, not narrative.
+  - **Migration on existing dashboards with prose-style entries:** during regeneration, condense each entry to its task ID + 1-line outcome (drop the prose). Do not archive the prose anywhere new — it belongs in handoff/git log, not duplicated. If an entry's content can't compress to 1 line meaningfully, drop the entry entirely.
+  - **Source:** the most recent 7 task-status transitions (Pending → In Progress → Finished) OR git commits within the last 7 days, whichever yields a more compact list.
 - **Status summary table:** When `task_count` exceeds 20, render a status summary table at the top of the Progress section (before the phase table) showing the count of tasks in each active status. Only include statuses with count > 0. Format: `| Status | Count |` with rows for Finished, Pending, In Progress, Blocked, On Hold, Broken Down, Absorbed. This gives at-a-glance project health for medium-to-large projects. When task_count is 20 or fewer, the phase table alone provides sufficient detail.
 - Phase table in Progress: always show ALL phases (including blocked/future)
 - Critical path owners: ❗ (human), 🤖 (Claude), 👥 (both)
