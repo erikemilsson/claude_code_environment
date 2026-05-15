@@ -408,14 +408,16 @@ Audit findings need a different state model than `/work`'s sequential single-thr
 
 | Finding kind | `[Fix it]` | `[Promote to FB]` | `[Dismiss]` |
 |--------------|:---:|:---:|:---:|
-| `bundle-eligible` (impl-only, source-confirmed) | ✓ inline apply (single-finding mode) | ✓ | ✓ |
-| `fix-eligible` (impl-only, clear fix, single source) | ✓ inline apply (may escalate) | ✓ | ✓ |
-| `decision` (touches spec / decision record / vision) | ✓ auto-routes to `/iterate` (no inline apply — ever) | ✓ | ✓ |
-| `design` (needs research / discussion) | — | ✓ | ✓ |
+| `bundle-eligible` (impl-only, source-confirmed, ≤3 files, reversible) | ✓ inline apply (single-finding mode) — **DEC-013 Option C** | ✓ | ✓ |
+| `fix-eligible` (impl-only but >3 files or ambiguous) | — *(deferred per DEC-013; manual review pending future DEC)* | ✓ | ✓ |
+| `decision` (touches spec / decision record / vision) | — *(routes via `/iterate`; never inline)* | ✓ | ✓ |
+| `design` (needs research / discussion) | — *(promote to FB → `/research`)* | ✓ | ✓ |
 
-**The `decision` kind is structural, not advisory.** Any finding whose `files_to_touch` includes a spec / decision / vision path is auto-classified `decision` regardless of perceived clarity. [Fix it] on these only routes to `/iterate` — it never edits the file. This enforces the Component 6 hard exclusion at the action layer too.
+**The `decision` kind is structural, not advisory.** Any finding whose `files_to_touch` includes a spec / decision / vision path is auto-classified `decision` regardless of perceived clarity. There is no `[Fix it]` path for these — only `/iterate` mutates the spec. This enforces the Component 6 hard exclusion at the action layer too.
 
-For `design` kind, [Fix it] doesn't appear because there's nothing for Claude to do without judgment input — promote to FB → `/research` → DEC is the right path.
+**The `fix-eligible` kind is currently no-`[Fix it]` per DEC-013 Option C.** The decision approved 2026-05-15 scoped inline-apply to `bundle-eligible` only, deferring fix-eligible to a future DEC pending telemetry validation (≥5 successful `[Fix it]` invocations + manual diff inspection of a sample). Fix-eligible findings still surface in the digest with `[Promote to FB] / [Dismiss]` and an italicized annotation explaining the deferral.
+
+For `design` kind, `[Fix it]` doesn't appear because there's nothing for Claude to do without judgment input — promote to FB → `/research` → DEC is the right path.
 
 **Mid-fix escalation contract:** When [Fix it] routes to `/iterate` or `/work`, it leaves the finding in `escalated_to_*` status (not `resolved`) and adds an annotation: *"C-02 escalated to /iterate 2026-05-15 — see [link]"*. This keeps the finding visible on the dashboard until the downstream work closes the loop. The downstream work (a spec change in `/iterate` or a task in `/work`) is responsible for setting `status: resolved` once it lands. Convention: include the finding id in the spec change commit message or task `notes` field; a future audit run picks up the resolution.
 
@@ -508,25 +510,34 @@ The router. Detects applicable audits (`.claude/commands/audit-*.md`), presents 
 **Validates:** `/health-check` on Styler shows audit menu with `coherence` + `ui`; selecting `1` runs coherence audit and lands digest in dashboard.
 **Risk:** low.
 
-### Stage 6 — Dashboard digest section + [Fix it] mechanism
+### Stage 6a — Dashboard digest section + Promote/Dismiss (✅ shipped v3.11.0)
 
-The persistent `🔍 Audit Findings` sub-section in Action Required, plus the per-finding [Fix it] async-fix mechanism (Component 8). These ship together because [Fix it] is the action surfaced on dashboard digest items.
+The persistent `🔍 Audit Findings` sub-section in Action Required, with `[Promote to FB] / [Dismiss]` actions for all kinds. No autonomy expansion — actions are user-driven. Shipped 2026-05-15 as the safe staging step before the autonomy-boundary review.
 
-**Ships:** `dashboard-regeneration.md` edits (digest section spec, marker pair `<!-- AUDIT DIGEST -->`), sidecar schema bump (`audit_digest: { items: [...], dismissed_ids: [...] }`), [Fix it] mechanism documentation in a new reference doc (`.claude/support/reference/audit-fix-workflow.md`), the at-apply spec re-read invariant, single-commit-per-finding contract, mid-fix escalation contract.
-**Depends on:** Stage 5.
-**Validates:** dry-run on Styler — pick a known finding (e.g., DEC-010 spec drift), invoke *"address C-01 from latest audit"* in a fresh session, confirm spec re-read happens, change applies as single commit, `digest.json` marks `resolved`. Test mid-fix escalation: inject a finding whose spec is genuinely ambiguous, confirm Claude routes to `/iterate` and marks `escalated_to_iterate` instead of applying. Test parallel-session safety: run [Fix it] on C-02 in one session while `/work` is active in another; confirm no state collision.
-**Risk:** medium. This is the autonomy boundary — Claude can modify spec/code text after one approval per finding. Mitigation is in the at-apply re-read invariant. Could be staged to "promote-only" first (digest + promote + dismiss + escalation routing, no inline apply), then add inline-apply once the re-read protocol is battle-tested.
+### Stage 6 (Option C per DEC-013) — `[Fix it]` for bundle-eligible only (✅ shipped v3.12.0)
 
-### Stage 7 — Bundled-apply batch-mode UX
+Adds `[Fix it]` action for `bundle-eligible` kind only (per DEC-013, approved 2026-05-15). `fix-eligible` kind defers to a future DEC pending telemetry validation. `decision` and `design` kinds unchanged — no inline-apply path; promote-only.
 
-The batch UX over Stage 6's [Fix it] mechanism. **No new autonomy expansion** — same at-apply re-read invariant — just a different prompting flow that handles N findings in one approval and one combined commit. Lower-risk because the autonomy boundary was established in Stage 6.
+**Why Option C** (per DEC-013 research): bundle-eligibility criteria are the strictest tier and filter most failure-mode patterns surfaced in research. Anthropic's Claude Code does not yet ship "previously-captured finding inline apply" in any UX (per Q2 — `acceptEdits` is session-wide, not per-finding); staying conservative aligns with platform norms. Q4 favored single-commit-per-finding over batched apply (so Stage 7 also stays deferred). Q6 confirmed free telemetry already exists (`resolved_by.kind` in friction register + `digest.json items[].status`).
 
-**Ships:** edits to `health-check.md` Part 8 to detect bundle-eligible findings post-audit and present the bulk approval prompt; combined-commit logic with per-finding `digest.json` updates; rejection-falls-through-to-individual-review path.
-**Depends on:** Stage 6.
-**Validates:** dry-run on Styler — confirm 3 bundle-eligible findings present together, single approval applies all 3 in one commit; rejection of any one falls through to per-finding [Fix it] for the rest; spec re-read happens once per finding (not collapsed across the batch).
-**Risk:** low (autonomy already established in Stage 6; this is UX layer only).
+**Ships:**
+- `audit-fix-workflow.md` — Stage 6 (Option C) action protocol promoted from deferred placeholder to current; per-kind action availability table; `[Fix it]` mechanism documentation; known-limitations callouts (transitive-consumer risk, parallel-session collision, synthesizer classification trust)
+- `dashboard-regeneration.md` + `SKILL.md` mirror — kind-conditional action labels (bundle-eligible: `[Fix it] / [Promote] / [Dismiss]`; other kinds: `[Promote] / [Dismiss]` + italicized annotation explaining why `[Fix it]` doesn't appear)
+- `audit-coherence.md` and `audit-ui.md` — synthesizer step 5 tightened (bundle-eligible classification confidence raised; "when in doubt → fix-eligible" rule); new `Fix mode` section with sub-command shape (`/audit-{name} fix {audit-ts} {C-ID}`) referring to canonical reference
 
-**Suggested ship order:** Stage 1 → Stage 2 → Stage 3 → Stage 4 (parallel with 3) → Stage 5 → Stage 6 → Stage 7.
+**Depends on:** Stage 5 + Stage 6a.
+
+**Validates:** invoke `/audit-coherence fix latest {C-ID}` against a known bundle-eligible finding (e.g., orphan-dep removal in a downstream project); confirm at-apply re-read fires, hard-exclusion gate refuses any spec/decision/vision touch, single commit lands with `audit-fix:` prefix, digest.json + friction.jsonl status fields update.
+
+**Risk:** medium (autonomy expansion, but scoped narrowly to bundle-eligible per DEC-013). Mitigations: HARD RULE structurally enforced at synthesizer step 5 + post-synth sanity check + action-layer hard-exclusion re-verify (three independent gates); at-apply `source_anchors` re-read; conservative classification at synthesis time.
+
+### Stage 7 — Bundled-apply batch-mode UX (deferred)
+
+The batch UX over Stage 6's `[Fix it]` mechanism. **No new autonomy expansion** — same at-apply re-read invariant — just a different prompting flow that handles N findings in one approval and one combined commit.
+
+**Status:** deferred per DEC-013 Q4 (rollback analysis showed all-or-nothing batch revert is materially worse than Stage 6's single-commit-per-finding rollback). Reconsider once Stage 6 Option C accumulates usage signal — particularly the `resolved_by.kind == "fix_it"` count in friction register and the manual diff-inspection sample called out in DEC-013's telemetry validation gate.
+
+**Suggested ship order (current):** Stage 1 → Stage 2 → Stage 3 → Stage 4 (parallel with 3) → Stage 5 → Stage 6a → **Stage 6 (Option C)** → *(future DEC: fix-eligible expansion or Stage 7 depending on telemetry)*.
 
 ---
 

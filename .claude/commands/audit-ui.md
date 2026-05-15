@@ -285,6 +285,26 @@ Promote with: /audit-ui promote {ts}
 
 The existing `/feedback review` → `/iterate` flow is unchanged. The audit just produces feedback-shaped artifacts.
 
+### Fix mode (bundle-eligible only — DEC-013 Option C)
+
+`/audit-ui fix {audit-ts} {F-ID}` — apply a single bundle-eligible finding inline.
+
+Available only for findings with `kind: bundle-eligible`. Other kinds (`fix-eligible`, `decision`, `design`) require manual review or `/iterate` routing — see kind-availability table in `.claude/support/reference/audit-fix-workflow.md` § "Per-kind action availability".
+
+**Mechanism:** see canonical reference at `.claude/support/reference/audit-fix-workflow.md` § "Action protocol — Stage 6 (Option C per DEC-013)" / "[Fix it] — inline apply (bundle-eligible only)". In short:
+
+1. Read finding from this audit's `digest.json` + `findings.md#{F-ID}`
+2. Verify kind is `bundle-eligible` (refuse with kind-specific message otherwise)
+3. Verify finding `status == "pending"` (not already resolved/dismissed/promoted)
+4. Re-read cited `source_anchors[]` / `files_to_touch[]` to verify finding's claim still holds (refuse if stale)
+5. Re-verify hard-exclusion (no spec/decision/vision in `files_to_touch[]` — defense-in-depth)
+6. Show concrete change + ask single approval
+7. On approval: apply, single commit `audit-fix: {F-ID} — {summary}`, update `digest.json` + `friction.jsonl`
+
+For UI audits, bundle-eligible findings are rare — most UI fixes need copy/IA decisions and route via `[Promote to FB]` → `/iterate`. The typical bundle-eligible UI case is dead-link removal where the link target is a route the spec also dropped, or deletion of a single orphan component file.
+
+`/audit-ui fix latest {F-ID}` — convenience: resolves "latest" to the newest `ui-*` audit dir by `ran_at`.
+
 ---
 
 ## Walker playbook (orchestrator self-instructions)
@@ -634,25 +654,36 @@ task work, write findings.md AND digest.json.
    - severity = max in cluster.
    - Drop the original IDs; assign a fresh `F-NN` sequence in dedupe order.
 
-5. **Classify `kind` per cluster (HARD RULE FIRST):**
-   - **HARD RULE.** If `files_to_touch` includes ANY of: `.claude/spec_v*.md`,
+5. **Classify `kind` per cluster (DEC-013 Option C is now an action layer — bundle-eligible classification triggers actual inline-apply at Fix-it time, so be conservative):**
+   - **HARD RULE FIRST.** If `files_to_touch` includes ANY of: `.claude/spec_v*.md`,
      `.claude/support/decisions/decision-*.md`, `.claude/vision/**/*.md`
      → `kind: decision` (always; no exceptions; this enforces Component 6
      hard exclusion of the audit family proposal). Set
      `iterate_routing.reason: "spec/decision/vision file modification — read-only outside /iterate"`.
    - If suggested_kind is `design` from any contributing lens → `kind: design`.
      No [Fix it] action; promote to FB only.
-   - If implementation-only AND source-confirmed AND ≤3 files AND reversible
-     (typical: copy edit, dead-link removal, single-file orphan delete) →
-     `kind: bundle-eligible`.
-   - Otherwise (implementation-only but >3 files, or ambiguous fix) →
-     `kind: fix-eligible`.
+   - **Bundle-eligible classification (DEC-013 Option C — triggers actual inline-apply via [Fix it])** — only when ALL hold:
+     a. Implementation-file-only (no spec/decision/vision per HARD RULE)
+     b. Source-confirmed: the fix is a sync from one authoritative source (cited concretely
+        in `source_anchors[]` / `files_to_touch[]`) to a derived/dependent location.
+     c. Reversible: text edit, dead-link removal, single-file orphan delete
+     d. No new judgment: the fix's content is already established (audit syncs, doesn't decide)
+     e. Bounded scope: ≤3 files
+     f. **When in doubt → fix-eligible, not bundle-eligible.** The action layer's at-apply
+        re-read invariant cannot catch semantic mismatches the synthesizer creates —
+        conservative classification at synthesis time is the load-bearing safety property.
+     Set on bundle-eligible items: `bundle_eligibility.source_confirmed: true`,
+     `reversible: true`, `files_count: {N}`, `touches_spec_or_decisions: false`.
+   - Otherwise (implementation-only but doesn't meet ALL bundle-eligible criteria,
+     or >3 files, or ambiguous fix) → `kind: fix-eligible`. Surfaces on dashboard with
+     `[Promote to FB] / [Dismiss]` only — no [Fix it] until a future DEC expands inline-apply.
 
    Note: most UI audit findings will be `decision` kind because UI fixes
    typically require copy/IA decisions that should route through `/iterate`.
    Bundle-eligible UI findings are rare but real (orphan dead-link removal,
-   stale CTA pointing at a 404 the spec also dropped). Don't force findings
-   into bundle-eligible — most genuinely need judgment.
+   stale CTA pointing at a 404 the spec also dropped, deletion of a clearly-unused
+   component file). Don't force findings into bundle-eligible — DEC-013 Option C's
+   inline-apply path is opt-in by classification confidence, not by hopeful inference.
 
 6. Score each canonical:
    - Impact:

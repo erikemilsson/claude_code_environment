@@ -407,7 +407,13 @@ The user selects an option when prompted, and `/work` updates the task according
     <!-- END AUDIT DIGEST -->
     ```
   - One bullet per item where `status == "pending"` AND `id NOT IN dismissed_ids`. Items resolved by promote (`status: resolved` or `status: promoted`) or dismissed are filtered out at render time.
-  - **Action labels (Stage 6a — promote-only):** `[Promote to FB] / [Dismiss]` for ALL kinds. Stage 6 (full) extends with `[Fix it]` per kind — see audit-fix-workflow.md for the kind→action table.
+  - **Action labels (Stage 6 Option C per DEC-013, currently shipped):** kind-conditional.
+    - `bundle-eligible` items: `[Fix it] / [Promote to FB] / [Dismiss]`
+    - `fix-eligible`, `decision`, `design` items: `[Promote to FB] / [Dismiss]` plus a one-line italicized annotation explaining why `[Fix it]` doesn't appear:
+      - `fix-eligible` → `*(fix-eligible — manual review pending future DEC)*`
+      - `decision` → `*(spec amendment via /iterate)*`
+      - `design` → `*(promote to FB → /research)*`
+    See `audit-fix-workflow.md` § "Per-kind action availability" for the full table and the [Fix it] mechanism documentation.
   - **Annotations footer** (when the source digest has `annotations[]`): rendered as a separate italicized sub-list outside the marker pair:
     ```
     *Already covered by in-flight work:*
@@ -460,7 +466,7 @@ The user selects an option when prompted, and `/work` updates the task according
 | Action Required → Verification Pending | Plain text status message |
 | Action Required → Verification Debt | `Task \| Title \| Issue` |
 | Action Required → Spec Drift | `- ⚠️ **{section}** — {N} tasks affected, deferred {M} days ago` |
-| Action Required → Audit Findings | `- [ ] **{C-NN}** {title} — [Promote to FB] / [Dismiss]` (Stage 6a; Stage 6 full extends per kind. See audit-fix-workflow.md.) |
+| Action Required → Audit Findings | `bundle-eligible`: `- [ ] **{C-NN}** {title} — [Fix it] / [Promote to FB] / [Dismiss]`. Other kinds: `- [ ] **{C-NN}** {title} — [Promote to FB] / [Dismiss] *({reason})*`. See audit-fix-workflow.md § "Per-kind action availability". |
 | Action Required → Feedback | `- 📝 **{N} feedback items** awaiting attention ({X} new, {Y} refined, {Z} ready) → /feedback review` |
 | Action Required → Decisions | `Decision \| Question \| Doc` |
 | Action Required → Your Tasks | `Task \| What To Do \| Where` |

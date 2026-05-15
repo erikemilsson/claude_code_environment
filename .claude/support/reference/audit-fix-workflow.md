@@ -2,7 +2,7 @@
 
 Documents the user-facing surface for audit findings (the dashboard's `🔍 Audit Findings` section) and the action protocol for resolving them. Audits themselves are documented per-command in `.claude/commands/audit-*.md`; this doc covers what happens *after* an audit runs.
 
-**Scope:** Stage 6a of the audit family proposal (`template-maintenance/audit-command-family-proposal.md`). Surfaces digest items on the dashboard with `[Promote to FB]` / `[Dismiss]` actions. The `[Fix it]` inline-apply mechanism (and bundled-apply UX) is **deferred to Stage 6 full** — sections below marked `(Stage 6 full)` are placeholders documenting what's coming, not what currently works.
+**Scope:** Stage 6a + Stage 6 Option C (per DEC-013) of the audit family proposal (`template-maintenance/audit-command-family-proposal.md`). Stage 6a surfaces digest items on the dashboard with `[Promote to FB]` / `[Dismiss]` actions for all kinds. Stage 6 Option C adds a `[Fix it]` inline-apply action for `bundle-eligible` kind only — per DEC-013's autonomy-boundary review (2026-05-15). `fix-eligible` kind defers to a future DEC pending telemetry validation. Stage 7 (bundled-apply batch UX) remains deferred — the `(Stage 7)` section below is a placeholder.
 
 ---
 
@@ -97,38 +97,73 @@ Marks a finding as not-a-problem-to-fix. Doesn't promote, doesn't change source,
 
 ---
 
-## Action protocol — Stage 6 (full) — *deferred*
+## Action protocol — Stage 6 (Option C per DEC-013) — *currently shipped*
 
-The following sections document what Stage 6 (full) will add. **Not currently shipped.**
+Adds `[Fix it]` to the dashboard digest, scoped to `bundle-eligible` kind only. Per DEC-013 (approved 2026-05-15), `fix-eligible` defers to a future DEC pending telemetry validation; `decision` and `design` kinds are unchanged from Stage 6a.
 
-### `[Fix it]` *(Stage 6 full — not yet implemented)*
+### `[Fix it]` — inline apply (bundle-eligible only)
 
-Per-finding inline-apply mechanism. Available actions per kind will be:
+Lifts a single bundle-eligible audit finding into an inline applied change with one user approval.
 
-| Finding kind | `[Fix it]` (Stage 6 full) | `[Promote to FB]` | `[Dismiss]` |
+**User invocation patterns (any session):**
+
+- **Slash command:** `/audit-coherence fix {audit-ts} {C-ID}` or `/audit-ui fix {audit-ts} {F-ID}` — analogous to existing `promote` sub-mode
+- **Natural language:** *"fix C-02 from the latest coherence audit"* or *"address F-04 from the ui audit"* — Claude infers the slash command
+- **Dashboard click:** the `[Fix it]` link in the `🔍 Audit Findings` section expands to the slash command form
+
+**Mechanism (orchestrator-side):**
+
+1. **Resolve audit dir.** From the audit name + timestamp (or "latest" → newest by `ran_at`): `.claude/support/audits/{audit-name}-{ts}/`.
+2. **Read finding.** Read `digest.json`, find item by id. Read `findings.md#{C-ID}` for the full evidence + cited `source_anchors`.
+3. **Kind gate.** If `kind != "bundle-eligible"`, refuse with a kind-specific message:
+   - `fix-eligible` → *"C-XX is fix-eligible, not bundle-eligible. Inline apply for fix-eligible kind is deferred per DEC-013 — review the finding manually or run `/audit-{name} promote {ts} {C-ID}` to route to feedback."*
+   - `decision` → *"C-XX touches spec/decision/vision (read-only outside `/iterate`). Use `/audit-{name} promote {ts} {C-ID}` to route to feedback for `/iterate` triage."*
+   - `design` → *"C-XX requires design judgment. Promote to feedback (`/audit-{name} promote {ts} {C-ID}`) for `/research` consideration."*
+4. **Status gate.** If finding `status != "pending"`, refuse — the item has already been resolved / dismissed / promoted. Surface what status it has.
+5. **At-apply re-read (load-bearing safety property).** For each path in `source_anchors[]`, re-read the cited file/section and confirm the finding's claim still holds. If the cited source has changed in a way that invalidates the finding (e.g., a referenced decision was edited, a cited file was moved or removed, a magic value the finding depends on was changed), refuse with: *"Finding C-XX is stale — its source_anchor `{anchor}` no longer asserts `{claim}`. Re-run the audit to refresh."*
+6. **Hard-exclusion re-verify (defense-in-depth).** Confirm `files_to_touch[]` contains NO paths matching `.claude/spec_v*.md`, `.claude/support/decisions/decision-*.md`, or `.claude/vision/**/*.md`. If any path matches: this is a synthesizer mis-classification (kind should have been `decision`); refuse and ask the user to file a friction marker. (Should never happen if synthesizer step 5 + post-synth sanity check worked; this is defense-in-depth.)
+7. **Compute the concrete change.** Based on the finding's `fix_one_liner` + evidence + `files_to_touch[]`, formulate the actual edit. For bundle-eligible findings this is typically a single-line change (remove a dep from package.json, delete an orphan file, sync a numerical anchor).
+8. **Show + approve.** Display the concrete change to the user (file paths + 1-3 lines of context per file showing what changes) and ask single approval: `Apply this change? [Y/N]`.
+9. **On approval (Y):**
+   - Apply the change using Edit / Write tools.
+   - Single git commit: `audit-fix: {C-ID} — {one-line summary from fix_one_liner}` with body listing the changed files + the C-ID + audit run reference.
+   - Update `digest.json` in place: `items[i].status: "resolved"`, `resolved_by: {kind: "fix_it", ref: "<commit-sha>", at: "<ISO timestamp>"}`.
+   - For each friction register entry cited in the finding: update `friction.jsonl` in place per `friction-register.md` § "Status update protocol" — `status: resolved`, `resolved_by: {kind: "fix_it", ref: "<commit-sha>", at: "<ISO>"}`.
+   - Update `findings.md` in place: replace `- [ ] {C-ID} — title` with `- [x] {C-ID} → fixed in <short-sha> ({date})`.
+   - Print summary: `Applied {C-ID} in commit {sha}. Run your test suite if this touched package.json or source code.`
+10. **On refusal (N or any non-Y):** don't apply. Don't change `status` (stays `pending`). Print: `{C-ID} not applied. Run /audit-{name} promote {ts} {C-ID} to route to feedback instead, or invoke [Fix it] again later.`
+
+### Per-kind action availability
+
+| Finding kind | `[Fix it]` | `[Promote to FB]` | `[Dismiss]` |
 |--------------|:---:|:---:|:---:|
-| `bundle-eligible` (impl-only, source-confirmed) | ✓ inline apply (single-finding mode) | ✓ | ✓ |
-| `fix-eligible` (impl-only, clear fix, single source) | ✓ inline apply (may escalate) | ✓ | ✓ |
-| `decision` (touches spec / decision record / vision) | ✓ auto-routes to `/iterate` (no inline apply — ever) | ✓ | ✓ |
-| `design` (needs research / discussion) | — | ✓ | ✓ |
+| `bundle-eligible` (impl-only, source-confirmed, ≤3 files, reversible) | ✓ inline apply | ✓ | ✓ |
+| `fix-eligible` (impl-only but >3 files or ambiguous) | — *(deferred per DEC-013; manual review)* | ✓ | ✓ |
+| `decision` (touches spec/decision/vision) | — *(routes via /iterate; never inline)* | ✓ | ✓ |
+| `design` (needs research/discussion) | — *(promote to FB → /research)* | ✓ | ✓ |
 
-**Hard rule (Component 6 of audit family proposal):** the spec, decision records, and vision documents are read-only outside `/iterate`. Any finding whose `files_to_touch` includes a spec/decision/vision file path is auto-classified `kind: decision` by the synthesizer, and `[Fix it]` on those will route to `/iterate` rather than apply inline. Two enforcement points: synthesizer step 5 (HARD RULE FIRST) and post-synth sanity check.
+For non-bundle-eligible kinds, the dashboard digest renders a one-line italicized annotation explaining why `[Fix it]` doesn't appear (see `dashboard-regeneration.md` § "Audit Findings sub-section in Action Required").
 
-**Mechanism (Stage 6 full):**
+### Known limitations (per DEC-013 research)
 
-1. User invokes inline (any session): *"address C-02 from latest coherence audit"*.
-2. Claude resolves latest audit dir, reads `findings.md#{C-02}`.
-3. **Re-reads `source_anchors`** at apply time — synthesizer's classification is not trusted.
-4. Routes by kind:
-   - `bundle-eligible` / `fix-eligible`: applies inline, asks for approval, single commit `audit-fix: C-02 — {summary}`, marks `status: resolved` in digest.json + friction.jsonl.
-   - `decision`: stops, says *"requires spec amendment via /iterate"*, marks `status: escalated_to_iterate`.
-   - `fix-eligible` mid-fix scope-growth: stops, suggests `/work` task creation, marks `status: escalated_to_work`.
+- **Transitive-consumer risk for orphan-dep removal (DEC-013 Q3).** Bundle-eligibility criteria can't catch dynamic-require / `importlib.import_module` / string-keyed import patterns that static analysis misses. **After any [Fix it] touching `package.json`, run your test suite** to catch transitive consumers the audit didn't model. If a test fails after a [Fix it] apply, `git revert HEAD` undoes the change cleanly. Same applies to source-code deletions of seemingly-orphan files.
+- **Parallel-session collision (DEC-013 Q5).** [Fix it] does not coordinate with concurrent `/work` sessions. The at-apply re-read window doesn't lock against an implement-agent's edits to the same file. If you suspect overlap (e.g., `/work` running in another session targeting the same area), run [Fix it] serially after `/work` completes.
+- **Synthesizer classification trust (DEC-013 Q1).** If the audit synthesizer mis-classifies a finding as bundle-eligible when the fix actually requires judgment (e.g., a test count anchor pinned for an intentional design reason; a "dead" link whose target was about to be created), the at-apply re-read invariant won't catch this — it only checks that the cited source still says what it claimed, not whether the inferred fix is correct. **Quick visual review at the show+approve step is the user's protection** — read the proposed diff before pressing Y. If it looks unexpected, refuse and use `[Promote to FB]` for human triage.
+- **Single-commit-per-finding rollback (DEC-013 Q4).** `git revert {sha}` works cleanly for an isolated finding. If the user notices days later, subsequent commits may have built on the audit-fix commit and the revert may merge-conflict — standard git problem, no template-side mitigation.
 
-**State isolation property:** the audit dir + `digest.json` are independent of `.handoff.json` + `tasks/`. Two parallel sessions (one running `/work`, another addressing audit findings) don't fight over the same state.
+### State isolation property
 
-### Bundled apply *(Stage 7 — not yet implemented)*
+The `audits/` directory + `digest.json` + `friction.jsonl` are independent of `.handoff.json` + `tasks/`. Two parallel sessions (one running `/work`, another addressing audit findings) don't fight over the same *audit metadata*. File-content collisions are a separate concern — see "Parallel-session collision" under Known Limitations above.
 
-Batch-mode UX over the `[Fix it]` mechanism. Same at-apply re-read invariant; one bulk approval prompt instead of N per-finding interactions; combined into a single commit. Eligibility criteria (Component 6 of proposal): implementation-file-only, source-confirmed at apply time, reversible, no new judgment, ≤3 files per finding + ≤10 total in the bundle.
+---
+
+## Bundled apply *(Stage 7 — deferred)*
+
+Batch-mode UX over the `[Fix it]` mechanism — apply N bundle-eligible findings in one bulk approval and one combined commit.
+
+**Status:** deferred. DEC-013 Q4's rollback analysis showed Stage 7's all-or-nothing revert (`git revert HEAD` reverts ALL N findings, including the (N-1) that were correct) is materially worse than Stage 6 Option C's single-commit-per-finding rollback. Reconsider once Stage 6 Option C has accumulated usage signal.
+
+When/if shipped: same at-apply re-read invariant per finding (called N times); same hard-exclusion enforcement; same eligibility filter (only bundle-eligible findings ride the batch path). Eligibility criteria documented in `audit-command-family-proposal.md` Component 6.
 
 ---
 

@@ -388,11 +388,19 @@ Your job: dedupe, cluster, classify by `kind`, dedupe against in-flight task wor
    - severity = max in cluster
    - Drop the original IDs; assign a fresh `C-NN` sequence in cluster order
 
-5. **Classify `kind` per cluster:**
+5. **Classify `kind` per cluster (DEC-013 Option C is now an action layer — bundle-eligible classification triggers actual inline-apply at Fix-it time, so be conservative):**
    - **HARD RULE FIRST.** If `files_to_touch` includes ANY of: `.claude/spec_v*.md`, `.claude/support/decisions/decision-*.md`, `.claude/vision/**/*.md` → `kind: decision` (always; no exceptions; this enforces Component 6 hard exclusion). Set `iterate_routing.reason: "spec/decision/vision file modification — read-only outside /iterate"`.
    - If suggested_kind is `design` from any contributing lens (e.g., friction-register cluster of `design_contradiction` entries) → `kind: design`. No [Fix it] action; promote to FB only.
-   - Otherwise (implementation-only, source-confirmed, single-source-of-truth fix, ≤3 files, reversible) → `kind: bundle-eligible`. Set `bundle_eligibility.source_confirmed: true`, `reversible: true`, `files_count: {N}`, `touches_spec_or_decisions: false`.
-   - Otherwise (implementation-only but >3 files, or ambiguous fix) → `kind: fix-eligible`. Same as bundle-eligible structurally but won't ride the batch path; per-finding [Fix it] only.
+   - **Bundle-eligible classification (DEC-013 Option C — triggers actual inline-apply via [Fix it])** — only when ALL hold:
+     a. Implementation-file-only (no spec/decision/vision per HARD RULE above)
+     b. Source-confirmed: the fix is a sync from one authoritative source (cited concretely in `source_anchors[]`) to a derived/dependent location. NOT bundle-eligible if the only "source" is the lens's inference.
+     c. Reversible: text edit, dep removal, file deletion of clearly-orphaned items
+     d. No new judgment: the fix's content is already present somewhere authoritative (audit syncs, doesn't decide)
+     e. Bounded scope: ≤3 files
+     f. **Orphan-dep removal (special-case per DEC-013 Q3):** still classify as bundle-eligible (it's the canonical case) but set `bundle_eligibility.transitive_consumer_risk: true` so the action layer warns the user to run tests after apply (dynamic require / `importlib.import_module` / string-keyed import patterns aren't statically detectable).
+     g. **When in doubt → fix-eligible, not bundle-eligible.** The action layer's at-apply re-read invariant cannot catch semantic mismatches that the synthesizer creates. Conservative classification at synthesis time is the load-bearing safety property.
+     Set on bundle-eligible items: `bundle_eligibility.source_confirmed: true`, `reversible: true`, `files_count: {N}`, `touches_spec_or_decisions: false`, `transitive_consumer_risk: {bool}`.
+   - Otherwise (implementation-only but doesn't meet ALL bundle-eligible criteria above, or >3 files, or ambiguous fix) → `kind: fix-eligible`. Will surface on dashboard with `[Promote to FB] / [Dismiss]` only — no [Fix it] until a future DEC expands inline-apply per DEC-013 telemetry validation gate.
 
 6. **Pending-work dedupe.** For each clustered finding, scan `.claude/tasks/task-*.json` for tasks with `status` in `{Pending, In Progress, Awaiting Verification}`. Match if:
    - The task's `files_affected` overlaps with the finding's `files_to_touch`, OR
@@ -513,6 +521,28 @@ Same shape as `/audit-ui promote`:
 10. Print summary.
 
 The existing `/feedback review` → `/iterate` flow is unchanged. The audit just produces feedback-shaped artifacts.
+
+---
+
+## Fix mode (bundle-eligible only — DEC-013 Option C)
+
+`/audit-coherence fix {audit-ts} {C-ID}` — apply a single bundle-eligible finding inline.
+
+Available only for findings with `kind: bundle-eligible`. Other kinds (`fix-eligible`, `decision`, `design`) require manual review or `/iterate` routing — see kind-availability table in `.claude/support/reference/audit-fix-workflow.md` § "Per-kind action availability".
+
+**Mechanism:** see canonical reference at `.claude/support/reference/audit-fix-workflow.md` § "Action protocol — Stage 6 (Option C per DEC-013)" / "[Fix it] — inline apply (bundle-eligible only)". In short:
+
+1. Read finding from this audit's `digest.json` + `findings.md#{C-ID}`
+2. Verify kind is `bundle-eligible` (refuse with kind-specific message otherwise)
+3. Verify finding `status == "pending"` (not already resolved/dismissed/promoted)
+4. Re-read cited `source_anchors[]` to verify finding's claim still holds (refuse if stale)
+5. Re-verify hard-exclusion (no spec/decision/vision in `files_to_touch[]` — defense-in-depth against mis-classification)
+6. Show concrete change + ask single approval
+7. On approval: apply, single commit `audit-fix: {C-ID} — {summary}`, update `digest.json` + `friction.jsonl`
+
+**Important:** after any [Fix it] touching `package.json`, run your test suite to catch transitive consumers static analysis missed (DEC-013 Q3 — orphan-dep removal can break dynamic-require / `importlib` / string-keyed import patterns). Same applies to source-code deletions.
+
+`/audit-coherence fix latest {C-ID}` — convenience: resolves "latest" to the newest `coherence-*` audit dir by `ran_at`.
 
 ---
 
