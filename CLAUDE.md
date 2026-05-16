@@ -42,22 +42,32 @@ These are template-maintenance artifacts that don't ship to projects.
 
 ## Active Follow-ups
 
-Template-maintenance work staged for later sessions. Read these first if resuming template work after a gap:
+Template-maintenance work staged for later sessions. Read these first if resuming template work after a gap.
 
-- **FB-011 scripts extraction.** Families A + B landed in v3.0.0 (`.claude/scripts/fingerprint.py` + `validate-tasks.py`); bug-fixed in v3.1.1 (FB-039: `task_id` → `id` field). Families C/D/E remain deferred per `template-maintenance/scripts-candidates.md`:
-  - **Family C (dashboard regen):** new trigger (2026-05-13) — escalate if `health-check.md` Part 6 check 4b (FB-038 ship) fires repeatedly across downstream projects.
-  - **Family D (parallel-plan):** trigger on observed real conflicts the LLM misses.
-  - **Family E (decision finalization):** 30-day trial window 2026-04-17 → 2026-05-17. Re-assess on or after 2026-05-17.
-- **Feedback backlog.** `template-maintenance/feedback.md` currently holds 2 active items after the May 2026 Phase 4 pass + DEC-010/DEC-011 ships:
-  - **FB-011** (special-case): scripts tracker — Families A+B shipped, C/D/E deferred per `template-maintenance/scripts-candidates.md`.
-  - **FB-033** (special-case): spec-auditor subagent — trial-gated on FB-032 (DEC-009 if escalated).
-  - **DEC-010 shipped 2026-05-13 (v3.4.0):** Option C — `partial_completion` envelope for usage-limit graceful resume. Decision record: `decisions/decision-010-partial-completion-envelope.md`. Promoted FB-049.
-  - **DEC-011 shipped 2026-05-13 (v3.5.0):** Option ABp — Hybrid A+B + `.pending-markers.jsonl` transient buffer for Track 1 pipeline reliability. Decision record: `decisions/decision-011-track1-pipeline-execution.md`. Promoted FB-057.
-  - Triage manually by reading the file and re-assessing; do not run `/feedback review` against it (that command targets the shipped `.claude/support/feedback/` path).
-- **DEC-009 / FB-033 trial gate.** FB-032 (Decisions in This Proposal structural contract) shipped 2026-04-17 in `.claude/commands/iterate.md`. Trial accumulates as downstream projects run `/iterate propose` sessions. If silent-decisions friction persists despite FB-032, escalate to DEC-009 (spec-auditor subagent research).
-- **Audit family shipped 2026-05-15 (v3.6.0 → v3.12.0, 7 commits).** 6.5 of 7 stages from `template-maintenance/audit-command-family-proposal.md`. Highlights: dashboard slim (META whitelist + Recent Activity cap); friction register at `.claude/support/friction.jsonl`; new commands `/audit-coherence` (6 lenses) + `/audit-ui` (7 lenses + mobile, migrated from Styler) dispatched by `/health-check` Part 8; persistent `🔍 Audit Findings` dashboard section with `[Promote to FB] / [Dismiss]`; `[Fix it]` inline-apply for `bundle-eligible` kind only (per DEC-013 Option C). Decision record: `decisions/decision-013-audit-fix-it-autonomy-boundary.md`. **Two open follow-ups:**
-  - **Stage 7 (bundled-apply batch UX) deferred** per DEC-013 Q4 rollback analysis (all-or-nothing batch revert is materially worse than single-commit-per-finding). Reconsider after Stage 6 Option C telemetry accumulates.
-  - **Fix-eligible inline-apply expansion** gated on telemetry validation: ≥5 successful `[Fix it]` invocations on bundle-eligible findings across downstream projects + manual diff inspection sample for zero silent-corruption events. If clean: open follow-up DEC for fix-eligible expansion. If not: revisit Option F (add dry-run-first). Telemetry observable via `resolved_by.kind == "fix_it"` count in `friction.jsonl` + per-audit `digest.json items[].status` counts.
+**Active feedback items** (`template-maintenance/feedback.md` — triage manually; do NOT run `/feedback review` against this path, that command targets the shipped `.claude/support/feedback/` queue):
+
+- **FB-011** (special-case): scripts tracker — Families A+B shipped (v3.0.0/3.1.1), C/D/E deferred per `template-maintenance/scripts-candidates.md`. Re-assess Family E on/after 2026-05-17 (30-day trial window 2026-04-17 → 2026-05-17 closing); escalate Family C if `/health-check` Part 6 check 4b fires repeatedly; Family D triggers on observed real LLM-missed parallel conflicts.
+- **FB-033** (special-case): spec-auditor subagent — trial-gated on FB-032 (Decisions in This Proposal structural contract, shipped 2026-04-17). Escalate to DEC-009 only if silent-decisions friction persists across `/iterate propose` sessions despite FB-032.
+- **FB-060** (partial): file-ownership boundary — Phases 1+3+4+5 shipped (v3.14.2 + v3.15.0); Phase 2 (`sync_strict` category schema) deferred per DEC-014 § Decision. Re-open only if a real `project_extensible` category member emerges.
+- **FB-062** (cheap action shipped, v3.14.1): two FB-NNN locations convention — root `CLAUDE.md` § File Boundary documents the four-file enumeration. Medium (rename to TM-NNN) / Higher (consolidate with `track:` field) options remain if dedup misses recur.
+- **FB-063** (cheap action shipped, v3.14.1): background-session auto-worktree breaks gitignored-state reads — per-command note added to `/audit-coherence` + `/audit-ui`. Medium (extend preamble carve-out) / Higher (worktree bind-mount) options remain if other commands hit the same trap.
+- **FB-064** (new, 2026-05-16): decomposition heuristic for project-local test-harness awareness — bridged from echothread `FB-009`. Echothread solving project-side via T86; template-side would ship the generic harness-directory-detection pattern. Not yet triaged.
+
+**Recent ships:**
+
+- **v3.4.0 (2026-05-13)** — DEC-010 Option C: `partial_completion` envelope for usage-limit graceful resume (`decisions/decision-010-partial-completion-envelope.md`). Promoted FB-049.
+- **v3.5.0 (2026-05-13)** — DEC-011 Option ABp: hybrid A+B + `.pending-markers.jsonl` transient buffer for Track 1 pipeline reliability (`decisions/decision-011-track1-pipeline-execution.md`). Promoted FB-057.
+- **v3.6.0 → v3.12.0 (2026-05-15, 7 commits)** — Audit family: 6.5 of 7 stages from `template-maintenance/audit-command-family-proposal.md`. Dashboard slim (META whitelist + Recent Activity cap); friction register at `.claude/support/friction.jsonl`; commands `/audit-coherence` (6 lenses) + `/audit-ui` (7 lenses + mobile) dispatched by `/health-check` Part 8; persistent `🔍 Audit Findings` dashboard section with `[Promote to FB] / [Dismiss]`; `[Fix it]` inline-apply for `bundle-eligible` kind only per DEC-013 Option C (`decisions/decision-013-audit-fix-it-autonomy-boundary.md`).
+- **v3.14.0 → v3.14.2 (2026-05-16)** — FB-003 feature-retirement workflow rule promoted; FB-062 + FB-063 cheap actions shipped; FB-060 Phases 1 + 5 (Cross-Project Capture Protocol in `.claude/rules/agents.md` + new `.claude/support/reference/extension-hooks.md`).
+- **v3.15.0 (2026-05-16)** — DEC-014 Option F: `.claude/.sync-state.json` sidecar + `/health-check` Part 5 2-condition algorithm refinement (`decisions/decision-014-sync-state-and-file-ownership-categories.md`). Closes FB-059; partially closes FB-060.
+- **v3.16.0 (2026-05-16)** — FB-065 + FB-066 promoted: 5th heuristic on FB-058's Pre-Pass table (decomposition-time enum-extension ripple inference) + production-consumption check in verify-agent Step T5 (catches class-export integration gaps).
+
+**Audit family open follow-ups:**
+
+- **Stage 7 (bundled-apply batch UX) deferred** per DEC-013 Q4 rollback analysis (all-or-nothing batch revert is materially worse than single-commit-per-finding). Reconsider after Stage 6 Option C telemetry accumulates.
+- **Fix-eligible inline-apply expansion** gated on telemetry: ≥5 successful `[Fix it]` invocations on bundle-eligible findings across downstream projects + manual diff inspection sample for zero silent-corruption events. If clean: open follow-up DEC for fix-eligible expansion. If not: revisit Option F (add dry-run-first). Telemetry observable via `resolved_by.kind == "fix_it"` count in `friction.jsonl` + per-audit `digest.json items[].status` counts.
+
+**Decision record status (as of 2026-05-16):** 11 of 12 records `implemented` with populated `implementation_anchors`. DEC-003 (subdirectory vs flat layout) stays `approved` — research conclusion with no implementation commit (template was already in flat layout).
 
 ## Version Bumping
 

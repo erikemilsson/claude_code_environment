@@ -229,48 +229,10 @@ In the Styler audit run, this left two captured-inputs files missing (`meta.json
 
 **Cross-reference:** FB-058 (decomposition pre-pass), FB-047 (files_affected drift). Source FB also notes the meta-observation that the bridge mechanism (`template_inbox_path` per FB-040) is the right place for these generalizable patterns — confirms the v3.5.1 bridge is working as designed.
 
-## FB-065: Decomposition systematically under-counts synchronized-enum-locations in files_affected
+## FB-065: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
 
-**Status:** promoted
-**Captured:** 2026-05-16
-**Promoted:** 2026-05-16 — Added 5th heuristic row to FB-058's Decomposition Pre-Pass Leg 2 (Ripple Inference) in both `.claude/support/reference/decomposition.md` AND `.claude/skills/decomposition-heuristics/SKILL.md` (mirror per DEC-007 Option B). New heuristic fires on "new enum / literal-union / `as const` member" patterns (e.g., `add 'foo' to CriterionId`); grep finds importers and the procedure inspects them for `switch(...)` over the enum or `Record<EnumName, ...>` maps; surfaces parsers, formatters, header maps, barrel re-exports, and per-case test factories as ripple candidates. Advisory (present-and-ask), consistent with the other four legs. Shipped in template_version 3.16.0.
-**Source:** 5+ occurrences across echothread sessions 2026-05-13/14/15 (T67, T80, T81, T82, T83 — see `interaction-logs/processed/echothread-session-2026-05-14.json` + `echothread-session-2026-05-15.json`). Cross-session friction-marker pattern.
+**Status:** promoted 2026-05-16 — decomposition enum-extension heuristic shipped in template_version 3.16.0 (5th heuristic row added to FB-058 Pre-Pass Leg 2). See archive for full text.
 
-**Observation:** When a task extends an enum (e.g., adds a new `CriterionId` member), the task's declared `files_affected` systematically under-counts the actual edit surface by 5-10 files. Concrete examples:
-- T80: declared 4 files, edited 10 (synchronized locations under `CriterionId` / `CRITERION_ORDER` / `CRITERION_HEADERS` / `EvaluationInputs` / barrel / category-rename / inline polish / test-factory).
-- T81: declared 4 files, edited 11 (under-counted by 7).
-- T82: declared 4 files, edited 13.
-- T83: declared 4 files, edited 14.
+## FB-066: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
 
-The synchronized-enum-locations rule (template's `.claude/rules/agents.md § Synchronized Locations` — implicit via `## Root Cause Over Symptom` semantics; implement-agent currently catches this at grep time, not at decomposition time) means the gap is recovered downstream but at the cost of (a) implement-agent doing extra synchronization work outside declared scope (every occurrence registered a `template_gap` or `scope_creep` marker), and (b) verify-agent's `scope_validation` check having to gracefully accept "actually edited 13 files, declared 4."
-
-**Proposal:** Extend decomposition heuristics with an "enum-extension hint" — when a task's `files_affected` or task description references extending an enum (e.g., a `CriterionId`, status enum, kind enum), auto-enumerate the synchronized locations and add them to `files_affected` at decomposition time. The synchronized sites are typically: 1 event-log type file, 1 evaluator types file, 1 evaluator parser, 1 evaluator entrypoint, 1 evaluator format file, 2 barrel files, N test-factory files. For echothread's Phase 4 pattern that's an 8-10 location floor.
-
-**Detection signal:** decomposition could grep the candidate task's description/test_protocol for enum-y keywords (`CriterionId`, `enum`, `kind`, `union of` etc) AND grep the codebase for matching enum declarations. If both match, surface the synchronized sites as auto-added `files_affected` entries with a prompt asking the user to confirm.
-
-**Overlaps with:** FB-058 (decomposition pre-pass — path validation + ripple inference heuristics) covers a similar pattern (decomposition-time validation of `files_affected`). FB-047 (files_affected drift — implement-agent expansion) is the downstream complement. **This could be folded into FB-058's ripple-inference heuristics** rather than a standalone item — same code path, additive heuristic.
-
-**Likely route:** decomposition step refinement in `commands/work.md` Step 2c (decomposition pre-pass). Could land alongside FB-058's escalation if it gets pursued. Lower priority than FB-058 itself (which is path validation, a separate failure mode) but mature signal (5+ occurrences in one project's Phase 4 alone).
-
-**Cross-reference:** FB-058, FB-047, echothread sessions 2026-05-13/14/15.
-
-## FB-066: verify-agent missing default "production-consumption" check for class-export tasks
-
-**Status:** promoted
-**Captured:** 2026-05-16
-**Promoted:** 2026-05-16 — Added production-consumption sub-bullet to `.claude/agents/verify-agent.md` Step T5 (Verify Integration Boundaries). Check fires when any file in `files_affected` declares a top-level class export (regex: `^export (default )?class \w+`); greps `new {ClassName}\(` across `src/` excluding `__tests__` and `*.test.*`; requires ≥1 hit OR explicit "consumer task deferred" note. Failure feeds the existing `integration_ready` key (no new schema field needed) and emits a `major` issue. Skips cleanly for tasks without class-exporting files. Catches the structural-vs-runtime verification gap that echothread Phase 4 surfaced only via interactive Playwright run on T71. Shipped in template_version 3.16.0.
-**Source:** 3+ occurrences across echothread sessions 2026-05-14/15. Pattern: T71→T85 integration-gap discovery + T85_1/T85_2/T85_3 verifications adding ad-hoc grep checks.
-
-**Observation:** Structural verification (files exist, types correct, tests pass) is necessary but not sufficient for tasks that ship a new top-level class export. Echothread's Phase 4 introduced 6 new module classes (`BeatEmitter`, `BeatResponse`, `ResonanceTracker`, `CriticalEvaluator`, `BeatEffects`, `NodeTrace`); structural verification passed for all 14 individual implementation tasks; the **integration gap** — modules exported but never `new`'d in `src/` — was discovered only via interactive Playwright-driven runtime test on T71. T85 was decomposed retroactively into 3 subtasks to close the gap. Subsequent T85_1/T85_2/T85_3 verifications each independently ran a `grep -rn 'new {ClassName}(' src/ | grep -v __tests__` check as a one-off addition to per-task verification — re-inventing the same pattern.
-
-**Proposal:** Add a default check to verify-agent's per-task verification list — when a task's `files_affected` includes a top-level class-exporting file, grep `new {ClassName}(` across `src/` (excluding tests). Pass requires ≥1 hit OR an explicit "consumer task deferred" flag in the task description (e.g., `task.deferred_consumption: true` with a pointer to the consuming task). One grep per task; catches the structural-vs-runtime verification gap without requiring runtime tests for every class export.
-
-**Detection signal:** verify-agent already reads task `files_affected`. Adding the check is: (a) parse each file in `files_affected` for `export class \w+`/`export default class \w+` patterns, (b) for each detected class name, run the grep. The class-name extraction is mechanical.
-
-**Why elevate from "opportunity" to default:** the gap surfaced 3+ times this Echothread Phase 4 alone (T71 discovery + T85_1/T85_2/T85_3 verifications). The cost of the check is trivial; the cost of NOT having it is shown by Echothread's pattern — 14 tasks shipped structurally clean, integration gap caught accidentally via interactive runtime test. In a project without that interactive test stage, the gap could ship to production.
-
-**Boundary with FB-064:** FB-064 proposes a *decomposition-time* heuristic that authors scenario tests for runtime/UI tasks. FB-066 proposes a *verification-time* check that catches "structural code shipped, no consumer" cases. They complement each other: FB-064 grows the test suite; FB-066 catches gaps even when scenario tests don't exist yet.
-
-**Likely route:** small addition to `.claude/agents/verify-agent.md`'s per-task verification check list (probably under `scope_validation` or as a new check `consumer_check`). Low blast radius; one new grep per verification.
-
-**Cross-reference:** FB-064, echothread sessions 2026-05-14/15 (markers from T71, T85_1, T85_2, T85_3).
+**Status:** promoted 2026-05-16 — verify-agent production-consumption check shipped in template_version 3.16.0 (sub-bullet added to Step T5; feeds existing integration_ready key). See archive for full text.

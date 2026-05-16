@@ -1120,3 +1120,33 @@ The current algorithm can't distinguish these without per-file last-synced state
 **Workaround for affected projects (until Part 5 is refined):** when Part 5 offers selective sync, manually review the diff for each "skip" candidate via `diff <template-path> <project-path>`. If the diff is purely template content (lines present in template but not project), override the skip or manually copy the new template content into the project's file.
 
 **Likely route:** scope-add to a new `/health-check` Part 5 refinement (not FB-058 — that's about `/work` decomposition path validation). Worth a research-light to confirm the proposed sidecar-based detection is feasible without restructuring the sync engine. Could also incorporate a "show me the diff" sub-action in the Part 5 menu so users can manually adjudicate per file.
+
+## FB-065: Decomposition systematically under-counts synchronized-enum-locations in files_affected
+
+**Status:** promoted
+**Captured:** 2026-05-16
+**Promoted:** 2026-05-16 — Added 5th heuristic row to FB-058's Decomposition Pre-Pass Leg 2 (Ripple Inference) in both `.claude/support/reference/decomposition.md` AND `.claude/skills/decomposition-heuristics/SKILL.md` (mirror per DEC-007 Option B). New heuristic fires on "new enum / literal-union / `as const` member" patterns (e.g., `add 'foo' to CriterionId`); grep finds importers and the procedure inspects them for `switch(...)` over the enum or `Record<EnumName, ...>` maps; surfaces parsers, formatters, header maps, barrel re-exports, and per-case test factories as ripple candidates. Advisory (present-and-ask), consistent with the other four legs. Shipped in template_version 3.16.0.
+**Source:** 5+ occurrences across echothread sessions 2026-05-13/14/15 (T67, T80, T81, T82, T83 — see `interaction-logs/processed/echothread-session-2026-05-14.json` + `echothread-session-2026-05-15.json`). Cross-session friction-marker pattern.
+
+**Observation:** When a task extends an enum (e.g., adds a new `CriterionId` member), the task's declared `files_affected` systematically under-counts the actual edit surface by 5-10 files. Concrete examples:
+- T80: declared 4 files, edited 10 (synchronized locations under `CriterionId` / `CRITERION_ORDER` / `CRITERION_HEADERS` / `EvaluationInputs` / barrel / category-rename / inline polish / test-factory).
+- T81: declared 4 files, edited 11 (under-counted by 7).
+- T82: declared 4 files, edited 13.
+- T83: declared 4 files, edited 14.
+
+The synchronized-enum-locations rule (template's `.claude/rules/agents.md § Synchronized Locations` — implicit via `## Root Cause Over Symptom` semantics; implement-agent currently catches this at grep time, not at decomposition time) means the gap is recovered downstream but at the cost of (a) implement-agent doing extra synchronization work outside declared scope (every occurrence registered a `template_gap` or `scope_creep` marker), and (b) verify-agent's `scope_validation` check having to gracefully accept "actually edited 13 files, declared 4."
+
+**Cross-reference:** FB-058, FB-047, echothread sessions 2026-05-13/14/15.
+
+## FB-066: verify-agent missing default "production-consumption" check for class-export tasks
+
+**Status:** promoted
+**Captured:** 2026-05-16
+**Promoted:** 2026-05-16 — Added production-consumption sub-bullet to `.claude/agents/verify-agent.md` Step T5 (Verify Integration Boundaries). Check fires when any file in `files_affected` declares a top-level class export (regex: `^export (default )?class \w+`); greps `new {ClassName}\(` across `src/` excluding `__tests__` and `*.test.*`; requires ≥1 hit OR explicit "consumer task deferred" note. Failure feeds the existing `integration_ready` key (no new schema field needed) and emits a `major` issue. Skips cleanly for tasks without class-exporting files. Catches the structural-vs-runtime verification gap that echothread Phase 4 surfaced only via interactive Playwright run on T71. Shipped in template_version 3.16.0.
+**Source:** 3+ occurrences across echothread sessions 2026-05-14/15. Pattern: T71→T85 integration-gap discovery + T85_1/T85_2/T85_3 verifications adding ad-hoc grep checks.
+
+**Observation:** Structural verification (files exist, types correct, tests pass) is necessary but not sufficient for tasks that ship a new top-level class export. Echothread's Phase 4 introduced 6 new module classes (`BeatEmitter`, `BeatResponse`, `ResonanceTracker`, `CriticalEvaluator`, `BeatEffects`, `NodeTrace`); structural verification passed for all 14 individual implementation tasks; the **integration gap** — modules exported but never `new`'d in `src/` — was discovered only via interactive Playwright-driven runtime test on T71. T85 was decomposed retroactively into 3 subtasks to close the gap. Subsequent T85_1/T85_2/T85_3 verifications each independently ran a `grep -rn 'new {ClassName}(' src/ | grep -v __tests__` check as a one-off addition to per-task verification — re-inventing the same pattern.
+
+**Boundary with FB-064:** FB-064 proposes a *decomposition-time* heuristic that authors scenario tests for runtime/UI tasks. FB-066 proposes a *verification-time* check that catches "structural code shipped, no consumer" cases. They complement each other: FB-064 grows the test suite; FB-066 catches gaps even when scenario tests don't exist yet.
+
+**Cross-reference:** FB-064, echothread sessions 2026-05-14/15 (markers from T71, T85_1, T85_2, T85_3).
