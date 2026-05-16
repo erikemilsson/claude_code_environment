@@ -69,7 +69,7 @@ Understanding which files are yours to edit vs. which are managed by the templat
 
 Claude Code reads permissions, hooks, and theme from two files that merge at runtime:
 
-- **`.claude/settings.json`** — template-owned. Ships a conservative base `permissions.allow` set (safe read-only git/filesystem commands) that eliminates the most common acceptEdits permission prompts. Updated via template sync. **Don't edit this file.**
+- **`.claude/settings.json`** — template-owned. Ships a conservative base `permissions.allow` set (safe read-only git/filesystem commands) that eliminates the most common acceptEdits permission prompts, AND a base `permissions.ask` set (template-wide guardrails per DEC-016 — Edit/Write prompts for `.claude/spec_v*.md`, decision records, and vision documents). Updated via template sync. **Don't edit this file.**
 - **`.claude/settings.local.json`** — yours. Add additional permissions (language runners, write-class git, anything project-specific), hooks, env vars, and theme here. Claude Code concatenates `permissions.allow` across both files automatically.
 
 If you accidentally add permissions to `.claude/settings.json`, `/health-check` will warn you and offer to move them to `.claude/settings.local.json`.

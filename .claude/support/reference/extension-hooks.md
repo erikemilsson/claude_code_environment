@@ -31,7 +31,7 @@ The rule: **never modify template-owned files** (`.claude/CLAUDE.md`, `.claude/r
 - **Archive locations:** `.claude/rules/archiving.md` — where resolved work goes (decisions to `.archive/`, feedback to `archive.md`, etc.).
 - **Workspace conventions:** `.claude/rules/archiving.md § "User-Facing Documents"` — how `docs/` vs `.claude/support/workspace/` differ.
 - **Sync category source of truth:** `.claude/sync-manifest.json` — the file-level enumeration of `sync` / `customize` / `ignore` categories.
-- **Settings layering:** `.claude/CLAUDE.md § "Critical Invariants"` — `.claude/settings.json` is template-owned (base permissions only); user additions go in `.claude/settings.local.json`.
+- **Settings layering:** `.claude/CLAUDE.md § "Critical Invariants"` — `.claude/settings.json` is template-owned (base `permissions.allow` + base `permissions.ask` per DEC-016); user additions go in `.claude/settings.local.json`.
 
 ## Examples — right vs wrong placement
 

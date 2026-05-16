@@ -37,7 +37,8 @@ This environment is designed for **Claude Opus 4.7** (`claude-opus-4-7[1m]`). Al
 - Exactly one `spec_v{N}.md` exists in `.claude/` at any time.
 - Never commit credentials to tracked files.
 - Never create working documents in the project root — use `.claude/support/workspace/`.
-- Settings layering: `.claude/settings.json` is template-owned (base `permissions.allow` only); put hooks, env vars, theme, and any additional permissions in `.claude/settings.local.json`. Claude Code merges both at runtime. Under `--permission-mode auto`, these rules short-circuit the runtime classifier — see `.claude/README.md` § Auto Mode for composition.
+- Settings layering: `.claude/settings.json` is template-owned (base `permissions.allow` AND `permissions.ask` — the `ask` set ships template-wide guardrails for spec/decision/vision file edits per DEC-016); put hooks, env vars, theme, and any additional permissions in `.claude/settings.local.json`. Claude Code merges both at runtime. Under `--permission-mode auto`, these rules short-circuit the runtime classifier — see `.claude/README.md` § Auto Mode for composition.
+- Direct edits to `.claude/spec_v*.md`, `.claude/support/decisions/decision-*.md`, and `.claude/vision/**/*.md` route through `/iterate` (or analogous flow per category) — see `.claude/rules/spec-workflow.md § "Direct edits to spec, decision, and vision files (DEC-016)"`. Structurally enforced via `permissions.ask` in template-owned `.claude/settings.json`; infrastructure operations (archiving, version transitions, frontmatter) remain autonomous.
 - Respect prior kills: when the user halts a long-running process (dev server, watcher, batch loop), do not restart it in the same session without renewed approval. See `.claude/rules/agents.md § "Behavioral Rules"` for the full rule.
 
 ## Environment Commands

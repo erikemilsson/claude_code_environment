@@ -633,7 +633,7 @@ Never delete or rename custom commands without user consent.
 
 ## Part 5c: Settings Boundary Validation
 
-Validates the layered-settings contract: `.claude/settings.json` is template-owned (base `permissions.allow` only); `.claude/settings.local.json` is user-owned (all user additions, hooks, env vars, theme). Enforcing the boundary prevents template sync from silently clobbering user edits.
+Validates the layered-settings contract: `.claude/settings.json` is template-owned (base `permissions.allow` + base `permissions.ask` per DEC-016); `.claude/settings.local.json` is user-owned (all user additions, hooks, env vars, theme). Enforcing the boundary prevents template sync from silently clobbering user edits.
 
 ### Process
 
@@ -644,9 +644,9 @@ Validates the layered-settings contract: `.claude/settings.json` is template-own
 2. **Validate template-owned `settings.json` scope:**
    - Parse `.claude/settings.json` as JSON.
    - If parse fails: ❌ error — "`.claude/settings.json` is not valid JSON. Sync may have been interrupted; re-run `/health-check` to re-sync."
-   - Check that the file contains **only** `permissions.allow`:
-     - ✅ Pass: the top-level object has exactly one key (`permissions`) whose value has exactly one key (`allow`).
-     - ⚠️ Warn if any of the following are present: `permissions.deny`, `permissions.ask`, `hooks`, `env`, `theme`, or any other top-level key.
+   - Check that the file contains **only** `permissions.allow` and/or `permissions.ask`:
+     - ✅ Pass: the top-level object has exactly one key (`permissions`) whose value has only the keys `allow` and/or `ask`.
+     - ⚠️ Warn if any of the following are present: `permissions.deny`, `hooks`, `env`, `theme`, or any other top-level key.
      - Warning message:
        ```
        ⚠️ Found non-base entries in `.claude/settings.json` (template-owned file).
@@ -659,7 +659,7 @@ Validates the layered-settings contract: `.claude/settings.json` is template-own
 
 3. **Validate base-set drift (template vs. local):**
    - Read the template's `.claude/settings.json` from the template remote (if configured and reachable — same fetch as Part 5). Skip this check if offline.
-   - Compare the local `permissions.allow` array against the template's.
+   - Compare the local `permissions.allow` AND `permissions.ask` arrays against the template's.
    - If entries differ: this is normal (user has not yet synced, or template has been updated). Part 5's sync flow will offer the update — no Part 5c action needed.
    - This check exists purely to reassure users that additions/removals from the template base will propagate through normal sync.
 
@@ -669,7 +669,7 @@ Validates the layered-settings contract: `.claude/settings.json` is template-own
 
 ### Rationale
 
-Claude Code's runtime concatenates `permissions.allow[]` across all settings layers, so the user's additions in `settings.local.json` combine automatically with the template's base in `settings.json`. The template-owned file exists for one job only: shipping a conservative base set. Everything else belongs in the user-owned file.
+Claude Code's runtime concatenates `permissions.allow[]` and `permissions.ask[]` across all settings layers, so the user's additions in `settings.local.json` combine automatically with the template's base in `settings.json`. The template-owned file exists for two jobs: shipping a conservative base allow-set (read-only git/filesystem commands) AND a base ask-set (template-wide guardrails for spec/decision/vision file edits per DEC-016). Everything else (project-specific permissions, hooks, env vars, theme) belongs in the user-owned file.
 
 ---
 
