@@ -408,10 +408,11 @@ The user selects an option when prompted, and `/work` updates the task according
   - Marker-bracketed for sidecar persistence:
     ```
     <!-- AUDIT DIGEST -->
-    - [ ] **{C-NN}** {title}
+    - [ ] **{C-NN}** {description ?? title}
     <!-- END AUDIT DIGEST -->
     ```
   - One bullet per item where `status == "pending"` AND `id NOT IN dismissed_ids`. Items resolved by promote (`status: resolved` or `status: promoted`) or dismissed are filtered out at render time.
+  - **Body field selection (added v3.18.0, FB-006 iteration 2):** prefer the item's `description` field (plain-English one-line summary, ~80-140 chars; written by the synthesizer per `audit-coherence.md` / `audit-ui.md` § "Algorithm" step 4). Fall back to `title` for backward compatibility with digest.json files written before v3.18.0 (no migration of older audits — they render their `title` as before).
   - **Per-item action affordance (Stage 6 Option C per DEC-013, currently shipped) — kind-conditional, single trailing token:**
     - `bundle-eligible` items: append ` — [Fix it]` after the title. `[Fix it]` is retained because it has no checkbox/keyword alternative — invoke via `/audit-{name} fix latest {C-ID}` or natural-language *"fix C-NN from the latest audit"*.
     - `fix-eligible`, `decision`, `design` items: append a single italicized kind annotation after the title (no inline `[Promote to FB] / [Dismiss]` text — those actions are still available, just not rendered per-item; see "How to act on findings" below):
@@ -475,7 +476,7 @@ The user selects an option when prompted, and `/work` updates the task according
 | Action Required → Verification Pending | Plain text status message |
 | Action Required → Verification Debt | `Task \| Title \| Issue` |
 | Action Required → Spec Drift | `- ⚠️ **{section}** — {N} tasks affected, deferred {M} days ago` |
-| Action Required → Audit Findings | `bundle-eligible`: `- [ ] **{C-NN}** {title} — [Fix it]`. Other kinds: `- [ ] **{C-NN}** {title} *({kind annotation})*` (annotations: `decision` → `*(spec amendment via /iterate)*`; `fix-eligible` → `*(fix-eligible — manual review pending future DEC)*`; `design` → `*(promote to FB → /research)*`). Promote (tick + `/audit-{name} promote {audit-ts}`) and Dismiss (natural-language to Claude) are NOT rendered inline per-item — see Audit Findings rule "How to act on findings" above. |
+| Action Required → Audit Findings | `bundle-eligible`: `- [ ] **{C-NN}** {description ?? title} — [Fix it]`. Other kinds: `- [ ] **{C-NN}** {description ?? title} *({kind annotation})*` (annotations: `decision` → `*(spec amendment via /iterate)*`; `fix-eligible` → `*(fix-eligible — manual review pending future DEC)*`; `design` → `*(promote to FB → /research)*`). Body field selection per v3.18.0: prefer `description` (plain-English synthesizer-written sentence); fall back to `title` for older audits. Promote (tick + `/audit-{name} promote {audit-ts}`) and Dismiss (natural-language to Claude) are NOT rendered inline per-item — see Audit Findings rule "How to act on findings" above. |
 | Action Required → Feedback | `- 📝 **{N} feedback items** awaiting attention ({X} new, {Y} refined, {Z} ready) → /feedback review` |
 | Action Required → Decisions | `Decision \| Question \| Doc` |
 | Action Required → Your Tasks | `Task \| What To Do \| Where` |

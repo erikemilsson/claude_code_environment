@@ -171,6 +171,7 @@ Every audit produces:
     {
       "id": "C-04",
       "title": "Orphan dep react-native-pager-view in styler-phone/package.json (per T647)",
+      "description": "react-native-pager-view is listed in styler-phone/package.json but no import or require reference exists anywhere in src/ — task T647 retired the only consumer.",
       "kind": "bundle-eligible",
       "fix_one_liner": "Remove react-native-pager-view from package.json dependencies",
       "source_anchors": ["task-647.json#verification_history", "package.json"],
@@ -188,6 +189,7 @@ Every audit produces:
     {
       "id": "C-01",
       "title": "Spec § 5.2 still describes per-user generation; DEC-050 selected maintainer-curated",
+      "description": "Spec §§ 5.2, 5.3, 5.5 still describe per-user generation, but DEC-050 selected maintainer-curated — 3 unfixed references in the active spec.",
       "kind": "decision",
       "fix_one_liner": "Spec amendment via /iterate (3 occurrences in § 5.2)",
       "source_anchors": ["spec_v13.md § 5.2.1", "decision-050-*.md"],
@@ -211,6 +213,8 @@ Every audit produces:
 ```
 
 **Naming note:** `source_anchors` (was `spec_anchors` in earlier drafts) — generalized because not all anchors are spec sections. Could be a decision ID, a task JSON field, an on-disk file. Spec-anchor findings are a strict subset that always route to `/iterate`.
+
+**`description` vs `title` (added v3.18.0, FB-006 iteration 2):** Two distinct fields for two distinct roles. `title` is a terse cluster identifier (~5-10 words, sentence-case, no period) used as findings.md cluster header and as the FB title on `[Promote to FB]`. `description` is a complete plain-English sentence (~80-140 chars, period-terminated, self-contained) rendered on the dashboard digest so the user can triage without opening `findings.md`. Synthesizer-written; see `audit-coherence.md` / `audit-ui.md` § "Algorithm" step 4 for the writing convention. Backward-compat: older digest.json files without `description` render `title` on the dashboard as before.
 
 `status` per item: `pending` | `resolved` | `dismissed` | `escalated_to_iterate` | `escalated_to_work`. Updated atomically by [Fix it] / bundled-apply / dismiss actions (Component 8).
 

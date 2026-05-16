@@ -31,12 +31,12 @@ The `🔍 Audit Findings` sub-section in Action Required renders when the dashbo
 *Last audit: coherence 2026-05-15 14:30Z (6 pending · 0 promoted · 0 dismissed since last audit)*
 
 <!-- AUDIT DIGEST -->
-- [ ] **C-01** orphan dep `unused-pkg` in package.json (only ref in lockfile) — [Fix it]
-- [ ] **C-02** "sub-tab" vs "section nav" vocab inconsistency (spec § 9.1, 11.1, 42.5) *(spec amendment via /iterate)*
-- [ ] **C-03** Oracle-thesis contradiction pattern recurring (3 friction register entries cluster) *(promote to FB → /research)*
-- [ ] **C-05** 5 FB items >30 days open without status change *(fix-eligible — manual review pending future DEC)*
-- [ ] **C-07** Phase 27 § 27.1 feature retirement workflow referenced but not implemented *(spec amendment via /iterate)*
-- [ ] **C-08** Retired feature pull-to-refresh missing spec retirement marker (Phase 41) *(spec amendment via /iterate)*
+- [ ] **C-01** `unused-pkg` is listed in package.json dependencies but no `import` or `require` references it anywhere in `src/` — the only consumer was retired in T625. — [Fix it]
+- [ ] **C-02** Spec uses "sub-tab" and "section nav" interchangeably for the same UI element across §§ 9.1, 11.1, 42.5 — 3 occurrences need a canonical-term decision. *(spec amendment via /iterate)*
+- [ ] **C-03** Three friction-register entries (FR-014, FR-022, FR-028) cluster around the Oracle-thesis contradiction pattern, suggesting an unresolved design tension rather than isolated incidents. *(promote to FB → /research)*
+- [ ] **C-05** Five FB-* entries are >30 days old without a status change — likely abandoned threads worth re-triaging or archiving. *(fix-eligible — manual review pending future DEC)*
+- [ ] **C-07** Spec § 27.1 references a "feature retirement workflow" but no rule file, manifest schema, or directory convention exists on disk to back the reference. *(spec amendment via /iterate)*
+- [ ] **C-08** A retired feature manifest under `.claude/support/retired/pull-to-refresh/` exists, but spec § 41 doesn't carry the corresponding "Retired (YYYY-MM-DD)" marker. *(spec amendment via /iterate)*
 <!-- END AUDIT DIGEST -->
 
 *Already covered by in-flight work:*
@@ -45,6 +45,8 @@ The `🔍 Audit Findings` sub-section in Action Required renders when the dashbo
 ```
 
 **Per-item action affordance (post-v3.17.1):** Only `[Fix it]` is rendered inline, and only for `bundle-eligible` items — because `[Fix it]` has no checkbox/keyword alternative. Non-bundle-eligible kinds show a single italicized annotation explaining their kind (no inline `[Promote to FB] / [Dismiss]` text — those actions are still available, just not rendered per-item to avoid dead UI). See `dashboard-regeneration.md` § "Audit Findings sub-section in Action Required" for the canonical rule and the "How to act on findings" sub-section for promote/dismiss invocation patterns.
+
+**Body text per item (post-v3.18.0):** The bullet body is the item's `description` field — a plain-English synthesizer-written sentence describing what's wrong and where, sufficient for at-a-glance triage without opening `findings.md` (FB-006 iteration 2). Backward-compat: older digest.json files without `description` render `title` instead. See `audit-coherence.md` § "Algorithm" step 4 + Component 2 schema § "`description` vs `title`" for the field convention.
 
 **Section ordering:** between Spec Drift and Feedback in Action Required.
 

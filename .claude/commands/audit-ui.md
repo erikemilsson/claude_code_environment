@@ -655,6 +655,19 @@ task work, write findings.md AND digest.json.
    - lenses_seen = set of all lens names that contributed (pre + cross).
    - severity = max in cluster.
    - Drop the original IDs; assign a fresh `F-NN` sequence in dedupe order.
+   - **Write `description`** — a plain-English one-line summary suitable for
+     at-a-glance dashboard triage. Derive from the canonical finding's `What`
+     line; expand with `Why` context only if the bare `What` would be opaque
+     without it. Constraints: complete sentence, period-terminated, ~80-140
+     chars (hard cap 200 to prevent wrap disasters), self-contained (names
+     the page / element / surface affected so the user doesn't need to open
+     `findings.md`). Distinct from `title` — `title` is a short cluster
+     identifier (used as findings.md cluster header + FB title on promote);
+     `description` is the readable sentence rendered on the dashboard digest.
+     Example: title `"Login page has no email-format hint pre-submission"`,
+     description `"The /login email field shows no inline format hint before
+     submission; users only learn the format requirement from the post-submit
+     error, breaking the affordance loop."`
 
 5. **Classify `kind` per cluster (DEC-013 Option C is now an action layer — bundle-eligible classification triggers actual inline-apply at Fix-it time, so be conservative):**
    - **HARD RULE FIRST.** If `files_to_touch` includes ANY of: `.claude/spec_v*.md`,
