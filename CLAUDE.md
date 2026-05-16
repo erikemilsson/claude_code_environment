@@ -51,8 +51,6 @@ Template-maintenance work staged for later sessions. Read these first if resumin
 - **FB-060** (partial): file-ownership boundary — Phases 1+3+4+5 shipped (v3.14.2 + v3.15.0); Phase 2 (`sync_strict` category schema) deferred per DEC-014 § Decision. Re-open only if a real `project_extensible` category member emerges.
 - **FB-062** (cheap action shipped, v3.14.1): two FB-NNN locations convention — root `CLAUDE.md` § File Boundary documents the four-file enumeration. Medium (rename to TM-NNN) / Higher (consolidate with `track:` field) options remain if dedup misses recur.
 - **FB-063** (cheap action shipped, v3.14.1): background-session auto-worktree breaks gitignored-state reads — per-command note added to `/audit-coherence` + `/audit-ui`. Medium (extend preamble carve-out) / Higher (worktree bind-mount) options remain if other commands hit the same trap.
-- **FB-064** (new, 2026-05-16): decomposition heuristic for project-local test-harness awareness — bridged from echothread `FB-009`. Echothread solving project-side via T86; template-side would ship the generic harness-directory-detection pattern. Not yet triaged.
-
 **Recent ships:**
 
 - **v3.4.0 (2026-05-13)** — DEC-010 Option C: `partial_completion` envelope for usage-limit graceful resume (`decisions/decision-010-partial-completion-envelope.md`). Promoted FB-049.
@@ -61,6 +59,7 @@ Template-maintenance work staged for later sessions. Read these first if resumin
 - **v3.14.0 → v3.14.2 (2026-05-16)** — FB-003 feature-retirement workflow rule promoted; FB-062 + FB-063 cheap actions shipped; FB-060 Phases 1 + 5 (Cross-Project Capture Protocol in `.claude/rules/agents.md` + new `.claude/support/reference/extension-hooks.md`).
 - **v3.15.0 (2026-05-16)** — DEC-014 Option F: `.claude/.sync-state.json` sidecar + `/health-check` Part 5 2-condition algorithm refinement (`decisions/decision-014-sync-state-and-file-ownership-categories.md`). Closes FB-059; partially closes FB-060.
 - **v3.16.0 (2026-05-16)** — FB-065 + FB-066 promoted: 5th heuristic on FB-058's Pre-Pass table (decomposition-time enum-extension ripple inference) + production-consumption check in verify-agent Step T5 (catches class-export integration gaps).
+- **v3.17.0 (2026-05-16)** — FB-064 promoted: Test-Harness Awareness section added to decomposition.md + SKILL.md (mirror). Detects runtime-shaped tasks (`interaction_hint: cli_direct`, runtime-surface globs, runtime/UI `test_protocol`); scans for conventional harness directories with root `./CLAUDE.md` opt-in for custom paths; proposes scenario-authoring `_h` subtask when harness exists. Bridged from echothread `FB-009`.
 
 **Audit family open follow-ups:**
 

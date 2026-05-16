@@ -30,7 +30,7 @@ Procedure for breaking a spec into granular tasks. Run as `/work` Step 4 "If Dec
    - `section_snapshot_ref` — Snapshot filename (e.g., "spec_v1_decomposed.md")
    - **Important:** Create all task JSON files before regenerating the dashboard. Every task must have a `task-*.json` file — the dashboard is generated from these files, never the other way around.
    - **Script alternative:** Capture hashes via `.claude/scripts/fingerprint.py --spec` / `--sections`; orchestrator writes the `sha256:...` strings into task JSON `spec_fingerprint` and `section_fingerprint` fields.
-   - **After creating task JSONs:** run the Decomposition Pre-Pass Validation (below) to catch declared-path drift and under-counted `files_affected` before tasks ship to `/work` Step 2c.
+   - **After creating task JSONs:** run the Decomposition Pre-Pass Validation (below) to catch declared-path drift and under-counted `files_affected`, and the Test-Harness Awareness check (below) to propose scenario-authoring subtasks for runtime-shaped tasks — both run before tasks ship to `/work` Step 2c.
 
 9. **Map dependencies** — What must complete before what.
 
@@ -89,6 +89,75 @@ Like Leg 1, do not auto-add — present and ask. Both legs are advisory: they re
 ### Limits
 
 The heuristics are deliberately narrow — they catch the dominant friction patterns (verified across styler Phase 20: 12+ tasks, ~40% with files_affected under-counts) without trying to be exhaustive. Function-name drift, deep import-graph ripples, and runtime-only dependencies remain implementer-side discovery work; that's acceptable given the alternative (full static analysis at decomposition time) is much more expensive.
+
+---
+
+## Test-Harness Awareness
+
+When decomposing tasks for projects with a programmatic test harness (Playwright-driven scenarios, CLI-driven simulations, etc.), prefer authoring scenario scripts over manual user verification of runtime/UI behavior. Catches the pattern echothread surfaced: a reusable harness gets re-discovered each cycle because decomposition doesn't reach for it automatically.
+
+### Detection
+
+A task is **harness-eligible** if ANY of these hold:
+
+- `interaction_hint` is `cli_direct`
+- `files_affected` includes paths matching a runtime-surface glob — defaults: `src/engine/**`, `src/audio/**`, `src/renderer/**`, `src/ui/**`, `src/components/**`, `src/game/**`. Projects can extend the glob list via a one-line declaration in root `./CLAUDE.md` (e.g., `**Runtime-surface paths:** src/engine/**, src/audio/**, src/headless/**`).
+- `test_protocol` describes runtime/UI behavior (e.g., "drive the runtime through state X and observe Y", "click button Z and confirm UI", any interactive verification step)
+
+If none hold, skip the check — the task is not runtime-shaped.
+
+### Harness-directory scan
+
+Look for a project-conventional harness directory at project root:
+
+1. First, read root `./CLAUDE.md` for an explicit declaration (e.g., a one-line `**Harness directory:** path/to/scenarios/`). If present, use it.
+2. Otherwise, scan for conventional names in order: `tooling/test-scenarios/`, `tooling/scenarios/`, `tests/scenarios/`, `e2e/scenarios/`. The first one that exists wins.
+3. If none exist, the project hasn't adopted a harness convention — see fallback below.
+
+### Decomposition action
+
+**If harness directory exists AND no scenario covers this task's surface** — check for `<harness-dir>/{task-id}.{ts,py,js,mjs}` or any file containing `{task-id}` in its basename — propose a scenario-authoring subtask:
+
+```
+Task {id}_h: Author <harness-dir>/{id}.{ext}
+  description: "Author a programmatic scenario script so task {id}'s runtime
+                check can be re-run via the harness. The scenario should drive
+                the runtime surface to the state {id} verifies. See root
+                ./CLAUDE.md for the harness API."
+  difficulty: 3
+  owner: claude
+  dependencies: [{id}]
+  files_affected: [<harness-dir>/{id}.{ext}]
+```
+
+The subtask is dispatched after the parent finishes — its job is to convert the verification path from "manual user playthrough" to "re-runnable scenario." Surface the subtask inline:
+
+```
+Decomposition note: Task {id} is harness-eligible (interaction_hint: cli_direct)
+  → propose subtask: Author <harness-dir>/{id}.ts
+  Accept? [Y/N]
+```
+
+**If harness directory does NOT exist**, surface inline:
+
+```
+Decomposition note: Task {id} is harness-eligible but no harness directory found.
+  Consider authoring `tooling/test-scenarios/` (or equivalent) + documenting the
+  harness API in root ./CLAUDE.md. Capture via /feedback if worth pursuing.
+  (Continuing with manual-verification path for now.)
+```
+
+Do not force the convention — the absence of a harness directory is a legitimate project state; the note is a soft signal, not a blocker.
+
+### When to Run
+
+- Always after step 8 of the standard procedure, alongside the Pre-Pass Validation
+- Skip for trivial decompositions (≤3 tasks, all touching disjoint single files)
+- Skip when the user explicitly opts out via task notes (e.g., `notes: "no harness scenario needed — pure refactor"`)
+
+### Limits
+
+The heuristic proposes the subtask but does not author the scenario itself. The scenario author (implement-agent dispatched to the `_h` subtask) needs to know the harness API — projects with a harness directory should document their API in root `./CLAUDE.md` (entry-point function, available globals, scenario-script conventions) so the implement-agent can find it. Without that documentation, the subtask is harder to execute — the heuristic ships the suggestion but project-side documentation closes the loop.
 
 ---
 

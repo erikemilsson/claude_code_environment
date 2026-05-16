@@ -206,28 +206,9 @@ In the Styler audit run, this left two captured-inputs files missing (`meta.json
 
 **Cross-reference:** Styler audit run that surfaced this — `.claude/support/audits/coherence-2026-05-15-2337/` (in `~/Developer/styler/`). The missing files in that audit dir's `inputs/` are the visible artifact of the failure mode.
 
-## FB-064: Decomposition heuristic for project-local test-harness awareness
+## FB-064: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
 
-**Status:** new
-**Captured:** 2026-05-16
-**Source:** Bridged from echothread `echothread-FB-009` (`echothread-feedback-2026-05-15-test-harness-pattern.json`, template_version 3.5.1) via interaction-logs inbox processing.
-
-**Observation:** Claude only reaches for project-local programmatic test harnesses (e.g., Playwright-driven scenarios using `window.__app.engine.processKeystroke()`-style entry points) when prompted. The pattern gets re-discovered or re-justified each decomposition cycle. Echothread's 2026-05-15 T71 listening test (drove the game through a 1994-char passage via Playwright MCP + `engine.processKeystroke` rather than asking the user to type manually) was authored ad-hoc; the user (correctly) observed that the harness pattern is reusable and asked: how do we make Claude reach for this automatically during decomposition?
-
-**Proposal (from source FB):** Extend `.claude/support/reference/decomposition-heuristics.md` (or equivalent decomposition guidance in `commands/work.md` / `agents/implement-agent.md`) with a heuristic that:
-- During decomposition, for each task that (a) carries `interaction_hint: cli_direct`, (b) touches files matching a runtime-surface pattern (project-configurable; defaults like `src/engine/`, `src/audio/`, `src/renderer/`, `src/ui/`, `src/components/`), or (c) has any `test_protocol` referring to runtime/UI behavior — check for a project-conventional harness directory (suggested defaults: `tooling/test-scenarios/`, `tooling/scenarios/`, `tests/scenarios/`, `e2e/scenarios/`).
-- If a harness directory exists AND no matching scenario covers the task's surface, decompose a subtask: "Author `<harness-dir>/{id}.ts` so this task's runtime check can be re-run programmatically."
-- If no harness directory exists, fall back to manual verification with a single-line note: "manual verification — consider authoring a scenario harness via `/feedback` capture."
-
-**Config surface:** opt-in via convention. Projects create the harness directory and add a one-line pointer to root `./CLAUDE.md`. The decomposition scan is a one-time filesystem check. No required schema field, no breaking change for projects that don't adopt the pattern.
-
-**Why template-side, not just project-side:** echothread is solving its immediate need via project-specific T86 (root `CLAUDE.md` addition). But every downstream project that adopts a programmatic-scenario harness convention will face the same "Claude only reaches for the harness when prompted" problem. Template-side heuristic makes harness-aware decomposition the default for any project that opts in. Analogous to how the template defines dashboard META fields that projects populate.
-
-**Expected payoff:** Faster decomposition + fewer manual-verification round-trips. Echothread's T71 case took 4 turns to manually type + investigate + capture; a harness-aware decomposition would have auto-suggested authoring a scenario subtask at T71's creation time.
-
-**Likely route:** documentation extension of decomposition-heuristics + a check during `/work` Step 2c (decomposition). Could pair with FB-058 (decomposition pre-pass — path validation + ripple inference) since both extend decomposition with one-time filesystem scans.
-
-**Cross-reference:** FB-058 (decomposition pre-pass), FB-047 (files_affected drift). Source FB also notes the meta-observation that the bridge mechanism (`template_inbox_path` per FB-040) is the right place for these generalizable patterns — confirms the v3.5.1 bridge is working as designed.
+**Status:** promoted 2026-05-16 — test-harness awareness decomposition heuristic shipped in template_version 3.17.0 (new "Test-Harness Awareness" section added to decomposition.md + SKILL.md mirror; runs alongside the Pre-Pass Validation after step 8). See archive for full text.
 
 ## FB-065: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
 

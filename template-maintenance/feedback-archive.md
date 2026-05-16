@@ -1150,3 +1150,16 @@ The synchronized-enum-locations rule (template's `.claude/rules/agents.md § Syn
 **Boundary with FB-064:** FB-064 proposes a *decomposition-time* heuristic that authors scenario tests for runtime/UI tasks. FB-066 proposes a *verification-time* check that catches "structural code shipped, no consumer" cases. They complement each other: FB-064 grows the test suite; FB-066 catches gaps even when scenario tests don't exist yet.
 
 **Cross-reference:** FB-064, echothread sessions 2026-05-14/15 (markers from T71, T85_1, T85_2, T85_3).
+
+## FB-064: Decomposition heuristic for project-local test-harness awareness
+
+**Status:** promoted
+**Captured:** 2026-05-16
+**Promoted:** 2026-05-16 — Added new "Test-Harness Awareness" section to `.claude/support/reference/decomposition.md` AND `.claude/skills/decomposition-heuristics/SKILL.md` (mirror per DEC-007 Option B). Heuristic detects harness-eligible tasks via three OR conditions (`interaction_hint: cli_direct`, runtime-surface `files_affected` glob, runtime/UI `test_protocol`); scans for project-conventional harness directories (`tooling/test-scenarios/`, `tooling/scenarios/`, `tests/scenarios/`, `e2e/scenarios/`) with root `./CLAUDE.md` opt-in for custom paths/globs; proposes a scenario-authoring `_h` subtask when a harness exists but no scenario covers the task; surfaces a soft suggestion when no harness exists (does not force convention). Step 8 of standard decomposition procedure now references the check alongside the Pre-Pass Validation. SKILL.md frontmatter description extended to mention test-harness awareness. Shipped in template_version 3.17.0.
+**Source:** Bridged from echothread `echothread-FB-009` (`echothread-feedback-2026-05-15-test-harness-pattern.json`, template_version 3.5.1) via interaction-logs inbox processing.
+
+**Observation:** Claude only reaches for project-local programmatic test harnesses (e.g., Playwright-driven scenarios using `window.__app.engine.processKeystroke()`-style entry points) when prompted. The pattern gets re-discovered or re-justified each decomposition cycle. Echothread's 2026-05-15 T71 listening test (drove the game through a 1994-char passage via Playwright MCP + `engine.processKeystroke` rather than asking the user to type manually) was authored ad-hoc; the user (correctly) observed that the harness pattern is reusable and asked: how do we make Claude reach for this automatically during decomposition?
+
+**Why template-side, not just project-side:** echothread is solving its immediate need via project-specific T86 (root `CLAUDE.md` addition). But every downstream project that adopts a programmatic-scenario harness convention will face the same "Claude only reaches for the harness when prompted" problem. Template-side heuristic makes harness-aware decomposition the default for any project that opts in.
+
+**Cross-reference:** FB-058 (decomposition pre-pass — sibling), FB-066 (verify-time complement — catches "no consumer" gaps when scenarios don't exist yet).
