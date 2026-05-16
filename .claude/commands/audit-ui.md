@@ -237,7 +237,7 @@ Top 5:
 Promote with: /audit-ui promote {ts}
 ```
 
-(Stages 6/7 will surface bundle-eligible findings on the dashboard's `🔍 Audit Findings` section with `[Fix it] / [Promote] / [Dismiss]` actions. Until then, the inline summary + manual review is the surface.)
+(Stage 6 has shipped — `bundle-eligible` findings surface on the dashboard's `🔍 Audit Findings` section with the inline `[Fix it]` token; other kinds render with an italicized kind annotation. Stage 7 batch UX remains deferred per DEC-013 Q4. Promote/Dismiss are available via tick + `/audit-ui promote {audit-ts}` and natural-language-to-Claude respectively — not rendered per-item; see `dashboard-regeneration.md` § "Audit Findings sub-section". The inline summary + manual review remains a complementary surface.)
 
 ### Promote mode
 
@@ -678,7 +678,10 @@ task work, write findings.md AND digest.json.
      `reversible: true`, `files_count: {N}`, `touches_spec_or_decisions: false`.
    - Otherwise (implementation-only but doesn't meet ALL bundle-eligible criteria,
      or >3 files, or ambiguous fix) → `kind: fix-eligible`. Surfaces on dashboard with
-     `[Promote to FB] / [Dismiss]` only — no [Fix it] until a future DEC expands inline-apply.
+     the italicized `*(fix-eligible — manual review pending future DEC)*` kind annotation
+     only — no inline `[Fix it]` until a future DEC expands inline-apply.
+     (Promote/Dismiss actions are available via tick + bulk CLI / natural-language;
+     not rendered per-item — see `dashboard-regeneration.md` § "Audit Findings sub-section".)
 
    Note: most UI audit findings will be `decision` kind because UI fixes
    typically require copy/IA decisions that should route through `/iterate`.

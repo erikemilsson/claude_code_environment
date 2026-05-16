@@ -133,7 +133,7 @@ Digest: .claude/support/audits/coherence-{ts}/digest.json
 Promote findings to feedback: /audit-coherence promote {ts}
 ```
 
-(When Stage 6 ships, the Top findings list will be rendered on the dashboard's `🔍 Audit Findings` section with `[Fix it] / [Promote] / [Dismiss]` actions per item. Until then, the inline summary + manual review of `findings.md` is the surface.)
+(Stage 6 has shipped — `bundle-eligible` items render on the dashboard's `🔍 Audit Findings` section with the inline `[Fix it]` token; other kinds render with an italicized kind annotation. Promote/Dismiss actions are available via tick + `/audit-coherence promote {audit-ts}` and natural-language-to-Claude respectively — not rendered per-item; see `dashboard-regeneration.md` § "Audit Findings sub-section". The inline summary + manual review of `findings.md` remains a complementary surface for context beyond what the dashboard digest shows.)
 
 ---
 
@@ -402,7 +402,7 @@ Your job: dedupe, cluster, classify by `kind`, dedupe against in-flight task wor
      f. **Orphan-dep removal (special-case per DEC-013 Q3):** still classify as bundle-eligible (it's the canonical case) but set `bundle_eligibility.transitive_consumer_risk: true` so the action layer warns the user to run tests after apply (dynamic require / `importlib.import_module` / string-keyed import patterns aren't statically detectable).
      g. **When in doubt → fix-eligible, not bundle-eligible.** The action layer's at-apply re-read invariant cannot catch semantic mismatches that the synthesizer creates. Conservative classification at synthesis time is the load-bearing safety property.
      Set on bundle-eligible items: `bundle_eligibility.source_confirmed: true`, `reversible: true`, `files_count: {N}`, `touches_spec_or_decisions: false`, `transitive_consumer_risk: {bool}`.
-   - Otherwise (implementation-only but doesn't meet ALL bundle-eligible criteria above, or >3 files, or ambiguous fix) → `kind: fix-eligible`. Will surface on dashboard with `[Promote to FB] / [Dismiss]` only — no [Fix it] until a future DEC expands inline-apply per DEC-013 telemetry validation gate.
+   - Otherwise (implementation-only but doesn't meet ALL bundle-eligible criteria above, or >3 files, or ambiguous fix) → `kind: fix-eligible`. Surfaces on dashboard with the italicized `*(fix-eligible — manual review pending future DEC)*` kind annotation only — no inline `[Fix it]` until a future DEC expands inline-apply per DEC-013 telemetry validation gate. (Promote/Dismiss actions are available via tick + bulk CLI / natural-language to Claude; not rendered per-item — see `dashboard-regeneration.md` § "Audit Findings sub-section".)
 
 6. **Pending-work dedupe.** For each clustered finding, scan `.claude/tasks/task-*.json` for tasks with `status` in `{Pending, In Progress, Awaiting Verification}`. Match if:
    - The task's `files_affected` overlaps with the finding's `files_to_touch`, OR

@@ -403,17 +403,21 @@ The user selects an option when prompted, and `/work` updates the task according
   - Marker-bracketed for sidecar persistence:
     ```
     <!-- AUDIT DIGEST -->
-    - [ ] **{C-NN}** {title} — [Promote to FB] / [Dismiss]
+    - [ ] **{C-NN}** {title}
     <!-- END AUDIT DIGEST -->
     ```
   - One bullet per item where `status == "pending"` AND `id NOT IN dismissed_ids`. Items resolved by promote (`status: resolved` or `status: promoted`) or dismissed are filtered out at render time.
-  - **Action labels (Stage 6 Option C per DEC-013, currently shipped):** kind-conditional.
-    - `bundle-eligible` items: `[Fix it] / [Promote to FB] / [Dismiss]`
-    - `fix-eligible`, `decision`, `design` items: `[Promote to FB] / [Dismiss]` plus a one-line italicized annotation explaining why `[Fix it]` doesn't appear:
+  - **Per-item action affordance (Stage 6 Option C per DEC-013, currently shipped) — kind-conditional, single trailing token:**
+    - `bundle-eligible` items: append ` — [Fix it]` after the title. `[Fix it]` is retained because it has no checkbox/keyword alternative — invoke via `/audit-{name} fix latest {C-ID}` or natural-language *"fix C-NN from the latest audit"*.
+    - `fix-eligible`, `decision`, `design` items: append a single italicized kind annotation after the title (no inline `[Promote to FB] / [Dismiss]` text — those actions are still available, just not rendered per-item; see "How to act on findings" below):
       - `fix-eligible` → `*(fix-eligible — manual review pending future DEC)*`
       - `decision` → `*(spec amendment via /iterate)*`
       - `design` → `*(promote to FB → /research)*`
     See `audit-fix-workflow.md` § "Per-kind action availability" for the full table and the [Fix it] mechanism documentation.
+  - **How to act on findings (was previously rendered as per-item `[Promote to FB] / [Dismiss]` inline text; dropped in FB-006 PATCH iteration v3.17.1 because the inline text was non-interactive and the actions exist regardless of rendering):**
+    - **Promote** — tick the checkbox of each finding to lift, then run `/audit-{name} promote {audit-ts}` to bulk-promote ticked items to `feedback.md`. Single-item promotion: `/audit-{name} promote {audit-ts} {C-ID}`.
+    - **Dismiss** — ask Claude in natural language, e.g. *"dismiss C-05 — those FB items are stale because they're tracking long-term ideas"*. The orchestrator adds the id to `dashboard-state.json audit_digest.dismissed_ids[]` and updates `digest.json status: dismissed`.
+    - **Fix it (bundle-eligible only)** — see the inline `[Fix it]` token; invoke per-item as documented above.
   - **Annotations footer** (when the source digest has `annotations[]`): rendered as a separate italicized sub-list outside the marker pair:
     ```
     *Already covered by in-flight work:*
@@ -466,7 +470,7 @@ The user selects an option when prompted, and `/work` updates the task according
 | Action Required → Verification Pending | Plain text status message |
 | Action Required → Verification Debt | `Task \| Title \| Issue` |
 | Action Required → Spec Drift | `- ⚠️ **{section}** — {N} tasks affected, deferred {M} days ago` |
-| Action Required → Audit Findings | `bundle-eligible`: `- [ ] **{C-NN}** {title} — [Fix it] / [Promote to FB] / [Dismiss]`. Other kinds: `- [ ] **{C-NN}** {title} — [Promote to FB] / [Dismiss] *({reason})*`. See audit-fix-workflow.md § "Per-kind action availability". |
+| Action Required → Audit Findings | `bundle-eligible`: `- [ ] **{C-NN}** {title} — [Fix it]`. Other kinds: `- [ ] **{C-NN}** {title} *({kind annotation})*` (annotations: `decision` → `*(spec amendment via /iterate)*`; `fix-eligible` → `*(fix-eligible — manual review pending future DEC)*`; `design` → `*(promote to FB → /research)*`). Promote (tick + `/audit-{name} promote {audit-ts}`) and Dismiss (natural-language to Claude) are NOT rendered inline per-item — see Audit Findings rule "How to act on findings" above. |
 | Action Required → Feedback | `- 📝 **{N} feedback items** awaiting attention ({X} new, {Y} refined, {Z} ready) → /feedback review` |
 | Action Required → Decisions | `Decision \| Question \| Doc` |
 | Action Required → Your Tasks | `Task \| What To Do \| Where` |

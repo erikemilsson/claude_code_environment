@@ -966,7 +966,7 @@ To act on findings:
   (Stages 6-7 will add [Fix it] inline + bundled-apply batch UX — see audit family proposal)
 ```
 
-When Stage 6 of the audit family ships, the digest items will surface automatically on the dashboard's `🔍 Audit Findings` section with `[Fix it] / [Promote] / [Dismiss]` actions per item. Until then, the inline summary + manual review of `findings.md` + `/audit-{name} promote {ts}` is the surface.
+Stage 6 has shipped — `bundle-eligible` digest items surface automatically on the dashboard's `🔍 Audit Findings` section with the inline `[Fix it]` token; other kinds render with an italicized kind annotation. Promote/Dismiss invocation patterns are documented in `dashboard-regeneration.md` § "Audit Findings sub-section" (tick + bulk CLI for promote; natural-language for dismiss). The inline summary + manual review of `findings.md` + `/audit-{name} promote {ts}` remains a complementary surface for context beyond what the dashboard digest shows.
 
 ### Skip Conditions
 

@@ -28,20 +28,23 @@ The `🔍 Audit Findings` sub-section in Action Required renders when the dashbo
 ```markdown
 ### 🔍 Audit Findings
 
-*Last audit: coherence 2026-05-15 14:30Z (5 pending · 0 promoted · 0 dismissed since last audit)*
+*Last audit: coherence 2026-05-15 14:30Z (6 pending · 0 promoted · 0 dismissed since last audit)*
 
 <!-- AUDIT DIGEST -->
-- [ ] **C-02** "sub-tab" vs "section nav" vocab inconsistency (spec § 9.1, 11.1, 42.5) — [Promote to FB] / [Dismiss]
-- [ ] **C-03** Oracle-thesis contradiction pattern recurring (3 friction register entries cluster) — [Promote] / [Dismiss]
-- [ ] **C-05** 5 FB items >30 days open without status change — [Review FB] / [Dismiss]
-- [ ] **C-07** Phase 27 § 27.1 feature retirement workflow referenced but not implemented — [Promote] / [Dismiss]
-- [ ] **C-08** Retired feature pull-to-refresh missing spec retirement marker (Phase 41) — [Promote] / [Dismiss]
+- [ ] **C-01** orphan dep `unused-pkg` in package.json (only ref in lockfile) — [Fix it]
+- [ ] **C-02** "sub-tab" vs "section nav" vocab inconsistency (spec § 9.1, 11.1, 42.5) *(spec amendment via /iterate)*
+- [ ] **C-03** Oracle-thesis contradiction pattern recurring (3 friction register entries cluster) *(promote to FB → /research)*
+- [ ] **C-05** 5 FB items >30 days open without status change *(fix-eligible — manual review pending future DEC)*
+- [ ] **C-07** Phase 27 § 27.1 feature retirement workflow referenced but not implemented *(spec amendment via /iterate)*
+- [ ] **C-08** Retired feature pull-to-refresh missing spec retirement marker (Phase 41) *(spec amendment via /iterate)*
 <!-- END AUDIT DIGEST -->
 
 *Already covered by in-flight work:*
 - C-04 → T725 (Pending) — "spec § 28 path migration cleanup"
 - C-09 → T712 (In Progress) — "FB-071 Phase 27 retirement scaffolding"
 ```
+
+**Per-item action affordance (post-v3.17.1):** Only `[Fix it]` is rendered inline, and only for `bundle-eligible` items — because `[Fix it]` has no checkbox/keyword alternative. Non-bundle-eligible kinds show a single italicized annotation explaining their kind (no inline `[Promote to FB] / [Dismiss]` text — those actions are still available, just not rendered per-item to avoid dead UI). See `dashboard-regeneration.md` § "Audit Findings sub-section in Action Required" for the canonical rule and the "How to act on findings" sub-section for promote/dismiss invocation patterns.
 
 **Section ordering:** between Spec Drift and Feedback in Action Required.
 
