@@ -1,15 +1,23 @@
 ---
 id: DEC-014
 title: Sync-state mechanism + file-ownership category schema (FB-059 + FB-060 structural fix)
-status: approved
+status: implemented
 category: architecture
 created: 2026-05-16
 decided: 2026-05-16
+implemented: 2026-05-16
 related:
   tasks: []
   decisions: [DEC-005, DEC-008, DEC-013]
   feedback: [FB-059, FB-060]
-implementation_anchors: []
+implementation_anchors:
+  - .claude/commands/health-check.md  # Part 5: new "Sync State Sidecar" sub-section + revised Steps 2, 3, 4; new Key Rules entries
+  - .claude/sync-manifest.json        # added .claude/.sync-state.json to ignore array
+  - .claude/version.json              # template_version 3.14.2 → 3.15.0
+  - .gitignore                        # added .claude/.sync-state.json per Q4 (gitignored)
+  - template-maintenance/feedback.md  # FB-059 promoted (relocated); FB-060 updated (Phases 3+4 shipped, Phase 2 deferred)
+  - template-maintenance/feedback-archive.md  # FB-059 archived with promotion text
+  - template-maintenance/plan-fb059-fb060.md  # status updated to partially implemented; Option F selected
 inflection_point: false
 spec_revised:
 spec_revised_date:

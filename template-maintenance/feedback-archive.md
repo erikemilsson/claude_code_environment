@@ -1094,3 +1094,29 @@ DEC-001 Option C (Track 1 friction markers + Track 2 retrospective + Phase 3 ing
 - Or extract into a deterministic script (FB-011 Family D/E candidate) — removes the LLM reliability layer entirely.
 
 Sources: FB-041 (2026-05-13, Option C audit) + FB-045 (2026-04-27, styler Phase 20).
+
+## FB-059: `/health-check` Part 5 selective sync conflates unsynced template content with genuine local additions (false-positive SKIP)
+
+**Status:** promoted
+**Captured:** 2026-05-15
+**Promoted:** 2026-05-16 — Implemented DEC-014 Option F (sidecar + algorithm, no category change) in template_version 3.15.0. New `.claude/.sync-state.json` sidecar (gitignored, schema-versioned, full SHA-256 with `sha256:` prefix) records per-file last-synced hash on every successful sync. `/health-check` Part 5 now classifies each diff via 2-condition algorithm: `local_hash == sidecar.synced_hash` → "Template content not yet applied" (default APPLY); mismatch or missing entry → "Modified upstream" (current behavior + "Show me the diff" sub-action). The Styler false-positive case (SKILL.md with pure template movement) now classifies correctly without confusing the user. Phase 2 (sync_strict category schema) deferred per DEC-014 — every current `sync` member is uniformly template-owned, so the sidecar's hash check is category-agnostic and sufficient. Decision record: `decisions/decision-014-sync-state-and-file-ownership-categories.md`. Affected files: `.claude/commands/health-check.md` Part 5 (Sync State Sidecar sub-section + Steps 2/3/4), `.claude/sync-manifest.json` (added `.claude/.sync-state.json` to `ignore`), `.claude/version.json` (bump 3.14.2 → 3.15.0).
+**Source:** observed during downstream Styler `/health-check` after audit family v3.12.0 ship.
+
+**Observation:** Part 5 (Template Sync Check) flagged two files as having "local additions" and offered selective sync that would SKIP both. Inspection showed the flag was correct for one file and a false-positive for the other:
+
+- **`.claude/skills/dashboard-style/SKILL.md`** — 100% false positive. The diff was purely Stage 6 Option C content (kind-conditional `[Fix it]` action labels for the audit findings sub-section) that template shipped in v3.12.0 but Styler's local copy never received. Styler's `version.json` correctly read `template_version: 3.12.0` (the version field synced) but the file content stayed at Stage 6a state. Skipping the SKILL.md sync per the menu offer would have permanently prevented Styler from rendering `[Fix it]` labels until manual reconciliation.
+- **`.claude/CLAUDE.md`** — correct flag. Styler genuinely added 2 project-specific rule imports (`brand-mention-provenance.md` per DEC-060, `feature-retirement.md` per FB-070 / § 27.1) plus their summary-table rows.
+
+**Root cause hypothesis:** Part 5's detection compares downstream's *current* file content to template's *new* file content; any line-level diff is treated as a "local addition" warranting skip. This conflates two distinct conditions:
+- (a) Downstream has unsynced template content (was at template_version N, template is at N+1, file content didn't sync along with the version field) → should sync
+- (b) Downstream has genuinely user-added local content (file was customized after the last sync) → should preserve
+
+The current algorithm can't distinguish these without per-file last-synced state.
+
+**Proposed detection refinement:** Part 5 should compare downstream's file content to *the template version it last synced from*, not the *current template version*. The diff vs last-synced-version reveals genuine local additions. The diff vs current-template reveals all changes (sync delta + local additions). The intersection is what to sync without conflict; the symmetric difference is what to preserve as local. Requires the sync to record per-file last-synced template_version (or content hash). Could live in `dashboard-state.json` or a new `.claude/.sync-state.json` sidecar.
+
+**Practical impact during this observation:** zero immediate harm because the `/audit-coherence` run that triggered the discovery had 0 bundle-eligible findings (so the missing `[Fix it]` labels weren't rendering anywhere). But future audits in Styler with bundle-eligible findings would have rendered with stale Stage 6a labels until manually reconciled.
+
+**Workaround for affected projects (until Part 5 is refined):** when Part 5 offers selective sync, manually review the diff for each "skip" candidate via `diff <template-path> <project-path>`. If the diff is purely template content (lines present in template but not project), override the skip or manually copy the new template content into the project's file.
+
+**Likely route:** scope-add to a new `/health-check` Part 5 refinement (not FB-058 — that's about `/work` decomposition path validation). Worth a research-light to confirm the proposed sidecar-based detection is feasible without restructuring the sync engine. Could also incorporate a "show me the diff" sub-action in the Part 5 menu so users can manually adjudicate per file.

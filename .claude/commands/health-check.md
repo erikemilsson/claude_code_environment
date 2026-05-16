@@ -282,7 +282,7 @@ When a section exceeds the soft limit, offer these options:
 
 Validates that the expected template rule files exist in `.claude/rules/`.
 
-**Expected files:** `task-management.md`, `spec-workflow.md`, `decisions.md`, `dashboard.md`, `agents.md`, `archiving.md`, `session-management.md`
+**Expected files:** `task-management.md`, `spec-workflow.md`, `decisions.md`, `dashboard.md`, `agents.md`, `archiving.md`, `session-management.md`, `feature-retirement.md`
 
 **Checks:**
 - Each expected file exists
@@ -424,17 +424,52 @@ For archived specs where tasks reference that version, check if `spec_v{i}_decom
 
 ## Part 5: Template Sync Check
 
-Checks whether the project's `.claude/` workflow files are up to date with the template repository using git-based comparison.
+Checks whether the project's `.claude/` workflow files are up to date with the template repository using git-based comparison. Skipped in the template repo (mirror of Parts 5d / 7: `system-overview.md` at project root indicates the template repo, where syncing the template against itself is self-referential and meaningless — `template_repo` points to the same URL as `origin`).
 
 ### Purpose
 
 The upstream template may improve commands, agents, and reference docs. This check uses the template repo as a git remote to compare sync files and present updates.
+
+### Repo-type skip
+
+Before running any sync step: if `system-overview.md` exists at the project root, skip Part 5 entirely and report `ℹ️ Template sync skipped (template repo — self-sync is a no-op)`. The template repo's `version.json::template_repo` points to itself; adding a `template` remote pointing to the same URL as `origin` and diffing against it produces no useful output. The template's own work uses normal git workflow (push to origin); downstream-project sync flow does not apply.
 
 ### Requirements
 
 - `.claude/version.json` — contains `template_repo` (git URL) and `template_version`
 - `.claude/sync-manifest.json` — defines `sync` (updatable) vs `customize` (user-owned) vs `ignore` (project data) file categories
 - `git` available (no `gh` CLI dependency)
+
+### Sync State Sidecar
+
+Per-file last-synced state lives in `.claude/.sync-state.json` (gitignored, in `ignore` category). The sidecar lets Part 5 distinguish two diff shapes that look identical to a naive `git diff`:
+
+- **Template content not yet applied** — local is byte-for-byte identical to the last-synced state; the diff is pure template movement. Default action: APPLY.
+- **Modified upstream** — local differs from the last-synced state (user edited it post-sync, or the file has never been synced). User adjudicates.
+
+**Schema:**
+
+```json
+{
+  "schema_version": "1.0",
+  "last_full_sync_version": "<template_version at time of sync>",
+  "last_full_sync_date": "<ISO 8601 date>",
+  "files": {
+    "<path>": { "synced_hash": "sha256:<full SHA-256 hex>" }
+  }
+}
+```
+
+**Hash format:** full SHA-256 hex with `sha256:` prefix. Aligns with `fingerprint.py`, `task_hash`, `spec_fingerprint`, dashboard META — one hash convention across the template. Computed over the file's raw bytes via `shasum -a 256 <path>` (macOS) or `sha256sum <path>` (Linux).
+
+**Lifecycle:**
+- **Read** in Step 2 to classify per-file diffs.
+- **Written/updated** in Step 4 after each successful sync — only files the user actually accepted get their `synced_hash` recorded/refreshed. Files the user skipped retain their prior entry (or remain absent if never synced).
+- **Missing entries** (file not in sidecar) fall through to "Modified upstream" — graceful migration for pre-3.15.0 projects without a sidecar, and for files newly added to the `sync` manifest that haven't been synced yet.
+
+**First-run population:** the sidecar appears silently the first time Part 5 applies updates after 3.15.0 ships. No user-facing announcement. The file is gitignored (in `sync-manifest.json` `ignore` array), so it doesn't surface in `git status`.
+
+**Recovery:** if the sidecar is deleted or corrupted, Part 5 falls through to current behavior on the next run. The next successful sync repopulates it from the post-checkout file hashes.
 
 ### Process
 
@@ -453,31 +488,39 @@ If fetch fails (offline, invalid URL) → report as informational, skip remainin
 
 #### 2. Compare Sync Files
 
-Determine the template's default branch via `git remote show template` (typically `main`). For each file matching `sync` category patterns in `sync-manifest.json`, use `git diff` to compare the local version against `template/{default_branch}:.claude/...`.
+Determine the template's default branch via `git remote show template` (typically `main`). Read `.claude/.sync-state.json` (see "Sync State Sidecar" above) if present; absence triggers fallback (every diff classifies as "Modified upstream"). For each file matching `sync` category patterns in `sync-manifest.json`, use `git diff` to compare the local version against `template/{default_branch}:.claude/...`.
 
 Per-file status:
 - **Up to date** — no diff
-- **Modified upstream** — template has changes the local copy doesn't
+- **Template content not yet applied** — template differs from local AND `local_hash == sidecar.files[path].synced_hash`. The local file is byte-for-byte identical to the last-synced state; the diff is pure template movement. Default action in Step 3: APPLY.
+- **Modified upstream** — template differs from local AND (sidecar entry is missing OR `local_hash != sidecar.files[path].synced_hash`). Local was modified post-sync, or has never been synced. Default action in Step 3: present diff for user adjudication (Apply / Keep / Show diff).
 - **New in template** — file exists upstream but not locally
 - **Local only** — exists locally but not in template (kept, never flagged)
 
 Never compare `customize` or `ignore` category files.
 
+**Compute `local_hash`:** `shasum -a 256 <path>` (macOS) or `sha256sum <path>` (Linux); prefix `sha256:` to the bare hex. Compare string-equal against the sidecar's `synced_hash`. The hash is over raw bytes — line-ending differences DO produce different hashes (intentional: a CRLF/LF normalization at sync time is a real change, not a no-op).
+
 #### 3. Present Changes
+
+Group files by the per-file status from Step 2. Files classified as "Template content not yet applied" default to APPLY; "Modified upstream" entries default to user adjudication.
 
 **Small changes** (few files, minor edits) — simple list with diff stats:
 
 ```
 Template updates available (v1.5.0 → v1.6.0):
 
-  Modified:
+  Template content not yet applied (default: APPLY):
+    .claude/skills/dashboard-style/SKILL.md (+12 -0 lines)
+
+  Modified upstream (review before applying):
     .claude/commands/work.md (+15 -8 lines)
     .claude/support/reference/paths.md (+3 -1 lines)
 
   New:
     .claude/support/reference/new-feature.md
 
-Apply these changes? [Y/N]
+Apply all / Select individually / Skip?
 ```
 
 **Bigger changes** (structural, multi-file) — group related changes and explain impact:
@@ -491,6 +534,7 @@ Template updates available (v1.5.0 → v1.6.0):
    - .claude/support/reference/workflow.md — updated process docs
 
    Impact: Adds scope validation to the verification process.
+   Classification: 2 Template content not yet applied, 1 Modified upstream
 
 2. New reference file
    - .claude/support/reference/new-feature.md
@@ -502,6 +546,20 @@ Apply all / Select individually / Skip?
 
 **Grouping heuristic:** Changes are "related" when they touch the same workflow area (e.g., a command and the reference docs it depends on, or multiple files in the verification pipeline).
 
+**Per-file actions (when selecting individually):**
+
+For each file, the menu offers:
+
+- **[A] Apply** — check out the template version (overwrites local).
+- **[K] Keep current** — leave local as-is for this sync run. The sidecar entry is NOT updated, so the file resurfaces on the next sync.
+- **[D] Show me the diff** — print `git diff template/{branch}:<path> <path>` (full output, truncate to ~100 lines if very long with a "...truncated" marker) and re-display the per-file menu.
+
+Defaults differ by status:
+- "Template content not yet applied" → default keystroke is `[A] Apply` (Enter applies).
+- "Modified upstream" → no default; the user must explicitly pick to avoid accidental overwrites of genuine local additions.
+
+The "Show me the diff" sub-action helps users adjudicate when classification is ambiguous — e.g., pre-3.15.0 projects without a sidecar (every diff falls into "Modified upstream"), or files genuinely modified locally where the user has forgotten what they changed.
+
 #### 4. Apply Updates
 
 Read the upstream `template_version` from `template/{default_branch}:.claude/version.json`.
@@ -509,6 +567,7 @@ Read the upstream `template_version` from `template/{default_branch}:.claude/ver
 For accepted changes:
 - Check out the accepted files from `template/{default_branch}` into the working tree
 - Update `template_version` in local `.claude/version.json` to match the upstream version
+- **Update the sync-state sidecar** — for each file the user accepted, compute the new local SHA-256 (post-checkout) and write/update its entry in `.claude/.sync-state.json` under `files["<path>"].synced_hash`. Refresh top-level `last_full_sync_version` (to the upstream version just synced) and `last_full_sync_date` (current date, ISO 8601). If the sidecar doesn't exist yet, create it with `schema_version: "1.0"`. Files the user skipped retain their prior sidecar entries (or remain absent if never synced).
 - Report what was changed
 
 **Post-sync dashboard re-check:** After applying template updates, check if any dashboard-related files were updated (any file matching `dashboard-regeneration.md`, `rules/dashboard.md`, or `shared-definitions.md`). If so, the dashboard was generated with older format rules — offer to regenerate: `"Dashboard format rules updated — regenerate dashboard to apply new format? [Y/N]"`. This catches the ordering issue where Part 1 ran dashboard checks before Part 5 synced the new rules. Regeneration follows `.claude/support/reference/dashboard-regeneration.md` (which is now the updated version).
@@ -520,6 +579,8 @@ For accepted changes:
 - **Local-only files are kept** — never suggest removing files that aren't in the template
 - **No silent changes** — always present changes and get confirmation before applying
 - **Fetch only** — never merge, pull, or rebase from the template remote
+- **Sidecar populates silently on first sync** — `.claude/.sync-state.json` appears the first time Step 4 applies updates after 3.15.0. No user-facing announcement; the file is gitignored.
+- **Sidecar absence is fine** — pre-3.15.0 projects (no sidecar) fall through to "Modified upstream" classification for every diff. Behavior matches pre-3.15.0; sidecar populates on the first successful sync.
 
 ### Report Format
 

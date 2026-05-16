@@ -1,15 +1,23 @@
 ---
 id: DEC-001
 title: Cross-project interaction log capture and processing pipeline
-status: approved
+status: implemented
 category: process
 created: 2026-03-30
-decided:
+decided: 2026-05-13
+implemented: 2026-05-13
 related:
   tasks: []
   decisions: [DEC-002]
   feedback: [FB-011]
-implementation_anchors: []
+implementation_anchors:
+  - .claude/agents/implement-agent.md        # Track 1 friction marker emission
+  - .claude/agents/verify-agent.md           # Track 1 friction marker emission
+  - .claude/commands/work.md                 # /work pause Track 2 assessment + session export
+  - .claude/hooks/pre-compact-handoff.sh     # Track 1 markers-only fallback export
+  - .claude/version.json                     # template_inbox_path field
+  - .claude/commands/health-check.md         # Part 7 processing pipeline trigger
+  - interaction-logs/                        # inbox/processed/insights directory layout
 inflection_point: false
 spec_revised:
 spec_revised_date:

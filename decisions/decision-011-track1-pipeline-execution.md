@@ -1,15 +1,19 @@
 ---
 id: DEC-011
 title: Track 1 / Track 2 pipeline execution — fix tier for marker-append + session-export reliability
-status: approved
+status: implemented
 category: architecture
 created: 2026-05-13
 decided: 2026-05-13
+implemented: 2026-05-13
 related:
   tasks: []
   decisions: [DEC-001]
   feedback: [FB-057]
-implementation_anchors: []
+implementation_anchors:
+  - .claude/commands/work.md                           # behavioral nudge ("do NOT defer") + startup catchup + dual-write to .pending-markers.jsonl
+  - .claude/support/reference/parallel-execution.md    # parallel-batch mirror of dual-write
+  - .claude/hooks/pre-compact-handoff.sh               # catchup at PreCompact reads .pending-markers.jsonl
 inflection_point: false
 spec_revised:
 spec_revised_date:

@@ -1,15 +1,24 @@
 ---
 id: DEC-006
 title: Phase gate flexibility for cross-phase long-running tasks
-status: approved
+status: implemented
 category: architecture
 created: 2026-04-14
 decided: 2026-04-14
+implemented: 2026-04-17
 related:
   tasks: []
   decisions: []
   feedback: [FB-013]
-implementation_anchors: []
+implementation_anchors:
+  - .claude/support/reference/task-schema.md             # cross_phase field defined + phase gate rule annotated
+  - .claude/support/reference/phase-decision-gates.md    # phase gate IF/THEN respects cross_phase
+  - .claude/support/reference/parallel-execution.md      # eligibility OR-clause references cross_phase
+  - .claude/commands/work.md                             # routing eligibility includes cross_phase
+  - .claude/commands/breakdown.md                        # subtask inheritance of cross_phase flag
+  - .claude/support/reference/decomposition.md           # heuristic guidance for suggesting the flag
+  - .claude/support/reference/dashboard-regeneration.md  # cross-phase annotation in dashboard rendering
+  - system-overview.md                                   # cross_phase documented in field catalog
 inflection_point: true
 spec_revised:
 spec_revised_date:

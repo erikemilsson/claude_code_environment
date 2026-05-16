@@ -62,6 +62,7 @@
       ".claude/verification-result.json",
       ".claude/version.json",
       ".claude/sync-manifest.json",
+      ".claude/.sync-state.json",
       ".claude/support/decisions/decision-*.md",
       ".claude/support/decisions/.archive/*",
       ".claude/support/learnings/*",

@@ -1,15 +1,21 @@
 ---
 id: DEC-005
 title: Base allowedTools shipping policy and merge strategy
-status: approved
+status: implemented
 category: process
 created: 2026-04-14
 decided: 2026-04-14
+implemented: 2026-04-14
 related:
   tasks: []
   decisions: []
   feedback: [FB-012]
-implementation_anchors: []
+implementation_anchors:
+  - .claude/settings.json                       # template-owned base permissions.allow (later narrowed by DEC-008)
+  - .claude/sync-manifest.json                  # settings.json slotted into sync category; notes document layered model
+  - .claude/CLAUDE.md                           # Critical Invariants documents settings layering
+  - .claude/commands/health-check.md            # Part 5c boundary validation for two-file model
+  - .claude/README.md                           # explains layered settings model to users
 inflection_point: false
 spec_revised:
 spec_revised_date:

@@ -35,36 +35,16 @@ A bigger-hammer version of FB-032. The spec-auditor would diff each proposed cha
 
 **Likely outcome:** candidate DEC-009 after FB-032 trial, FB-020 research, and FB-026 resolution all close.
 
-## FB-059: `/health-check` Part 5 selective sync conflates unsynced template content with genuine local additions (false-positive SKIP)
+## FB-059: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
 
-**Status:** structural fix deferred (Phases 2-4 of `template-maintenance/plan-fb059-fb060.md`); docs partially shipped via FB-060 Phase 5
-**Captured:** 2026-05-15
-**Source:** observed during downstream Styler `/health-check` after audit family v3.12.0 ship.
-
-**Observation:** Part 5 (Template Sync Check) flagged two files as having "local additions" and offered selective sync that would SKIP both. Inspection showed the flag was correct for one file and a false-positive for the other:
-
-- **`.claude/skills/dashboard-style/SKILL.md`** — 100% false positive. The diff was purely Stage 6 Option C content (kind-conditional `[Fix it]` action labels for the audit findings sub-section) that template shipped in v3.12.0 but Styler's local copy never received. Styler's `version.json` correctly read `template_version: 3.12.0` (the version field synced) but the file content stayed at Stage 6a state. Skipping the SKILL.md sync per the menu offer would have permanently prevented Styler from rendering `[Fix it]` labels until manual reconciliation.
-- **`.claude/CLAUDE.md`** — correct flag. Styler genuinely added 2 project-specific rule imports (`brand-mention-provenance.md` per DEC-060, `feature-retirement.md` per FB-070 / § 27.1) plus their summary-table rows.
-
-**Root cause hypothesis:** Part 5's detection compares downstream's *current* file content to template's *new* file content; any line-level diff is treated as a "local addition" warranting skip. This conflates two distinct conditions:
-- (a) Downstream has unsynced template content (was at template_version N, template is at N+1, file content didn't sync along with the version field) → should sync
-- (b) Downstream has genuinely user-added local content (file was customized after the last sync) → should preserve
-
-The current algorithm can't distinguish these without per-file last-synced state.
-
-**Proposed detection refinement:** Part 5 should compare downstream's file content to *the template version it last synced from*, not the *current template version*. The diff vs last-synced-version reveals genuine local additions. The diff vs current-template reveals all changes (sync delta + local additions). The intersection is what to sync without conflict; the symmetric difference is what to preserve as local. Requires the sync to record per-file last-synced template_version (or content hash). Could live in `dashboard-state.json` or a new `.claude/.sync-state.json` sidecar.
-
-**Practical impact during this observation:** zero immediate harm because the `/audit-coherence` run that triggered the discovery had 0 bundle-eligible findings (so the missing `[Fix it]` labels weren't rendering anywhere). But future audits in Styler with bundle-eligible findings would have rendered with stale Stage 6a labels until manually reconciled.
-
-**Workaround for affected projects (until Part 5 is refined):** when Part 5 offers selective sync, manually review the diff for each "skip" candidate via `diff <template-path> <project-path>`. If the diff is purely template content (lines present in template but not project), override the skip or manually copy the new template content into the project's file.
-
-**Likely route:** scope-add to a new `/health-check` Part 5 refinement (not FB-058 — that's about `/work` decomposition path validation). Worth a research-light to confirm the proposed sidecar-based detection is feasible without restructuring the sync engine. Could also incorporate a "show me the diff" sub-action in the Part 5 menu so users can manually adjudicate per file.
+**Status:** promoted 2026-05-16 via DEC-014 Option F (template_version 3.15.0). Sidecar + Part 5 algorithm refinement shipped. See archive for full text.
 
 ## FB-060: Template-owned vs project-owned file ownership boundary not enforced or discoverable
 
-**Status:** Phases 1 + 5 shipped (behavioral + discoverability); Phases 2-4 (structural fix) tracked in `template-maintenance/plan-fb059-fb060.md`
+**Status:** Phases 1 + 3 + 4 + 5 shipped; Phase 2 (category schema) deferred per DEC-014
 **Captured:** 2026-05-15
-**Phase 1 + Phase 5 shipped 2026-05-16 (v3.14.2):** (Phase 1) Cross-Project Capture Protocol section added to `.claude/rules/agents.md` — codifies the pre-sync boundary check + finding-routing rules (generically-applicable → project→template promotion; project-specific → migration to project-owned location). (Phase 5) New `.claude/support/reference/extension-hooks.md` with canonical map of extension need → project-owned location, linked from `setup-checklist.md` preamble + `.claude/CLAUDE.md` navigation. Closes the "behavioral complement" follow-up and the "discoverability gap" sub-concern. Structural Phases 2-4 (sync_strict category, `.sync-state.json` sidecar, Part 5 algorithm refinement) remain deferred per the plan — candidate for DEC-NNN before implementation.
+**Phase 1 + Phase 5 shipped 2026-05-16 (v3.14.2):** (Phase 1) Cross-Project Capture Protocol section added to `.claude/rules/agents.md` — codifies the pre-sync boundary check + finding-routing rules (generically-applicable → project→template promotion; project-specific → migration to project-owned location). (Phase 5) New `.claude/support/reference/extension-hooks.md` with canonical map of extension need → project-owned location, linked from `setup-checklist.md` preamble + `.claude/CLAUDE.md` navigation. Closes the "behavioral complement" follow-up and the "discoverability gap" sub-concern.
+**Phase 3 + Phase 4 shipped 2026-05-16 (v3.15.0):** DEC-014 Option F selected — `.claude/.sync-state.json` sidecar + 2-condition Part 5 classification (sidecar-hash-match → "Template content not yet applied" default APPLY; mismatch/missing → "Modified upstream" + "Show me the diff" sub-action). Closes the structural fix for FB-059. The sidecar's `local_hash == synced_hash` check is category-agnostic; per-file ownership tags are operationally redundant given that every current `sync` member is uniformly template-owned. **Phase 2 (sync_strict category schema) remains deferred per DEC-014 § Decision** — adding the category alongside would ship a label without a function (the category doesn't gate anything; the hash check is what drives classification). If/when a real `project_extensible` member emerges (e.g., a future `.claude/skills/{name}/SKILL.md` that ships base content from template + accepts project-side appendix sections), adding the category later is purely additive — no migration cost, no downstream breakage. Decision record: `decisions/decision-014-sync-state-and-file-ownership-categories.md`. Plan: `template-maintenance/plan-fb059-fb060.md` (note: Option F selected; Phase 2 not implemented).
 **Source:** surfaced during FB-059 root-cause investigation. The Styler local-additions case wasn't a one-off — it exposes a structural gap: the template documents file ownership as a convention but ships no enforcement, no detection, and no documented extension pattern.
 
 **Observation:** Template files are conceptually split into ownership categories but the template doesn't make this machine-readable or user-discoverable. Three concrete failure modes observed via Styler:
@@ -225,3 +205,70 @@ In the Styler audit run, this left two captured-inputs files missing (`meta.json
 **Dependencies:** none. Surfaces an interaction between the audit family (template-shipped) and the background-session preamble (template-shipped). Both files are template-owned; fix lands wholly inside this repo.
 
 **Cross-reference:** Styler audit run that surfaced this — `.claude/support/audits/coherence-2026-05-15-2337/` (in `~/Developer/styler/`). The missing files in that audit dir's `inputs/` are the visible artifact of the failure mode.
+
+## FB-064: Decomposition heuristic for project-local test-harness awareness
+
+**Status:** new
+**Captured:** 2026-05-16
+**Source:** Bridged from echothread `echothread-FB-009` (`echothread-feedback-2026-05-15-test-harness-pattern.json`, template_version 3.5.1) via interaction-logs inbox processing.
+
+**Observation:** Claude only reaches for project-local programmatic test harnesses (e.g., Playwright-driven scenarios using `window.__app.engine.processKeystroke()`-style entry points) when prompted. The pattern gets re-discovered or re-justified each decomposition cycle. Echothread's 2026-05-15 T71 listening test (drove the game through a 1994-char passage via Playwright MCP + `engine.processKeystroke` rather than asking the user to type manually) was authored ad-hoc; the user (correctly) observed that the harness pattern is reusable and asked: how do we make Claude reach for this automatically during decomposition?
+
+**Proposal (from source FB):** Extend `.claude/support/reference/decomposition-heuristics.md` (or equivalent decomposition guidance in `commands/work.md` / `agents/implement-agent.md`) with a heuristic that:
+- During decomposition, for each task that (a) carries `interaction_hint: cli_direct`, (b) touches files matching a runtime-surface pattern (project-configurable; defaults like `src/engine/`, `src/audio/`, `src/renderer/`, `src/ui/`, `src/components/`), or (c) has any `test_protocol` referring to runtime/UI behavior — check for a project-conventional harness directory (suggested defaults: `tooling/test-scenarios/`, `tooling/scenarios/`, `tests/scenarios/`, `e2e/scenarios/`).
+- If a harness directory exists AND no matching scenario covers the task's surface, decompose a subtask: "Author `<harness-dir>/{id}.ts` so this task's runtime check can be re-run programmatically."
+- If no harness directory exists, fall back to manual verification with a single-line note: "manual verification — consider authoring a scenario harness via `/feedback` capture."
+
+**Config surface:** opt-in via convention. Projects create the harness directory and add a one-line pointer to root `./CLAUDE.md`. The decomposition scan is a one-time filesystem check. No required schema field, no breaking change for projects that don't adopt the pattern.
+
+**Why template-side, not just project-side:** echothread is solving its immediate need via project-specific T86 (root `CLAUDE.md` addition). But every downstream project that adopts a programmatic-scenario harness convention will face the same "Claude only reaches for the harness when prompted" problem. Template-side heuristic makes harness-aware decomposition the default for any project that opts in. Analogous to how the template defines dashboard META fields that projects populate.
+
+**Expected payoff:** Faster decomposition + fewer manual-verification round-trips. Echothread's T71 case took 4 turns to manually type + investigate + capture; a harness-aware decomposition would have auto-suggested authoring a scenario subtask at T71's creation time.
+
+**Likely route:** documentation extension of decomposition-heuristics + a check during `/work` Step 2c (decomposition). Could pair with FB-058 (decomposition pre-pass — path validation + ripple inference) since both extend decomposition with one-time filesystem scans.
+
+**Cross-reference:** FB-058 (decomposition pre-pass), FB-047 (files_affected drift). Source FB also notes the meta-observation that the bridge mechanism (`template_inbox_path` per FB-040) is the right place for these generalizable patterns — confirms the v3.5.1 bridge is working as designed.
+
+## FB-065: Decomposition systematically under-counts synchronized-enum-locations in files_affected
+
+**Status:** new
+**Captured:** 2026-05-16
+**Source:** 5+ occurrences across echothread sessions 2026-05-13/14/15 (T67, T80, T81, T82, T83 — see `echothread-session-2026-05-14.json` + `echothread-session-2026-05-15.json` inbox files). Cross-session friction-marker pattern.
+
+**Observation:** When a task extends an enum (e.g., adds a new `CriterionId` member), the task's declared `files_affected` systematically under-counts the actual edit surface by 5-10 files. Concrete examples:
+- T80: declared 4 files, edited 10 (synchronized locations under `CriterionId` / `CRITERION_ORDER` / `CRITERION_HEADERS` / `EvaluationInputs` / barrel / category-rename / inline polish / test-factory).
+- T81: declared 4 files, edited 11 (under-counted by 7).
+- T82: declared 4 files, edited 13.
+- T83: declared 4 files, edited 14.
+
+The synchronized-enum-locations rule (template's `.claude/rules/agents.md § Synchronized Locations` — implicit via `## Root Cause Over Symptom` semantics; implement-agent currently catches this at grep time, not at decomposition time) means the gap is recovered downstream but at the cost of (a) implement-agent doing extra synchronization work outside declared scope (every occurrence registered a `template_gap` or `scope_creep` marker), and (b) verify-agent's `scope_validation` check having to gracefully accept "actually edited 13 files, declared 4."
+
+**Proposal:** Extend decomposition heuristics with an "enum-extension hint" — when a task's `files_affected` or task description references extending an enum (e.g., a `CriterionId`, status enum, kind enum), auto-enumerate the synchronized locations and add them to `files_affected` at decomposition time. The synchronized sites are typically: 1 event-log type file, 1 evaluator types file, 1 evaluator parser, 1 evaluator entrypoint, 1 evaluator format file, 2 barrel files, N test-factory files. For echothread's Phase 4 pattern that's an 8-10 location floor.
+
+**Detection signal:** decomposition could grep the candidate task's description/test_protocol for enum-y keywords (`CriterionId`, `enum`, `kind`, `union of` etc) AND grep the codebase for matching enum declarations. If both match, surface the synchronized sites as auto-added `files_affected` entries with a prompt asking the user to confirm.
+
+**Overlaps with:** FB-058 (decomposition pre-pass — path validation + ripple inference heuristics) covers a similar pattern (decomposition-time validation of `files_affected`). FB-047 (files_affected drift — implement-agent expansion) is the downstream complement. **This could be folded into FB-058's ripple-inference heuristics** rather than a standalone item — same code path, additive heuristic.
+
+**Likely route:** decomposition step refinement in `commands/work.md` Step 2c (decomposition pre-pass). Could land alongside FB-058's escalation if it gets pursued. Lower priority than FB-058 itself (which is path validation, a separate failure mode) but mature signal (5+ occurrences in one project's Phase 4 alone).
+
+**Cross-reference:** FB-058, FB-047, echothread sessions 2026-05-13/14/15.
+
+## FB-066: verify-agent missing default "production-consumption" check for class-export tasks
+
+**Status:** new
+**Captured:** 2026-05-16
+**Source:** 3+ occurrences across echothread sessions 2026-05-14/15. Pattern: T71→T85 integration-gap discovery + T85_1/T85_2/T85_3 verifications adding ad-hoc grep checks.
+
+**Observation:** Structural verification (files exist, types correct, tests pass) is necessary but not sufficient for tasks that ship a new top-level class export. Echothread's Phase 4 introduced 6 new module classes (`BeatEmitter`, `BeatResponse`, `ResonanceTracker`, `CriticalEvaluator`, `BeatEffects`, `NodeTrace`); structural verification passed for all 14 individual implementation tasks; the **integration gap** — modules exported but never `new`'d in `src/` — was discovered only via interactive Playwright-driven runtime test on T71. T85 was decomposed retroactively into 3 subtasks to close the gap. Subsequent T85_1/T85_2/T85_3 verifications each independently ran a `grep -rn 'new {ClassName}(' src/ | grep -v __tests__` check as a one-off addition to per-task verification — re-inventing the same pattern.
+
+**Proposal:** Add a default check to verify-agent's per-task verification list — when a task's `files_affected` includes a top-level class-exporting file, grep `new {ClassName}(` across `src/` (excluding tests). Pass requires ≥1 hit OR an explicit "consumer task deferred" flag in the task description (e.g., `task.deferred_consumption: true` with a pointer to the consuming task). One grep per task; catches the structural-vs-runtime verification gap without requiring runtime tests for every class export.
+
+**Detection signal:** verify-agent already reads task `files_affected`. Adding the check is: (a) parse each file in `files_affected` for `export class \w+`/`export default class \w+` patterns, (b) for each detected class name, run the grep. The class-name extraction is mechanical.
+
+**Why elevate from "opportunity" to default:** the gap surfaced 3+ times this Echothread Phase 4 alone (T71 discovery + T85_1/T85_2/T85_3 verifications). The cost of the check is trivial; the cost of NOT having it is shown by Echothread's pattern — 14 tasks shipped structurally clean, integration gap caught accidentally via interactive runtime test. In a project without that interactive test stage, the gap could ship to production.
+
+**Boundary with FB-064:** FB-064 proposes a *decomposition-time* heuristic that authors scenario tests for runtime/UI tasks. FB-066 proposes a *verification-time* check that catches "structural code shipped, no consumer" cases. They complement each other: FB-064 grows the test suite; FB-066 catches gaps even when scenario tests don't exist yet.
+
+**Likely route:** small addition to `.claude/agents/verify-agent.md`'s per-task verification check list (probably under `scope_validation` or as a new check `consumer_check`). Low blast radius; one new grep per verification.
+
+**Cross-reference:** FB-064, echothread sessions 2026-05-14/15 (markers from T71, T85_1, T85_2, T85_3).

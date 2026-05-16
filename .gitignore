@@ -15,5 +15,8 @@ __pycache__/
 # Local settings
 .claude/settings.local.json
 
+# Per-file sync state sidecar (project state, not template content)
+.claude/.sync-state.json
+
 # Prevent nested .claude directories
 .claude/.claude/

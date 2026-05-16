@@ -1,15 +1,20 @@
 ---
 id: DEC-008
 title: Auto-mode reevaluation — should DEC-005's shipped allowlist be retired, narrowed, or kept?
-status: approved
+status: implemented
 category: process
 created: 2026-04-17
 decided: 2026-04-17
+implemented: 2026-04-17
 related:
   tasks: []
   decisions: [DEC-005]
   feedback: [FB-026]
-implementation_anchors: []
+implementation_anchors:
+  - .claude/settings.json                  # narrowed permissions.allow (8 entries from DEC-008 + 1 script-invocation later)
+  - .claude/commands/health-check.md       # Part 5c boundary validation
+  - .claude/CLAUDE.md                      # Critical Invariants references auto-mode + classifier short-circuit
+  - .claude/README.md                      # § Auto Mode (composition + setup guidance)
 inflection_point: true
 spec_revised:
 spec_revised_date:

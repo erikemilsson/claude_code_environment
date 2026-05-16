@@ -1,9 +1,10 @@
 # Plan: FB-059 + FB-060 — file-ownership categories + per-file sync state
 
-**Status:** draft — for user review before any code lands
+**Status:** partially implemented — Phases 1, 3, 4, 5 shipped; Phase 2 (`sync_strict` category schema) deferred per DEC-014
 **Date:** 2026-05-16
 **Covers:** FB-059 (`/health-check` Part 5 false-positive SKIP) + FB-060 (template/project file-ownership boundary). Items are tightly coupled per FB-060 "Likely route: one DEC covering both."
-**Behavioral complement (FB-060 § "Where this lives"):** documented in FB-060's body but NOT yet shipped to any template file. This plan ships it.
+**Outcome:** Phase 1 (behavioral complement in `.claude/rules/agents.md`) + Phase 5 (`extension-hooks.md` doc) shipped in v3.14.2 (2026-05-16). Phase 3 (`.claude/.sync-state.json` sidecar) + Phase 4 (Part 5 2-condition algorithm refinement) shipped in v3.15.0 (2026-05-16) via DEC-014 **Option F** (sidecar + algorithm, no category change). Phase 2 (`sync_strict` category schema) was **not implemented** — DEC-014 § Decision selected Option F because the sidecar's `local_hash == synced_hash` check is category-agnostic; adding `sync_strict` alongside would ship a label without a function (every current `sync` member is uniformly template-owned, so the category wouldn't gate anything beyond what the hash check already gates). Phase 2 is forward-compatible if a real `project_extensible` member ever emerges — adding the category then is purely additive.
+**Decision record:** `decisions/decision-014-sync-state-and-file-ownership-categories.md` (status: implemented after v3.15.0 ship).
 
 ## 1. The concrete bug (recap)
 

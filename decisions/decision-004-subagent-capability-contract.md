@@ -1,15 +1,22 @@
 ---
 id: DEC-004
 title: Subagent capability contract — who owns task state transitions
-status: approved
+status: implemented
 category: architecture
 created: 2026-04-14
 decided: 2026-04-14
+implemented: 2026-04-14
 related:
   tasks: []
   decisions: []
   feedback: [FB-010]
-implementation_anchors: []
+implementation_anchors:
+  - .claude/rules/agents.md                            # canonical State Ownership + Context Separation + Dispatch Convention
+  - .claude/agents/implement-agent.md                  # structured-report contract (no .claude/ writes)
+  - .claude/agents/verify-agent.md                     # structured-report contract (no .claude/ writes)
+  - .claude/commands/work.md                           # orchestrator owns state writes (verify dispatch + JSON persistence)
+  - .claude/support/reference/parallel-execution.md    # orchestrator-owned writes in parallel batches
+  - system-overview.md                                 # state ownership documented as /work coordinator responsibility
 inflection_point: true
 spec_revised:
 spec_revised_date:

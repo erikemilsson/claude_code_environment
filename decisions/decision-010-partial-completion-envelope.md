@@ -1,15 +1,19 @@
 ---
 id: DEC-010
 title: partial_completion envelope — schema and threshold for usage-limit graceful resume
-status: approved
+status: implemented
 category: architecture
 created: 2026-05-13
 decided: 2026-05-13
+implemented: 2026-05-13
 related:
   tasks: []
   decisions: [DEC-004]
   feedback: [FB-049]
-implementation_anchors: []
+implementation_anchors:
+  - .claude/agents/implement-agent.md                  # partial_resume_pending status + partial_completion envelope schema
+  - .claude/commands/work.md                           # orchestrator persistence + resume-pending check + re-dispatch flow
+  - .claude/support/reference/context-transitions.md   # .handoff.json schema extended for envelope (string-or-object union)
 inflection_point: false
 spec_revised:
 spec_revised_date:

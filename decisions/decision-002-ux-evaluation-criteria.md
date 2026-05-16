@@ -1,15 +1,19 @@
 ---
 id: DEC-002
 title: UX evaluation criteria and methodology for /health-check
-status: approved
+status: implemented
 category: methodology
 created: 2026-03-30
-decided:
+decided: 2026-05-16
+implemented: 2026-05-16
 related:
   tasks: []
   decisions: [DEC-001]
   feedback: [FB-015]
-implementation_anchors: []
+implementation_anchors:
+  - .claude/commands/health-check.md                # Part 6 UX Evaluation (6 starter checks + Nielsen severity framework)
+  - .claude/support/reference/workflow.md           # documents UX evaluation step
+  - system-overview.md                              # /health-check description + feature catalog
 inflection_point: false
 spec_revised:
 spec_revised_date:

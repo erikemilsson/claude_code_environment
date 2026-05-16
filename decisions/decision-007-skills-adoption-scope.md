@@ -1,15 +1,19 @@
 ---
 id: DEC-007
 title: Skills adoption scope — where Skills fit in the template
-status: approved
+status: implemented
 category: architecture
 created: 2026-04-17
 decided: 2026-04-17
+implemented: 2026-04-17
 related:
   tasks: []
   decisions: [DEC-004]
   feedback: [FB-020]
-implementation_anchors: []
+implementation_anchors:
+  - .claude/skills/spec-checklist/SKILL.md           # first Skill from Option B recommendation
+  - .claude/skills/decomposition-heuristics/SKILL.md # second Skill
+  - .claude/skills/dashboard-style/SKILL.md          # third Skill
 inflection_point: false
 spec_revised:
 spec_revised_date:
