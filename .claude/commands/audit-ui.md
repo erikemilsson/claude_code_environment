@@ -28,9 +28,11 @@ This command is part of the audit family (proposal: `template-maintenance/audit-
 /audit-ui --vector x,y,z               # run only listed lenses (default: all 7 + mobile)
 /audit-ui --depth shallow              # one snapshot per route; skip tabs/expanders
 /audit-ui --depth full                 # default — also walks every tab + expander
+/audit-ui triage [audit-ts]            # interactive walker: per-finding fix/promote/dismiss (default audit-ts: latest)
 /audit-ui promote {audit-ts}           # promote ticked findings → feedback.md
 /audit-ui promote {audit-ts} --all     # bulk promote everything in the report
 /audit-ui promote {audit-ts} F-01,F-07 # promote specific IDs
+/audit-ui fix {audit-ts} {F-ID}        # apply a single bundle-eligible finding inline
 ```
 
 Stage 5 (`/health-check` Part 6) will dispatch this command automatically based on `applies_when` (web framework deps detected in package.json). Until then, invoke directly.
@@ -306,6 +308,31 @@ Available only for findings with `kind: bundle-eligible`. Other kinds (`fix-elig
 For UI audits, bundle-eligible findings are rare — most UI fixes need copy/IA decisions and route via `[Promote to FB]` → `/iterate`. The typical bundle-eligible UI case is dead-link removal where the link target is a route the spec also dropped, or deletion of a single orphan component file.
 
 `/audit-ui fix latest {F-ID}` — convenience: resolves "latest" to the newest `ui-*` audit dir by `ran_at`.
+
+### Triage mode
+
+`/audit-ui triage [audit-ts]` — interactive walker through the audit's pending findings.
+
+The preferred entry point when a UI audit has multiple pending findings. Walker iterates each pending non-dismissed finding, presents its `description` + kind + kind-conditional actions, dispatches the user's choice (Fix it / Promote / Dismiss / Skip / Quit), and continues to the next. Closes the dashboard-tick → CLI re-specification courier pattern and the audit-name memory burden (FB-006 sub-issues 1+2). Parallel structure to `/audit-coherence triage` — see `commands/audit-coherence.md § "Triage mode"` for the canonical algorithm.
+
+**Default for `audit-ts`:** `latest` — resolves to the newest `ui-*` audit dir by `ran_at` (same resolution as `/audit-ui fix latest`).
+
+**Algorithm:** identical to `/audit-coherence triage` § "Algorithm" with these substitutions:
+- Audit dir glob: `.claude/support/audits/ui-*/` (instead of `coherence-*/`).
+- Finding ID prefix: `F-NN` (instead of `C-NN`).
+- Empty-state messages: `No pending findings in latest ui audit.` / `No ui audit has run in this project yet. Run /audit-ui first.`
+
+**Per-kind action gates:** same as `/audit-coherence triage`. For UI audits, most findings are `decision` or `design` kind (copy/IA changes); `bundle-eligible` is rare (typical case: dead-link removal where the target route is also spec-dropped, or deletion of a single orphan component file). The kind-conditional gate works identically — `[F]ix it` is presented only for `bundle-eligible` items.
+
+**State mutations:** same canonical dispatch (no divergence):
+- Fix it → `audit-fix-workflow.md § "[Fix it] — inline apply"` (single commit `audit-fix: {F-ID} — {summary}`; `digest.json` + `friction.jsonl` cascades).
+- Promote → `### Promote mode` above (compute next `FB-NNN`, dedupe, append `feedback.md`; cascades).
+- Dismiss → `audit-fix-workflow.md § "[Dismiss]"` (sidecar `dismissed_ids[]` + `digest.json status: dismissed`).
+- Skip → no mutation.
+
+**Edge cases:** identical to `/audit-coherence triage § "Edge cases"`. Title fallback for pre-v3.18.0 digests; parallel-session collision caveat; per-audit-family scope (no unified `/triage`); re-running `/audit-ui` mid-triage decouples the new digest from in-flight walker state.
+
+`/audit-ui triage latest` (explicit `latest` keyword) is equivalent to the no-arg form.
 
 ---
 

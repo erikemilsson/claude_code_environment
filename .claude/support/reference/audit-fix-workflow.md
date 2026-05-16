@@ -59,6 +59,19 @@ When no audit has ever run (sidecar `audit_digest.latest_audit` is empty), the s
 
 ---
 
+## Preferred entry point for N pending findings — `triage` mode
+
+When an audit has multiple pending findings, the user-friendly entry point is the audit family member's `triage` sub-command (shipped v3.19.0, FB-006 iteration 3):
+
+- `/audit-coherence triage [audit-ts]` — see `.claude/commands/audit-coherence.md § "Triage mode"` for the canonical algorithm.
+- `/audit-ui triage [audit-ts]` — parallel structure; see `.claude/commands/audit-ui.md § "Triage mode"`.
+
+Both default `audit-ts` to `latest` (newest by `ran_at`), so the user never has to type the audit name. The walker iterates pending non-dismissed findings, presents each with its `description` + kind + kind-conditional actions (`[F]ix it · [P]romote · [D]ismiss · [S]kip · [Q]uit`), and dispatches the chosen action to the per-action mechanics documented below (no divergence — `triage` is a dispatcher, not a separate flow).
+
+The individual per-action invocations documented below remain the canonical mechanics and are still callable directly (`/audit-{name} fix {ts} {C-ID}`, `/audit-{name} promote {ts} {C-ID}`, natural-language dismiss). Use them when triaging a single specific finding outside the walker, or when scripting bulk operations.
+
+---
+
 ## Action protocol — Stage 6a (currently shipped)
 
 Two actions per item: `[Promote to FB]` and `[Dismiss]`. Both are user-driven — Claude doesn't take either action without explicit user instruction.

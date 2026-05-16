@@ -23,9 +23,11 @@ This command is the first audit shipped by the audit family (proposal: `template
 /audit-coherence                            # full audit, all 6 lenses
 /audit-coherence --lens {name}              # run only the listed lens (comma-separated for multiple)
 /audit-coherence --since {YYYY-MM-DD}       # restrict to friction register entries / FB items captured after date
+/audit-coherence triage [audit-ts]          # interactive walker: per-finding fix/promote/dismiss (default audit-ts: latest)
 /audit-coherence promote {audit-ts}         # promote ticked findings → feedback.md (same shape as /audit-ui promote)
 /audit-coherence promote {audit-ts} --all   # bulk promote everything in the report
 /audit-coherence promote {audit-ts} F-01,F-07
+/audit-coherence fix {audit-ts} {C-ID}      # apply a single bundle-eligible finding inline
 ```
 
 Stage 5 (`/health-check` Part 6) will dispatch this command automatically based on `applies_when`. Until then, invoke directly.
@@ -546,6 +548,70 @@ Available only for findings with `kind: bundle-eligible`. Other kinds (`fix-elig
 **Important:** after any [Fix it] touching `package.json`, run your test suite to catch transitive consumers static analysis missed (DEC-013 Q3 — orphan-dep removal can break dynamic-require / `importlib` / string-keyed import patterns). Same applies to source-code deletions.
 
 `/audit-coherence fix latest {C-ID}` — convenience: resolves "latest" to the newest `coherence-*` audit dir by `ran_at`.
+
+---
+
+## Triage mode
+
+`/audit-coherence triage [audit-ts]` — interactive walker through the audit's pending findings.
+
+The preferred entry point when an audit has multiple pending findings. The walker iterates each pending non-dismissed finding, presents its `description` + kind + kind-conditional actions, dispatches the user's choice (Fix it / Promote / Dismiss / Skip / Quit), and continues to the next. Closes the dashboard-tick → CLI re-specification courier pattern and the audit-name memory burden (FB-006 sub-issues 1+2).
+
+**Default for `audit-ts`:** `latest` — resolves to the newest `coherence-*` audit dir by `ran_at` (same resolution as `/audit-coherence fix latest`). User never types the audit name unless they want an older audit explicitly.
+
+### Algorithm
+
+1. **Resolve audit dir.** No arg or `latest` → newest `coherence-*` dir by `ran_at`. Explicit `{audit-ts}` → `.claude/support/audits/coherence-{audit-ts}/`.
+2. **Empty-state checks** (exit cleanly, no state mutation):
+   - Audit dir does not exist → `No coherence audit has run in this project yet. Run /audit-coherence first.`
+   - Audit dir exists but no findings have `status: pending` (all resolved/dismissed/promoted) → `No pending findings in latest coherence audit. Nothing to triage.\n(Last audit ran {ran_at date}. Run /audit-coherence to refresh.)`
+3. **Read pending findings.** From `digest.json items[]`, filter where `status == "pending"` AND `id NOT IN` sidecar's `audit_digest.dismissed_ids[]`. Preserve digest order. (Sidecar missing → treat `dismissed_ids` as `[]`.)
+4. **Print walk header.** `Reading latest coherence audit: coherence-{ts} ({N} pending of {M} total)`.
+5. **Per-finding loop** (for each of the `N` pending findings):
+   - **Print finding card** — `[{i+1}/{N}] {C-ID} ({kind})` followed by `item.description ?? item.title` (title fallback for pre-v3.18.0 digests), then `Files to touch:` and `Source anchors:` lines, then the kind-conditional `Actions:` prompt (see § "Per-kind action gates" below).
+   - **Read user action.** Accept single-letter shorthand (case-insensitive) OR natural-language with a verb (`fix it`, `promote`, `dismiss because X`, `skip`, `quit`). Map to `F` / `P` / `D` / `S` / `Q`.
+   - **Kind-action validation.** If the user picks an action the kind doesn't support (e.g., `F` on a `decision` kind), print the kind-specific refuse message from `audit-fix-workflow.md § "Action protocol — Stage 6 (Option C per DEC-013)"` step 3 and re-prompt the same finding.
+   - **Dispatch** to the canonical per-action mechanics (no divergence):
+     - `F` → `audit-fix-workflow.md § "[Fix it] — inline apply"` steps 4-10 (at-apply re-read + hard-exclusion + show + approve + commit + state update).
+     - `P` → `## Promote mode` steps 3-9 (read body, dedupe, append to `feedback.md`, update `digest.json` + `friction.jsonl` + `findings.md`). Single-finding subset of bulk promote.
+     - `D` → if user typed bare `D`, follow up with `Reason (optional, blank to skip): ` and read one line. If user typed `dismiss because X`, parse `X` as the reason inline. Then dispatch to `audit-fix-workflow.md § "[Dismiss]"` steps 1-4.
+     - `S` → no mutation; advance.
+     - `Q` → break loop, jump to step 6.
+   - **Auto-advance** after dispatch completes — print a one-line result, then immediately print the next finding's card. No `Continue? [Y/N]` confirmation between findings (the user can `[Q]uit` at any prompt to step out).
+6. **End-of-walk summary.** `Triaged {X} of {N} findings. {Z} still pending. Run /audit-coherence triage again later to revisit.` where `Z` = skipped + remainder-after-quit.
+
+### Per-kind action gates
+
+Mirrors `audit-fix-workflow.md § "Per-kind action availability"`:
+
+| Finding kind | Actions prompt |
+|--------------|----------------|
+| `bundle-eligible` | `[F]ix it · [P]romote to FB · [D]ismiss · [S]kip · [Q]uit` |
+| `fix-eligible` | `[P]romote to FB · [D]ismiss · [S]kip · [Q]uit` (no `[F]ix it` — deferred per DEC-013) |
+| `decision` | `[P]romote to FB · [D]ismiss · [S]kip · [Q]uit` (no `[F]ix it` — routes via `/iterate`) |
+| `design` | `[P]romote to FB · [D]ismiss · [S]kip · [Q]uit` (no `[F]ix it` — promote → `/research`) |
+
+The kind annotation is printed alongside the card header (`{C-ID} ({kind})`) so the reason for the action list is transparent.
+
+### State mutations — atomic per action
+
+Each action's mutation is identical to the existing per-action flow; no divergence:
+
+- **Fix it** → single commit `audit-fix: {C-ID} — {summary}`; `digest.json items[i].status: "resolved"`; `friction.jsonl` cascades.
+- **Promote** → next `FB-NNN` computed, dedupe pass, append to `feedback.md`; `digest.json items[i].status: "promoted"`; `friction.jsonl` + `findings.md` cascades.
+- **Dismiss** → append id to sidecar's `audit_digest.dismissed_ids[]`; `digest.json items[i].status: "dismissed"` + `dismiss_reason` + `dismissed_at`.
+- **Skip** → no mutation.
+
+`Ctrl+C` mid-walk is safe — completed actions stay committed, remaining stay pending. The next `/audit-coherence triage` resumes from whichever findings are still `pending`.
+
+### Edge cases
+
+- **Pre-v3.18.0 digests without `description`** → render `item.title` (same `{description ?? title}` fallback as `dashboard-regeneration.md § "Body field selection"`).
+- **Parallel-session collision.** Same caveat as `[Fix it]` (per `audit-fix-workflow.md § "Known limitations"` → "Parallel-session collision"): don't run `/audit-coherence triage` while another session is running `/work` on overlapping files. The at-apply re-read invariant catches stale source for the Fix-it dispatch path, but doesn't lock against concurrent edits.
+- **Mixed audit kinds in the project.** Each audit family member has its own `triage` sub-command. No unified `/triage` across audit kinds — run `/audit-coherence triage` and `/audit-ui triage` separately.
+- **Re-running `/audit-coherence` mid-triage.** A fresh audit replaces sidecar items at next dashboard regen. The next `triage` invocation walks the new digest; pending items from the older audit are decoupled from the dashboard. Acceptable — `triage` operates on a named digest, not the dashboard.
+
+`/audit-coherence triage latest` (explicit `latest` keyword) is equivalent to the no-arg form.
 
 ---
 

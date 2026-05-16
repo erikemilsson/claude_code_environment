@@ -416,9 +416,10 @@ The user selects an option when prompted, and `/work` updates the task according
       - `design` → `*(promote to FB → /research)*`
     See `audit-fix-workflow.md` § "Per-kind action availability" for the full table and the [Fix it] mechanism documentation.
   - **How to act on findings (was previously rendered as per-item `[Promote to FB] / [Dismiss]` inline text; dropped in FB-006 PATCH iteration v3.17.1 because the inline text was non-interactive and the actions exist regardless of rendering):**
-    - **Promote** — tick the checkbox of each finding to lift, then run `/audit-{name} promote {audit-ts}` to bulk-promote ticked items to `feedback.md`. Single-item promotion: `/audit-{name} promote {audit-ts} {C-ID}`.
-    - **Dismiss** — ask Claude in natural language, e.g. *"dismiss C-05 — those FB items are stale because they're tracking long-term ideas"*. The orchestrator adds the id to `dashboard-state.json audit_digest.dismissed_ids[]` and updates `digest.json status: dismissed`.
-    - **Fix it (bundle-eligible only)** — see the inline `[Fix it]` token; invoke per-item as documented above.
+    - **Preferred for multiple findings (v3.19.0+):** `/audit-{name} triage` — interactive walker that defaults `audit-ts` to `latest` (newest by `ran_at`) and walks the user through each pending non-dismissed finding with kind-conditional actions ([F]ix it / [P]romote / [D]ismiss / [S]kip / [Q]uit). Eliminates the dashboard-tick → CLI re-specification courier pattern and audit-name memory burden (FB-006 sub-issues 1+2). See `commands/audit-coherence.md § "Triage mode"` for the canonical algorithm.
+    - **Promote (single or bulk)** — tick the checkbox of each finding to lift, then run `/audit-{name} promote {audit-ts}` to bulk-promote ticked items to `feedback.md`. Single-item promotion: `/audit-{name} promote {audit-ts} {C-ID}`. The walker invokes the same canonical promote mechanics per-finding.
+    - **Dismiss** — ask Claude in natural language, e.g. *"dismiss C-05 — those FB items are stale because they're tracking long-term ideas"*. The orchestrator adds the id to `dashboard-state.json audit_digest.dismissed_ids[]` and updates `digest.json status: dismissed`. The walker's `[D]ismiss` action invokes the same dispatch (with optional inline reason prompt).
+    - **Fix it (bundle-eligible only)** — see the inline `[Fix it]` token; invoke per-item as documented above. The walker's `[F]ix it` action invokes the same canonical mechanics.
   - **Annotations footer** (when the source digest has `annotations[]`): rendered as a separate italicized sub-list outside the marker pair:
     ```
     *Already covered by in-flight work:*
