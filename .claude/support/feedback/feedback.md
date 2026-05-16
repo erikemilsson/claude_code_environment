@@ -4,44 +4,6 @@ Items are captured via `/feedback` and triaged via `/feedback review`.
 
 ---
 
-## FB-006: Audit-findings dashboard/CLI workflow — courier pattern, dead UI, name burden, opacity
-
-**Status:** ready
-**Captured:** 2026-05-16
-**Split:** 2026-05-16 — Original FB-006 split during `/feedback review` Phase 1. This item retains sub-issues 1-4 (dashboard/CLI workflow UX). Sub-issue 5 (Claude direct-edit guardrail) extracted to FB-007 because it is a behavioral/rule concern orthogonal to the UX rough edges and worth a separate assessment + promotion track.
-**Refined:** 2026-05-16 — The audit-findings → feedback → spec-amendment workflow has four convergent UX rough edges that compound during triage: **(a) courier pattern** — dashboard tick is the only interactive element, but acting on ticks requires re-specifying state in the CLI (`/audit-coherence promote <name>`); user couriers the audit name from dashboard to terminal. **(b) name memory burden** — audit names (e.g. `coherence-2026-05-15-2337`) must be remembered or copy-pasted; especially painful when multiple audits have populated the dashboard. **(c) dead UI** — inline `[Promote to FB] / [Dismiss]` text per finding looks selectable but isn't; only the checkbox is interactive and it can only express promote-tick (unticked is ambiguous: not-yet-triaged vs dismissed). **(d) opacity at decision moment** — dashboard digest shows only short titles; full description lives in `findings.md` which the user must open separately; auto-routing via `/audit-coherence promote` doesn't surface plain-English at the moment of decision. User-stated requirement: "a simple description in plain English about what was found and what the issue is" *on the dashboard*, enough to triage without opening `findings.md`. Three candidate directions (not mutually exclusive): **(1) render-time consolidation** — drop dead inline text, expand each finding's dashboard entry to a one-line plain-English description, render audit name in one copy-paste-friendly header; **(2) single triage command** — `/audit-coherence triage` reads dashboard state and walks promote/dismiss interactively, eliminating name-memory; **(3) dual-checkbox column** — promote-tick vs dismiss-tick, removes implicit-state ambiguity. Implementation surface is template-owned (`commands/audit-coherence.md`, dashboard render rules in `rules/dashboard.md` + `support/reference/dashboard-regeneration.md`, audit digest format under `.claude/support/audits/<name>/`).
-**Assessed:** 2026-05-16 — Scope: corrective + additive (dead-UI removal reductive; plain-English description per finding + triage command additive). Template files affected: `commands/audit-coherence.md` (digest synthesizer + possible `triage` subcommand), `rules/dashboard.md` + `support/reference/dashboard-regeneration.md` (audit-findings render rules), `skills/dashboard-style/SKILL.md` (section format), possibly `support/audits/<name>/digest.json` schema (`plain_english_description` field per finding). No decision conflicts — DEC-013 specified routing rules for findings, not the visual element shape; Direction 1's change to the `[Promote to FB] / [Dismiss]` inline text is compatible. Active follow-ups: precursor to deferred Audit family Stage 7 (bundled-apply batch UX); no interaction with Fix-eligible inline-apply expansion telemetry gate; no interaction with FB-011/FB-033/FB-060/FB-062/FB-063. Decision character: pick-and-go (no inflection). Version bump on promotion: likely sequenced as PATCH (drop dead-UI inline text alone) → MINOR (plain-English digest extension) → MINOR (`/audit-coherence triage` interactive walker) → MINOR-or-deferred (dual-checkbox column; depends on whether single triage command obsoletes the need). Promotion route: direct template change(s); no /research needed.
-
-Surfaced live while working `coherence-2026-05-15-2337` finding C-01 in the styler project. User concerns, captured directly:
-
-1. **Dashboard ticking is disconnected from the CLI follow-up.** On the dashboard the user can only tick boxes. To act on those ticks the user has to go to the CLI and re-specify what they want (`/audit-coherence promote <audit-name>`). The dashboard knows the audit name; the CLI also wants it; the user is the courier between them.
-
-2. **Audit-name memory burden.** The user has to remember the audit name (e.g. `coherence-2026-05-15-2337`) when running the CLI command. Especially painful if more than one audit has populated the dashboard.
-
-3. **"[Promote to FB] / [Dismiss]" inline text is dead UI.** Each finding renders "[Promote to FB] / [Dismiss]" next to its title. These look like options but aren't selectable — the only interactive element on the dashboard is the checkbox, and there's no way to express "dismiss" via the checkbox (ticking it = promote; not-ticking = ambiguous between "not yet triaged" and "dismissed"). The "[Dismiss]" text takes up real estate without offering function. (Promote text is also moot since the actual promote action is the CLI command at the bottom of the section, not the inline text.)
-
-4. **Promotion is opaque.** The dashboard digest gives only a short title per finding. The full description lives in `.claude/support/audits/<name>/findings.md`, which the user has to open and read separately. And if a ticked finding auto-routes onward (e.g. into `/iterate` after `/audit-coherence promote`), the user doesn't see the plain-English description at the moment of decision. The user wants "a simple description in plain English about what was found and what the issue is" *on the dashboard* — enough to triage without opening the findings.md.
-
-Possible directions for the broader dashboard ↔ CLI split (user has not chosen — starting points only):
-
-- **Render-time consolidation:** drop the dead `[Promote to FB] / [Dismiss]` inline text; expand each finding's dashboard entry to include a one-line plain-English description (currently it's just a short title); render the audit name in one copy-paste-friendly header so the user reads it from one place
-- **Single triage command:** `/audit-coherence triage` (or similar) reads the dashboard state, walks the user through promote/dismiss per finding interactively, and removes the need to remember the audit name
-- **Add a second checkbox column** so the dashboard supports both promote-tick and dismiss-tick, removing the implicit-state ambiguity of unticked-vs-dismissed
-
-### Context
-
-Triggered while working audit `coherence-2026-05-15-2337` finding C-01 (Phase 28 `template/` prefix drift) in styler. The audit's path-drift evidence was largely stale (~40 claimed callsites → 0 bare-path matches in current spec, since Phase 28 implementation work had already swept them). The behavioral concern that surfaced in the same session — Claude running direct `Edit` calls on the spec instead of routing through `/iterate` — is extracted to FB-007.
-
-### Related
-
-Sibling capture FB-007 covers the Claude direct-edit guardrail concern that surfaced in the same C-01 session.
-
-### Tags
-
-audit-findings, dashboard-cli-split, workflow-friction, render-consolidation, triage-command
-
----
-
 ## FB-007: Claude direct-edit guardrail on `.claude/spec_v*.md` — rule tension between "direct edits safe" and audit `iterate_routing: /iterate`
 
 **Status:** ready
