@@ -63,7 +63,7 @@ Use a fuzzy-match (e.g., `Glob` for the basename) to suggest the closest existin
 
 ### Leg 2: Ripple Inference
 
-For each task, run targeted greps to surface ripple-affected files the declared `files_affected` may miss. Four detection heuristics:
+For each task, run targeted greps to surface ripple-affected files the declared `files_affected` may miss. Five detection heuristics:
 
 | Pattern in task description | Grep target | Add to candidates |
 |----------------------------|-------------|-------------------|
@@ -71,6 +71,7 @@ For each task, run targeted greps to surface ripple-affected files the declared 
 | `.max(N)` → `.max(M)` or any threshold change | `grep -r "{old_threshold}"` in fixture files | Fixtures with hard-coded values that share the schema-constant's name |
 | New test files under `__tests__` / sibling-test convention | Read `package.json` `scripts.test` — if it chains explicit paths (vs glob), suggest `package.json` | `package.json` for chain-style test runners |
 | Validator-walk extension (Zod/Pydantic `superRefine`, strict-parse) | `grep -r "{ParserSchemaName}\.parse\|\.{ParserSchemaName}\.safeParse"` | Downstream callers |
+| New enum / literal-union / `as const` member (e.g., `add 'foo' to CriterionId`, extending `type Kind = 'a' \| 'b'`, extending `const X = [...] as const`) | `grep -rln "{EnumName}" src/ tests/` to find importers; inspect each for `switch(...)` over the enum or `Record<EnumName, ...>` maps | Files that switch / map over the enum (parsers, formatters, header maps); barrel re-exports; test factories that build instances per enum case |
 
 For each candidate, surface:
 

@@ -301,6 +301,7 @@ Default when absent: `"dashboard"` (preserves current behavior).
 - If the task has dependencies: are the outputs of those dependencies consumed correctly?
 - If other tasks depend on this one: does this task produce what they will need?
 - Check: references, interfaces, naming conventions, and file paths that downstream tasks will depend on
+- **Production-consumption check (for class-export tasks):** If any file in `files_affected` declares a top-level class export (pattern: `^export (default )?class \w+` or `export\s+\{[^}]*\b\w+Class\b`), grep for `new {ClassName}\(` across `src/` excluding `__tests__` and `*.test.*`. Pass requires either ≥1 hit OR an explicit "consumer task deferred" note in the task description (e.g., "T85 will instantiate"). Failure sets `integration_ready` to fail with a `major` issue: "Class `{ClassName}` exported but not instantiated in src/ — likely integration gap (structural code shipped, no consumer)". Catches the structural-vs-runtime verification gap (echothread Phase 4 integration gap: 6 module classes exported but never `new`'d; discovered only via interactive Playwright run on T71). Skip the check for tasks where `files_affected` contains no class-exporting files.
 
 ### Step T5b: Rule-Layer Checks
 

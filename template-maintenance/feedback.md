@@ -231,9 +231,10 @@ In the Styler audit run, this left two captured-inputs files missing (`meta.json
 
 ## FB-065: Decomposition systematically under-counts synchronized-enum-locations in files_affected
 
-**Status:** new
+**Status:** promoted
 **Captured:** 2026-05-16
-**Source:** 5+ occurrences across echothread sessions 2026-05-13/14/15 (T67, T80, T81, T82, T83 — see `echothread-session-2026-05-14.json` + `echothread-session-2026-05-15.json` inbox files). Cross-session friction-marker pattern.
+**Promoted:** 2026-05-16 — Added 5th heuristic row to FB-058's Decomposition Pre-Pass Leg 2 (Ripple Inference) in both `.claude/support/reference/decomposition.md` AND `.claude/skills/decomposition-heuristics/SKILL.md` (mirror per DEC-007 Option B). New heuristic fires on "new enum / literal-union / `as const` member" patterns (e.g., `add 'foo' to CriterionId`); grep finds importers and the procedure inspects them for `switch(...)` over the enum or `Record<EnumName, ...>` maps; surfaces parsers, formatters, header maps, barrel re-exports, and per-case test factories as ripple candidates. Advisory (present-and-ask), consistent with the other four legs. Shipped in template_version 3.16.0.
+**Source:** 5+ occurrences across echothread sessions 2026-05-13/14/15 (T67, T80, T81, T82, T83 — see `interaction-logs/processed/echothread-session-2026-05-14.json` + `echothread-session-2026-05-15.json`). Cross-session friction-marker pattern.
 
 **Observation:** When a task extends an enum (e.g., adds a new `CriterionId` member), the task's declared `files_affected` systematically under-counts the actual edit surface by 5-10 files. Concrete examples:
 - T80: declared 4 files, edited 10 (synchronized locations under `CriterionId` / `CRITERION_ORDER` / `CRITERION_HEADERS` / `EvaluationInputs` / barrel / category-rename / inline polish / test-factory).
@@ -255,8 +256,9 @@ The synchronized-enum-locations rule (template's `.claude/rules/agents.md § Syn
 
 ## FB-066: verify-agent missing default "production-consumption" check for class-export tasks
 
-**Status:** new
+**Status:** promoted
 **Captured:** 2026-05-16
+**Promoted:** 2026-05-16 — Added production-consumption sub-bullet to `.claude/agents/verify-agent.md` Step T5 (Verify Integration Boundaries). Check fires when any file in `files_affected` declares a top-level class export (regex: `^export (default )?class \w+`); greps `new {ClassName}\(` across `src/` excluding `__tests__` and `*.test.*`; requires ≥1 hit OR explicit "consumer task deferred" note. Failure feeds the existing `integration_ready` key (no new schema field needed) and emits a `major` issue. Skips cleanly for tasks without class-exporting files. Catches the structural-vs-runtime verification gap that echothread Phase 4 surfaced only via interactive Playwright run on T71. Shipped in template_version 3.16.0.
 **Source:** 3+ occurrences across echothread sessions 2026-05-14/15. Pattern: T71→T85 integration-gap discovery + T85_1/T85_2/T85_3 verifications adding ad-hoc grep checks.
 
 **Observation:** Structural verification (files exist, types correct, tests pass) is necessary but not sufficient for tasks that ship a new top-level class export. Echothread's Phase 4 introduced 6 new module classes (`BeatEmitter`, `BeatResponse`, `ResonanceTracker`, `CriticalEvaluator`, `BeatEffects`, `NodeTrace`); structural verification passed for all 14 individual implementation tasks; the **integration gap** — modules exported but never `new`'d in `src/` — was discovered only via interactive Playwright-driven runtime test on T71. T85 was decomposed retroactively into 3 subtasks to close the gap. Subsequent T85_1/T85_2/T85_3 verifications each independently ran a `grep -rn 'new {ClassName}(' src/ | grep -v __tests__` check as a one-off addition to per-task verification — re-inventing the same pattern.
