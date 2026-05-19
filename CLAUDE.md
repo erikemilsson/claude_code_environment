@@ -51,6 +51,7 @@ Template-maintenance work staged for later sessions. Read these first if resumin
 - **FB-060** (partial): file-ownership boundary — Phases 1+3+4+5 shipped (v3.14.2 + v3.15.0); Phase 2 (`sync_strict` category schema) deferred per DEC-014 § Decision. Re-open only if a real `project_extensible` category member emerges.
 - **FB-062** (cheap action shipped, v3.14.1): two FB-NNN locations convention — root `CLAUDE.md` § File Boundary documents the four-file enumeration. Medium (rename to TM-NNN) / Higher (consolidate with `track:` field) options remain if dedup misses recur.
 - **FB-063** (cheap action shipped, v3.14.1): background-session auto-worktree breaks gitignored-state reads — per-command note added to `/audit-coherence` + `/audit-ui`. Medium (extend preamble carve-out) / Higher (worktree bind-mount) options remain if other commands hit the same trap.
+- **FB-067** (deferred): mattpocock/skills Wave 2 candidates — re-assess on/after 2026-06-02. Wave 1 entries FB-068 + FB-069 + FB-070 + FB-071 ship first; Wave 2 candidates (`/tdd`, `/prototype`, `/improve-codebase-architecture`, `/caveman`, hard-vs-soft dep cleanup, bucketed skills) signal-gated on Wave 1 outcomes. Source: video https://www.youtube.com/watch?v=6BB6exR8Zd8 + repo `mattpocock/skills`.
 
 **Shipped-queue items ready for action** (`.claude/support/feedback/feedback.md` — promoted via direct template edit OR `/research`, per per-item disposition):
 

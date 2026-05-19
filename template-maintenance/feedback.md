@@ -217,3 +217,207 @@ In the Styler audit run, this left two captured-inputs files missing (`meta.json
 ## FB-066: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
 
 **Status:** promoted 2026-05-16 — verify-agent production-consumption check shipped in template_version 3.16.0 (sub-bullet added to Step T5; feeds existing integration_ready key). See archive for full text.
+
+## FB-067: External-source recheck — mattpocock/skills Wave 2 candidates
+
+**Status:** deferred — re-assess on/after 2026-06-02
+**Captured:** 2026-05-19
+**Source:** video https://www.youtube.com/watch?v=6BB6exR8Zd8 reviewed 2026-05-19; repo `mattpocock/skills` (clone at `/Users/erikemilsson/Downloads/skills-main` as of 2026-05-19; mirror github.com/mattpocock/skills).
+
+**Reason for deferral:** Wave 1 (FB-068 + FB-069 + FB-070 + FB-071) ships first. Wave 2 candidates depend on Wave 1 signal — some compound only with their Wave 1 sibling in place.
+
+**Wave 2 candidates to re-evaluate:**
+
+- **`/tdd` skill** — vertical-slice red-green-refactor + anti-horizontal-slicing discipline. Pocock files at `skills/engineering/tdd/SKILL.md` + `tests.md` + `mocking.md` + `interface-design.md` + `deep-modules.md` + `refactoring.md`. Open question: does CCE's verify-agent already cover the "correctness" angle sufficiently?
+- **`/prototype` skill** — throwaway design exploration. Two branches: terminal app for state/logic, multi-variation UI on one route. Trigger to ship: how often CCE work hits "I don't know what shape this should be."
+- **`/improve-codebase-architecture` skill** — complement to `/audit-coherence`. Architectural vocabulary (Module/Interface/Depth/Seam/Adapter/Leverage/Locality) + deletion test heuristic. Most valuable AFTER CONTEXT.md (FB-068) and AFTER `/diagnose` (FB-069) — `/diagnose`'s Phase 6 post-mortem explicitly hands off here.
+- **`/caveman` ultra-compressed mode** — ~75% token cut. Niche; ship only if cost pressure becomes a recurring concern.
+- **Hard-vs-soft dependency cleanup pass** — apply Pocock's ADR-0001 pattern across CCE command files. Distinguish load-bearing cross-references from advisory. Cosmetic.
+- **Bucketed skill organization** (`engineering/` / `productivity/` / `misc/` / etc.) — only worth considering if skill count grows much further.
+
+**Trigger to escalate from deferred → ready:**
+1. Any Wave 1 ship produces signal that a specific Wave 2 sibling compounds. Concrete example: `/diagnose` Phase 6 post-mortems repeatedly identify architectural friction → `/improve-codebase-architecture` becomes load-bearing.
+2. The 2-week recheck on 2026-06-02 (default if no earlier signal).
+3. Separate user request to re-evaluate.
+
+**Source pointers preserved:**
+- Local clone: `/Users/erikemilsson/Downloads/skills-main` (may be cleaned later)
+- GitHub: github.com/mattpocock/skills
+- Video: https://www.youtube.com/watch?v=6BB6exR8Zd8
+- Skill list + four-frame structure: `/Users/erikemilsson/Downloads/skills-main/README.md`
+
+## FB-068: Project domain glossary + interactive interrogation mode (CONTEXT.md + /grill)
+
+**Status:** ready
+**Captured:** 2026-05-19
+**Source:** mattpocock/skills review 2026-05-19 — `skills/productivity/grill-me/SKILL.md`, `skills/engineering/grill-with-docs/SKILL.md`, `skills/engineering/grill-with-docs/CONTEXT-FORMAT.md`, and the deprecated `skills/deprecated/ubiquitous-language/SKILL.md` (deprecated *because* extract-then-stop didn't stick — the working pattern weaves glossary growth into the design conversation).
+
+**Two coupled additions:**
+
+1. **`./CONTEXT.md` slot** — project-owned, lazily-created domain glossary at project root. Format from Pocock's CONTEXT-FORMAT.md: term + one-sentence definition + `Avoid:` aliases; Relationships with cardinality; Example dialogue between dev and domain expert; Flagged ambiguities with resolutions. Strict scope: "totally devoid of implementation details — not a spec, not a scratchpad."
+2. **`/grill` interactive interrogation mode** — Claude asks branch-by-branch questions, walks decision tree, resolves dependencies one at a time, recommends each answer. With-docs variant: challenge user vocabulary against CONTEXT.md inline, sharpen fuzzy terms, cross-reference with code, update CONTEXT.md and offer ADRs sparingly as decisions crystallise.
+
+**Why coupled:** Pocock's deprecation history shows standalone `/ubiquitous-language` didn't survive. The working mechanism is conversation-driven growth — `/grill-with-docs` populates CONTEXT.md as terms resolve during interviews. Shipping CONTEXT.md without the conversational growth mechanism repeats the deprecated mistake.
+
+**Where it fits in CCE's pipeline:** `/grill` complements `/iterate propose` rather than replacing it. `/iterate` is *propose-shaped* (Claude proposes, user audits via `[NEEDS APPROVAL]`). `/grill` is *extract-shaped* (Claude asks, user answers, branches resolve). Strongest integration: `/iterate grill` as a new phase before `/iterate distill`, producing an enriched vision doc the existing distill flow consumes.
+
+**Proposed actions:**
+
+1. **CONTEXT.md slot.**
+   - Add `./CONTEXT.md` row to `.claude/CLAUDE.md` Navigation table (project-owned artifact, parallel to existing "Project instructions: `./CLAUDE.md` (root)" entry).
+   - Brief rule addition in `.claude/rules/agents.md` (or new `.claude/rules/glossary.md` imported from `.claude/CLAUDE.md`): implement-agent reads CONTEXT.md when present; verify-agent checks vocabulary; lazy-creation pattern (no placeholder file shipped — created on first resolved term).
+   - Extend `/audit-coherence` `vocab_drift` lens to use CONTEXT.md as canonical reference when present.
+   - **Do NOT ship a starter CONTEXT.md** — per Pocock's deprecation lesson, placeholders don't get filled.
+
+2. **/grill command.**
+   - New `.claude/commands/grill.md` carrying Pocock's 7-line essence (interview relentlessly, walk decision tree, one question at a time, recommend each answer, explore codebase when answers are gettable that way).
+   - Auto-detect with-docs flow: if CONTEXT.md exists, run the full grill-with-docs behavior (challenge vocab, sharpen terms, cross-reference code, update CONTEXT.md, offer ADRs sparingly with three criteria — hard to reverse + surprising without context + real trade-off).
+   - Wire into `/iterate` as new pre-distill phase (`/iterate grill` → enriched vision doc → `/iterate distill`).
+
+3. **Sync + rule wiring.**
+   - Add command to `sync-manifest.json`.
+   - Reference from `.claude/rules/spec-workflow.md` § Vision Documents as pre-distill enrichment step.
+
+**Dependencies / interactions:**
+
+- **DEC-016 guardrail**: `/grill` writes vision docs and CONTEXT.md, NOT spec/decision files directly. Existing guardrail not triggered. CONTEXT.md is outside the three guarded patterns. ADR-offering still routes through `/research` rather than direct write (see Out of Scope below).
+- **FB-060 Phase 2** (sync category schema): if Phase 2 ever ships, CONTEXT.md is clearly `project_owned`. Doesn't block.
+- **`/iterate distill`**: minor — accept enriched-vision-doc input shape.
+- **`/audit-coherence` vocab_drift lens**: minor — switch from heuristic to glossary-anchored when CONTEXT.md exists.
+
+**Out of scope (explicitly — these are likely temptations to scope-creep into; each is excluded with reason):**
+
+- **Co-equal CONTEXT.md/spec as sources of truth.** Tempting because the spec already has its own drift/fingerprint machinery — symmetry pull would suggest doing the same for the glossary. Would require: `glossary_fingerprint` provenance on tasks (parallel to `spec_fingerprint`), glossary-anchored verify-agent checks on task descriptions and code, dual-source drift reconciliation, conflict-resolution UX when glossary and spec disagree. Lift far exceeds value; advisory glossary referenced by behavior rules captures the practical benefit. Revisit only if the advisory mechanism demonstrably fails to prevent vocabulary drift across multiple shipped projects.
+
+- **Glossary auto-import from existing spec or codebase.** Tempting because the spec already contains domain terms — easy to scan for Capitalized Nouns and propose a starter glossary. DO NOT. Pocock's deprecated `/ubiquitous-language` did exactly this (batch-extract from conversation → save `UBIQUITOUS_LANGUAGE.md`) and it didn't stick. The deprecation reasoning: a pre-populated glossary doesn't get maintained; an organically-grown one does. The `/grill with-docs` mechanism *is* the maintenance loop. If a user wants to seed the glossary they can manually write the first entry; Claude does not batch-extract.
+
+- **`/grill` writing ADRs directly (bypassing `/research`).** Tempting because Pocock's `/grill-with-docs` offers to create ADRs inline. CCE has `/research` for decision records, with multi-option investigation + comparison matrix + select-an-option checkbox + research-archive — substantially more rigor than Pocock's 1-3 sentence ADRs. DEC-016's permission-layer guardrail would also block a direct `/grill` write to `decisions/`. Behavior instead: when Pocock's three ADR criteria are all true (hard to reverse + surprising without context + real trade-off), `/grill` *suggests* an ADR is needed and routes the user to `/research`. Routing through `/research` preserves CCE's decision-record rigor.
+
+- **Multi-context `CONTEXT-MAP.md` for monorepos.** Pocock supports it: a root `CONTEXT-MAP.md` lists per-subdir `CONTEXT.md` files. CCE's single-spec model assumes one domain per project. Revisit only when a real multi-context CCE project exists. Adding it speculatively risks over-design — the format would need to align with whatever multi-spec mechanism (if any) emerges.
+
+- **Replacing `.claude/support/reference/shared-definitions.md` with CONTEXT.md.** They occupy different layers and must coexist: shared-definitions.md is *environment* vocabulary (Pending/In Progress/Awaiting Verification statuses, difficulty 1-10 scale, owner enums) — terms a user needs to understand the CCE workflow. CONTEXT.md is *project domain* vocabulary (the user's Customer/Order/Invoice or equivalent). Don't collapse them; the two layers serve different audiences.
+
+- **Glossary-driven code linting from the glossary slot itself.** Auto-flagging task descriptions, file names, or code that uses non-canonical terms belongs to `/audit-coherence`'s `vocab_drift` lens, not the glossary file. CONTEXT.md is the *reference*; `/audit-coherence` is the *enforcement*. Keep the surfaces separate so that disabling the audit doesn't also disable the glossary.
+
+- **Glossary versioning / fingerprinting.** Treat CONTEXT.md as a live document without version tracking or drift fingerprinting. If drift becomes an observed problem (e.g., specs reference glossary terms that have since been renamed), add a fingerprint mechanism in a follow-up FB. Premature versioning machinery would add maintenance overhead before the underlying behavior is validated.
+
+**Likely route:** direct ship via template edit (1 new command, 1 navigation row, 1 rule addition, 1 audit-coherence reference, 1 spec-workflow cross-ref). No DEC unless we end up debating `./CONTEXT.md` vs `.claude/CONTEXT.md` location — default to root per Pocock's convention.
+
+## FB-069: /diagnose skill — debugging methodology (CCE has zero)
+
+**Status:** ready
+**Captured:** 2026-05-19
+**Source:** `skills/engineering/diagnose/SKILL.md` in mattpocock/skills (clone: `/Users/erikemilsson/Downloads/skills-main/skills/engineering/diagnose/SKILL.md`).
+
+**Observation:** CCE tracks bugs as tasks and verify-agent catches regressions, but there's no structured methodology for *working* a bug — particularly hard / non-deterministic / performance-regression bugs. Pocock's `/diagnose` fills exactly that gap with a 6-phase loop:
+
+1. **Build a feedback loop** ("this is the skill; everything else is mechanical"). Tool ladder: failing test → curl → CLI fixture → headless browser → trace replay → throwaway harness → fuzz → bisect → differential → HITL last resort. Iterate on the loop itself. Non-deterministic bugs: raise repro rate before debugging.
+2. **Reproduce** — confirm the loop hits the *user's* failure, not a nearby one.
+3. **Hypothesise** — 3-5 ranked falsifiable hypotheses *before* testing. Format: "If X is the cause, changing Y will make the bug disappear." Show ranked list to user (cheap checkpoint).
+4. **Instrument** — debugger > targeted logs > never "log everything and grep". Tagged debug logs `[DEBUG-<hash>]` for grep-cleanup. Perf branch: baseline measurement first, then bisect.
+5. **Fix + regression test** — test before fix *only if* a correct seam exists. No-seam → flag as architecture concern.
+6. **Cleanup + post-mortem** — original repro gone, regression test passes, tagged logs grep-cleaned, throwaway prototypes deleted, correct hypothesis recorded in commit/PR. Then: "what would have prevented this?" → optional architecture-improvement handoff.
+
+**Why this is a fit:** drops in as a new command without architectural change. Slots between bug-task-pickup and implement-agent. The Phase 1 "build a feedback loop" discipline is independently valuable beyond debugging — applies to any task where the failure mode isn't visible.
+
+**Proposed actions:**
+
+1. New `.claude/commands/diagnose.md` — port the 6 phases. Keep the 10-rung tool ladder, falsifiable-hypotheses discipline, tagged-log convention, correct-seam rule, post-mortem handoff. Domain-genericize the engineering-only framing — methodology generalizes (software, research, procurement, any "something is wrong, I don't know why" task).
+2. Cross-reference from `.claude/rules/agents.md` § Behavioral Rules — when implement-agent encounters a hard bug, route via `/diagnose` rather than attempting hypothesis-light fixes. Strengthens the existing § "Root Cause Over Symptom" rule with a structural mechanism.
+3. Cross-reference from `.claude/rules/spec-workflow.md` § Workflow Cycle — bug tasks follow `/diagnose → fix → verify` rather than direct implement.
+4. Add to `sync-manifest.json`.
+
+**Dependencies / interactions:**
+
+- **`/improve-codebase-architecture`** (FB-067 Wave 2): Phase 6's "what would have prevented this?" hand-off depends on this sibling existing. While deferred, record architectural-friction observations in the task's `issues_discovered` field or as a friction-register entry (`design_contradiction` kind). No new artifact needed.
+- **Verify-agent**: `/diagnose`'s fix+regression-test phase already aligns with verify-agent's structural pass-gate. Verify-agent runs after `/diagnose` produces the fix.
+- **`.claude/rules/agents.md` § Root Cause Over Symptom**: `/diagnose` Phase 3 falsifiable-hypotheses discipline is a structural way to enforce the existing rule. Worth a cross-reference both ways.
+
+**Likely route:** direct ship via template edit. Single new command file + 2 cross-references. No DEC.
+
+## FB-070: /zoom-out micro-skill
+
+**Status:** ready
+**Captured:** 2026-05-19
+**Source:** `skills/engineering/zoom-out/SKILL.md` in mattpocock/skills (clone: `/Users/erikemilsson/Downloads/skills-main/skills/engineering/zoom-out/SKILL.md`).
+
+**Observation:** Trivially small but useful skill. Claude is told to go up a layer of abstraction and produce a map of relevant modules + callers when the user signals "I don't know this area." Pocock's full skill body is 7 lines: *"I don't know this area of code well. Go up a layer of abstraction. Give me a map of all the relevant modules and callers, using the project's domain glossary vocabulary."*
+
+CCE has no equivalent. The skill is cheap to add, low maintenance, and complements FB-068 — the "domain glossary vocabulary" clause becomes load-bearing once CONTEXT.md exists; degrades gracefully to "domain-relevant naming" without it.
+
+**Proposed actions:**
+
+1. New `.claude/commands/zoom-out.md` — port Pocock's essence. Domain-genericize "code" wording (CCE is domain-agnostic; the skill works for any unfamiliar area — research, procurement, renovation).
+2. Add to `sync-manifest.json`.
+3. Apply `disable-model-invocation: true` frontmatter (per Pocock's own `/zoom-out` and the rationale in FB-071): `/zoom-out` is specifically a user-asks-for-help signal — Claude autonomously invoking it doesn't make sense (Claude would only invoke it for itself, which is circular). Gated by FB-071's harness-behavior verification.
+
+**Dependencies / interactions:**
+
+- **FB-068** (CONTEXT.md + /grill): `/zoom-out`'s domain-glossary clause becomes load-bearing after CONTEXT.md ships. `/zoom-out` works either way (degrades gracefully). Order: ship FB-068 first if both are in the same batch; otherwise ship `/zoom-out` independently — it just gets sharper once CONTEXT.md is in place.
+- **FB-071** (`disable-model-invocation` audit): action 3 above (apply the frontmatter to `/zoom-out`) is gated by FB-071's verification step. If FB-071 reveals commands don't honor the frontmatter, ship `/zoom-out` without it; the skill still functions, just without the autonomous-fire gate.
+
+**Likely route:** direct ship via template edit. Single new command file. No DEC. Smallest scope of the Wave 1 entries — can ship independently of every other FB-068/069/071.
+
+## FB-071: `disable-model-invocation: true` frontmatter audit pass
+
+**Status:** ready (verification cleared 2026-05-19 — audit pass can proceed)
+**Captured:** 2026-05-19
+**Verified:** 2026-05-19 — claude-code-guide agent docs lookup confirmed `disable-model-invocation: true` is fully supported on `.claude/commands/*.md` with identical semantics to `.claude/skills/<name>/SKILL.md`. Sources: [Claude Code frontmatter-reference.md (anthropics/claude-code)](https://github.com/anthropics/claude-code/blob/main/plugins/plugin-dev/skills/command-development/references/frontmatter-reference.md) + [official Claude Code skills docs](https://code.claude.com/docs/en/skills). Audit pass on candidates below can proceed without harness reshape; no fallback option needed.
+**Source:** Frontmatter pattern observed across `skills/engineering/zoom-out/SKILL.md`, `skills/engineering/setup-matt-pocock-skills/SKILL.md`, and `skills/deprecated/ubiquitous-language/SKILL.md` in mattpocock/skills (clone at `/Users/erikemilsson/Downloads/skills-main`).
+
+**Observation:** Pocock's skills use `disable-model-invocation: true` in YAML frontmatter to mark skills that should *only* fire on explicit user slash-invocation — preventing Claude from autonomously deciding to invoke the skill mid-conversation as ambient context. CCE has command and skill entries where ambient invocation would be a foot-gun (silent writes to substantive artifacts, expensive flows, irreversible state transitions). An audit pass identifies which CCE entries should carry the equivalent gate.
+
+**Why the foot-gun is real:** without explicit gating, Claude can decide to invoke a substantive command mid-session ("I should run `/iterate apply` here"). For destructive or expensive commands this is bad: the user expected a discussion, got an autonomous write. CCE's DEC-005 (permission-layer auto mode) catches *unauthorized tool calls*; this gate is upstream — preventing the autonomous decision in the first place.
+
+**Verification approach (cleared 2026-05-19; preserved as historical context):**
+
+Original open question: does the harness honor `disable-model-invocation: true` for slash commands under `.claude/commands/` (vs only for skills)? All three of Pocock's instances are under `skills/`. Resolved via claude-code-guide agent: Claude Code's `frontmatter-reference.md` documents the field with identical semantics for both surfaces. No empirical test session was needed.
+
+Original empirical-test approach (now redundant; kept for reference):
+1. Create a throwaway `.claude/commands/test-gate.md` with `disable-model-invocation: true` in frontmatter and a no-op body.
+2. In a fresh session, attempt to trigger conditions where Claude might autonomously invoke it. Confirm Claude does NOT fire it.
+3. Confirm `/test-gate` slash invocation still works as a user-typed entry.
+
+**If verification had failed (NOT TRIGGERED — preserved as historical context):**
+
+Original fallback options had verification failed:
+- **Option A (defer):** wait for Claude Code harness support. Track via this FB; check after each Claude Code release.
+- **Option B (convert gating-worthy commands to skills):** the candidates that need gating would become skills. Larger change — touches dispatch sites, sync manifest, and the command-vs-skill convention. Reshape as separate FB. Pair with FB-067 Wave 2's hard-vs-soft dependency cleanup pass for one consolidated structural change.
+
+**Candidate commands for the audit:**
+
+*Strong candidates (substantive writes, irreversible or expensive — gate to prevent autonomous fire):*
+- `/iterate apply` — writes to `spec_v{N}.md` (substantive; DEC-016 guardrail catches at write-time but this blocks Claude's *intent* upstream too)
+- `/research` — writes to `decisions/` directory (substantive; same guardrail interaction)
+- `/work complete` — substantive task transition (`In Progress → Awaiting Verification → Finished` flow); autonomous fire risks silent "wrap this up" finalisation
+- `/feedback review` — promotes/archives feedback items (substantive ledger changes; per DEC-013 paired-symmetric concern)
+- `/breakdown {id}` — splits tasks into subtask JSON files (substantive)
+
+*Medium candidates (substantive but interactive — gating ambiguity less severe):*
+- `/iterate distill` — vision → spec creation (substantive write but gated by DEC-016 + user vision input)
+- `/iterate propose` — spec proposal (substantive; `[NEEDS APPROVAL]` block already requires user approval before apply)
+- `/audit-coherence triage` / `/audit-ui triage` — interactive walkers that may apply `[Fix it]` actions (autonomous fire risks silent walk-and-fix)
+
+*Weak candidates (read-only or already conversational — leave open, do NOT gate):*
+- `/work` — primary command, conversational entry point. Should stay ambient-invokable.
+- `/status` — read-only.
+- `/health-check` — read-only audit (audit phase only; if it dispatches to `/audit-coherence` + `/audit-ui` read-only phases, those stay open too).
+- `/review` — read-only advisory.
+- `/audit-coherence` / `/audit-ui` (non-triage read-only phases) — read-only.
+- `/work pause` — writes handoff but is session-end signal. Should stay ambient-invokable (Claude can suggest at appropriate moments).
+- `/iterate` (no args) — entry point; read-only.
+
+**Proposed actions:**
+
+1. ~~**Verification.**~~ ✓ Cleared 2026-05-19 — see Verified header above. No empirical test needed.
+2. **Audit pass.** Apply `disable-model-invocation: true` to strong candidates. Re-evaluate medium candidates after observing how strong-candidate gating feels in practice (a few weeks of usage). Skip weak candidates.
+3. **Document the convention.** Add a brief note to `.claude/rules/agents.md` § "Behavioral Rules" or a new sub-section explaining the frontmatter pattern + selection criteria (substantive writes + ambient-fire foot-gun → gate; read-only or already-conversational → leave open).
+4. **Sync manifest.** No new files unless documenting requires a new reference doc.
+
+**Dependencies / interactions:**
+
+- **DEC-005 (auto-mode permission layer):** complementary. DEC-005 catches *tool calls* Claude shouldn't make; this gate prevents Claude's *decision* to invoke the command in the first place. Both layers compound — the permission layer catches anyone who slipped past, the frontmatter prevents the slip.
+- **DEC-016 (spec/decision/vision edit guardrail):** complementary in the same way. Per-Edit ask-permission catches the write; the frontmatter catches the intent. With both: even if Claude autonomously decided to invoke `/iterate apply`, the permission layer would prompt; with both, Claude doesn't autonomously decide in the first place.
+- **FB-070 (`/zoom-out`):** `/zoom-out` should carry the frontmatter on day one — explicitly a "user asks for help" signal where autonomous fire is circular. Unblocked by verification clearing.
+
+**Likely route:** direct edit (1 audit pass across the candidate list + 1 rule documentation addition). No DEC.
