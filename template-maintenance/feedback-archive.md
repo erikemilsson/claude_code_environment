@@ -1312,3 +1312,41 @@ CCE has no equivalent. The skill is cheap to add, low maintenance, and complemen
 - **FB-071** (`disable-model-invocation` audit): action 3 above (apply the frontmatter to `/zoom-out`) is gated by FB-071's verification step. If FB-071 reveals commands don't honor the frontmatter, ship `/zoom-out` without it; the skill still functions, just without the autonomous-fire gate. **[Held: FB-071 verification cleared 2026-05-19; FB-071 shipped 2026-05-20 in template_version 4.1.0. Frontmatter applied as planned.]**
 
 **Likely route (as captured):** direct ship via template edit. Single new command file. No DEC. Smallest scope of the Wave 1 entries — can ship independently of every other FB-068/069/071. **[Held: shipped as captured.]**
+
+## FB-069: /diagnose skill — debugging methodology (CCE has zero)
+
+**Status:** promoted
+**Captured:** 2026-05-19
+**Promoted:** 2026-05-20 — shipped in template_version 4.4.0 via direct template edit. New `.claude/commands/diagnose.md` (~170 lines): 6-phase methodology preserved verbatim from Pocock (feedback loop → reproduce → falsifiable hypotheses → instrument → fix + regression test → cleanup + post-mortem); domain-genericized framing in the introduction (methodology applies to any "something is wrong, I don't know why" task — software, research, procurement, renovation). CCE-specific integrations: Pre-flight section references `./CONTEXT.md` (FB-068) for domain vocabulary + `.claude/support/decisions/` for area-shaping decisions; Phase 6 architectural-friction handoff routes through CCE's friction register (`design_contradiction` kind) or `/research` for substantial architectural decisions (no `/improve-codebase-architecture` exists yet — that's FB-067 Wave 2). Cross-references shipped: (a) `.claude/rules/agents.md § "Root Cause Over Symptom"` extended with a paragraph routing hard-bug cases through `/diagnose` (mutual reference — `/diagnose` Phase 3 falsifiable-hypothesis discipline is the structural enforcement mechanism for the rule on multi-turn debugging); (b) `.claude/rules/spec-workflow.md § "Workflow Cycle"` extended with a "Bug tasks" paragraph naming `/diagnose` as the preferred route. No sync-manifest change (`.claude/commands/*.md` glob auto-covers). No DEC needed. **Wave 1 complete** — all four Wave 1 entries (FB-068 + FB-069 + FB-070 + FB-071) shipped on 2026-05-20.
+
+**Frontmatter decision (per user 2026-05-20):** `/diagnose` does NOT carry `disable-model-invocation: true`. Three options were considered: (A) Gate now (defensive), (B) Leave open (matches `/grill`, Pocock's pattern), (C) Add to FB-071 medium candidates for trial-period re-evaluation. Chose B with the note that misfires can flip to gated later if observed. Reasoning: autonomous-fire-when-stuck is exactly the value `/diagnose` brings to CCE — when implement-agent hits a hard bug mid-`/work`, the model sweeping into structured methodology is the feature, not the foot-gun. FB-071's gating criteria targets *substantive writes to durable narrative state* (spec/decisions/tasks/feedback ledger), which `/diagnose` doesn't touch — it writes to code (the user's actual work, scoped to the bug being diagnosed).
+
+**Help-me-think umbrella candidate added to FB-072:** during FB-069 ship review, observed that three help-me-think commands now exist (`/zoom-out`, `/grill`, `/diagnose`) — none has a natural umbrella home. Added as a candidate to FB-072's boundary-survey list. Pattern: *user-asks-for-help-in-a-specific-mode*. Less obviously umbrella-shaped than `/iterate` (small family, distinct modes), but worth surveying whether a single `/help` or `/think` entry point + interpretive dispatch produces better UX than three discrete commands.
+
+**Source:** `skills/engineering/diagnose/SKILL.md` in mattpocock/skills (clone: `/Users/erikemilsson/Downloads/skills-main/skills/engineering/diagnose/SKILL.md`).
+
+**Observation (as captured):** CCE tracks bugs as tasks and verify-agent catches regressions, but there's no structured methodology for *working* a bug — particularly hard / non-deterministic / performance-regression bugs. Pocock's `/diagnose` fills exactly that gap with a 6-phase loop:
+
+1. **Build a feedback loop** ("this is the skill; everything else is mechanical"). Tool ladder: failing test → curl → CLI fixture → headless browser → trace replay → throwaway harness → fuzz → bisect → differential → HITL last resort. Iterate on the loop itself. Non-deterministic bugs: raise repro rate before debugging.
+2. **Reproduce** — confirm the loop hits the *user's* failure, not a nearby one.
+3. **Hypothesise** — 3-5 ranked falsifiable hypotheses *before* testing. Format: "If X is the cause, changing Y will make the bug disappear." Show ranked list to user (cheap checkpoint).
+4. **Instrument** — debugger > targeted logs > never "log everything and grep". Tagged debug logs `[DEBUG-<hash>]` for grep-cleanup. Perf branch: baseline measurement first, then bisect.
+5. **Fix + regression test** — test before fix *only if* a correct seam exists. No-seam → flag as architecture concern.
+6. **Cleanup + post-mortem** — original repro gone, regression test passes, tagged logs grep-cleaned, throwaway prototypes deleted, correct hypothesis recorded in commit/PR. Then: "what would have prevented this?" → optional architecture-improvement handoff.
+
+**Why this is a fit:** drops in as a new command without architectural change. Slots between bug-task-pickup and implement-agent. The Phase 1 "build a feedback loop" discipline is independently valuable beyond debugging — applies to any task where the failure mode isn't visible.
+
+**Proposed actions (as captured; ship outcomes annotated):**
+
+1. New `.claude/commands/diagnose.md` — port the 6 phases. Keep the 10-rung tool ladder, falsifiable-hypotheses discipline, tagged-log convention, correct-seam rule, post-mortem handoff. Domain-genericize the engineering-only framing — methodology generalizes (software, research, procurement, any "something is wrong, I don't know why" task). **[Shipped.]**
+2. Cross-reference from `.claude/rules/agents.md` § Behavioral Rules — when implement-agent encounters a hard bug, route via `/diagnose` rather than attempting hypothesis-light fixes. Strengthens the existing § "Root Cause Over Symptom" rule with a structural mechanism. **[Shipped, but in § "Root Cause Over Symptom" itself rather than § "Behavioral Rules" — that's the section the new paragraph extends, and the existing rule already covers symptom-suppression. Mutual cross-reference established.]**
+3. Cross-reference from `.claude/rules/spec-workflow.md` § Workflow Cycle — bug tasks follow `/diagnose → fix → verify` rather than direct implement. **[Shipped.]**
+4. Add to `sync-manifest.json`. **[No change needed — `.claude/commands/*.md` glob already covers `/diagnose.md`.]**
+
+**Dependencies / interactions:**
+
+- **`/improve-codebase-architecture`** (FB-067 Wave 2): Phase 6's "what would have prevented this?" hand-off depends on this sibling existing. While deferred, record architectural-friction observations in the task's `issues_discovered` field or as a friction-register entry (`design_contradiction` kind). No new artifact needed.
+- **Verify-agent**: `/diagnose`'s fix+regression-test phase already aligns with verify-agent's structural pass-gate. Verify-agent runs after `/diagnose` produces the fix.
+- **`.claude/rules/agents.md` § Root Cause Over Symptom**: `/diagnose` Phase 3 falsifiable-hypotheses discipline is a structural way to enforce the existing rule. Worth a cross-reference both ways. **[Mutual cross-reference shipped.]**
+
+**Likely route (as captured):** direct ship via template edit. Single new command file + 2 cross-references. No DEC. **[Held: shipped as captured.]**

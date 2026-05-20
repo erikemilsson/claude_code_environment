@@ -250,37 +250,9 @@ In the Styler audit run, this left two captured-inputs files missing (`meta.json
 
 **Status:** promoted 2026-05-20 — new `/grill` command + `./CONTEXT.md` slot (project-owned, lazy-created glossary) shipped in template_version 4.2.0. Live skills-list verification: `grill: Grill Command` immediately appeared in model-invocable list. Integration points: `./CONTEXT.md` row in `.claude/CLAUDE.md` Navigation, `/grill` in Environment Commands, new `## Domain Glossary Awareness` section in `rules/agents.md`, `/grill` mention in `rules/spec-workflow.md § Vision Documents`, extended `audit-coherence.md § "Lens 2 — vocab-drift"` to consume CONTEXT.md when present. All explicit out-of-scope items from FB-068 honored (no batch-extract, no co-equal source of truth, no CONTEXT-MAP.md, no glossary versioning, no direct ADR writes). See archive for full text.
 
-## FB-069: /diagnose skill — debugging methodology (CCE has zero)
+## FB-069: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
 
-**Status:** ready
-**Captured:** 2026-05-19
-**Source:** `skills/engineering/diagnose/SKILL.md` in mattpocock/skills (clone: `/Users/erikemilsson/Downloads/skills-main/skills/engineering/diagnose/SKILL.md`).
-
-**Observation:** CCE tracks bugs as tasks and verify-agent catches regressions, but there's no structured methodology for *working* a bug — particularly hard / non-deterministic / performance-regression bugs. Pocock's `/diagnose` fills exactly that gap with a 6-phase loop:
-
-1. **Build a feedback loop** ("this is the skill; everything else is mechanical"). Tool ladder: failing test → curl → CLI fixture → headless browser → trace replay → throwaway harness → fuzz → bisect → differential → HITL last resort. Iterate on the loop itself. Non-deterministic bugs: raise repro rate before debugging.
-2. **Reproduce** — confirm the loop hits the *user's* failure, not a nearby one.
-3. **Hypothesise** — 3-5 ranked falsifiable hypotheses *before* testing. Format: "If X is the cause, changing Y will make the bug disappear." Show ranked list to user (cheap checkpoint).
-4. **Instrument** — debugger > targeted logs > never "log everything and grep". Tagged debug logs `[DEBUG-<hash>]` for grep-cleanup. Perf branch: baseline measurement first, then bisect.
-5. **Fix + regression test** — test before fix *only if* a correct seam exists. No-seam → flag as architecture concern.
-6. **Cleanup + post-mortem** — original repro gone, regression test passes, tagged logs grep-cleaned, throwaway prototypes deleted, correct hypothesis recorded in commit/PR. Then: "what would have prevented this?" → optional architecture-improvement handoff.
-
-**Why this is a fit:** drops in as a new command without architectural change. Slots between bug-task-pickup and implement-agent. The Phase 1 "build a feedback loop" discipline is independently valuable beyond debugging — applies to any task where the failure mode isn't visible.
-
-**Proposed actions:**
-
-1. New `.claude/commands/diagnose.md` — port the 6 phases. Keep the 10-rung tool ladder, falsifiable-hypotheses discipline, tagged-log convention, correct-seam rule, post-mortem handoff. Domain-genericize the engineering-only framing — methodology generalizes (software, research, procurement, any "something is wrong, I don't know why" task).
-2. Cross-reference from `.claude/rules/agents.md` § Behavioral Rules — when implement-agent encounters a hard bug, route via `/diagnose` rather than attempting hypothesis-light fixes. Strengthens the existing § "Root Cause Over Symptom" rule with a structural mechanism.
-3. Cross-reference from `.claude/rules/spec-workflow.md` § Workflow Cycle — bug tasks follow `/diagnose → fix → verify` rather than direct implement.
-4. Add to `sync-manifest.json`.
-
-**Dependencies / interactions:**
-
-- **`/improve-codebase-architecture`** (FB-067 Wave 2): Phase 6's "what would have prevented this?" hand-off depends on this sibling existing. While deferred, record architectural-friction observations in the task's `issues_discovered` field or as a friction-register entry (`design_contradiction` kind). No new artifact needed.
-- **Verify-agent**: `/diagnose`'s fix+regression-test phase already aligns with verify-agent's structural pass-gate. Verify-agent runs after `/diagnose` produces the fix.
-- **`.claude/rules/agents.md` § Root Cause Over Symptom**: `/diagnose` Phase 3 falsifiable-hypotheses discipline is a structural way to enforce the existing rule. Worth a cross-reference both ways.
-
-**Likely route:** direct ship via template edit. Single new command file + 2 cross-references. No DEC.
+**Status:** promoted 2026-05-20 — new `/diagnose` command (6-phase debugging methodology) shipped in template_version 4.4.0. Adapted from `mattpocock/skills/engineering/diagnose`, domain-genericized for CCE. Cross-referenced from `agents.md § Root Cause Over Symptom` (structural enforcement mechanism for hard bugs) + `spec-workflow.md § Workflow Cycle` (bug-task preferred route). Leaves `disable-model-invocation: true` OFF per FB-071 selection criteria — autonomous-fire-when-stuck is the value proposition. Phase-6 architectural-friction handoff routes through CCE's friction register or `/research` (no `/improve-codebase-architecture` exists yet — FB-067 Wave 2). **Wave 1 complete.** See archive for full text.
 
 ## FB-070: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
 
@@ -318,6 +290,7 @@ Sub-flows can live in separate files (per-purpose, focused) or stay in `iterate.
    - **`/work`** — currently covers many concerns (decomposition, agent routing, parallel batching, completion, pause); some might split out under interpretive routing
    - **`/research` and `/iterate` overlap** — both touch decisions and spec adjacency. Unified umbrella, or correctly distinct?
    - **`/audit-coherence` and `/audit-ui`** — already dispatched from `/health-check` Part 8 menu (different pattern: menu-based). Similar umbrella-vs-discrete tension.
+   - **Help-me-think family** — `/zoom-out`, `/grill`, `/diagnose`. Pattern: *user-asks-for-help-in-a-specific-mode*. Loose grouping ("I need broader context" / "I need to be interrogated about this plan" / "I need to debug rigorously"). Less obviously umbrella-shaped than `/iterate` (the family is small and the modes are quite distinct), but worth surveying for whether a single `/help` or `/think` entry point + interpretive dispatch produces a better UX than three discrete commands. Surfaced 2026-05-20 during FB-069 ship (post-FB-068/FB-070 reflection — three help-me-think commands now exist, none has a natural umbrella home).
 
 **Research questions:**
 

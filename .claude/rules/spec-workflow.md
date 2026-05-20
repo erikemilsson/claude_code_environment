@@ -41,6 +41,8 @@ Vision docs can be added throughout the project lifecycle — the vision folder 
 
 Primary command: `/work` — checks spec alignment, decomposes tasks, routes to specialist agents.
 
+**Bug tasks:** when a task's failure mode isn't obvious from inspection (hard bugs, non-deterministic failures, performance regressions), prefer `/diagnose` (`.claude/commands/diagnose.md`) — its 6-phase methodology produces a falsifiable hypothesis + regression test before the fix lands, which is what verify-agent expects under `.claude/rules/agents.md § "Root Cause Over Symptom"`.
+
 Parallel execution is the default when `/work` finds multiple pending tasks with no mutual dependencies or file conflicts.
 
 ## References

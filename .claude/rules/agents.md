@@ -38,6 +38,8 @@ When a test fails, a build breaks, a type error surfaces, or a runtime error occ
 
 In those cases, the suppression is the fix — not a symptom hiding a bug.
 
+**For hard bugs where the root cause isn't obvious from inspection** — non-deterministic failures, performance regressions, tests that fail in unclear ways — route through `/diagnose` (`.claude/commands/diagnose.md`). The 6-phase methodology (feedback loop → reproduce → falsifiable hypotheses → instrument → fix + regression test → cleanup + post-mortem) is the structural enforcement mechanism for this rule on multi-turn debugging. The Phase 3 falsifiable-hypothesis discipline is what prevents the "swap-and-see" pattern that produces symptom-only fixes.
+
 ## Domain Glossary Awareness
 
 Projects may keep `./CONTEXT.md` at the project root — a project-owned domain glossary populated by `/grill`. **Lazily-created**: the template never ships a placeholder; `/grill` creates it on the first resolved term. Absent in projects that haven't run `/grill` (fine — agents fall back to spec/code vocabulary).
