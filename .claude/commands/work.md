@@ -1054,7 +1054,7 @@ After writing both the handoff file and interaction assessment, compile the sess
 }
 ```
 
-5. Write to `.claude/support/workspace/.session-export-YYYY-MM-DD.json`
+5. Write to `.claude/support/workspace/.session-export-YYYY-MM-DD-HHMM.json` (minute-granularity timestamp; same-day pauses do not collide per FB-079)
 6. If `template_inbox_path` is configured in `.claude/version.json`, copy the export there
 7. Clean up: delete `.session-log.jsonl` and `.interaction-assessment.json` (data is now in the export)
 

@@ -1479,3 +1479,39 @@ Proposal: raise the rules-file soft cap from 200 to 220 in .claude/commands/heal
 
 Tags: template-improvement, decisions, validation, categories, canonical-set, aggregate-subtask-verification, soft-cap
 Source: Surfaced 2026-05-20 by /health-check on the styler corpus.
+
+## FB-079: `/work pause` session-export filename collides on same-day pauses (silent overwrite)
+
+**Status:** promoted (v4.6.4, 2026-05-20)
+**Captured:** 2026-05-20
+**Shipped:** 2026-05-20 — minute-granularity timestamp (`YYYY-MM-DD-HHMM`) applied to both write sites: `.claude/commands/work.md § "Context Transition"` step 5 (orchestrator-driven pause) and `.claude/hooks/pre-compact-handoff.sh` lines 230 + 237 (PreCompact-hook fallback path + template-inbox copy). Direct mirror of SIREN's own build-bundles.py fix.
+**Source:** SIREN-task-7.5 session export 2026-05-18 (`interaction-logs/processed/SIREN-task-7.5-session-export-2026-05-18-T1530.json` § `workflow_friction_notes`). User worked around inline by suffixing `-HHMM` to the export filename; captured here for template-side cleanup.
+
+`/work pause` writes `.session-export-YYYY-MM-DD.json`. If two pauses happen on the same day (paused, resumed work, paused again), the second write silently overwrites the first. The failure mode is invisible — the user sees one file and assumes the earlier pause's export is there.
+
+### Same pattern, different surface
+
+SIREN's session ran into the identical failure mode on its own build pipeline (`scripts/build-bundles.py` with date-only YYYY-MM-DD bundle naming). Erik caught it on first walkthrough; SIREN fixed it by adding minute-granularity to bundle filenames. The template's `/work pause` procedure had the same shape but the cross-session export from the bug surfaced it before the template's own pause path tripped it in production.
+
+### Mitigation candidates (capture-time)
+
+1. **Minute-granularity filename:** `.session-export-YYYY-MM-DD-HHMM.json`. Direct mirror of SIREN's build-pipeline fix. No procedure change beyond the filename pattern. **← Selected.**
+2. **Sequence-suffix on collision:** detect existing same-day export, append `-2`, `-3`, etc. Slightly more robust against same-minute pauses (impossible-ish but defensive); marginally more complex than option 1.
+3. **Content-hash suffix:** unique per session content. Most robust but harder to scan visually.
+
+### What shipped
+
+Two write sites updated:
+
+- **`.claude/commands/work.md` line 1057** (orchestrator pause procedure step 5): instruction text updated from `.session-export-YYYY-MM-DD.json` to `.session-export-YYYY-MM-DD-HHMM.json` with inline FB-079 reference.
+- **`.claude/hooks/pre-compact-handoff.sh` lines 230 + 237** (Python in the PreCompact hook): new `timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d-%H%M")` variable; both the workspace export path AND the template-inbox copy use `timestamp` rather than `today`. The `today` variable continues to drive task-filtering by `completion_date` AND the `session_date` payload field (which stays YYYY-MM-DD per export schema).
+
+The `.session-export-*.json` glob already matches the new filename shape; no reader-side change needed (verified — no other write or glob-based read sites in the template).
+
+### Signal strength (capture-time, retrospective)
+
+Single-project capture but the failure mode was concrete and observable. The fix was small enough that waiting for a 2nd-project signal would have burned more friction than just shipping it. Promoted directly within the same session as capture (FB-079 captured 2026-05-20 morning → shipped 2026-05-20 same day in v4.6.4).
+
+No DEC; no sync-manifest change (the affected files are already in `sync` category; the diff is content-only).
+
+Tags: workflow, work-pause, filename-collision, silent-overwrite, session-export

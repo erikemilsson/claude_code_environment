@@ -512,3 +512,93 @@ FB-017 (shipped via inlining fix) was about Step 2b's **decision auto-finalizati
 Single-project signal (styler 2026-05-16). Low frequency expected — most `inflection_point: true` decisions DO have spec impact in their chosen option. The false-positive happens specifically when an inflection-eligible decision lands on a "close / defer / no-op" option. Could promote now (Option 1 cheap fix) or wait for 2nd-project signal.
 
 Tags: workflow, work-step-2b, post-decision-check, false-positive, inflection-point, decisions-schema
+
+## FB-079: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
+
+**Status:** promoted 2026-05-20 via v4.6.4. Minute-granularity timestamp applied to `/work pause` session-export filename at both write sites (`work.md` step 5 + `pre-compact-handoff.sh` lines 230 + 237). See archive for full entry.
+
+## FB-080: Dashboard full-regen is too heavy for incremental updates → strategic-moment regens get deferred, staleness compounds
+
+**Status:** new
+**Captured:** 2026-05-20
+**Source:** Two consecutive same-week session exports, two different projects:
+- styler 2026-05-17 (`interaction-logs/processed/styler-2026-05-17.json` § `workflow_friction_notes`): "Dashboard regeneration is heavy enough that I deferred it across multiple strategic moments (Tier 1 triggers fired but I did targeted inline edits to META + Reviews instead). The dashboard task_hash stayed STALE_PENDING_REGEN through the entire session."
+- echothread 2026-05-17 (`interaction-logs/processed/echothread-2026-05-17.json` § `workflow_friction_notes`): "Dashboard staleness pattern is now twice-repeated. Both prior session's handoff AND this session's handoff explicitly note 'dashboard is stale, did not regen, deferred to next session's Step 1a.'"
+
+### Observation
+
+The current dashboard-style skill specifies a Tier 1 "Strategic Regen" trigger set (decomposition complete, parallel batch end, session boundaries, `/work complete`, phase gates, decision resolution). When those fire, the procedure regenerates the *entire* dashboard. In dense work sessions, this gets deferred because the cost-to-update ratio doesn't justify a full regen for, say, "one phase decision resolved" — so the orchestrator does targeted inline edits to META + Recent Activity + the affected section instead.
+
+The deferred regen accumulates. Next session's Step 1a freshness check then triggers a full regen as session-start overhead, displacing actual work time. Two of the most-active projects in the last week both report this independently.
+
+### Two routes
+
+**Route A — Partial-regen mode.** Add a documented "partial regen" path to the dashboard-style skill: regenerate META + specific sections (passed as args or derived from change kind) without touching the rest. The inline-edits-then-defer pattern is exactly partial-regen done by hand; codifying it would remove the ambiguity and let the writer commit to it confidently.
+
+**Route B — Formalize the defer-then-regen pattern.** Change the documented expectation: "pause defers regen, next session Step 1a regenerates" becomes the explicit pattern, not the implicit fallback. The dashboard-style skill's Tier 1 trigger list shrinks accordingly (or each trigger gets an "inline edit OR queue for next-session regen" branch).
+
+Route A is structurally cleaner (the underlying problem is "full regen is too heavy" — partial-regen addresses it directly). Route B is cheaper to ship (documentation change only) but doesn't fix the underlying cost issue.
+
+### Scope
+
+- `.claude/skills/dashboard-style/SKILL.md` — primary surface (procedure + trigger list)
+- `.claude/support/reference/dashboard-regeneration.md` — mirror in the reference doc
+- `.claude/rules/dashboard.md` — "Regeneration Strategy" section may need a partial-regen branch
+- `.claude/commands/work.md` Step 0/1 freshness check — recognize partial-regen sentinel if Route A ships
+
+### Signal strength
+
+Multi-session, multi-project, same-week. Strong promote candidate. Likely route: research-light (decide A vs B vs hybrid), then ship.
+
+Tags: dashboard, regeneration, partial-regen, freshness, multi-project-signal, workflow
+
+## FB-081: Long autonomous batches (3+ implement+verify cycles) lack heartbeat or user-check-in default
+
+**Status:** new
+**Captured:** 2026-05-20
+**Source:** styler 2026-05-17 session export (`interaction-logs/processed/styler-2026-05-17.json` § `design_pushback_opportunities` + `workflow_friction_notes`). Erik asked "is it stuck?" ~30 min into a 4-cycle autonomous batch (T683→T684→T685→T686→T687). Orchestrator had Erik's earlier "keep moving with autonomous tasks" but didn't proactively communicate progress during the long stretch.
+
+### Two distinct gaps
+
+**Gap 1 — No heartbeat during autonomous batches.** When 3+ implement+verify cycles run without user interaction, the user has no visibility into where the batch is. The default failure mode is silence; the user pings to break the silence; the orchestrator interprets the ping as "confirm I'm working" rather than "you should check whether to continue".
+
+**Gap 2 — Mid-batch user ping → auto-continue (wrong default).** Erik's "is it stuck?" was a yellow flag, not a green light. The right call was to PAUSE, summarize, and ask "continue or pause?" — the orchestrator instead dispatched the next verify-agent immediately. Pings during long autonomous runs should default to summary-plus-confirmation, not auto-continue.
+
+### Two patterns
+
+**Pattern 1 — Heartbeat.** Before dispatching the Nth+1 cycle in an autonomous batch (where N≥3), emit a brief status line to the conversation: "On task T685 (3 of 4 in §40.17 chain), autonomous batch in progress." Cheap; structural; addresses Gap 1 directly.
+
+**Pattern 2 — Ping-mid-batch behavior rule.** Add a `.claude/rules/agents.md § "Behavioral Rules"` (or a new sub-section) rule: when the user sends any message during an autonomous batch — including questions, status checks, or seemingly-incidental remarks — default to (a) acknowledging receipt, (b) summarizing current batch state, (c) offering "continue or pause?". Distinct from the orchestrator's normal dispatch flow.
+
+The two patterns compose — heartbeat reduces ping frequency (users have less reason to interrupt); ping behavior catches the ones that still happen.
+
+### Boundary with `/work` context budget
+
+The styler session also flagged a related-but-distinct concern: `/work` auto-continuation lacks a "context burn threshold" stopping point. That's a separate FB candidate (context budget as a stop signal), but the heartbeat pattern here naturally piggybacks on it — a heartbeat could include cumulative agent-dispatch count, which the user could use to decide whether to redirect.
+
+### Scope
+
+- `.claude/commands/work.md` § "Auto-continuation within phases" — heartbeat insertion point (Pattern 1)
+- `.claude/rules/agents.md § "Behavioral Rules"` — new sub-rule (Pattern 2)
+- Possibly `.claude/skills/dashboard-style/SKILL.md` if heartbeat should also write to Recent Activity (unclear; defer until Pattern 1 design lands)
+
+### Signal strength
+
+Single-session signal but tied to a concrete observable user-friction event. Pattern is structural (autonomous-batch UX is independent of the specific project). Worth promoting if next `/feedback review` runs; otherwise can wait for a 2nd-project signal.
+
+Tags: autonomous-batch, heartbeat, user-ping, work-step, behavioral-rule
+
+## Signal queue from 2026-05-20 scan — captured here for next-session triage
+
+The 2026-05-20 scan of `interaction-logs/processed/` surfaced six additional weaker signals not yet promoted to dedicated FBs. Captured here as a queue so next `/feedback review` (or manual triage) can decide whether to expand any into proper entries.
+
+- **Uncommitted-work check at `/work` entry-time** (styler 2026-05-20). After recovery scan, count modified+untracked source files vs finished-since-last-commit tasks; surface mismatch. Erik discovered ~14-task uncommitted backlog mid-commit; an entry-time check would have caught it. Possible Step 0e addition.
+- **Math-check before commit-to-pixels on layout iterations** (styler 2026-05-20). When changing a layout/composition dimension that affects vertical flow or composition (object-position, viewport-relative heights, crop modes), pre-compute arithmetic trade-off BEFORE committing to a screenshot iteration. Behavioral pattern; could land in `agents.md` as a UI-iteration rule.
+- **Dashboard Recent Activity prose-style cap enforcement is ambiguous** (styler 2026-05-20). The dashboard-style skill's strict cap is at the writer's discretion; aggressive cleanup gets deferred because the regen-scope cost is high. Two routes: automatic cleanup during regen vs relax the rule for substantial work. Cross-couples with FB-080 (partial-regen would make cleanup cheaper).
+- **Magnitude check when user specifies rule without absolute value** (echothread 2026-05-17). When the user says "tier-graduated sizes" or any RULE without specifying MAGNITUDE, surface a single-question check ("tier 4 = pebble-sized?") before coding. Avoids the wasted-iteration cycle of implementing default values → screenshotting → user reacts → re-implementing.
+- **`.interaction-assessment.json` cleanup may have silent failure mode** (echothread 2026-05-17). Prior session's `/work pause` left `.interaction-assessment.json` on disk; this session's Write tool refused because file existed and hadn't been Read. Worth a quick check of the pause procedure's cleanup step — possible silent partial-completion bug.
+- **`/walkthrough` or `/preflight` command for major workflow transitions** (SIREN 2026-05-18). Erik benefited from a "walk through plus implement plus sanity check" pattern when changing a workflow surface. Possible new command. Cross-couples with FB-072's help-me-think family review — could be part of that survey.
+
+A seventh candidate — `file-status-taxonomy.md` starter reference doc (CANONICAL/REFERENCE/OPERATIONAL/HISTORICAL/etc.) — is speculative enough (one-project signal, abstract pattern) that it's not worth even queue capture; revisit only if a second project independently raises the need.
+
+Tags: signal-queue, multi-source-scan, next-triage
