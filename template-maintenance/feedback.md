@@ -323,3 +323,156 @@ Sub-flows can live in separate files (per-purpose, focused) or stay in `iterate.
 **Impact scope if pursued:** large — touches `iterate.md` (router refactor), possibly `work.md` and `research.md`, `/grill` (entry-point migration), `/health-check` Part 8 menu (if `/audit-*` commands also umbrella-ize), and the Command Invocation Gates story.
 
 **Likely outcome:** candidate DEC after survey + prototype + data accumulate.
+
+## FB-073: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
+
+See `feedback-archive.md` for full entry.
+
+## FB-074: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
+
+See `feedback-archive.md` for full entry.
+
+## FB-075: TaskCreate/TaskUpdate harness reminder fires in projects that explicitly forbid built-in task tools
+
+**Status:** cheap-action-shipped + deferred (structural fix upstream-gated)
+**Captured:** 2026-05-20
+**Cheap action shipped:** 2026-05-20 — Added "Harness reminders about built-in task tools" paragraph to `.claude/README.md § Known Constraints`. Documents the noise as harness-emitted (not template-emitted) and benign in projects using `.claude/tasks/*.json`. Shipped in template_version 4.6.1 (alongside FB-076 deferral).
+**Defer condition (structural fix):** structural opt-out requires Anthropic-side mechanism (CLAUDE.md sentinel, settings hook, or per-project flag). Re-assess when (a) upstream offers such a mechanism, OR (b) friction scales materially (token tax across 100+ sessions becomes meaningful).
+**Source:** Aggregated across 7 session exports (echothread + styler, 2026-05-16 → 2026-05-17). Observed in this very session 2026-05-20 during inbox triage — the harness reminder fired immediately after the AskUserQuestion confirming this FB capture.
+
+The Claude Code harness emits a system-reminder along the lines of *"The task tools haven't been used recently. Consider using TaskCreate to add new tasks and TaskUpdate to update task status..."* on most tool returns. When a project's `.claude/CLAUDE.md` contains the explicit override ("Use the project's task system (`.claude/tasks/*.json`). Never use built-in TaskCreate/TaskUpdate/TaskList tools"), the reminder is universally irrelevant — every fire costs cognitive cycles + token tax + a user-visible "ignoring per project rules" acknowledgment from the agent.
+
+### Pattern
+
+Observed cumulatively across the 7 sessions: ~60+ TaskCreate reminder fires. The reminder is built into the runtime (not template-emitted), so the template can't suppress it directly. Both echothread and styler sessions show the same pattern:
+
+1. Agent does work using the project's task JSON system (per CLAUDE.md).
+2. Harness emits the reminder after most tool returns.
+3. Agent burns tokens acknowledging + ignoring + reasserting the project rule.
+
+### Two possible mitigations
+
+1. **Harness-side (Anthropic concern):** when CLAUDE.md contains an explicit-override phrase ("Never use built-in TaskCreate"), suppress the reminder for that project's sessions.
+2. **Template-side (CCE concern):** add a CLAUDE.md marker or settings.json convention that the harness reads to disable the nudge. Example: `task_system_override: true` field in `.claude/version.json`, or a documented sentinel comment in CLAUDE.md the harness recognizes.
+
+Both paths require Anthropic-side cooperation — the reminder logic lives in the runtime, not in template-shipped files. Worth raising upstream OR documenting the unavoidable noise in `.claude/README.md` so users (and agents) don't feel the rule is broken.
+
+### Why this is worth capturing despite being upstream
+
+- **Recurring confusion signal:** agents visibly burn tokens acknowledging the reminder; users observe and ask "why does it keep suggesting that?"
+- **Project authority erosion:** explicit project rules feel less authoritative when the harness contradicts them on every tool return.
+- **Documented friction = potential fix:** if Anthropic adds an opt-out mechanism, the template can adopt it immediately.
+
+Sources:
+- `interaction-logs/processed/echothread-2026-05-16.json` (~10 fires)
+- `interaction-logs/processed/echothread-2026-05-17.json` (~10 fires)
+- `interaction-logs/processed/echothread-session-2026-05-16.json` (~20 fires)
+- `interaction-logs/processed/styler-2026-05-17.json` (~10 fires)
+- `interaction-logs/processed/styler-session-export-2026-05-16-T0955.json` (7+ fires)
+- `interaction-logs/processed/styler-session-export-2026-05-16-T1332.json` (7+ fires)
+- `interaction-logs/processed/styler-session-export-2026-05-16-T1425.json` (recurring fires)
+
+Tags: harness, task-system, system-reminders, upstream-anthropic, friction-aggregate
+
+## FB-076: verify-agent runtime_validation misses bundle-boundary breaks and catalog-state-dependent gaps
+
+**Status:** deferred (single-project signal; research-gated)
+**Captured:** 2026-05-20
+**Defer condition:** Re-assess when (a) 2nd project signals the same verification gap, OR (b) FB-066 downstream telemetry suggests broader runtime_validation hardening is needed. Single-project signal (styler T667) doesn't justify the design work (build-command discovery + catalog-path declaration; mitigations 1+3 are not as mechanical as FB-066's regex+grep). If signal escalates: route through `/research` for design — similar to FB-072's trial-gated DEC candidate path. Tracked in root CLAUDE.md § Active Follow-ups as of v4.6.1.
+**Source:** Aggregated from styler session export 2026-05-17 (T667 markers — two distinct verification_gap entries). Extends FB-066 (production-consumption check, shipped v3.16.0).
+
+Structural + automated verification (lint, tsc, vitest, behavior tests) is necessary but not sufficient for tasks where bugs surface only under (a) production bundling or (b) live data state. Two concrete failure modes from styler T667:
+
+### Failure mode 1: Client/server bundle boundary
+
+`ExpandedPalette.tsx` + `ItemRecropControl.tsx` imported `DEFAULT_TARGET_ASPECT` from `photo-normalization.ts`, which transitively pulled `sharp` → Node-only modules into the client bundle. All static + automated checks passed; first `/outfits` page render failed with Turbopack 500.
+
+Hotfix: extracted client-safe constants to `photo-target.ts` re-exported by `photo-normalization.ts`.
+
+### Failure mode 2: Catalog-state-dependent precondition
+
+T667's worn-photo outlier warning targets a code path satisfied by zero items in the live catalog (26/27 wardrobe items have no worn photo; hanger photos never reach the measurement img). Mock-based behavior tests passed because synthetic photoSrc was supplied; live catalog cross-reference would have shown the warning can never fire.
+
+### Why this extends rather than duplicates FB-066
+
+FB-066 (shipped v3.16.0) addresses "class exported but never instantiated" via a verify-agent T5 production-consumption check. That covers static class-export gaps. T667's two failure modes are different:
+
+- **Bundle boundary** is dynamic — the symbol IS consumed, but consumption from a client-marked file pulls a transitive Node-only dep into the wrong bundle. Static grep doesn't catch this; only an actual build does.
+- **Catalog-state** is data-dependent — the code path executes correctly under mocks but is unreachable under real data because no catalog rows satisfy the precondition.
+
+Both fall under verify-agent's `runtime_validation` check, which currently passes any task whose static + mock-based tests pass.
+
+### Mitigation candidates (in priority order)
+
+1. **Production-build invocation.** When a task touches files marked `'use client'` (or framework equivalents), verify-agent runs `npm run build` (or the project's equivalent) before declaring the task verified. Catches bundle-boundary breaks like failure mode 1.
+2. **ESLint rule.** A custom ESLint rule that blocks client components from importing modules whose transitive deps include `sharp`, `fs`, `child_process`, etc. Faster than full build; runs in implement-agent's edit loop. Less reliable than build (transitive analysis is brittle) but cheap.
+3. **Live-data cross-reference.** When the spec implies a feature operates over real catalog state (foundation/wardrobe/items/*.json or analog), verify-agent samples the catalog and confirms the feature's precondition is reachable for ≥1 row. Catches failure mode 2.
+
+Mitigations 1 and 3 are independent (different failure classes); both are worth adding. Mitigation 2 is a faster proxy for mitigation 1, useful if `npm run build` is too slow to run on every task.
+
+### Template-side homes
+
+- `.claude/agents/verify-agent.md` — add runtime_validation sub-checks for bundle-boundary + live-data
+- `.claude/commands/work.md` — verify-agent dispatch should pass the project's build command + catalog paths if available
+- Project-side: `./CLAUDE.md` may declare the project's build command + foundation-data paths for verify-agent consumption
+
+Source: `interaction-logs/processed/styler-2026-05-17.json` (T667 markers, two `verification_gap` entries explicitly naming both failure modes).
+
+Tags: verify-agent, runtime-validation, bundle-boundary, live-data, extends-FB-066
+
+## FB-077: Auto-mode classifier over-broad DEC-016 scope + AskUserQuestion responses don't count as authorization
+
+**Status:** new
+**Captured:** 2026-05-20
+**Source:** Two distinct classifier false-positives observed in-session 2026-05-20 during FB-074 sub-issue 1 (categories extension) ship. Concrete block messages preserved below.
+
+The auto-mode classifier blocked legitimate Edits during a session where the user had explicitly approved the work (FB-074 promotion approved via AskUserQuestion). Two distinct failure modes surfaced.
+
+### Sub-issue A: DEC-016 scope misinterpretation
+
+The classifier blocked an Edit to `.claude/support/reference/decisions.md` (a reference doc documenting decision RECORD format) citing DEC-016. But DEC-016's scope is explicitly the three globs documented in `.claude/CLAUDE.md § Critical Invariants`:
+
+- `.claude/spec_v*.md`
+- `.claude/support/decisions/decision-*.md` (decision RECORDS, not reference docs)
+- `.claude/vision/**/*.md`
+
+The reference doc `.claude/support/reference/decisions.md` is NOT in scope. The classifier conflated:
+- (record at) `.claude/support/decisions/decision-{NNN}-*.md` ← in scope
+- (reference doc at) `.claude/support/reference/decisions.md` ← NOT in scope
+
+Concrete block message: *"Substantive edit to `.claude/support/reference/decisions.md` (a template-owned reference file) is blocked by user's own DEC-016 rule routing substantive edits through /iterate"*
+
+This is a false-positive. The user's intent (per DEC-016) was to gate decision RECORDS — the audit-trail-of-intent files — not the meta-documentation about how to author records.
+
+### Sub-issue B: AskUserQuestion responses don't count as authorization
+
+After the first block, the agent surfaced the issue and offered options via `AskUserQuestion`. The user picked "Authorize the edit explicitly". The agent retried the Edit. The classifier blocked again with:
+
+*"Agent retried the same edit immediately after the classifier block / AskUserQuestion without a visible user response authorizing the retry."*
+
+The classifier requires typed-text authorization in a user message. `AskUserQuestion` responses — even when the user explicitly selected an "authorize" option — are treated as programmatic answers, not authorization.
+
+This is a UX-shape problem: `AskUserQuestion` is designed as a clean, structured way to collect user decisions. If those decisions can't authorize subsequent actions, the tool's utility for permission-flow scenarios is sharply limited. Agents must fall back to free-text prompts when authorization matters — defeating the purpose of structured-choice collection.
+
+### Combined impact
+
+In this session: FB-074 sub-issue 1 (categories enum) needed edits to BOTH `health-check.md` (allowed by classifier) AND `decisions.md` (blocked twice). The two-file inconsistency left the template in a half-shipped state — `health-check.md` validated against the extended enum, but the reference doc still showed the old 6-value list. Manual intervention required (user typed text authorization after the structured approval via AskUserQuestion failed).
+
+### Mitigation candidates
+
+**For Sub-issue A (DEC-016 scope):**
+- Tighten classifier rules to match DEC-016's stated path patterns exactly (the three explicit globs from `CLAUDE.md § Critical Invariants`).
+- Add a positive-list of in-scope paths for DEC-016 enforcement rather than a heuristic "anything named decisions.md".
+
+**For Sub-issue B (AskUserQuestion authorization):**
+- Treat AskUserQuestion responses as authorization for the action they reference (per-question metadata could declare which action the question gates).
+- Or: document the limitation so agents know to use free-text prompts for permission flows.
+- Or: classifier inspects the AskUserQuestion question + options to determine authorization intent.
+
+### Related
+
+- DEC-016 (spec/decision/vision file edit guardrail) — Sub-issue A is about the classifier's interpretation of DEC-016's scope.
+- DEC-005 (auto-mode permission layer) — the broader auto-mode classifier where this lives.
+- FB-074 sub-issue 1 (categories extension) — concrete promoted item that triggered the block.
+
+Tags: auto-mode, classifier, dec-016, dec-005, false-positive, askuserquestion, authorization, upstream-anthropic

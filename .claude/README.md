@@ -208,6 +208,8 @@ flowchart TD
 
 **Effort defaults:** Max/Team subscriptions default to medium reasoning effort. The environment uses "ultrathink" for phase-level verification where deep reasoning matters most. If you want elevated reasoning more broadly, you can say "ultrathink" in your prompt.
 
+**Harness reminders about built-in task tools:** The Claude Code runtime emits a reminder along the lines of *"Consider TaskCreate / TaskUpdate"* on most tool returns. This environment uses its own task system (`.claude/tasks/task-*.json`) and never the built-in tools (see `.claude/CLAUDE.md § Critical Invariants`). The reminder is harness-emitted (not template-emitted) and currently cannot be suppressed per-project. Agents ignore it automatically; the noise is benign but visible. Upstream Anthropic mechanism for opt-out is pending.
+
 ## Where to Find Things
 
 | Looking for... | Location |

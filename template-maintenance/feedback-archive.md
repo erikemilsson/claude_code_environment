@@ -1350,3 +1350,132 @@ CCE has no equivalent. The skill is cheap to add, low maintenance, and complemen
 - **`.claude/rules/agents.md` § Root Cause Over Symptom**: `/diagnose` Phase 3 falsifiable-hypotheses discipline is a structural way to enforce the existing rule. Worth a cross-reference both ways. **[Mutual cross-reference shipped.]**
 
 **Likely route (as captured):** direct ship via template edit. Single new command file + 2 cross-references. No DEC. **[Held: shipped as captured.]**
+
+## FB-073: Expo Go can't cold-launch offline — test_protocol for cache verification needs rework
+
+**Status:** promoted
+**Captured:** 2026-05-17
+**Promoted:** 2026-05-20 — Added new `## Test-Protocol Runtime Constraints` section to `.claude/skills/decomposition-heuristics/SKILL.md` (sibling to existing Test-Harness Awareness section, placed between Test-Harness Awareness and Task Creation Guidelines). Covers detection patterns (force-quit + airplane mode + cold-launch under Expo Go), three substitution patterns (background mode / server-only kill / defer to dev client), `constraint` informational-field annotation pattern, and optional project-side declaration in root `./CLAUDE.md` (`**Primary phone runtime:** Expo Go`). Added `### Runtime Constraints` sub-section to `.claude/support/reference/task-schema.md § Test Protocol Field` cross-referencing the skill. No DEC; no formal schema field for `constraint` (documented as informational pending convention proving itself). No sync-manifest change (both targets already covered by sync globs). Shipped in template_version 4.5.0.
+**Source:** Bridged from styler FB-174 (template_version 4.0.0) via /feedback template:
+
+Phone task test_protocol authors need a pre-tag convention for steps that exercise offline / force-quit / cold-launch behavior: these should be marked Expo-Go-limited regardless of in-app cache correctness (Expo Go's own bundle-fetch failure under airplane mode is not the app's bug). Eliminates mid-attestation reframings.
+
+### The observation
+
+T650's test_protocol step 6 ('force-quit + airplane mode + relaunch → paints from cache') and step 7 ('clear app storage + airplane mode → empty-state copy') are not testable in Expo Go. When the user tried it, Expo Go itself freezes at its logo screen — it can't reach any server because Expo Go fetches the JS bundle from Metro on every cold-launch.
+
+This is not an app bug. The cache logic in Reference.tsx is statically verified and correct. The test_protocol simply assumes a bundled-JS runtime (real installed app or EAS dev client) where airplane-mode cold-launch works.
+
+### Pattern recurrence
+
+Any phone-side test_protocol that combines `force-quit + airplane mode + relaunch` will fail in Expo Go for the same reason. This is a verifier authoring blind spot: the test step looks reasonable (the offline-cache path is a real acceptance criterion) but the runtime can't execute it.
+
+### Proposed workarounds for cache-path verification without a dev client
+
+1. Background mode (lock screen → unlock — don't force-quit): JS stays in memory; the app re-hydrates from cache on resume. Tests the cache code path correctly without forcing a cold launch.
+2. Server-only kill (stop the project's dev server but keep WiFi on; force-quit and relaunch the app): Expo Go bundle loads, app starts, foundation fetch fails, cache fallback fires. Tests the fetch-failure → cache-render branch.
+3. Defer cold-launch-offline verification to dev client (post-EAS landing): the only path that mirrors a production install.
+
+### Proposed template change
+
+When `/work` or verify-agent authors a test_protocol for a phone-side surface, it should detect 'force-quit + airplane mode + cold-launch' patterns and either:
+- Substitute one of the workarounds above (background mode is the simplest substitute), or
+- Annotate the step with 'Requires dev client (EAS); skip in Expo Go' so the user knows to defer.
+
+This belongs in the test_protocol authoring guidance for owner:both phone tasks — same family as the `cd` vs `npx expo start` cwd friction marker captured separately.
+
+Suggested template-side homes:
+- `.claude/skills/decomposition-heuristics/SKILL.md` — test-protocol authoring guidance section
+- `.claude/support/reference/task-schema.md` — test_protocol field docs
+
+Project-side context: styler ran an iPhone attestation walkthrough that hit this. The cache logic was correct but unverifiable under Expo Go, and the verifier (Claude) didn't pre-detect the runtime constraint when authoring the test_protocol. Pre-tagging the step would have surfaced the dev-client requirement before attestation rather than mid-attempt.
+
+Routing note: styler's local /feedback assessment originally routed this to `/work` as a tactical task, then a /feedback review pass caught the boundary violation (target files are template-owned, per the project's Cross-Project Capture Protocol in .claude/rules/agents.md). This bridge export is the corrected route.
+
+Tags: phase-41-style, expo-go, dev-client, test-protocol, template-improvement
+Source: User feedback 2026-05-13 — phone-side attestation walkthrough.
+
+## FB-074: Canonical decision categories miss UI/UX surface; parent-task aggregate-subtask verify exception; rules-file soft cap raise
+
+**Status:** promoted
+**Captured:** 2026-05-20
+**Promoted:** 2026-05-20 — Three sub-issues bundled into one MINOR ship.
+- **Sub-issue 1 (categories):** Extended canonical decision categories enum with `ux`, `design`, `ui-ia`, `ui-content` in `.claude/support/reference/decisions.md` (template enum + Categories table with one-sentence definitions) AND `.claude/commands/health-check.md` Part 3 check 1 (validation enum). Addresses 22/100 styler decisions whose categories fell outside the previous 6-value set. `data` category (5th additional value covering schema / data-curation decisions) deferred per FB body's "lower priority" annotation.
+- **Sub-issue 2 (parent verify exception):** Added parent-task aggregate-subtask exception to `.claude/commands/health-check.md` Part 1 check 7 alongside the existing `owner: human` self-attested exception. Pattern: parents with status `"Broken Down"` (non-empty `subtasks`) OR `"Finished"` (non-empty `subtasks` where every subtask is itself `"Finished"` with passing per-task verification) that have `checks.aggregate_subtask_verification: "pass"` are exempt from the 7-key requirement — verification aggregates from subtasks. No schema change; pattern-mirror of existing exception.
+- **Sub-issue 3 (soft cap raise):** Raised rules-file soft cap from 200 → 220 in `.claude/commands/health-check.md` Part 2c. Closes the standing warning on `.claude/rules/feature-retirement.md` (203 lines, genuinely rich procedure — procedure + 5 edge cases + restore path + worked examples).
+
+No DEC; no sync-manifest change (`.claude/commands/*.md` and `.claude/support/reference/*.md` already covered by sync globs). Shipped in template_version 4.6.0.
+
+**Ship-time deviation:** auto-mode classifier blocked Edit to `.claude/support/reference/decisions.md` on first attempt citing DEC-016 (false-positive — DEC-016 covers `.claude/spec_v*.md`, `.claude/support/decisions/decision-*.md` records, and `.claude/vision/**/*.md`, NOT the reference doc *about* decision format). Subsequent retry after AskUserQuestion approval also blocked because the classifier doesn't recognize AskUserQuestion responses as authorization. Resolved with explicit typed-text user authorization. Captured as **FB-077** for upstream-Anthropic / DEC-005 follow-up.
+
+**Source:** Bridged from styler FB-192 (template_version 4.0.0) via /feedback template: — bundled three sub-issues per FB-006 precedent.
+
+/health-check Part 3 check 1 enforces a six-value canonical category set on decision records: architecture · technology · process · scope · methodology · vendor. Styler's 100-decision corpus carries 26 records (26%) using categories outside that set — and the missing-from-canonical categories are not Styler-specific edge cases, they are the natural vocabulary any UI-heavy project accumulates.
+
+### The data (Styler corpus)
+
+| Category | Count | Examples |
+|---|---|---|
+| ux | 9 | DEC-037 approve-all-ungraded, DEC-049 worn-photo strategy, DEC-091 post-suggest pill → AdjustOverlay, DEC-093 wind-first action priority, DEC-095 + DEC-097 mark-unavailable retire/restore, DEC-098 weather glyph vocab, DEC-099 per-outlier warning chips |
+| design | 6 | DEC-041 visual identity, DEC-042 motion library, DEC-045 lookbook gender presentation, DEC-064 action-list home, DEC-067 acquired-state UX |
+| ui-ia | 4 | DEC-068 style-page IA chrome, DEC-070 sidebar IA pattern, DEC-077 style-nav sitemap-inventory alignment, DEC-079 sidebar IA extension |
+| ui-content | 3 | DEC-069 style content rendering, DEC-073 why-this-works expander, DEC-074 + DEC-076 empty-field display + palette rendering redundancy |
+| schema | 2 | DEC-061 curation-suggestions severity, DEC-084 seasonal palette 12-target consolidation |
+| data-curation | 1 | DEC-072 multi-source seasonal palette curation |
+| technical | 1 | DEC-051 URL scraping approach |
+
+The first four (ux, design, ui-ia, ui-content — 22 of the 26) are stable, semantically-distinct, and would appear in any project with a user-facing UI. The remaining three (schema, data-curation, technical) are borderline — arguably mergeable into architecture / process / technology respectively, but they exist because someone needed a finer-grained label and the canonical set didn't supply one.
+
+### Why the canonical set is too narrow
+
+The current six values bias toward backend/infrastructure decision categorization:
+- architecture covers component layout but doesn't distinguish IA from data shape from API contract
+- process covers workflow, not UX flow
+- methodology covers project-conventions, not visual/interaction design choices
+- vendor covers procurement, not design-system tradeoffs
+
+A decision like 'post-suggest pill opens an AdjustOverlay modal' (DEC-091) is genuinely a UX decision, not an architecture one. Forcing it into architecture loses the semantic distinction — the record's category becomes a fingerprint of 'I had to pick something' rather than a useful classifier when scanning a project's decision log.
+
+### Proposal
+
+Extend the canonical category set in three places:
+
+1. .claude/support/reference/decisions.md — add ux, design, ui-ia, ui-content to the list of valid category: values (with one-sentence definitions).
+2. .claude/commands/health-check.md Part 3 check 1 — update the canonical set inline so the validation pattern matches.
+3. .claude/scripts/validate-tasks.py (if it touches decisions in the future) and any other validator surface that lists categories.
+
+Optional fifth category: data (covering schema, data-curation, and similar data-shape decisions). Lower priority than the 4 UI-side additions — Styler's 3 records there are tolerable as architecture aliases if the maintainer prefers a 4-add minimum.
+
+### What this is NOT
+
+- Not a Styler-specific category extension. Adding these to a project-side project-categories.md override would help Styler but not the next UI-heavy project that hits the same gap.
+- Not a request to normalize Styler's 26 records to the canonical set — that loses semantic information for architecture's sake.
+- Not a proposal to make categories free-form. The whole point of canonical-set validation is preventing fragmentation (Styler ships ux 9× but also has ui-ia, ui-content, design — without enforcement these would proliferate further). The proposal is to *expand* the canonical set, not abolish it.
+
+### Definitions (suggested)
+
+| Category | When to use |
+|---|---|
+| ux | Decisions about user interaction patterns, flow, affordance choice (e.g., 'tap-to-expand vs always-expanded'). |
+| design | Decisions about visual identity, motion language, type system, color tokens. |
+| ui-ia | Decisions about information architecture in the UI — section ordering, nav structure, page taxonomy. |
+| ui-content | Decisions about copy presentation, empty-state rendering, what to show vs hide. |
+
+### Related: parent-task aggregate-subtask verification exception
+
+Styler has a single Finished parent task (T530) whose task_verification.checks contains only aggregate_subtask_verification: pass because all three subtasks (T530_1a / T530_1b / T530_2) verified individually. Schema-strict says 7 keys; semantically the verification is sound — the work happened at the subtask level and aggregated up.
+
+Proposal: add a parent-task exception to .claude/commands/health-check.md Part 1 check 7 alongside the existing owner:human + self_attested: pass exception:
+
+> Exception: parent tasks (status: Broken Down with non-empty subtasks, OR Finished with non-empty subtasks where every subtask is itself Finished with passing per-task verification) that have checks.aggregate_subtask_verification: pass are exempt from the 7-key requirement.
+
+The validator change is small and benefits any project that uses /breakdown. Pattern is identical to the categories proposal above — the rule's exception list is incomplete relative to the real shape of completed work.
+
+### Related: feature-retirement.md 200-line soft cap
+
+Template's .claude/rules/feature-retirement.md is 203 lines — 3 lines over the soft cap that /health-check Part 2c warns on. The file is structurally rich (procedure + 5 edge cases + restore path + worked examples); 200 was set before this much detail accreted.
+
+Proposal: raise the rules-file soft cap from 200 to 220 in .claude/commands/health-check.md Part 2c. Three lines isn't worth a trim pass; the cap should accommodate genuinely rich procedures.
+
+Tags: template-improvement, decisions, validation, categories, canonical-set, aggregate-subtask-verification, soft-cap
+Source: Surfaced 2026-05-20 by /health-check on the styler corpus.

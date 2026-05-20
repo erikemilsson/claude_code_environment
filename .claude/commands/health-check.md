@@ -100,7 +100,7 @@ Detects tasks that may have bypassed the implement-agent or verify-agent workflo
 
 **Verification debt (ERRORS):**
 - Finished tasks MUST have a `task_verification` field with `result` of `"pass"`
-- `task_verification.checks` should have all 7 keys (`files_exist`, `consistency_check`, `spec_alignment`, `output_quality`, `runtime_validation`, `integration_ready`, `scope_validation`) with pass/fail values (or `"skipped"` only when result is `"fail"` due to timeout). Note: `runtime_validation` additionally allows `"not_applicable"` and `"partial"` as valid non-error values. **Exception:** tasks with `owner: "human"` that have `checks.self_attested: "pass"` are exempt from the 7-key requirement — human tasks use self-attestation instead of the standard verification checks.
+- `task_verification.checks` should have all 7 keys (`files_exist`, `consistency_check`, `spec_alignment`, `output_quality`, `runtime_validation`, `integration_ready`, `scope_validation`) with pass/fail values (or `"skipped"` only when result is `"fail"` due to timeout). Note: `runtime_validation` additionally allows `"not_applicable"` and `"partial"` as valid non-error values. **Exceptions:** (a) tasks with `owner: "human"` that have `checks.self_attested: "pass"` are exempt — human tasks use self-attestation instead of the standard checks. (b) Parent tasks (status `"Broken Down"` with non-empty `subtasks`, OR `"Finished"` with non-empty `subtasks` where every subtask is itself `"Finished"` with passing per-task verification) that have `checks.aggregate_subtask_verification: "pass"` are exempt — verification aggregates from subtasks (per FB-074).
 - If any check is `"fail"`, the overall `result` must also be `"fail"` — a check-level fail with a result-level pass is invalid
 - If any finished task lacks `task_verification`: **ERROR** — "Verification debt: N finished tasks missing verification"
 - If any finished task has `task_verification.result == "fail"`: **ERROR**
@@ -286,7 +286,7 @@ Validates that the expected template rule files exist in `.claude/rules/`.
 
 **Checks:**
 - Each expected file exists
-- No expected file exceeds 200 lines
+- No expected file exceeds 220 lines (raised from 200 per FB-074 — accommodates genuinely rich procedures such as `feature-retirement.md`)
 - User-created rule files (`project-*.md`) are noted as informational
 
 ---
@@ -305,7 +305,7 @@ Each `decision-*.md` file must have valid frontmatter:
 - `id` - Format: `DEC-NNN` (e.g., DEC-001, DEC-042). Must match `\d+` pattern after `DEC-`. The numeric portion must match the filename: `decision-{NNN}-*.md` → frontmatter `id: DEC-{NNN}`. Mismatch is an ERROR.
 - `title` - Non-empty string
 - `status` - One of: `draft`, `proposed`, `approved`, `implemented`, `superseded`
-- `category` - One of: `architecture`, `technology`, `process`, `scope`, `methodology`, `vendor`
+- `category` - One of: `architecture`, `technology`, `process`, `scope`, `methodology`, `vendor`, `ux`, `design`, `ui-ia`, `ui-content` (UI-side categories added per FB-074 — see `.claude/support/reference/decisions.md § Categories` for definitions)
 - `created` - Valid date in YYYY-MM-DD format
 
 **Optional fields:**
