@@ -282,29 +282,71 @@ In the Styler audit run, this left two captured-inputs files missing (`meta.json
 
 **Likely route:** direct ship via template edit. Single new command file + 2 cross-references. No DEC.
 
-## FB-070: /zoom-out micro-skill
+## FB-070: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
 
-**Status:** ready
-**Captured:** 2026-05-19
-**Source:** `skills/engineering/zoom-out/SKILL.md` in mattpocock/skills (clone: `/Users/erikemilsson/Downloads/skills-main/skills/engineering/zoom-out/SKILL.md`).
-
-**Observation:** Trivially small but useful skill. Claude is told to go up a layer of abstraction and produce a map of relevant modules + callers when the user signals "I don't know this area." Pocock's full skill body is 7 lines: *"I don't know this area of code well. Go up a layer of abstraction. Give me a map of all the relevant modules and callers, using the project's domain glossary vocabulary."*
-
-CCE has no equivalent. The skill is cheap to add, low maintenance, and complements FB-068 — the "domain glossary vocabulary" clause becomes load-bearing once CONTEXT.md exists; degrades gracefully to "domain-relevant naming" without it.
-
-**Proposed actions:**
-
-1. New `.claude/commands/zoom-out.md` — port Pocock's essence. Domain-genericize "code" wording (CCE is domain-agnostic; the skill works for any unfamiliar area — research, procurement, renovation).
-2. Add to `sync-manifest.json`.
-3. Apply `disable-model-invocation: true` frontmatter (per Pocock's own `/zoom-out` and the rationale in FB-071): `/zoom-out` is specifically a user-asks-for-help signal — Claude autonomously invoking it doesn't make sense (Claude would only invoke it for itself, which is circular). Gated by FB-071's harness-behavior verification.
-
-**Dependencies / interactions:**
-
-- **FB-068** (CONTEXT.md + /grill): `/zoom-out`'s domain-glossary clause becomes load-bearing after CONTEXT.md ships. `/zoom-out` works either way (degrades gracefully). Order: ship FB-068 first if both are in the same batch; otherwise ship `/zoom-out` independently — it just gets sharper once CONTEXT.md is in place.
-- **FB-071** (`disable-model-invocation` audit): action 3 above (apply the frontmatter to `/zoom-out`) is gated by FB-071's verification step. If FB-071 reveals commands don't honor the frontmatter, ship `/zoom-out` without it; the skill still functions, just without the autonomous-fire gate.
-
-**Likely route:** direct ship via template edit. Single new command file. No DEC. Smallest scope of the Wave 1 entries — can ship independently of every other FB-068/069/071.
+**Status:** promoted 2026-05-20 — new `/zoom-out` micro-command shipped in template_version 4.3.0. Carries `disable-model-invocation: true` frontmatter on day one per FB-071 convention (`/zoom-out` is explicitly a user-asks-for-help signal; autonomous fire would be circular — Pocock's `/zoom-out` carries the same frontmatter for the same reason). Consumes `./CONTEXT.md` vocabulary when present (FB-068 integration); degrades gracefully when absent. See archive for full text.
 
 ## FB-071: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
 
 **Status:** promoted 2026-05-20 — `disable-model-invocation: true` frontmatter applied to all 5 strong-candidate commands (`/breakdown`, `/research`, `/iterate`, `/work`, `/feedback`) shipped in template_version 4.1.0. Live empirical verification: model-invocable skills list shrank immediately from 10 template commands to 5. New `## Command Invocation Gates` section in `rules/agents.md` documents the convention, selection criteria, sub-mode coupling trade-off, and defense-in-depth interaction with DEC-005 + DEC-016. Medium candidates deferred for trial-period observation. See archive for full text.
+
+## FB-072: Command routing as a UX pattern (interpretive vs explicit-arg dispatch + boundary survey)
+
+**Status:** ready (research-first; trial-gated DEC candidate)
+**Captured:** 2026-05-20
+**Source:** session-level reflection after shipping FB-068 (`/grill` as standalone command rather than `/iterate grill` sub-mode). User observed 2026-05-20: *"from a UX perspective it is one more command to remember. I think we should look into making `/iterate` a router that routes to other commands depending on what is being asked. ... I guess the larger question is how effective routing is at all, and perhaps that is something to do research on."*
+
+**Observation:** CCE currently dispatches sub-modes via explicit string args (`/iterate distill`, `/work complete`, `/work pause`, `/feedback review`). Each multi-mode command grows its own file (e.g., `iterate.md` ~700 lines covering distill/propose/hygiene/no-args; `work.md` ~1700 lines covering many sub-modes). Adding new spec-adjacent commands (FB-068's `/grill`, FB-069's `/diagnose`, FB-070's `/zoom-out`, likely Wave 2 entries) increases the surface area users have to remember.
+
+**The router pattern (proposed by user 2026-05-20):**
+
+`/iterate` becomes an interpretive umbrella for "everything that has to do with nailing down the single source of truth spec." Sub-purposes dispatch based on Claude's interpretation of intent:
+
+- `/iterate "I want to stress-test this plan"` → router invokes `/grill` internally
+- `/iterate "let's distill a buildable spec from this vision"` → router invokes the distill sub-flow
+- `/iterate "the spec is fuzzy on cancellation semantics"` → router invokes the propose sub-flow
+- `/iterate "check the spec against the registry"` → router invokes the hygiene sub-flow
+
+Sub-flows can live in separate files (per-purpose, focused) or stay in `iterate.md`. The key difference from current explicit-arg dispatch: **the user doesn't need to know the sub-mode name**; Claude classifies from natural language.
+
+**Two interesting twists:**
+
+1. **Interpretive vs explicit-arg dispatch.** Current pattern is structural: user types `/iterate distill`, matcher fires. Proposed pattern is interpretive: user types `/iterate <natural language>`, Claude classifies intent before firing. Failure mode: wrong sub-mode runs silently. Mitigation candidate: router announces its interpretation (*"I read this as a distill request — proceeding with `/iterate distill` flow. Say 'no' to redirect."*) before any substantive action.
+
+2. **Boundary discovery comes first.** Worth surveying which CCE commands have clean "umbrella" semantics before committing to the architecture. Concrete candidates:
+   - **`/iterate` as spec-source-of-truth umbrella** — covers distill / propose / hygiene / grill / possibly research-dispatch for spec-adjacent decisions
+   - **`/work`** — currently covers many concerns (decomposition, agent routing, parallel batching, completion, pause); some might split out under interpretive routing
+   - **`/research` and `/iterate` overlap** — both touch decisions and spec adjacency. Unified umbrella, or correctly distinct?
+   - **`/audit-coherence` and `/audit-ui`** — already dispatched from `/health-check` Part 8 menu (different pattern: menu-based). Similar umbrella-vs-discrete tension.
+
+**Research questions:**
+
+- **Accuracy of intent classification.** Can Claude correctly classify the sub-mode from user input across candidate umbrellas? Failure rate? Recovery cost when wrong?
+- **Discoverability.** Do users learn the umbrella surface (one command, many sub-purposes) faster than the discrete surface (many commands)? Or does the umbrella obscure capability?
+- **Latency / cost.** Does interpretive routing add a noticeable LLM pass? Sub-modes have their own context loads (iterate.md is large) — is the router pass cheap or expensive?
+- **Boundary clarity.** When should a piece of work be a sub-mode of an umbrella vs a standalone command? Are there cases where an umbrella forces unnatural couplings?
+
+**Deliverables (if pursued):**
+
+1. **Boundary survey** (`.claude/support/workspace/router-survey.md` or similar) — for each candidate umbrella, list sub-purposes that would route through it; flag any that don't fit cleanly. ~1-2 sessions.
+2. **Prototype** — pick one umbrella (likely `/iterate`, the immediate driver) and implement interpretive routing as proof-of-concept. Trial in a real downstream session.
+3. **Effectiveness data** — track router accuracy, recovery cost, and user feedback across N sessions. Threshold candidate: ≥ ~85% classification accuracy with ≤ 1 redirect per recovery to justify the pattern.
+4. **DEC candidate** — if survey + prototype + data are favorable, `/research` opens a DEC. If unfavorable, FB-072 closes; explicit-arg pattern stays.
+
+**Dependencies / interactions:**
+
+- **FB-071 (Command Invocation Gates):** if `/iterate` becomes a router, the gating story stays — `disable-model-invocation: true` blocks ambient autonomous fire of the umbrella. Sub-modes don't need individual gates because the router gates them collectively. Potentially *simplifies* the FB-071 sub-mode coupling trade-off.
+- **DEC-016 (spec/decision/vision Edit/Write ask):** unchanged. The permission-layer ask fires at the write boundary regardless of how the write was reached.
+- **FB-068 (`/grill` as standalone):** if FB-072 ships favorably, `/grill` could migrate to `/iterate grill` as a sub-mode. The standalone command file stays as the dispatch target; only the entry point shifts. No re-work of `/grill` itself.
+- **FB-070 (`/zoom-out`):** standalone micro-command; doesn't obviously belong under an umbrella (no "zoom-out family" of related commands). If router shipping reveals a help-the-user umbrella, revisit. Most likely outcome: `/zoom-out` stays standalone.
+
+**Trial-gate:** the research-first nature is important. The user explicitly said *"perhaps that is something to do research on."* Do NOT implement before:
+- Boundary survey is complete (which commands have clean umbrella semantics?)
+- At least one prototype is trialed in a real session
+- Effectiveness data accumulates
+
+**Likely route:** research-light (boundary survey) → prototype → `/research` opens DEC if signal is positive. No template change in the first session; the survey is a workspace doc, not a template artifact.
+
+**Impact scope if pursued:** large — touches `iterate.md` (router refactor), possibly `work.md` and `research.md`, `/grill` (entry-point migration), `/health-check` Part 8 menu (if `/audit-*` commands also umbrella-ize), and the Command Invocation Gates story.
+
+**Likely outcome:** candidate DEC after survey + prototype + data accumulate.

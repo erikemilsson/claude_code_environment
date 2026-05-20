@@ -1288,3 +1288,27 @@ Original fallback options had verification failed:
 - **Glossary versioning / fingerprinting.** Treat CONTEXT.md as a live document without version tracking or drift fingerprinting. If drift becomes an observed problem (e.g., specs reference glossary terms that have since been renamed), add a fingerprint mechanism in a follow-up FB. Premature versioning machinery would add maintenance overhead before the underlying behavior is validated.
 
 **Likely route (as captured):** direct ship via template edit (1 new command, 1 navigation row, 1 rule addition, 1 audit-coherence reference, 1 spec-workflow cross-ref). No DEC unless we end up debating `./CONTEXT.md` vs `.claude/CONTEXT.md` location — default to root per Pocock's convention. **[Held: shipped via direct edit, no DEC; root location chosen per Pocock convention without debate.]**
+
+## FB-070: /zoom-out micro-skill
+
+**Status:** promoted
+**Captured:** 2026-05-19
+**Promoted:** 2026-05-20 — shipped in template_version 4.3.0 via direct template edit. New `.claude/commands/zoom-out.md` (~50 lines): domain-genericized adaptation of Pocock's 7-line skill (works for software, research, procurement, renovation — any spec-driven project per CCE's domain-agnostic design); consumes `./CONTEXT.md` vocabulary when present (FB-068 integration) and degrades gracefully when absent. Carries `disable-model-invocation: true` frontmatter on day one per FB-071's convention — `/zoom-out` is explicitly a user-asks-for-help signal; autonomous fire would be circular (the model would be invoking it for its own benefit, which doesn't match the help-the-user trigger). Pocock's own `/zoom-out` carries the same frontmatter for the same reason. No sync-manifest change (`.claude/commands/*.md` glob auto-covers); no DEC needed. Single ship; smallest of the Wave 1 entries as predicted.
+**Source:** `skills/engineering/zoom-out/SKILL.md` in mattpocock/skills (clone: `/Users/erikemilsson/Downloads/skills-main/skills/engineering/zoom-out/SKILL.md`).
+
+**Observation (as captured):** Trivially small but useful skill. Claude is told to go up a layer of abstraction and produce a map of relevant modules + callers when the user signals "I don't know this area." Pocock's full skill body is 7 lines: *"I don't know this area of code well. Go up a layer of abstraction. Give me a map of all the relevant modules and callers, using the project's domain glossary vocabulary."*
+
+CCE has no equivalent. The skill is cheap to add, low maintenance, and complements FB-068 — the "domain glossary vocabulary" clause becomes load-bearing once CONTEXT.md exists; degrades gracefully to "domain-relevant naming" without it.
+
+**Proposed actions (as captured; ship outcomes annotated):**
+
+1. New `.claude/commands/zoom-out.md` — port Pocock's essence. Domain-genericize "code" wording (CCE is domain-agnostic; the skill works for any unfamiliar area — research, procurement, renovation). **[Shipped.]**
+2. Add to `sync-manifest.json`. **[No change needed — `.claude/commands/*.md` glob already covers `/zoom-out.md`.]**
+3. Apply `disable-model-invocation: true` frontmatter (per Pocock's own `/zoom-out` and the rationale in FB-071): `/zoom-out` is specifically a user-asks-for-help signal — Claude autonomously invoking it doesn't make sense (Claude would only invoke it for itself, which is circular). Gated by FB-071's harness-behavior verification. **[Shipped — FB-071's verification cleared 2026-05-19 and shipped 2026-05-20, so the gating frontmatter applied without delay.]**
+
+**Dependencies / interactions:**
+
+- **FB-068** (CONTEXT.md + /grill): `/zoom-out`'s domain-glossary clause becomes load-bearing after CONTEXT.md ships. `/zoom-out` works either way (degrades gracefully). Order: ship FB-068 first if both are in the same batch; otherwise ship `/zoom-out` independently — it just gets sharper once CONTEXT.md is in place. **[Held: FB-068 shipped 2026-05-20 in template_version 4.2.0, before FB-070 in 4.3.0 — the load-bearing case is the default.]**
+- **FB-071** (`disable-model-invocation` audit): action 3 above (apply the frontmatter to `/zoom-out`) is gated by FB-071's verification step. If FB-071 reveals commands don't honor the frontmatter, ship `/zoom-out` without it; the skill still functions, just without the autonomous-fire gate. **[Held: FB-071 verification cleared 2026-05-19; FB-071 shipped 2026-05-20 in template_version 4.1.0. Frontmatter applied as planned.]**
+
+**Likely route (as captured):** direct ship via template edit. Single new command file. No DEC. Smallest scope of the Wave 1 entries — can ship independently of every other FB-068/069/071. **[Held: shipped as captured.]**
