@@ -38,6 +38,20 @@ When a test fails, a build breaks, a type error surfaces, or a runtime error occ
 
 In those cases, the suppression is the fix — not a symptom hiding a bug.
 
+## Domain Glossary Awareness
+
+Projects may keep `./CONTEXT.md` at the project root — a project-owned domain glossary populated by `/grill`. **Lazily-created**: the template never ships a placeholder; `/grill` creates it on the first resolved term. Absent in projects that haven't run `/grill` (fine — agents fall back to spec/code vocabulary).
+
+**implement-agent:** when `./CONTEXT.md` is present, read it before producing deliverables; match its terminology in code, comments, task descriptions, and user-facing artifacts. If the user's request uses an alias listed in CONTEXT.md's `_Avoid:` field, surface the mismatch (`scope_clarification_needed` in the return report) rather than silently translating.
+
+**verify-agent:** when `./CONTEXT.md` is present, treat its glossary as authoritative for vocabulary checks during `spec_alignment` / `consistency_check`. A load-bearing domain noun absent from CONTEXT.md (appears 3+ times across implementation) signals either glossary drift or a missing entry — emit a `vocab_drift` friction marker rather than failing verification.
+
+**Maintenance.** `/grill` grows and refines CONTEXT.md inline as terms resolve in conversation. Agents do **not** batch-extract terms or autogenerate placeholder glossaries (per Pocock's deprecation lesson — pre-populated glossaries don't get maintained, organically-grown ones do).
+
+**Layer distinction.** `./CONTEXT.md` is project domain vocabulary (your Customer/Order/Invoice or equivalent). `.claude/support/reference/shared-definitions.md` is environment vocabulary (Pending/In Progress statuses, difficulty 1-10, owner enums). Both coexist; never collapse.
+
+`/audit-coherence`'s `vocab-drift` lens consumes CONTEXT.md when present (see `commands/audit-coherence.md § "Lens 2 — vocab-drift"`).
+
 ## Behavioral Rules
 
 **Respect prior kills.** When the user kills a long-running process (dev server, file watcher, batch loop, mass-file processor, external-API scan), do not restart it in the same session without renewed approval. "Kill" signals: explicit user message ("kill it", "stop the server", "cancel"), pressing Ctrl+C in a captured terminal, `/work pause`, or any explicit halt instruction.

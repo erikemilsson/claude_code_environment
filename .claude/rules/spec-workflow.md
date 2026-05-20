@@ -30,9 +30,10 @@ Every project starts with ideation. A vision document is required before spec cr
 
 1. Brainstorm in Claude Desktop (or any tool)
 2. Save the result to `.claude/vision/`
-3. Run `/iterate distill` to extract a buildable spec
+3. *(Optional pre-distill enrichment)* Run `/grill {vision-file}` to surface fuzzy language, sharpen domain vocabulary against `./CONTEXT.md` (created lazily on first resolved term), and resolve ambiguity branch-by-branch before distilling. See `.claude/commands/grill.md`.
+4. Run `/iterate distill` to extract a buildable spec
 
-Vision docs can be added throughout the project lifecycle — the vision folder is a living input, not a one-time artifact.
+Vision docs can be added throughout the project lifecycle — the vision folder is a living input, not a one-time artifact. `/grill` can be re-run mid-project when fuzzy language creeps into the spec or codebase; it updates `./CONTEXT.md` inline as terms resolve.
 
 ## Workflow Cycle
 

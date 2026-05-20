@@ -246,62 +246,9 @@ In the Styler audit run, this left two captured-inputs files missing (`meta.json
 - Video: https://www.youtube.com/watch?v=6BB6exR8Zd8
 - Skill list + four-frame structure: `/Users/erikemilsson/Downloads/skills-main/README.md`
 
-## FB-068: Project domain glossary + interactive interrogation mode (CONTEXT.md + /grill)
+## FB-068: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
 
-**Status:** ready
-**Captured:** 2026-05-19
-**Source:** mattpocock/skills review 2026-05-19 — `skills/productivity/grill-me/SKILL.md`, `skills/engineering/grill-with-docs/SKILL.md`, `skills/engineering/grill-with-docs/CONTEXT-FORMAT.md`, and the deprecated `skills/deprecated/ubiquitous-language/SKILL.md` (deprecated *because* extract-then-stop didn't stick — the working pattern weaves glossary growth into the design conversation).
-
-**Two coupled additions:**
-
-1. **`./CONTEXT.md` slot** — project-owned, lazily-created domain glossary at project root. Format from Pocock's CONTEXT-FORMAT.md: term + one-sentence definition + `Avoid:` aliases; Relationships with cardinality; Example dialogue between dev and domain expert; Flagged ambiguities with resolutions. Strict scope: "totally devoid of implementation details — not a spec, not a scratchpad."
-2. **`/grill` interactive interrogation mode** — Claude asks branch-by-branch questions, walks decision tree, resolves dependencies one at a time, recommends each answer. With-docs variant: challenge user vocabulary against CONTEXT.md inline, sharpen fuzzy terms, cross-reference with code, update CONTEXT.md and offer ADRs sparingly as decisions crystallise.
-
-**Why coupled:** Pocock's deprecation history shows standalone `/ubiquitous-language` didn't survive. The working mechanism is conversation-driven growth — `/grill-with-docs` populates CONTEXT.md as terms resolve during interviews. Shipping CONTEXT.md without the conversational growth mechanism repeats the deprecated mistake.
-
-**Where it fits in CCE's pipeline:** `/grill` complements `/iterate propose` rather than replacing it. `/iterate` is *propose-shaped* (Claude proposes, user audits via `[NEEDS APPROVAL]`). `/grill` is *extract-shaped* (Claude asks, user answers, branches resolve). Strongest integration: `/iterate grill` as a new phase before `/iterate distill`, producing an enriched vision doc the existing distill flow consumes.
-
-**Proposed actions:**
-
-1. **CONTEXT.md slot.**
-   - Add `./CONTEXT.md` row to `.claude/CLAUDE.md` Navigation table (project-owned artifact, parallel to existing "Project instructions: `./CLAUDE.md` (root)" entry).
-   - Brief rule addition in `.claude/rules/agents.md` (or new `.claude/rules/glossary.md` imported from `.claude/CLAUDE.md`): implement-agent reads CONTEXT.md when present; verify-agent checks vocabulary; lazy-creation pattern (no placeholder file shipped — created on first resolved term).
-   - Extend `/audit-coherence` `vocab_drift` lens to use CONTEXT.md as canonical reference when present.
-   - **Do NOT ship a starter CONTEXT.md** — per Pocock's deprecation lesson, placeholders don't get filled.
-
-2. **/grill command.**
-   - New `.claude/commands/grill.md` carrying Pocock's 7-line essence (interview relentlessly, walk decision tree, one question at a time, recommend each answer, explore codebase when answers are gettable that way).
-   - Auto-detect with-docs flow: if CONTEXT.md exists, run the full grill-with-docs behavior (challenge vocab, sharpen terms, cross-reference code, update CONTEXT.md, offer ADRs sparingly with three criteria — hard to reverse + surprising without context + real trade-off).
-   - Wire into `/iterate` as new pre-distill phase (`/iterate grill` → enriched vision doc → `/iterate distill`).
-
-3. **Sync + rule wiring.**
-   - Add command to `sync-manifest.json`.
-   - Reference from `.claude/rules/spec-workflow.md` § Vision Documents as pre-distill enrichment step.
-
-**Dependencies / interactions:**
-
-- **DEC-016 guardrail**: `/grill` writes vision docs and CONTEXT.md, NOT spec/decision files directly. Existing guardrail not triggered. CONTEXT.md is outside the three guarded patterns. ADR-offering still routes through `/research` rather than direct write (see Out of Scope below).
-- **FB-060 Phase 2** (sync category schema): if Phase 2 ever ships, CONTEXT.md is clearly `project_owned`. Doesn't block.
-- **`/iterate distill`**: minor — accept enriched-vision-doc input shape.
-- **`/audit-coherence` vocab_drift lens**: minor — switch from heuristic to glossary-anchored when CONTEXT.md exists.
-
-**Out of scope (explicitly — these are likely temptations to scope-creep into; each is excluded with reason):**
-
-- **Co-equal CONTEXT.md/spec as sources of truth.** Tempting because the spec already has its own drift/fingerprint machinery — symmetry pull would suggest doing the same for the glossary. Would require: `glossary_fingerprint` provenance on tasks (parallel to `spec_fingerprint`), glossary-anchored verify-agent checks on task descriptions and code, dual-source drift reconciliation, conflict-resolution UX when glossary and spec disagree. Lift far exceeds value; advisory glossary referenced by behavior rules captures the practical benefit. Revisit only if the advisory mechanism demonstrably fails to prevent vocabulary drift across multiple shipped projects.
-
-- **Glossary auto-import from existing spec or codebase.** Tempting because the spec already contains domain terms — easy to scan for Capitalized Nouns and propose a starter glossary. DO NOT. Pocock's deprecated `/ubiquitous-language` did exactly this (batch-extract from conversation → save `UBIQUITOUS_LANGUAGE.md`) and it didn't stick. The deprecation reasoning: a pre-populated glossary doesn't get maintained; an organically-grown one does. The `/grill with-docs` mechanism *is* the maintenance loop. If a user wants to seed the glossary they can manually write the first entry; Claude does not batch-extract.
-
-- **`/grill` writing ADRs directly (bypassing `/research`).** Tempting because Pocock's `/grill-with-docs` offers to create ADRs inline. CCE has `/research` for decision records, with multi-option investigation + comparison matrix + select-an-option checkbox + research-archive — substantially more rigor than Pocock's 1-3 sentence ADRs. DEC-016's permission-layer guardrail would also block a direct `/grill` write to `decisions/`. Behavior instead: when Pocock's three ADR criteria are all true (hard to reverse + surprising without context + real trade-off), `/grill` *suggests* an ADR is needed and routes the user to `/research`. Routing through `/research` preserves CCE's decision-record rigor.
-
-- **Multi-context `CONTEXT-MAP.md` for monorepos.** Pocock supports it: a root `CONTEXT-MAP.md` lists per-subdir `CONTEXT.md` files. CCE's single-spec model assumes one domain per project. Revisit only when a real multi-context CCE project exists. Adding it speculatively risks over-design — the format would need to align with whatever multi-spec mechanism (if any) emerges.
-
-- **Replacing `.claude/support/reference/shared-definitions.md` with CONTEXT.md.** They occupy different layers and must coexist: shared-definitions.md is *environment* vocabulary (Pending/In Progress/Awaiting Verification statuses, difficulty 1-10 scale, owner enums) — terms a user needs to understand the CCE workflow. CONTEXT.md is *project domain* vocabulary (the user's Customer/Order/Invoice or equivalent). Don't collapse them; the two layers serve different audiences.
-
-- **Glossary-driven code linting from the glossary slot itself.** Auto-flagging task descriptions, file names, or code that uses non-canonical terms belongs to `/audit-coherence`'s `vocab_drift` lens, not the glossary file. CONTEXT.md is the *reference*; `/audit-coherence` is the *enforcement*. Keep the surfaces separate so that disabling the audit doesn't also disable the glossary.
-
-- **Glossary versioning / fingerprinting.** Treat CONTEXT.md as a live document without version tracking or drift fingerprinting. If drift becomes an observed problem (e.g., specs reference glossary terms that have since been renamed), add a fingerprint mechanism in a follow-up FB. Premature versioning machinery would add maintenance overhead before the underlying behavior is validated.
-
-**Likely route:** direct ship via template edit (1 new command, 1 navigation row, 1 rule addition, 1 audit-coherence reference, 1 spec-workflow cross-ref). No DEC unless we end up debating `./CONTEXT.md` vs `.claude/CONTEXT.md` location — default to root per Pocock's convention.
+**Status:** promoted 2026-05-20 — new `/grill` command + `./CONTEXT.md` slot (project-owned, lazy-created glossary) shipped in template_version 4.2.0. Live skills-list verification: `grill: Grill Command` immediately appeared in model-invocable list. Integration points: `./CONTEXT.md` row in `.claude/CLAUDE.md` Navigation, `/grill` in Environment Commands, new `## Domain Glossary Awareness` section in `rules/agents.md`, `/grill` mention in `rules/spec-workflow.md § Vision Documents`, extended `audit-coherence.md § "Lens 2 — vocab-drift"` to consume CONTEXT.md when present. All explicit out-of-scope items from FB-068 honored (no batch-extract, no co-equal source of truth, no CONTEXT-MAP.md, no glossary versioning, no direct ADR writes). See archive for full text.
 
 ## FB-069: /diagnose skill — debugging methodology (CCE has zero)
 

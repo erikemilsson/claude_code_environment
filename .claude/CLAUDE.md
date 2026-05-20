@@ -27,6 +27,7 @@ This environment is designed for **Claude Opus 4.7** (`claude-opus-4-7[1m]`). Al
 | Feedback | `.claude/support/feedback/` |
 | Project extension hooks | `.claude/support/reference/extension-hooks.md` |
 | Project instructions | `./CLAUDE.md` (root) |
+| Project domain glossary (lazy, optional) | `./CONTEXT.md` (created by `/grill` on first resolved term) |
 
 ## Critical Invariants
 
@@ -49,6 +50,7 @@ This environment is designed for **Claude Opus 4.7** (`claude-opus-4-7[1m]`). Al
 | `/work pause` | Graceful wind-down (preserve context before compaction) |
 | `/work complete` | Complete current in-progress task |
 | `/iterate` | Spec review and refinement |
+| `/grill` | Interview-style interrogation; auto-detects `./CONTEXT.md` for with-docs flow |
 | `/review` | Implementation quality review (advisory, read-only) |
 | `/status` | Quick view of project state |
 | `/research` | Investigate options for decisions |
