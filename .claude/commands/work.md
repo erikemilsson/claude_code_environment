@@ -213,6 +213,8 @@ Verify the dashboard is current before using its data. Compute a SHA-256 hash of
 
 Also compare `template_version` in the META block against `template_version` in `.claude/version.json`. If they differ or the META field is absent, the dashboard was generated with older format rules and should be regenerated (see dashboard-regeneration.md § "Format Staleness").
 
+Also read `.claude/dashboard-state.json`'s `pending_full_regen` field. If non-null, a prior-session targeted edit set the sentinel and full regen must run even when `task_hash` matches (see dashboard-regeneration.md § "Targeted Edits"). Full regen clears the field to `null`. A missing field is treated as `null` (back-compat).
+
 **Full procedure:** `.claude/support/reference/drift-reconciliation.md` § "Dashboard Freshness Check"
 
 ### Step 1b: Spec Drift Detection

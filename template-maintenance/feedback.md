@@ -517,40 +517,9 @@ Tags: workflow, work-step-2b, post-decision-check, false-positive, inflection-po
 
 **Status:** promoted 2026-05-20 via v4.6.4. Minute-granularity timestamp applied to `/work pause` session-export filename at both write sites (`work.md` step 5 + `pre-compact-handoff.sh` lines 230 + 237). See archive for full entry.
 
-## FB-080: Dashboard full-regen is too heavy for incremental updates → strategic-moment regens get deferred, staleness compounds
+## FB-080: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
 
-**Status:** new
-**Captured:** 2026-05-20
-**Source:** Two consecutive same-week session exports, two different projects:
-- styler 2026-05-17 (`interaction-logs/processed/styler-2026-05-17.json` § `workflow_friction_notes`): "Dashboard regeneration is heavy enough that I deferred it across multiple strategic moments (Tier 1 triggers fired but I did targeted inline edits to META + Reviews instead). The dashboard task_hash stayed STALE_PENDING_REGEN through the entire session."
-- echothread 2026-05-17 (`interaction-logs/processed/echothread-2026-05-17.json` § `workflow_friction_notes`): "Dashboard staleness pattern is now twice-repeated. Both prior session's handoff AND this session's handoff explicitly note 'dashboard is stale, did not regen, deferred to next session's Step 1a.'"
-
-### Observation
-
-The current dashboard-style skill specifies a Tier 1 "Strategic Regen" trigger set (decomposition complete, parallel batch end, session boundaries, `/work complete`, phase gates, decision resolution). When those fire, the procedure regenerates the *entire* dashboard. In dense work sessions, this gets deferred because the cost-to-update ratio doesn't justify a full regen for, say, "one phase decision resolved" — so the orchestrator does targeted inline edits to META + Recent Activity + the affected section instead.
-
-The deferred regen accumulates. Next session's Step 1a freshness check then triggers a full regen as session-start overhead, displacing actual work time. Two of the most-active projects in the last week both report this independently.
-
-### Two routes
-
-**Route A — Partial-regen mode.** Add a documented "partial regen" path to the dashboard-style skill: regenerate META + specific sections (passed as args or derived from change kind) without touching the rest. The inline-edits-then-defer pattern is exactly partial-regen done by hand; codifying it would remove the ambiguity and let the writer commit to it confidently.
-
-**Route B — Formalize the defer-then-regen pattern.** Change the documented expectation: "pause defers regen, next session Step 1a regenerates" becomes the explicit pattern, not the implicit fallback. The dashboard-style skill's Tier 1 trigger list shrinks accordingly (or each trigger gets an "inline edit OR queue for next-session regen" branch).
-
-Route A is structurally cleaner (the underlying problem is "full regen is too heavy" — partial-regen addresses it directly). Route B is cheaper to ship (documentation change only) but doesn't fix the underlying cost issue.
-
-### Scope
-
-- `.claude/skills/dashboard-style/SKILL.md` — primary surface (procedure + trigger list)
-- `.claude/support/reference/dashboard-regeneration.md` — mirror in the reference doc
-- `.claude/rules/dashboard.md` — "Regeneration Strategy" section may need a partial-regen branch
-- `.claude/commands/work.md` Step 0/1 freshness check — recognize partial-regen sentinel if Route A ships
-
-### Signal strength
-
-Multi-session, multi-project, same-week. Strong promote candidate. Likely route: research-light (decide A vs B vs hybrid), then ship.
-
-Tags: dashboard, regeneration, partial-regen, freshness, multi-project-signal, workflow
+**Status:** promoted 2026-05-20 via v4.7.0. Route C1 (hybrid: targeted-edit pattern + sidecar sentinel) selected over A (section-fingerprints in META) and B (defer-everything-to-session-boundary). New `pending_full_regen` field on `dashboard-state.json` sidecar; targeted-edit decision table in SKILL.md + mirror; Step 1a freshness check extended. See archive for full entry; research at `.claude/support/workspace/fb-080-research.md`.
 
 ## FB-081: Long autonomous batches (3+ implement+verify cycles) lack heartbeat or user-check-in default
 

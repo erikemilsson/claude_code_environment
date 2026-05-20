@@ -1515,3 +1515,58 @@ Single-project capture but the failure mode was concrete and observable. The fix
 No DEC; no sync-manifest change (the affected files are already in `sync` category; the diff is content-only).
 
 Tags: workflow, work-pause, filename-collision, silent-overwrite, session-export
+
+## FB-080: Dashboard full-regen is too heavy for incremental updates → strategic-moment regens get deferred, staleness compounds
+
+**Status:** promoted (v4.7.0, 2026-05-20) — Route C1 (hybrid: targeted-edit pattern + sidecar sentinel) selected over A (full structural section-fingerprints) and B (defer-everything-to-session-boundary).
+**Captured:** 2026-05-20
+**Shipped:** 2026-05-20 — Targeted-edit pattern documented in `.claude/skills/dashboard-style/SKILL.md § "Targeted Edits (mid-session lite path)"` + mirror in `.claude/support/reference/dashboard-regeneration.md`. New `pending_full_regen` field added to `.claude/dashboard-state.json` sidecar schema (META "strict 13" whitelist unchanged). `/work` Step 1a freshness check extended to read the sentinel; `.claude/support/reference/drift-reconciliation.md § "Dashboard Freshness Check"` updated with new check 5. Brief pointer added to `.claude/rules/dashboard.md § "Regeneration Strategy"`. Research artifact at `.claude/support/workspace/fb-080-research.md` documents the three-route analysis.
+**Source:** Two consecutive same-week session exports, two different projects:
+- styler 2026-05-17 (`interaction-logs/processed/styler-2026-05-17.json` § `workflow_friction_notes`): "Dashboard regeneration is heavy enough that I deferred it across multiple strategic moments (Tier 1 triggers fired but I did targeted inline edits to META + Reviews instead). The dashboard task_hash stayed STALE_PENDING_REGEN through the entire session."
+- echothread 2026-05-17 (`interaction-logs/processed/echothread-2026-05-17.json` § `workflow_friction_notes`): "Dashboard staleness pattern is now twice-repeated. Both prior session's handoff AND this session's handoff explicitly note 'dashboard is stale, did not regen, deferred to next session's Step 1a.'"
+
+### Observation (capture-time)
+
+The dashboard-style skill specifies a Tier 1 "Strategic Regen" trigger set (decomposition complete, parallel batch end, session boundaries, `/work complete`, phase gates, decision resolution). When those fire, the procedure regenerates the *entire* dashboard. In dense work sessions, this gets deferred because the cost-to-update ratio doesn't justify a full regen for, say, "one phase decision resolved" — so the orchestrator does targeted inline edits to META + Recent Activity + the affected section instead.
+
+The deferred regen accumulates. Next session's Step 1a freshness check then triggers a full regen as session-start overhead, displacing actual work time. Two of the most-active projects in the last week both reported this independently.
+
+### Route selection
+
+Three routes considered (full analysis in `workspace/fb-080-research.md`):
+
+**Route A — Section-fingerprints in META (full structural fix).** Add per-section fingerprints to the META whitelist; per-section freshness comparison drives partial-regen. Structurally correct but substantial: grows the "strict 13" whitelist ~50%, requires new section-fingerprint computation, new freshness logic, migration story for existing dashboards. Risk of dirty-tracking bugs. Effort: 1-2 sessions.
+
+**Route B — Documentation-only (formalize defer-then-regen).** Update SKILL.md Tier 1 to "queue for next-session regen" for most triggers. Cheap (~30 min) but DOES NOT fix the underlying cost issue (just shifts when full regen fires) AND throws away the observed mid-session value (Erik's targeted inline edits to META + Recent Activity + affected sections, which keep the dashboard current despite no full regen). Net regression on user-visible value.
+
+**Route C1 (selected) — Hybrid: targeted-edit pattern + sidecar sentinel.** Document the orchestrator's existing pattern of targeted inline `Edit` calls for single-section changes. Add `pending_full_regen: ISO timestamp | null` to `dashboard-state.json` sidecar so the next Step 1a still triggers full regen even if `task_hash` matches. Decision table specifies which Tier 1 triggers permit targeted-edit (single phase decision, single task→Action Required, META timestamp refresh, format-staleness fix touching only META) vs require full regen (decomposition complete, parallel batch end, `/work complete`, session boundaries, multi-task changes ≥3, spec version transitions). Cheap (~1 session, ~80-120 lines across 3 files + 1 sidecar field). Preserves mid-session dashboard updates AND backstops staleness via sentinel. Keeps Route A available as future iteration if Route C1 produces residual friction.
+
+### What shipped
+
+Six files touched:
+
+- `.claude/skills/dashboard-style/SKILL.md` — `pending_full_regen` added to sidecar schema (JSON example + field-definitions table); new "Targeted Edits (mid-session lite path)" section inserted between "When to Regenerate" and "Regeneration Steps" with decision table, procedure (4 steps), cycle-and-clearing rules, and rationale paragraph; brief pointer after Tier 2 parallel-mode note.
+- `.claude/support/reference/dashboard-regeneration.md` — Parallel mirror of all SKILL.md changes (same insertion points, identical content).
+- `.claude/rules/dashboard.md § "Regeneration Strategy"` — Brief pointer to the new SKILL.md section.
+- `.claude/commands/work.md § "Step 1a: Dashboard Freshness Check"` — New paragraph instructing orchestrator to read `pending_full_regen` field and trigger full regen if non-null.
+- `.claude/support/reference/drift-reconciliation.md § "Dashboard Freshness Check"` — Added check 5 (sidecar sentinel) to the freshness-check procedure; "Why this matters" paragraph extended.
+- `.claude/version.json` — 4.6.4 → 4.7.0 (MINOR — new behavior surface).
+
+No DEC (research-light deliverable with three-route analysis in workspace; route selection bundled into the ship). No sync-manifest change (all affected files already in `sync` category). Single commit. v4.7.0 (MINOR per SemVer policy at root `CLAUDE.md` § "Version Bumping": "Minor = new features, new commands, significant behavior changes" — targeted-edit pattern is new sanctioned behavior).
+
+### Behavior change
+
+| Before | After |
+|--------|-------|
+| Tier 1 triggers fire full regen (orchestrator informally defers + does targeted edits anyway) | Tier 1 triggers fire full regen OR sanctioned targeted edit per decision table |
+| `task_hash` mismatch is the only sentinel for regen-needed | `task_hash` mismatch OR `template_version` mismatch OR `pending_full_regen` sentinel non-null |
+| Mid-session targeted edits leave the dashboard quietly stale until next Step 1a regen | Mid-session targeted edits update the affected section + META + set sentinel; Step 1a always runs full regen if sentinel is set |
+| No explicit decision tree for orchestrator on targeted vs full | Decision table with 10 patterns (4 targeted, 6 full); "default to full regen when in doubt" |
+
+### Out of scope (deferred)
+
+- Section-level fingerprints in META (Route A) — revisit if Route C1 produces residual friction or if section-level partial-regen becomes load-bearing later.
+- Per-task dirty tracking — would emerge from Route A; not relevant here.
+- Refactoring the 8-step regen procedure itself — Route C1 is about *when* regen fires, not *how*.
+
+Tags: dashboard, regeneration, partial-regen, freshness, multi-project-signal, workflow, sidecar-sentinel
