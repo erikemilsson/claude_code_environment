@@ -20,3 +20,6 @@ __pycache__/
 
 # Prevent nested .claude directories
 .claude/.claude/
+
+# Cross-project session exports (template repo only, not shipped)
+interaction-logs/
