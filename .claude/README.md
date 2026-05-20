@@ -210,6 +210,10 @@ flowchart TD
 
 **Harness reminders about built-in task tools:** The Claude Code runtime emits a reminder along the lines of *"Consider TaskCreate / TaskUpdate"* on most tool returns. This environment uses its own task system (`.claude/tasks/task-*.json`) and never the built-in tools (see `.claude/CLAUDE.md § Critical Invariants`). The reminder is harness-emitted (not template-emitted) and currently cannot be suppressed per-project. Agents ignore it automatically; the noise is benign but visible. Upstream Anthropic mechanism for opt-out is pending.
 
+**Auto-mode classifier false-positives:** Two observed runtime-classifier behaviors that can block legitimate work (both upstream-Anthropic — the classifier lives in the Claude Code runtime, not the template):
+1. **DEC-016 scope over-broad.** Edits to `.claude/support/reference/decisions.md` (the reference doc *about* decision format) may be blocked citing DEC-016 — but DEC-016 only covers `.claude/spec_v*.md`, `.claude/support/decisions/decision-*.md` records, and `.claude/vision/**/*.md`. Workaround: agents lead with explicit context (e.g., "this is the reference doc, not a decision record"); if still blocked, the user provides typed-text authorization in their next message.
+2. **AskUserQuestion responses don't count as classifier-bypass authorization.** When an `AskUserQuestion`-offered "authorize" option is selected, the classifier does NOT treat it as "visible user response authorizing the retry" — it requires typed-text. Workaround: agents prefer free-text prompts (not `AskUserQuestion`) when classifier-bypass authorization is the goal. `AskUserQuestion` remains appropriate for collecting preferences and structured decisions. Tracked as FB-077; upstream-Anthropic mechanism pending.
+
 ## Where to Find Things
 
 | Looking for... | Location |

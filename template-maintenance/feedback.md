@@ -422,8 +422,10 @@ Tags: verify-agent, runtime-validation, bundle-boundary, live-data, extends-FB-0
 
 ## FB-077: Auto-mode classifier over-broad DEC-016 scope + AskUserQuestion responses don't count as authorization
 
-**Status:** new
+**Status:** cheap-action-shipped + deferred (structural fix upstream-gated)
 **Captured:** 2026-05-20
+**Cheap action shipped:** 2026-05-20 — Added "Auto-mode classifier false-positives" paragraph to `.claude/README.md § Known Constraints` (sibling to FB-075's TaskCreate harness reminder paragraph). Documents both sub-issues + workarounds: (a) DEC-016 scope — lead with explicit context-clarifying language, or user provides typed-text authorization; (b) AskUserQuestion authorization — agents prefer free-text prompts when classifier-bypass authorization is the goal. Shipped in template_version 4.6.3.
+**Defer condition (structural fix):** Re-assess when Anthropic offers (a) per-path DEC-016 scope declaration (positive-list of paths in scope, exact-match to the three globs in `CLAUDE.md § Critical Invariants`), (b) AskUserQuestion authorization recognition (classifier treats AUQ "authorize" responses as auth for the action they reference), OR (c) workaround friction recurs across N sessions despite the README docs.
 **Source:** Two distinct classifier false-positives observed in-session 2026-05-20 during FB-074 sub-issue 1 (categories extension) ship. Concrete block messages preserved below.
 
 The auto-mode classifier blocked legitimate Edits during a session where the user had explicitly approved the work (FB-074 promotion approved via AskUserQuestion). Two distinct failure modes surfaced.
