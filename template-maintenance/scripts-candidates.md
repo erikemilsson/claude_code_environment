@@ -143,7 +143,7 @@ Nine candidates grouped into five families. Each row: current home, current shap
 
 ---
 
-### Family E — Decision auto-finalization
+### Family E — Decision auto-finalization (CLOSED 2026-05-20 — dropped)
 
 | # | What | Current home | Writes `.claude/`? |
 |---|------|--------------|--------------------|
@@ -161,9 +161,9 @@ Nine candidates grouped into five families. Each row: current home, current shap
 - ✗ **Regression wait needed.** The inlining fix just landed. Extract only if we observe recurrence; otherwise the fix is complete and the script is redundant maintenance.
 - ✗ Writing Decision sections from Option Details requires text transformation (option-name → rationale text blocks). Partially LLM-shaped work. Script can do the mechanics (frontmatter), LLM does the prose.
 
-**Recommendation:** **Defer pending trial.** Explicitly hold this one for 30–60 days of observed `/work` + `/iterate` runs. If FB-017 recurs, extract immediately; if not, leave as LLM-executed and save the maintenance burden.
+**Recommendation:** **CLOSED — dropped 2026-05-20 per trial outcome.** No FB-017 regression observed in this template repo or across three downstream projects (echothread, styler, SIREN) during the trial window 2026-04-17 → 2026-05-17. FB-017's inlining fix at `commands/work.md` Step 2b + `commands/iterate.md` is sufficient; script extraction is not needed. The original deferral rationale (hold 30–60 days; extract only if FB-017 recurs) held — no recurrence observed.
 
-**Trial window:** 2026-04-17 to 2026-05-17 (30-day mark; 4 days remaining as of 2026-05-13). No FB-017 regression observed during this template-repo session. Re-assess on or after 2026-05-17 — if no recurrence in downstream projects either, drop the candidate.
+**Trial window:** 2026-04-17 to 2026-05-17 (30-day mark). **Outcome:** No FB-017 regression observed. Verified 2026-05-20 across feedback files, git log since 2026-04-17, and 18 cross-project session exports in `interaction-logs/processed/` (echothread / styler / SIREN). The single grep hit in `styler-session-2026-05-16.json` was a false-positive — matched "Step 2b" but referred to a different sub-feature (the inflection-flag post-decision check; captured separately as FB-078, not a FB-017 regression). Family E dropped per criterion; this section preserved for audit-trail purposes.
 
 ---
 
@@ -178,7 +178,7 @@ Nine candidates grouped into five families. Each row: current home, current shap
 
 **Tier 3 — extract on observed need** (low frequency or overlaps with just-landed fixes):
 4. **Family D** — parallel-plan computation. Only if real conflicts surface in downstream parallel-batch sessions.
-5. **Family E** — decision auto-finalization. Trial window closes 2026-05-17. Only extract if FB-017 recurs.
+5. **Family E** — decision auto-finalization. **CLOSED 2026-05-20 — dropped** (no FB-017 regression during trial window 2026-04-17 → 2026-05-17).
 
 ---
 
@@ -245,7 +245,7 @@ Recommended file layout:
 
 **Tier 3 (Families D + E) — observed-need gates.**
 - Family D: trigger if real parallel-batch conflicts surface that the LLM missed (low frequency expected; FB-036 Pre-Dispatch Confirmation reduces this risk).
-- Family E: re-assess on or after 2026-05-17 (30-day trial mark). If no FB-017 regression observed in this template repo or downstream projects, drop the candidate.
+- Family E: **CLOSED 2026-05-20** — dropped per trial outcome. No FB-017 regression observed in this template repo or downstream during 2026-04-17 → 2026-05-17.
 
 **Remaining open questions** (from "Open questions for user review" above):
 - #2 `task-schema.json` alongside Family B — still open. Could land as a separate Stage 2 extension.

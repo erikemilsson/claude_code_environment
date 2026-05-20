@@ -476,3 +476,37 @@ In this session: FB-074 sub-issue 1 (categories enum) needed edits to BOTH `heal
 - FB-074 sub-issue 1 (categories extension) — concrete promoted item that triggered the block.
 
 Tags: auto-mode, classifier, dec-016, dec-005, false-positive, askuserquestion, authorization, upstream-anthropic
+
+## FB-078: /work Step 2b post-decision check fires /iterate based on `inflection_point` flag alone, ignoring chosen-option spec_impact intent
+
+**Status:** new
+**Captured:** 2026-05-20
+**Source:** Surfaced 2026-05-20 during FB-011 Family E re-assessment — bridged from styler session export 2026-05-16 (`interaction-logs/processed/styler-session-2026-05-16.json` § `workflow_friction_notes`). Not surfaced in the inbox triage subagent's earlier analysis (this session's Phase 3 missed it); discovered during the Family E `Step 2b` cross-reference check.
+
+DEC-083 (styler decision) correctly flagged `inflection_point: true` because the option space contained spec-impacting candidates. The user selected option δ (close) which has explicit NO spec impact. But `/work` Step 2b's post-decision check fires the `/iterate` suggestion based on the decision-level `inflection_point` flag alone — it does NOT read the chosen option's text for spec_revised intent. Result: false-positive `/iterate` suggestion on the next `/work` run.
+
+### The structural gap
+
+`inflection_point` is a property of the **decision** (was the option space spec-shaping?). But spec-impact is a property of the **selected option** (does the chosen path require a spec amendment?). The current check conflates the two — it treats the decision-level flag as the trigger, ignoring whether the actual selection has spec consequences.
+
+### Mitigation candidates (from the session)
+
+1. **Read the chosen option's text for `'no spec amendment'` markers.** When the option detail explicitly says no spec impact, skip the `/iterate` suggestion. Heuristic-based; tolerant of varied phrasing; no schema change.
+2. **Add per-option `spec_impact` flag to the decision schema.** Author marks each option with `spec_impact: true | false | unclear` at decision creation. Step 2b reads the chosen option's flag deterministically. Cleaner; requires schema change + authoring burden.
+
+Option 1 is cheaper (no schema change) but heuristic-shaped. Option 2 is more deterministic but requires authoring change. Could ship Option 1 first as a quick fix; escalate to Option 2 if heuristic false-negatives accumulate.
+
+### Boundary with FB-017
+
+FB-017 (shipped via inlining fix) was about Step 2b's **decision auto-finalization** sub-feature (checkbox detection → `status: approved`). This issue (FB-078) is about Step 2b's **post-decision check** sub-feature (does the chosen option warrant `/iterate`?). Same Step 2b function, different sub-paths; no overlap. The cross-reference to FB-017 in the styler session was a textual false-positive (matched "Step 2b") that surfaced this issue during the Family E re-assessment grep.
+
+### Scope
+
+- `.claude/commands/work.md` Step 2b post-decision check logic (primary)
+- If Option 2 chosen: `.claude/support/reference/decisions.md` (decision record template + option authoring guidance) + decision-record schema enforcement
+
+### Signal strength
+
+Single-project signal (styler 2026-05-16). Low frequency expected — most `inflection_point: true` decisions DO have spec impact in their chosen option. The false-positive happens specifically when an inflection-eligible decision lands on a "close / defer / no-op" option. Could promote now (Option 1 cheap fix) or wait for 2nd-project signal.
+
+Tags: workflow, work-step-2b, post-decision-check, false-positive, inflection-point, decisions-schema
