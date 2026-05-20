@@ -557,6 +557,43 @@ Single-session signal but tied to a concrete observable user-friction event. Pat
 
 Tags: autonomous-batch, heartbeat, user-ping, work-step, behavioral-rule
 
+## FB-082: Template-side enforcement of the YAML frontmatter colon-space hazard in SKILL.md
+
+**Status:** new
+**Captured:** 2026-05-20
+**Source:** Bridged from flirty-gym FB-005 (template_version 4.0.0) via /feedback template:
+
+## Observation
+
+Authoring `.claude/skills/voice-gap/SKILL.md` in flirty-gym task T12 used unquoted `: ` (colon-space) inside the YAML frontmatter `description:` field at two sites. Strict YAML 1.2 / PyYAML rejects these as ambiguous mapping-value tokens. The Claude Code harness's deployment parser is permissive (it loaded the skill — visible in the `available-skills` system-reminder), so the failure mode was silent at runtime. T12's verify-agent caught it via PyYAML; the implement-agent retry replaced `: ` with em-dashes (` — `) to match sibling-skill convention.
+
+## Meta-pattern
+
+The convention is now established empirically across all 5 SKILL.md files in flirty-gym (review, persona, personas-from-real, voice-gap, pattern-mirror) — but there's no template-side documentation, validator, or skill-authoring guidance that encodes it. Task T13's dispatch prompt explicitly carried the lesson forward, which is fragile (the orchestrator had to remember; the implementer was warned just-in-time).
+
+## Proposed template surface for the fix
+
+1. **Lightweight (recommended):** add a 1-line note to `.claude/agents/implement-agent.md` § "Tool Preferences" / "Common Pitfalls" warning that YAML frontmatter `description:` values must avoid unquoted `: ` — use em-dashes. Or add the same note to a skill-authoring reference doc if one exists (`.claude/support/reference/skill-authoring.md` or similar).
+2. **Heavier:** a `/health-check` validator hook that parses every SKILL.md frontmatter with strict YAML and fails on ambiguous mapping-value tokens. Catches the issue at authoring/check time rather than verify time, removing the implementer-retry round-trip.
+
+## Project-side mitigation already applied
+
+flirty-gym added a "Skill authoring" bullet to root `./CLAUDE.md § Key Invariants` documenting the convention. Prevents future drift within this project.
+
+## Triage recommendation
+
+Lightweight option is a one-line edit and catches future drift across all projects using the template. The heavier validator hook is worth it only if SKILL.md frontmatter authoring becomes common enough to justify the hook overhead.
+
+## Source trace
+
+- Surfaced via T12 verification fail (flirty-gym friction marker FR-003 captured at the time).
+- FR-003 marked resolved 2026-05-20 once project-side mitigation landed and this template-side capture was written as FB-005.
+- See flirty-gym `.claude/support/feedback/feedback.md` for the local entry.
+
+## Tags
+
+template-side, skill-authoring, yaml, frontmatter, validator-hook-candidate
+
 ## Signal queue from 2026-05-20 scan — captured here for next-session triage
 
 The 2026-05-20 scan of `interaction-logs/processed/` surfaced six additional weaker signals not yet promoted to dedicated FBs. Captured here as a queue so next `/feedback review` (or manual triage) can decide whether to expand any into proper entries.
