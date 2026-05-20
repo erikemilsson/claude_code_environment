@@ -48,6 +48,20 @@ This complements DEC-005's permission-layer gate (which stops unauthorized tool 
 
 Note: starting a dev server for UI verification is a feature (per root `CLAUDE.md` guidance on UI testing), not a violation. The rule applies to *restarting after a kill*, not to initial starts.
 
+## Command Invocation Gates
+
+Slash commands that perform substantive or irreversible work carry `disable-model-invocation: true` in YAML frontmatter to prevent autonomous invocation by the model. User-typed slash invocation continues to work; the model can still *suggest* the command in conversation. The gate only blocks the model's autonomous decision to fire the command via the `Skill` tool.
+
+**Gated commands (template-shipped):** `/breakdown`, `/research`, `/iterate`, `/work`, `/feedback`.
+
+**Selection criteria:**
+- **Gate**: substantive writes, irreversible state transitions, ledger changes, expensive/long-running flows where autonomous fire is a foot-gun.
+- **Leave open**: read-only audits (`/status`, `/health-check`, `/review`, `/audit-coherence` / `/audit-ui` non-triage modes) and conversational entry points where the model legitimately benefits from being able to ambient-invoke.
+
+**Sub-mode coupling.** `disable-model-invocation` is per-file. Multi-mode commands (`/iterate`, `/work`, `/feedback`) gate as a whole — the model can no longer ambient-invoke their read-only sub-modes (`/work` no-args, `/iterate` no-args, `/feedback [text]` capture, `/feedback list`) either. Acceptable because user-typed slash invocation continues to work for all sub-modes, and the model can still surface suggestions in conversation. Future refactor option: split multi-mode files (e.g., `work-complete.md` separate from `work.md`) if the coupling produces observed friction.
+
+**Defense-in-depth.** Upstream of DEC-005 (permission-layer auto mode) and DEC-016 (spec/decision/vision Edit/Write ask). DEC-005 catches tool calls the model shouldn't make; DEC-016 catches writes to protected paths; this gate prevents the model's *decision* to fire the command in the first place. All three layers compound.
+
 ## Cross-Project Capture Protocol
 
 When a session is about to recommend the **template→sync flow** — typically after surfacing a generally-useful rule, command, agent, skill, or reference doc in the current project that could ship to the template — run a boundary check FIRST. The template→sync flow can silently lose local additions to template-owned files if those additions weren't reconciled before the sync.

@@ -1,3 +1,7 @@
+---
+disable-model-invocation: true
+---
+
 # Iterate Command
 
 Spec review and refinement. Identifies gaps, asks questions, proposes spec changes for user approval.

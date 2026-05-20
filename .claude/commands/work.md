@@ -1,3 +1,7 @@
+---
+disable-model-invocation: true
+---
+
 # Work Command
 
 The intelligent entry point for all project work. Handles spec-checking, state detection, task decomposition, task completion, and routing to specialist agents.

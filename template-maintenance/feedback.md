@@ -358,66 +358,6 @@ CCE has no equivalent. The skill is cheap to add, low maintenance, and complemen
 
 **Likely route:** direct ship via template edit. Single new command file. No DEC. Smallest scope of the Wave 1 entries — can ship independently of every other FB-068/069/071.
 
-## FB-071: `disable-model-invocation: true` frontmatter audit pass
+## FB-071: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
 
-**Status:** ready (verification cleared 2026-05-19 — audit pass can proceed)
-**Captured:** 2026-05-19
-**Verified:** 2026-05-19 — claude-code-guide agent docs lookup confirmed `disable-model-invocation: true` is fully supported on `.claude/commands/*.md` with identical semantics to `.claude/skills/<name>/SKILL.md`. Sources: [Claude Code frontmatter-reference.md (anthropics/claude-code)](https://github.com/anthropics/claude-code/blob/main/plugins/plugin-dev/skills/command-development/references/frontmatter-reference.md) + [official Claude Code skills docs](https://code.claude.com/docs/en/skills). Audit pass on candidates below can proceed without harness reshape; no fallback option needed.
-**Source:** Frontmatter pattern observed across `skills/engineering/zoom-out/SKILL.md`, `skills/engineering/setup-matt-pocock-skills/SKILL.md`, and `skills/deprecated/ubiquitous-language/SKILL.md` in mattpocock/skills (clone at `/Users/erikemilsson/Downloads/skills-main`).
-
-**Observation:** Pocock's skills use `disable-model-invocation: true` in YAML frontmatter to mark skills that should *only* fire on explicit user slash-invocation — preventing Claude from autonomously deciding to invoke the skill mid-conversation as ambient context. CCE has command and skill entries where ambient invocation would be a foot-gun (silent writes to substantive artifacts, expensive flows, irreversible state transitions). An audit pass identifies which CCE entries should carry the equivalent gate.
-
-**Why the foot-gun is real:** without explicit gating, Claude can decide to invoke a substantive command mid-session ("I should run `/iterate apply` here"). For destructive or expensive commands this is bad: the user expected a discussion, got an autonomous write. CCE's DEC-005 (permission-layer auto mode) catches *unauthorized tool calls*; this gate is upstream — preventing the autonomous decision in the first place.
-
-**Verification approach (cleared 2026-05-19; preserved as historical context):**
-
-Original open question: does the harness honor `disable-model-invocation: true` for slash commands under `.claude/commands/` (vs only for skills)? All three of Pocock's instances are under `skills/`. Resolved via claude-code-guide agent: Claude Code's `frontmatter-reference.md` documents the field with identical semantics for both surfaces. No empirical test session was needed.
-
-Original empirical-test approach (now redundant; kept for reference):
-1. Create a throwaway `.claude/commands/test-gate.md` with `disable-model-invocation: true` in frontmatter and a no-op body.
-2. In a fresh session, attempt to trigger conditions where Claude might autonomously invoke it. Confirm Claude does NOT fire it.
-3. Confirm `/test-gate` slash invocation still works as a user-typed entry.
-
-**If verification had failed (NOT TRIGGERED — preserved as historical context):**
-
-Original fallback options had verification failed:
-- **Option A (defer):** wait for Claude Code harness support. Track via this FB; check after each Claude Code release.
-- **Option B (convert gating-worthy commands to skills):** the candidates that need gating would become skills. Larger change — touches dispatch sites, sync manifest, and the command-vs-skill convention. Reshape as separate FB. Pair with FB-067 Wave 2's hard-vs-soft dependency cleanup pass for one consolidated structural change.
-
-**Candidate commands for the audit:**
-
-*Strong candidates (substantive writes, irreversible or expensive — gate to prevent autonomous fire):*
-- `/iterate apply` — writes to `spec_v{N}.md` (substantive; DEC-016 guardrail catches at write-time but this blocks Claude's *intent* upstream too)
-- `/research` — writes to `decisions/` directory (substantive; same guardrail interaction)
-- `/work complete` — substantive task transition (`In Progress → Awaiting Verification → Finished` flow); autonomous fire risks silent "wrap this up" finalisation
-- `/feedback review` — promotes/archives feedback items (substantive ledger changes; per DEC-013 paired-symmetric concern)
-- `/breakdown {id}` — splits tasks into subtask JSON files (substantive)
-
-*Medium candidates (substantive but interactive — gating ambiguity less severe):*
-- `/iterate distill` — vision → spec creation (substantive write but gated by DEC-016 + user vision input)
-- `/iterate propose` — spec proposal (substantive; `[NEEDS APPROVAL]` block already requires user approval before apply)
-- `/audit-coherence triage` / `/audit-ui triage` — interactive walkers that may apply `[Fix it]` actions (autonomous fire risks silent walk-and-fix)
-
-*Weak candidates (read-only or already conversational — leave open, do NOT gate):*
-- `/work` — primary command, conversational entry point. Should stay ambient-invokable.
-- `/status` — read-only.
-- `/health-check` — read-only audit (audit phase only; if it dispatches to `/audit-coherence` + `/audit-ui` read-only phases, those stay open too).
-- `/review` — read-only advisory.
-- `/audit-coherence` / `/audit-ui` (non-triage read-only phases) — read-only.
-- `/work pause` — writes handoff but is session-end signal. Should stay ambient-invokable (Claude can suggest at appropriate moments).
-- `/iterate` (no args) — entry point; read-only.
-
-**Proposed actions:**
-
-1. ~~**Verification.**~~ ✓ Cleared 2026-05-19 — see Verified header above. No empirical test needed.
-2. **Audit pass.** Apply `disable-model-invocation: true` to strong candidates. Re-evaluate medium candidates after observing how strong-candidate gating feels in practice (a few weeks of usage). Skip weak candidates.
-3. **Document the convention.** Add a brief note to `.claude/rules/agents.md` § "Behavioral Rules" or a new sub-section explaining the frontmatter pattern + selection criteria (substantive writes + ambient-fire foot-gun → gate; read-only or already-conversational → leave open).
-4. **Sync manifest.** No new files unless documenting requires a new reference doc.
-
-**Dependencies / interactions:**
-
-- **DEC-005 (auto-mode permission layer):** complementary. DEC-005 catches *tool calls* Claude shouldn't make; this gate prevents Claude's *decision* to invoke the command in the first place. Both layers compound — the permission layer catches anyone who slipped past, the frontmatter prevents the slip.
-- **DEC-016 (spec/decision/vision edit guardrail):** complementary in the same way. Per-Edit ask-permission catches the write; the frontmatter catches the intent. With both: even if Claude autonomously decided to invoke `/iterate apply`, the permission layer would prompt; with both, Claude doesn't autonomously decide in the first place.
-- **FB-070 (`/zoom-out`):** `/zoom-out` should carry the frontmatter on day one — explicitly a "user asks for help" signal where autonomous fire is circular. Unblocked by verification clearing.
-
-**Likely route:** direct edit (1 audit pass across the candidate list + 1 rule documentation addition). No DEC.
+**Status:** promoted 2026-05-20 — `disable-model-invocation: true` frontmatter applied to all 5 strong-candidate commands (`/breakdown`, `/research`, `/iterate`, `/work`, `/feedback`) shipped in template_version 4.1.0. Live empirical verification: model-invocable skills list shrank immediately from 10 template commands to 5. New `## Command Invocation Gates` section in `rules/agents.md` documents the convention, selection criteria, sub-mode coupling trade-off, and defense-in-depth interaction with DEC-005 + DEC-016. Medium candidates deferred for trial-period observation. See archive for full text.
