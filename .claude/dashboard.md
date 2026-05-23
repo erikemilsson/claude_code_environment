@@ -2,12 +2,18 @@
 
 <!-- DASHBOARD META
 generated: 2026-01-28T14:30:00Z
-task_hash: sha256:a3f8c91d2e7b4056890cd1ef23456789abcdef0123456789abcdef0123456789
 task_count: 12
+task_hash: sha256:a3f8c91d2e7b4056890cd1ef23456789abcdef0123456789abcdef0123456789
+spec_version: spec_v1
+spec_status: active
 spec_fingerprint: sha256:b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2
-template_version: 3.0.0
+template_version: 4.7.1
 verification_debt: 1
 drift_deferrals: 0
+decision_count: 2
+decisions_approved: 1
+decisions_superseded: 0
+decisions_partially_superseded: 0
 -->
 
 <details><summary><strong>Sections</strong></summary>
@@ -152,8 +158,8 @@ graph LR
 
 | ID | Decision | Status | Selected |
 |----|----------|--------|----------|
-| DEC-001 | Contractor selection | Decided | BuildRight Construction |
-| DEC-002 | Main hall flooring | Pending | [Review options](support/decisions/decision-002-flooring.md) |
+| DEC-001 | Contractor selection | Decided | [BuildRight Construction](support/decisions/decision-001-contractor.md) |
+| DEC-002 | Main hall flooring | Pending | [Pending](support/decisions/decision-002-flooring.md) |
 
 ---
 

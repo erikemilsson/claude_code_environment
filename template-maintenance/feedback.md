@@ -608,3 +608,79 @@ The 2026-05-20 scan of `interaction-logs/processed/` surfaced six additional wea
 A seventh candidate — `file-status-taxonomy.md` starter reference doc (CANONICAL/REFERENCE/OPERATIONAL/HISTORICAL/etc.) — is speculative enough (one-project signal, abstract pattern) that it's not worth even queue capture; revisit only if a second project independently raises the need.
 
 Tags: signal-queue, multi-source-scan, next-triage
+
+## FB-083: Capability grounding for spec/agent/model/skill design — template-side reference + freshness mechanism
+
+**Status:** new
+**Captured:** 2026-05-22
+**Source:** flirty-gym 2026-05-22 — that project shipped spec text and skill descriptions claiming runtime model-switching behavior that isn't structurally backed. Per code.claude.com/docs/en/skills, the SKILL.md `model:` frontmatter field is turn-scoped, not session-scoped, so it doesn't fit multi-turn chat skills. The drift wasn't caught at spec authoring or task decomposition because the template doesn't currently surface "what Claude Code can actually do" as a first-class input for spec/skill design. Session export in inbox: `interaction-logs/inbox/flirty-gym-session-export-2026-05-22-0049.json` (unprocessed at capture time).
+
+### Observation
+
+flirty-gym's spec described runtime model-switching as a feature of a multi-turn chat skill, on the assumption that the SKILL.md `model:` frontmatter field would govern model selection across the full skill invocation. The Claude Code skills doc is structurally clear: `model:` is **turn-scoped**, applied per-LLM-turn within the agent loop, not session-scoped or skill-lifetime-scoped. A multi-turn chat skill therefore cannot use that field for cross-turn model continuity the way the spec implied.
+
+The mismatch survived spec authoring AND task decomposition. Neither `/iterate` nor `/work` had a mechanism to sanity-check claims-about-Claude in spec text against the documented capability surface. The drift only surfaced during implementation when actual behavior didn't match the spec's promise — i.e., a "design pattern only obvious after hitting a wall" failure mode (same shape as FB-082).
+
+### Two coupled needs
+
+#### Need 1 — Capability grounding for spec/task/skill design
+
+A template-side reference (candidate location: `.claude/support/reference/claude-code-capabilities.md`) capturing structural facts spec/task authors should know:
+
+- **Skill `model:` / `effort:` frontmatter** — turn-scoped only; not session-scoped or skill-lifetime-scoped. Multi-turn chat skills cannot rely on it for cross-turn model continuity.
+- **Subagent isolation constraints** — no `.claude/` writes, no nested `Task` tool calls, no `permissions.allow` inheritance from parent. Already partially documented in `agents.md § State Ownership` and `§ Tool Preferences`, but scattered; consolidation candidate.
+- **Parallel-execution constraints** — MCP shared state across concurrent subagents (single-session MCPs like Playwright break under fan-out, per `agents.md § MCP and Parallel Execution`), `files_affected` overlap rules, shared-contract detection (FB-046-class).
+- **`Agent` tool `model` parameter** — exposes only `sonnet | opus | haiku` (no per-call effort control or model-version specificity). Effort selection is conversation-level, not call-level.
+- **Slash command invocation gates** — `disable-model-invocation: true` blocks autonomous fire by the model via the `Skill` tool while preserving user-typed slash invocation (see FB-071 / v4.1.0). Multi-mode coupling caveat.
+- **Skill-as-subagent execution** — `context: fork` + `agent:` frontmatter pattern for skill execution in a forked context. Boundaries vs the `Task` dispatch pattern.
+
+`/iterate` and `/work` decomposition would reference this doc so claims-about-Claude in spec text get sanity-checked. Possibilities: a `/iterate` hygiene check (read capability doc fingerprint vs spec mentions of model/skill/subagent/parallel terminology), a `/work` Step 2 decomposition-time guard, or a new `/audit-coherence` lens that flags spec claims contradicted by the capability reference.
+
+#### Need 2 — Freshness mechanism
+
+Claude Code's capability surface changes — skill `model:` field landed recently; `/effort` levels expanded; subagent dispatch shape has evolved across harness versions (see `agents.md § Dispatch Convention` rationale). A static capability reference will go stale, and stale capability docs are arguably worse than no docs (they confer false confidence).
+
+Candidates worth a `/research` round (tradeoffs are real for each):
+
+- **Periodic WebFetch sync** from code.claude.com/docs. Catches changes automatically but risks pulling in updates that silently contradict the project's current spec — the drift surface moves from "spec vs Claude Code" to "spec vs synced doc vs Claude Code", more layers, harder to audit.
+- **`/health-check` capability-doc-freshness lens** — manual review at cadence (every N sessions, or on template version bumps). Lower automation, higher signal; the user can authoritatively confirm "yes still true" or "this changed, update needed."
+- **Version-pinned capability docs with manual update step in template upgrades** — bind the capability doc to a specific Claude Code version range; force an explicit update step on template-version bumps. Conservative and predictable; requires the template maintainer to track Claude Code releases.
+- **"Last verified against Claude Code v.X.Y.Z" footer** on the reference, surfacing in `/audit-coherence` (or `/health-check`) as a staleness signal when the footer's date is more than N months old. Cheap; flags drift for attention without trying to fix it automatically.
+
+These are not mutually exclusive — likely route is a combination (e.g., footer + `/health-check` lens, or version-pinned + footer). `/research` should establish the tradeoffs explicitly before committing.
+
+### Why this slipped past existing surfaces
+
+- `/iterate`'s spec checklist (`spec-checklist.md`) is about spec readiness shape, not capability grounding.
+- `/work` decomposition checks task shape (difficulty, files_affected, dependencies), not capability claims.
+- `/audit-coherence`'s existing lenses (vocab-drift, path-drift, etc.) audit spec-vs-code, not spec-vs-runtime-platform.
+- DEC-016 protects spec/decision/vision files from accidental edits but doesn't catch claims-about-Claude that don't match reality.
+
+The gap is structurally distinct from each: a spec can be "ready", "decomposable", "coherent with code", and still describe a runtime behavior the platform doesn't support.
+
+### Pairs with FB-082
+
+FB-082 (template-side YAML colon-space hazard, bridged from flirty-gym FB-005) is the same shape of gap — a design pattern only obvious after hitting a wall, worth codifying proactively rather than re-discovering per project. The two together suggest a broader template surface for "Claude Code authoring hazards" — structural facts about the platform that the template should encode for spec/skill/agent authors.
+
+Worth considering at promotion time whether FB-082's lightweight fix and this FB's capability reference merge into a single `.claude/support/reference/claude-code-capabilities.md` (or `claude-code-authoring.md`) doc with multiple sections (capability surface, frontmatter hazards, dispatch shape gotchas), or stay as separate references with cross-links. Defer this scoping question until `/research`.
+
+### Scope (if promoted)
+
+- New `.claude/support/reference/claude-code-capabilities.md` (or merged-doc alternative per FB-082 consideration above)
+- `.claude/commands/iterate.md` — reference the capability doc at spec authoring/refinement; possibly a hygiene check
+- `.claude/commands/work.md § decomposition` — reference the capability doc at task creation time
+- `.claude/commands/audit-coherence.md` — possible new lens for capability-claim drift (depends on freshness mechanism choice)
+- `.claude/commands/health-check.md` — possible new Part for capability-doc freshness (depends on freshness mechanism choice)
+- `.claude/sync-manifest.json` — register the new reference doc in `sync` category
+
+### Triage recommendation
+
+**Research-gated.** Multiple viable freshness mechanisms with real tradeoffs (Need 2). Route through `/research` to compare WebFetch sync vs cadence lens vs version-pinned + manual vs footer, and to scope the initial capability reference (Need 1 might be a single reference doc, or split across skill-authoring + subagent-constraints + parallel-execution + model-tool-surface).
+
+Likely DEC candidate after research: the freshness mechanism itself is the substantive decision; the capability reference content is more mechanical once the mechanism is chosen.
+
+### Signal strength
+
+Two-project signal pattern (flirty-gym + the FB-082 case shape) for "claims-about-Claude that the platform doesn't support". Structural — the gap is independent of any specific spec or project. Worth a `/research` round when signal queue permits.
+
+Tags: template-side, capability-grounding, claude-code-platform-knowledge, freshness-mechanism, research-gated, dec-candidate, paired-with-FB-082, skill-authoring, spec-grounding, multi-project-signal
