@@ -116,6 +116,14 @@ True parallel browser inspection would require multiple MCP server instances on 
 
 **Detection (lower priority):** `/work` Step 2c parallel-batch heuristic currently keys on `files_affected` only. It could be extended to check `mcp_resource_overlap` (any pair of tasks both expected to use the same single-instance MCP server) — same dispatch site as `shared_contract` detection in `parallel-execution.md`. Tracked separately if it becomes a recurring foot-gun.
 
+## MCP and Result-Size Constraints
+
+Playwright MCP `browser_snapshot` returns the full accessibility tree of the current page. For long-scroll pages or sites with many sections (over ~10K characters of DOM), the result can exceed the model's per-tool-call token budget and truncate silently — the snapshot appears empty or partial without an error.
+
+For audits and verifications that only need specific elements, prefer `browser_evaluate` with targeted DOM queries (e.g., `document.querySelectorAll('h2').map(h => h.textContent)`). Reserve `browser_snapshot` for small pages or when you genuinely need the full tree.
+
+The same pattern applies to other MCP servers that return large result objects: prefer targeted queries over full-state dumps when the task only needs specific data.
+
 ## Tool Preferences
 
 All agents use dedicated tools (Read, Glob, Grep, Edit, Write) for file operations. Bash is reserved for operations requiring shell execution: git commands, running tests, executing deliverables, network requests. This minimizes permission prompts when agents run as subagents.

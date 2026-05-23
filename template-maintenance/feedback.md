@@ -684,3 +684,172 @@ Likely DEC candidate after research: the freshness mechanism itself is the subst
 Two-project signal pattern (flirty-gym + the FB-082 case shape) for "claims-about-Claude that the platform doesn't support". Structural — the gap is independent of any specific spec or project. Worth a `/research` round when signal queue permits.
 
 Tags: template-side, capability-grounding, claude-code-platform-knowledge, freshness-mechanism, research-gated, dec-candidate, paired-with-FB-082, skill-authoring, spec-grounding, multi-project-signal
+
+## FB-084: Engine-consumption verification gap during retirement proposals (snake_case vs CamelCase derivatives)
+
+**Status:** cheap-action-shipped + heavier-route-deferred
+**Captured:** 2026-05-24
+**Shipped:** 2026-05-24 (v4.7.3) — new `## Pre-Retirement Engine-Consumer Audit` section added to `.claude/rules/feature-retirement.md` between "When to Use This Workflow" and "Procedure". Documents the 4-pattern grep (snake_case + CamelCase derivatives + shortened forms + string literals) for pre-retirement verification. Heavier route (extend FB-066 to proposal-time) deferred — research-gated + signal-gated.
+**Source:** Bridged from styler 2026-05-22 session (FR-014 / T714, template_version 4.7.1) via `/health-check` Part 7 aggregation.
+
+## Observation
+
+T714 retired `price_quality_philosophy` based on a `/research` (FR-014) finding that grepped only the snake_case form and concluded "no engine consumer found". The actual engine consumption used multiple derivatives the snake_case grep missed:
+
+- `PriceQualityPhilosophy` (CamelCase TypeScript type)
+- `RankerSignals.philosophy` (shortened field name in `src/lib/stores/ranker.ts`)
+- `PHILOSOPHY_WEIGHTS` (CamelCase constant)
+- Runtime reads in `/stores Phase 2a` + `/briefing Step 3`
+
+The field is now retired from the registry but the engine integration points remain and will silently degrade (read returns `undefined` post-data-migration) until command files are restructured. Caught mid-implementation via friction marker (FR-016 / FR-017 / FR-018 sequence); corrective amend landed in-session.
+
+## Meta-pattern
+
+The grep convention for retirement proposals is fragile: `grep -r 'snake_case_field' src/` misses `CamelCaseField` derivatives, `field` shortened names, and string-literal usage (`"snake_case_field"`). A retirement proposal that searched only one form gives false confidence — "no consumer" reads as definitive when it's actually "no consumer matching this one form".
+
+## Proposed template surface
+
+Three candidate landing spots (not mutually exclusive):
+
+1. **`.claude/rules/feature-retirement.md` § "Procedure" / "Common gotchas"** — add a checklist for verifying engine-consumer searches cover snake_case + CamelCase + shortened-field + string-literal variants. One paragraph, near "What NOT to copy" or as a new "Pre-retirement engine-consumer audit" sub-section.
+2. **FB-066 extension** (verify-agent production-consumption check, shipped v3.16.0). The existing check is regex-based on file globs; could extend to scan for retired-field names in code beyond the spec section. Different timing (verify-agent, post-implementation) vs the proposal-time gap here.
+3. **`.claude/scripts/verify-engine-consumption.sh` helper** (project-side). Project ships a wrapper that runs the multi-pattern grep (snake_case, CamelCase, shortened, string-literal) and surfaces matches before retirement landing. Higher overhead; only worth it if the project retires fields routinely.
+
+## Triage recommendation
+
+**Cheap action:** add the multi-pattern grep checklist to `feature-retirement.md` as a one-paragraph "Pre-retirement engine-consumer audit" sub-section. Catches the issue at proposal time across all projects using the template.
+
+**Heavier route (research-gated):** extend FB-066 to cover the proposal-time gap (currently FB-066 is verify-agent only). Would unify the two layers — proposal-time + post-implementation — into one consistent check. `/research` to compare.
+
+## Relationship to FB-066 and FB-076
+
+- FB-066 (shipped v3.16.0) covers verify-agent runtime production-consumption — different timing (post-implementation, before "Finished").
+- FB-076 (deferred) covers verify-agent bundle-boundary breaks + catalog-state-dependent precondition gaps — adjacent but distinct sub-gap.
+- FB-084 is at the proposal stage (during `/research` or `/iterate distill`), upstream of verify-agent. Sibling to both, not a duplicate.
+
+## Source trace
+
+- Bridged from `interaction-logs/processed/.session-export-styler-2026-05-22-0105.json` § `claude_assessment.design_pushback_opportunities[0]`.
+- Single-session signal but novel pattern. Below 3+ session bar for auto-promotion in `/health-check` Part 7 step 4; captured manually per user direction.
+
+Tags: template-side, feature-retirement, grep-coverage, proposal-time-check, extends-FB-066, cheap-action-candidate, single-project-signal
+
+## FB-085: Load-bearing browser-behavior assumption verification gap (runtime_validation: partial + owner: both)
+
+**Status:** deferred + signal-gated (2nd-project)
+**Captured:** 2026-05-24
+**Triaged:** 2026-05-24 — proposed cheap action (behavioral rule in `agents.md`) has fragile enforcement scope: verify-agent's subagent sandbox limits direct Playwright access, so the empirical-verification step might need to route through the orchestrator instead — a different design problem. Re-assess if a 2nd project signals the same writer/reviewer shared-premise blindspot.
+**Source:** Bridged from styler 2026-05-21 session (T697 pass-2, template_version 4.6.3) via `/health-check` Part 7 aggregation.
+
+## Observation
+
+T697 pass-2 attempted a CSS-only fix for an anchor-scroll bug. Implement-agent's report claimed the fix relied on the load-bearing property "native browser anchor scroll re-evaluates the target during smooth-scroll animation". Verify-agent confirmed it as the load-bearing property. Both reads of the diff missed that this claim was empirically false. The faulty premise was caught only by orchestrator-driven Playwright re-test during user_review hand-off.
+
+The eventual landing fix (min-height reservation) was structurally different from the CSS-only approach implement-agent + verify-agent both shipped under the false premise.
+
+## Meta-pattern
+
+When implement-agent's report claims a load-bearing browser/runtime behavior on `runtime_validation: partial` + `owner: both` tasks, the writer/reviewer (implement-agent + verify-agent) separation can fail to catch incorrect assumptions because both share the same documentation-derived (rather than empirically-verified) model of the behavior. Verify-agent's fresh-eyes review is valuable for code correctness but doesn't independently verify runtime claims unless empirical re-test happens.
+
+The current pattern: implement-agent claims → verify-agent confirms or denies based on code reading → orchestrator-Playwright cycle for `owner: both`. The gap is that empirical verification happens *after* the writer/reviewer cycle, so wrong premises propagate through both.
+
+## Proposed template surface
+
+Two candidate routes (mutually compatible):
+
+1. **Behavioral rule in `.claude/rules/agents.md`** — when implement-agent's report claims a load-bearing browser/runtime behavior on `runtime_validation: partial`, verify-agent MUST empirically validate via dispatched tool (Playwright snapshot, dev-tools eval, etc.) before passing — not rely solely on code-reading. One paragraph, after "Root Cause Over Symptom" or as a sub-section of "Context Separation".
+2. **Schema field on task_verification.checks** — `runtime_validation: partial` could split into `partial_empirical` vs `partial_documented` so the verify-agent verdict carries forward whether load-bearing claims were empirically verified.
+
+## Triage recommendation
+
+Option 1 (behavioral rule) is the cheap action; catches the issue across all projects without schema migration. Option 2 (schema split) is heavier but produces a more durable signal that the orchestrator can use to decide whether `owner: both` empirical re-test is mandatory before user hand-off.
+
+**Likely route:** start with Option 1 as a rule addition; consider Option 2 only if Option 1's enforcement proves insufficient.
+
+## Source trace
+
+- Bridged from `interaction-logs/processed/.session-export-2026-05-21.json` § `claude_assessment.design_pushback_opportunities[0]`.
+- Single-session signal. Pattern is structural (writer/reviewer shared-premise blindspot) and worth capturing despite the 1-session bar — recurring class of "both agents agree but both are wrong" failures.
+
+Tags: template-side, verify-agent, runtime-validation, owner-both, behavioral-rule-candidate, writer-reviewer-blindspot, single-project-signal
+
+## FB-086: `files_affected` declaration drift detection (declared vs actual touched files)
+
+**Status:** research-light-candidate + ready
+**Captured:** 2026-05-24
+**Triaged:** 2026-05-24 — mechanism (git diff cross-check) is mechanical but the surrounding plumbing needs schema decisions before shipping: (a) which friction kind (existing `verification_gap` vs new `scope_drift`), (b) fold into FB-066 or stand alone, (c) timing — every verify-agent dispatch or only when `[Multi-file]` flagged. `/research` to scope when signal queue permits.
+**Source:** Bridged from styler 2026-05-22 session (T708, template_version 4.7.1) via `/health-check` Part 7 aggregation.
+
+## Observation
+
+T708's task JSON `files_affected` declared 3 files; implementation actually touched 10. Implement-agent flagged the multi-file scope via `[Multi-file: 10]` in its return report, but there's no structural cross-check between the declared `files_affected` array and the actual files touched (per `git diff` against the pre-implementation HEAD).
+
+The drift is benign for completed tasks (the work is done correctly) but blocks parallel-execution heuristics: `/work` Step 2c keys on `files_affected` overlap to decide parallel-safety. If declared `files_affected` is incomplete, a future parallel-dispatch decision could create real file collisions.
+
+## Meta-pattern
+
+`files_affected` is currently advisory metadata — populated at decomposition time, drifted away from at implementation time. There's no enforcement, no validation, no warning when implementation expands scope.
+
+## Proposed template surface
+
+Tier 2 scope-validation extension in verify-agent: when `[Multi-file]` is flagged by implement-agent's report, run `git diff --name-only <pre-impl-sha>..HEAD` and compare against declared `files_affected`. If actual is a superset:
+
+1. **Pass with warning** — verify-agent emits a `scope_drift` friction marker (or sub-field on `checks.scope_validation`) noting the additional files. Allows the task to land but surfaces the drift for orchestrator to update `files_affected` (or flag for next decomposition pass).
+2. **Block until update** — verify-agent fails until orchestrator updates `files_affected` to match actual. Stricter; prevents the drift from compounding but slows landing.
+
+## Triage recommendation
+
+Option 1 (pass with warning) is the more sustainable route — drift is benign for completed work but the signal helps future parallel-dispatch decisions and decomposition-pass calibration. Implement-agent already flags `[Multi-file: N]`; the verify-agent extension just consumes the signal and emits the friction marker.
+
+**Implementation cost:** small. Single check in verify-agent's `scope_validation`. Friction marker emission already exists (per `agents.md § "Friction Register"`).
+
+**Open question:** does `files_affected` drift also belong in the post-decomposition pre-pass check (per FB-058's 5 heuristics) for ripple inference? Possible secondary surface — flag at decomposition if a sibling task's `files_affected` significantly outsizes its difficulty, suggesting under-declared scope.
+
+## Source trace
+
+- Bridged from `interaction-logs/processed/.session-export-2026-05-22-1435.json` § `automated_markers[1]` (type: `verification_gap`, `template_area: task-schema files_affected`).
+- Originally captured as a marker in styler's session export; promoted to template feedback per `/health-check` Part 7 aggregation.
+
+Tags: template-side, verify-agent, scope-validation, files-affected, parallel-execution, friction-marker, single-project-signal
+
+## FB-087: Playwright MCP large-DOM token-limit pattern — prefer browser_evaluate over browser_snapshot
+
+**Status:** cheap-action-shipped
+**Captured:** 2026-05-24
+**Shipped:** 2026-05-24 (v4.7.3) — new `## MCP and Result-Size Constraints` section added to `.claude/rules/agents.md` between "## MCP and Parallel Execution" and "## Tool Preferences". Documents that `browser_snapshot` on long-scroll pages (~10K+ char DOM) exceeds per-tool-call token budgets and truncates silently; prefers `browser_evaluate` with targeted DOM queries. Optional project-side helper follow-up deferred unless a multi-project signal emerges.
+**Source:** Bridged from styler 2026-05-21 session (template_version 4.6.3) via `/health-check` Part 7 aggregation.
+
+## Observation
+
+Playwright MCP `browser_wait_for` and `browser_snapshot` return 105K+ character snapshots for large pages (the styler `/style` page is ~36000px tall with many sections), exceeding the result token limit. The model can't process the snapshot — tool result truncates or fails outright.
+
+The workaround styler used: replace `browser_snapshot` with `browser_evaluate` containing targeted DOM queries (`document.querySelector(...).textContent`, etc.). The pattern is reusable for any large-DOM page where the audit/verification only needs specific elements.
+
+## Meta-pattern
+
+The current `agents.md § "MCP and Parallel Execution"` section covers the parallel-execution constraint (single-instance MCPs can't fan out) but doesn't cover the per-call result-size constraint. `browser_snapshot` is the default tool the model reaches for, and on large pages it fails silently from the model's perspective (token limit exceeded → degraded behavior).
+
+## Proposed template surface
+
+One-paragraph addition to `.claude/rules/agents.md § "MCP and Parallel Execution"` (or a sibling sub-section "MCP and Result-Size Constraints"):
+
+> Playwright MCP `browser_snapshot` returns the full accessibility tree of the current page. For pages over ~10K characters of DOM (long-scroll pages, sites with many sections), the result can exceed the model's per-tool-call token budget and truncate silently. For audits/verifications that only need specific elements, prefer `browser_evaluate` with targeted DOM queries (e.g., `document.querySelectorAll('h2').forEach(...)`). Reserve `browser_snapshot` for small pages or when you genuinely need the full tree.
+
+## Triage recommendation
+
+**Cheap action:** one-paragraph addition to `agents.md`. No DEC needed. Catches future "why is my Playwright snapshot empty" debugging cycles across all projects.
+
+**Optional follow-up:** project-side helpers under `.claude/scripts/` that wrap common Playwright-evaluate patterns (e.g., extract-all-headings, count-elements-by-selector) — but these are project-specific and not worth template-shipping unless a multi-project pattern emerges.
+
+## Relationship to existing template content
+
+- `.claude/rules/agents.md § "MCP and Parallel Execution"` covers cross-call state collision; this FB covers per-call result size.
+- DEC-005 / auto-mode covers permission gating, not result-size.
+- No existing template surface addresses this.
+
+## Source trace
+
+- Bridged from `interaction-logs/processed/.session-export-2026-05-21.json` § `claude_assessment.workflow_friction_notes[3]`.
+- Single-session signal. Cheap-action threshold is low — one paragraph addition. Capture now, ship in next template patch.
+
+Tags: template-side, mcp, playwright, result-size, browser-snapshot, browser-evaluate, agents-md-extension, cheap-action-candidate, single-project-signal
