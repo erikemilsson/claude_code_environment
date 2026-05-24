@@ -634,6 +634,8 @@ The safety gate applies to implement-agent dispatch, verify-agent runtime valida
 
 Read `.claude/support/reference/decomposition.md` and follow its 10-step procedure to break the spec into granular tasks with full provenance fields.
 
+**Capability-claim cross-check (DEC-017):** when decomposing spec sections that reference Claude Code primitives (skill `model:`/`effort:` frontmatter, subagent dispatch, MCP fan-out, `Agent` tool model granularity, parallel execution boundaries), cross-reference `.claude/support/reference/claude-code-authoring.md` before generating task JSON. The reference doc surfaces load-bearing platform facts that aren't obvious from spec text alone (e.g., `model:` is turn-scoped, not session-scoped — multi-turn chat skills cannot use it for cross-turn model continuity). Task descriptions that depend on unsupported platform behavior produce wasted-iteration cycles at implementation time.
+
 #### State Persistence Protocol
 
 After any agent (implement-agent or verify-agent) returns a structured report, the orchestrator is responsible for all state transitions, JSON persistence, and dashboard updates. Agents cannot write to `.claude/` paths — this is enforced by the Claude Code harness (see DEC-004). Follow this protocol precisely to preserve the atomic implement→verify contract.

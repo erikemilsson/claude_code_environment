@@ -17,6 +17,8 @@ verify-agent always runs as a separate Task agent, dispatched by the `/work` orc
 
 All `.claude/` state transitions (task JSON writes, dashboard regeneration, verification-result.json, session-log.jsonl) are owned by the `/work` orchestrator. Subagents (implement-agent, verify-agent, research-agent) return structured reports; they do not write to `.claude/` paths. This is a hard constraint of the Claude Code harness (subagents are sandboxed from `.claude/` writes per Anthropic issue #38806) and is not expected to change. See DEC-004 for the full rationale.
 
+**Capability grounding:** the subagent boundaries above (no `.claude/` writes, no nested `Task` calls, no `permissions.allow` inheritance, Explore/Plan agents skip CLAUDE.md + git status) are documented in `.claude/support/reference/claude-code-authoring.md § "Subagent Boundaries"` as load-bearing constraints for spec/skill/agent authors who would otherwise design workflows that violate them. The reference doc is the canonical home for "facts about Claude Code that authors trip over" (DEC-017).
+
 ## Root Cause Over Symptom
 
 When a test fails, a build breaks, a type error surfaces, or a runtime error occurs: fix the underlying cause, not the symptom.
@@ -83,6 +85,8 @@ Slash commands that perform substantive or irreversible work carry `disable-mode
 **Sub-mode coupling.** `disable-model-invocation` is per-file. Multi-mode commands (`/iterate`, `/work`, `/feedback`) gate as a whole — the model can no longer ambient-invoke their read-only sub-modes (`/work` no-args, `/iterate` no-args, `/feedback [text]` capture, `/feedback list`) either. Acceptable because user-typed slash invocation continues to work for all sub-modes, and the model can still surface suggestions in conversation. Future refactor option: split multi-mode files (e.g., `work-complete.md` separate from `work.md`) if the coupling produces observed friction.
 
 **Defense-in-depth.** Upstream of DEC-005 (permission-layer auto mode) and DEC-016 (spec/decision/vision Edit/Write ask). DEC-005 catches tool calls the model shouldn't make; DEC-016 catches writes to protected paths; this gate prevents the model's *decision* to fire the command in the first place. All three layers compound.
+
+**Authoring hazards.** Skill frontmatter scoping (`disable-model-invocation`, turn-scoped `model:` / `effort:`, `context: fork` + `agent:` pattern, `allowed-tools`) is documented in `.claude/support/reference/claude-code-authoring.md § "Skill Frontmatter Scope"` (DEC-017). Spec authors writing flows that depend on these primitives should consult that reference to avoid the "design pattern only obvious after hitting a wall" failure mode.
 
 ## Cross-Project Capture Protocol
 

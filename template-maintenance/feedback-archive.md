@@ -1678,3 +1678,36 @@ Tags: work-command, step-0e, recovery-scan, git-boundary, uncommitted-work, sing
 **`.session-log.jsonl` standalone case:** does NOT trigger Step 0f recovery — Step 0d handles catchup; PreCompact hook is the canonical disposal mechanism.
 
 Tags: work-command, step-0f, pause-procedure, interaction-assessment, stale-file, recovery, single-project-signal
+
+## FB-082: Template-side enforcement of the YAML frontmatter colon-space hazard in SKILL.md
+
+**Status:** promoted 2026-05-24 via v4.9.0 (DEC-017 Option B ship; bundled with FB-083)
+**Captured:** 2026-05-20 (flirty-gym, bridged via `/feedback template:`)
+**Research artifact:** `.claude/support/workspace/fb-082-083-research.md`
+**Implementation anchors:**
+- `.claude/support/reference/claude-code-authoring.md § "YAML Frontmatter Hazards"` — Section 1 of new reference doc
+- `.claude/agents/implement-agent.md § "Editing strategy for structured documents"` — cross-reference bullet
+
+### Summary
+
+`description:` field rejects unquoted `: ` under strict YAML 1.2 / PyYAML; permissive Claude Code parser loaded silently but verify-agent rejected. flirty-gym standardized on em-dashes empirically across 5 SKILL.md files. Bundled with FB-083 into DEC-017 Option B; became Section 1 of new `claude-code-authoring.md`.
+
+Tags: template-side, skill-authoring, yaml, frontmatter, em-dash, dec-017
+
+## FB-083: Capability grounding for spec/agent/model/skill design — template-side reference + freshness mechanism
+
+**Status:** promoted 2026-05-24 via v4.9.0 (DEC-017 Option B ship; bundled with FB-082)
+**Captured:** 2026-05-22 (flirty-gym 2026-05-22 session export)
+**Research artifact:** `.claude/support/workspace/fb-082-083-research.md`
+**Decision record:** `decisions/decision-017-capability-authoring-doc-freshness.md` (Option B selected)
+**Implementation anchors (10 files):** new `.claude/support/reference/claude-code-authoring.md`; `sync-manifest.json` registration; `.claude/CLAUDE.md` Navigation row; `implement-agent.md` cross-ref; `rules/agents.md` cross-refs (State Ownership + Command Invocation Gates); `commands/iterate.md` Step 4 capability-claim cross-check; `commands/work.md` decomposition cross-check; `commands/health-check.md` Part 2d (NEW); `version.json` 4.8.0 → 4.9.0; `dashboard.md` META bump.
+
+### Summary
+
+flirty-gym's spec described runtime model-switching as a feature of multi-turn chat skill, on assumption that SKILL.md `model:` frontmatter governs model selection across the full skill invocation. Per `code.claude.com/docs/en/skills`: `model:` is turn-scoped, not session-scoped — *"The override applies for the rest of the current turn and is not saved to settings; the session model resumes on your next prompt."* Mismatch survived spec authoring + task decomposition.
+
+DEC-017 selected Option B (footer + `/health-check` lens) over alternatives (footer-only signal-only; WebFetch auto-sync with silent-contradiction risk; version-pinning with cadence mismatch). New `claude-code-authoring.md` reference doc consolidates facts not surfaced anywhere (turn-scoped frontmatter, YAML colon-space, Agent-tool model granularity, skill content lifecycle, auto-compaction budget, listing cap) and cross-links to scattered facts. Footer + 90-day threshold + `[V]` user-adjudicated WebFetch verify action.
+
+**Future option (deferred):** `/audit-coherence` capability-claim lens for retroactive sweep — Wave 2 if signal accumulates.
+
+Tags: template-side, capability-grounding, claude-code-platform-knowledge, freshness-mechanism, dec-017, reference-doc, multi-project-signal

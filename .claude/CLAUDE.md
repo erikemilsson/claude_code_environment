@@ -21,6 +21,7 @@ This environment is designed for **Claude Opus 4.7** (`claude-opus-4-7[1m]`). Al
 | Agent definitions | `.claude/agents/*.md` |
 | Decisions | `.claude/support/decisions/decision-*.md` |
 | Reference docs | `.claude/support/reference/` |
+| Claude Code authoring hazards | `.claude/support/reference/claude-code-authoring.md` (DEC-017) |
 | Vision documents | `.claude/vision/` |
 | Workspace (scratch) | `.claude/support/workspace/` |
 | Reference documents (inputs) | `.claude/support/documents/` |

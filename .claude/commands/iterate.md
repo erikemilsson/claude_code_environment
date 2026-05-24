@@ -304,6 +304,8 @@ Generate focused questions for the target area. Questions should:
 
 ### Step 4: Propose Changes (Change Declaration)
 
+**Capability-claim cross-check (DEC-017):** before proposing spec text that references Claude Code primitives (skill `model:`/`effort:` frontmatter, subagent dispatch, MCP fan-out, `Agent` tool model granularity, `Skill` tool invocation, parallel execution boundaries, slash-command invocation gates), confirm the claims against `.claude/support/reference/claude-code-authoring.md`. The most common drift class: spec text describes runtime model-switching as a feature of multi-turn skills, but `model:` frontmatter is turn-scoped, not session-scoped. The reference doc is the canonical home for these load-bearing platform facts.
+
 Based on answers, present an explicit change declaration — not copy-pasteable blocks, but a structured proposal the user can review and approve:
 
 ```

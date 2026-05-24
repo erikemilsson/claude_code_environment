@@ -291,6 +291,43 @@ Validates that the expected template rule files exist in `.claude/rules/`.
 
 ---
 
+### Part 2d: Capability Doc Freshness (DEC-017)
+
+Validates that `.claude/support/reference/claude-code-authoring.md` has been verified against Claude Code docs within the staleness threshold.
+
+**Procedure:**
+
+1. Check if `.claude/support/reference/claude-code-authoring.md` exists. If not present, skip Part 2d silently (the doc is shipped with template v4.9.0; older template versions don't have it).
+2. Read the footer line at end of file. Expected format:
+   ```
+   <!-- Last verified against Claude Code docs: <URL> @ <YYYY-MM-DD>; against template_version: <X.Y.Z> -->
+   ```
+3. Parse the date from the footer. If parsing fails (malformed footer, missing comment), surface inline: `Part 2d: ⚠ claude-code-authoring.md footer missing or malformed. Update with: 'Last verified against Claude Code docs: <URL> @ YYYY-MM-DD; against template_version: <X.Y.Z>'`.
+4. Compute days since verification date:
+   ```
+   days_stale = (today - parsed_date).days
+   ```
+5. Apply threshold:
+   - If `days_stale <= 90`: silent (pass)
+   - If `90 < days_stale <= 180`: surface inline `Part 2d: ⚠ Capability doc not verified in {days_stale} days (threshold: 90). Consider verifying against Claude Code docs.`
+   - If `days_stale > 180`: surface inline `Part 2d: ⚠⚠ Capability doc not verified in {days_stale} days (threshold: 90, hard threshold: 180). Strongly recommended to verify before authoring spec/skill/agent content that references Claude Code primitives.`
+6. Regardless of staleness, offer the verification action:
+   ```
+   Actions: [V] Verify against current docs | [S] Skip | [D] Defer (suppress warning until next sync)
+   ```
+7. If user selects `[V]`:
+   - WebFetch the docs URL from the footer
+   - Diff the fetched content against the current doc body section by section
+   - Present each diff as `[A] Accept change | [R] Reject (keep current) | [S] Skip section`
+   - On any accept, update the doc body for that section
+   - After all sections processed, update the footer date to today + `template_version` from `.claude/version.json`
+8. If user selects `[S]`: leave doc unchanged, leave footer unchanged.
+9. If user selects `[D]`: write a sentinel in `.claude/dashboard-state.json` (`capability_doc_defer_until: YYYY-MM-DD`, 30 days from today) to suppress the Part 2d warning until that date. Next `/health-check` after the defer-until date will surface the warning again.
+
+**Why this matters:** the capability doc encodes load-bearing facts about Claude Code (turn-scoped `model:` / `effort:`, subagent isolation, MCP constraints, Agent tool model granularity, skill content lifecycle). These facts evolve as Claude Code ships features. The footer + lens combination keeps the reference doc honest without silent auto-sync (which would risk silent contradiction with current spec) and without requiring maintainer-driven version pinning (which decouples from Claude Code's release cadence). See DEC-017 for full rationale.
+
+---
+
 ## Part 3: Decision System Validation
 
 Validates the decision documentation system for schema compliance and consistency.
