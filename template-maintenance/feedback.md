@@ -512,7 +512,7 @@ Tags: template-side, feature-retirement, grep-coverage, proposal-time-check, ext
 
 ## FB-085: Load-bearing browser-behavior assumption verification gap (runtime_validation: partial + owner: both)
 
-**Status:** deferred + signal-gated (2nd-project)
+**Status:** deferred + signal-gated (2nd-project) — resolved design captured via `/visual-verify` grill 2026-05-24 (general-merit half shipped v4.10.2; UI recipe ready-to-ship on 2nd signal). See "Resolved design" below.
 **Captured:** 2026-05-24
 **Triaged:** 2026-05-24 — proposed cheap action (behavioral rule in `agents.md`) has fragile enforcement scope: verify-agent's subagent sandbox limits direct Playwright access, so the empirical-verification step might need to route through the orchestrator instead — a different design problem. Re-assess if a 2nd project signals the same writer/reviewer shared-premise blindspot.
 **Source:** Bridged from styler 2026-05-21 session (T697 pass-2, template_version 4.6.3) via `/health-check` Part 7 aggregation.
@@ -541,6 +541,21 @@ Two candidate routes (mutually compatible):
 Option 1 (behavioral rule) is the cheap action; catches the issue across all projects without schema migration. Option 2 (schema split) is heavier but produces a more durable signal that the orchestrator can use to decide whether `owner: both` empirical re-test is mandatory before user hand-off.
 
 **Likely route:** start with Option 1 as a rule addition; consider Option 2 only if Option 1's enforcement proves insufficient.
+
+## Resolved design (via `/visual-verify` grill, 2026-05-24)
+
+A `/grill` of a candidate `/visual-verify` command (`template-maintenance/visual-verify-vision.md`) walked the full design tree and concluded the work should **fold into `/diagnose`**, not ship as a new command. This supersedes the two-route framing under "Proposed template surface" / "Triage recommendation" above. Locked decisions:
+
+- **Contract** — falsifiable assertions on *measured values* (geometry + computed style, incl. sampled interaction states); NO pixel-diff / golden images (excluded: needs a baseline the broken state can't provide, carries rendering noise, and "looks different" isn't falsifiable).
+- **Outcome-not-mechanism rule** — predictions assert observable end-states, never mechanisms. This is what converts the FB-085 silent-wrong-premise into a loud failed assertion. *(General-merit; shipped to `/diagnose` Phase 3 in v4.10.2.)*
+- **Measurement** — `browser_evaluate` reads asserted values; `browser_take_screenshot` is reporting-only (already shipped as FB-087).
+- **Persistence** — conditional on a test harness existing (= `/diagnose` Phase 5 "correct seam" logic; harness detection per FB-064): offer-to-persist the passing contract as a test when present, ephemeral otherwise.
+- **Loop** — N=3 configurable; each iteration = one falsifiable hypothesis with a predicted value-effect (folds in the queued "math-check before commit-to-pixels" signal); early-exit when out of distinct hypotheses; non-convergence surfaces a rich routed report (unmet contract + per-iteration hypothesis→prediction→result trace + before/after screenshots), and **never auto-escalates or silently stops**.
+- **Surface** — fold into `/diagnose` as a `## Visual / browser-rendering bugs` recipe (~20 lines) + the Phase 3 sharpen (shipped). No new command, no flag. `/diagnose`'s existing placement (un-gated auto-fire per FB-071; bug-task routing per `spec-workflow.md`) covers it — zero new `/work` wiring.
+
+**Why this dissolves the original blocker:** the prior triage feared the empirical step had "fragile enforcement scope" in the verify-agent subagent sandbox. The fold runs the browser loop in `/diagnose` at orchestrator level — exactly where the triage said it "might need to route." The enforcement-scope problem disappears.
+
+**Ship split + gate:** the general-merit Phase 3 sharpen shipped v4.10.2 (improves all diagnosis, not just UI). The UI-specific recipe section stays captured here, ready to ship the moment a 2nd-project signal lands — honoring the existing signal-gate now that the design and its cost (~20 lines, zero new surface) are fully known. **No DEC** (the fold fails the hard-to-reverse criterion — a 20-line recipe edit is trivially reversible; lands as feedback → edit).
 
 ## Source trace
 

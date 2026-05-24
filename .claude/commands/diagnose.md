@@ -89,6 +89,8 @@ Each hypothesis must be **falsifiable**: state the prediction it makes.
 
 If you cannot state the prediction, the hypothesis is a vibe — discard or sharpen it.
 
+**Assert the outcome, not the mechanism.** Phrase each prediction as an *observable end-state* — "after `<X>`, `<measured value Y>` is within tolerance `<T>`" — never as a claim about *how* the system gets there ("because `<Z>` re-evaluates mid-operation"). A mechanism-shaped prediction can be rubber-stamped by anyone who shares the same wrong model of how the system works — writer and reviewer agree, and both are wrong. An outcome-shaped prediction stays falsifiable regardless of your mental model: if the mechanism belief was wrong, the outcome assertion fails on its own and forces the next hypothesis.
+
 **Show the ranked list to the user before testing.** They often have domain knowledge that re-ranks instantly ("we just deployed a change to #3"), or know hypotheses they've already ruled out. Cheap checkpoint, big time saver. Don't block on it — proceed with your ranking if the user is AFK.
 
 ## Phase 4 — Instrument
