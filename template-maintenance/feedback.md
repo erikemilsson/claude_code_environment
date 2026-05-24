@@ -264,8 +264,9 @@ In the Styler audit run, this left two captured-inputs files missing (`meta.json
 
 ## FB-072: Command routing as a UX pattern (interpretive vs explicit-arg dispatch + boundary survey)
 
-**Status:** ready (research-first; trial-gated DEC candidate)
+**Status:** ready (route through `/research` directly)
 **Captured:** 2026-05-20
+**Triaged:** 2026-05-24 — Route through `/research` directly rather than walking the survey's 3 decision points inline. Survey `.claude/support/workspace/router-survey.md` becomes input artifact for research-agent. Larger investment but produces a DEC-shaped output. Research scope: net-recommendation from survey ("prototype interpretive routing on `/iterate` only; defer others") is the starting point; research-agent validates or extends. **Additional candidate added during walk-through:** `/walkthrough` or `/preflight` command for major workflow transitions (SIREN 2026-05-18 signal) — sibling to existing help-me-think family (`/zoom-out`, `/grill`, `/diagnose`) per FB-072's candidate list.
 **Source:** session-level reflection after shipping FB-068 (`/grill` as standalone command rather than `/iterate grill` sub-mode). User observed 2026-05-20: *"from a UX perspective it is one more command to remember. I think we should look into making `/iterate` a router that routes to other commands depending on what is being asked. ... I guess the larger question is how effective routing is at all, and perhaps that is something to do research on."*
 
 **Observation:** CCE currently dispatches sub-modes via explicit string args (`/iterate distill`, `/work complete`, `/work pause`, `/feedback review`). Each multi-mode command grows its own file (e.g., `iterate.md` ~700 lines covering distill/propose/hygiene/no-args; `work.md` ~1700 lines covering many sub-modes). Adding new spec-adjacent commands (FB-068's `/grill`, FB-069's `/diagnose`, FB-070's `/zoom-out`, likely Wave 2 entries) increases the surface area users have to remember.
@@ -479,39 +480,9 @@ In this session: FB-074 sub-issue 1 (categories enum) needed edits to BOTH `heal
 
 Tags: auto-mode, classifier, dec-016, dec-005, false-positive, askuserquestion, authorization, upstream-anthropic
 
-## FB-078: /work Step 2b post-decision check fires /iterate based on `inflection_point` flag alone, ignoring chosen-option spec_impact intent
+## FB-078: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
 
-**Status:** new
-**Captured:** 2026-05-20
-**Source:** Surfaced 2026-05-20 during FB-011 Family E re-assessment — bridged from styler session export 2026-05-16 (`interaction-logs/processed/styler-session-2026-05-16.json` § `workflow_friction_notes`). Not surfaced in the inbox triage subagent's earlier analysis (this session's Phase 3 missed it); discovered during the Family E `Step 2b` cross-reference check.
-
-DEC-083 (styler decision) correctly flagged `inflection_point: true` because the option space contained spec-impacting candidates. The user selected option δ (close) which has explicit NO spec impact. But `/work` Step 2b's post-decision check fires the `/iterate` suggestion based on the decision-level `inflection_point` flag alone — it does NOT read the chosen option's text for spec_revised intent. Result: false-positive `/iterate` suggestion on the next `/work` run.
-
-### The structural gap
-
-`inflection_point` is a property of the **decision** (was the option space spec-shaping?). But spec-impact is a property of the **selected option** (does the chosen path require a spec amendment?). The current check conflates the two — it treats the decision-level flag as the trigger, ignoring whether the actual selection has spec consequences.
-
-### Mitigation candidates (from the session)
-
-1. **Read the chosen option's text for `'no spec amendment'` markers.** When the option detail explicitly says no spec impact, skip the `/iterate` suggestion. Heuristic-based; tolerant of varied phrasing; no schema change.
-2. **Add per-option `spec_impact` flag to the decision schema.** Author marks each option with `spec_impact: true | false | unclear` at decision creation. Step 2b reads the chosen option's flag deterministically. Cleaner; requires schema change + authoring burden.
-
-Option 1 is cheaper (no schema change) but heuristic-shaped. Option 2 is more deterministic but requires authoring change. Could ship Option 1 first as a quick fix; escalate to Option 2 if heuristic false-negatives accumulate.
-
-### Boundary with FB-017
-
-FB-017 (shipped via inlining fix) was about Step 2b's **decision auto-finalization** sub-feature (checkbox detection → `status: approved`). This issue (FB-078) is about Step 2b's **post-decision check** sub-feature (does the chosen option warrant `/iterate`?). Same Step 2b function, different sub-paths; no overlap. The cross-reference to FB-017 in the styler session was a textual false-positive (matched "Step 2b") that surfaced this issue during the Family E re-assessment grep.
-
-### Scope
-
-- `.claude/commands/work.md` Step 2b post-decision check logic (primary)
-- If Option 2 chosen: `.claude/support/reference/decisions.md` (decision record template + option authoring guidance) + decision-record schema enforcement
-
-### Signal strength
-
-Single-project signal (styler 2026-05-16). Low frequency expected — most `inflection_point: true` decisions DO have spec impact in their chosen option. The false-positive happens specifically when an inflection-eligible decision lands on a "close / defer / no-op" option. Could promote now (Option 1 cheap fix) or wait for 2nd-project signal.
-
-Tags: workflow, work-step-2b, post-decision-check, false-positive, inflection-point, decisions-schema
+**Status:** promoted 2026-05-24 via v4.8.0 (5-FB cheap-action bundle). Option 1 heuristic shipped: chosen-option no-op scan in `phase-decision-gates.md § "Post-Decision Check"`. Research at `.claude/support/workspace/fb-078-research.md`. See archive for full entry.
 
 ## FB-079: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
 
@@ -521,41 +492,9 @@ Tags: workflow, work-step-2b, post-decision-check, false-positive, inflection-po
 
 **Status:** promoted 2026-05-20 via v4.7.0. Route C1 (hybrid: targeted-edit pattern + sidecar sentinel) selected over A (section-fingerprints in META) and B (defer-everything-to-session-boundary). New `pending_full_regen` field on `dashboard-state.json` sidecar; targeted-edit decision table in SKILL.md + mirror; Step 1a freshness check extended. See archive for full entry; research at `.claude/support/workspace/fb-080-research.md`.
 
-## FB-081: Long autonomous batches (3+ implement+verify cycles) lack heartbeat or user-check-in default
+## FB-081: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
 
-**Status:** new
-**Captured:** 2026-05-20
-**Source:** styler 2026-05-17 session export (`interaction-logs/processed/styler-2026-05-17.json` § `design_pushback_opportunities` + `workflow_friction_notes`). Erik asked "is it stuck?" ~30 min into a 4-cycle autonomous batch (T683→T684→T685→T686→T687). Orchestrator had Erik's earlier "keep moving with autonomous tasks" but didn't proactively communicate progress during the long stretch.
-
-### Two distinct gaps
-
-**Gap 1 — No heartbeat during autonomous batches.** When 3+ implement+verify cycles run without user interaction, the user has no visibility into where the batch is. The default failure mode is silence; the user pings to break the silence; the orchestrator interprets the ping as "confirm I'm working" rather than "you should check whether to continue".
-
-**Gap 2 — Mid-batch user ping → auto-continue (wrong default).** Erik's "is it stuck?" was a yellow flag, not a green light. The right call was to PAUSE, summarize, and ask "continue or pause?" — the orchestrator instead dispatched the next verify-agent immediately. Pings during long autonomous runs should default to summary-plus-confirmation, not auto-continue.
-
-### Two patterns
-
-**Pattern 1 — Heartbeat.** Before dispatching the Nth+1 cycle in an autonomous batch (where N≥3), emit a brief status line to the conversation: "On task T685 (3 of 4 in §40.17 chain), autonomous batch in progress." Cheap; structural; addresses Gap 1 directly.
-
-**Pattern 2 — Ping-mid-batch behavior rule.** Add a `.claude/rules/agents.md § "Behavioral Rules"` (or a new sub-section) rule: when the user sends any message during an autonomous batch — including questions, status checks, or seemingly-incidental remarks — default to (a) acknowledging receipt, (b) summarizing current batch state, (c) offering "continue or pause?". Distinct from the orchestrator's normal dispatch flow.
-
-The two patterns compose — heartbeat reduces ping frequency (users have less reason to interrupt); ping behavior catches the ones that still happen.
-
-### Boundary with `/work` context budget
-
-The styler session also flagged a related-but-distinct concern: `/work` auto-continuation lacks a "context burn threshold" stopping point. That's a separate FB candidate (context budget as a stop signal), but the heartbeat pattern here naturally piggybacks on it — a heartbeat could include cumulative agent-dispatch count, which the user could use to decide whether to redirect.
-
-### Scope
-
-- `.claude/commands/work.md` § "Auto-continuation within phases" — heartbeat insertion point (Pattern 1)
-- `.claude/rules/agents.md § "Behavioral Rules"` — new sub-rule (Pattern 2)
-- Possibly `.claude/skills/dashboard-style/SKILL.md` if heartbeat should also write to Recent Activity (unclear; defer until Pattern 1 design lands)
-
-### Signal strength
-
-Single-session signal but tied to a concrete observable user-friction event. Pattern is structural (autonomous-batch UX is independent of the specific project). Worth promoting if next `/feedback review` runs; otherwise can wait for a 2nd-project signal.
-
-Tags: autonomous-batch, heartbeat, user-ping, work-step, behavioral-rule
+**Status:** promoted 2026-05-24 via v4.8.0 (5-FB cheap-action bundle). Both patterns bundled: heartbeat (`commands/work.md § Step 3 "Autonomous batch heartbeat"`) + ping-mid-batch behavioral rule (`rules/agents.md § "Behavioral Rules" — "Acknowledge mid-batch user messages"`). Shared counter `autonomous_batch_position` ≥3 threshold. Research at `.claude/support/workspace/fb-081-research.md`. See archive for full entry.
 
 ## FB-082: Template-side enforcement of the YAML frontmatter colon-space hazard in SKILL.md
 
@@ -598,12 +537,13 @@ template-side, skill-authoring, yaml, frontmatter, validator-hook-candidate
 
 The 2026-05-20 scan of `interaction-logs/processed/` surfaced six additional weaker signals not yet promoted to dedicated FBs. Captured here as a queue so next `/feedback review` (or manual triage) can decide whether to expand any into proper entries.
 
-- **Uncommitted-work check at `/work` entry-time** (styler 2026-05-20). After recovery scan, count modified+untracked source files vs finished-since-last-commit tasks; surface mismatch. Erik discovered ~14-task uncommitted backlog mid-commit; an entry-time check would have caught it. Possible Step 0e addition.
+*(Item 1 — Uncommitted-work check — promoted to FB-088 on 2026-05-24 during walk-through triage.)*
+
 - **Math-check before commit-to-pixels on layout iterations** (styler 2026-05-20). When changing a layout/composition dimension that affects vertical flow or composition (object-position, viewport-relative heights, crop modes), pre-compute arithmetic trade-off BEFORE committing to a screenshot iteration. Behavioral pattern; could land in `agents.md` as a UI-iteration rule.
 - **Dashboard Recent Activity prose-style cap enforcement is ambiguous** (styler 2026-05-20). The dashboard-style skill's strict cap is at the writer's discretion; aggressive cleanup gets deferred because the regen-scope cost is high. Two routes: automatic cleanup during regen vs relax the rule for substantial work. Cross-couples with FB-080 (partial-regen would make cleanup cheaper).
-- **Magnitude check when user specifies rule without absolute value** (echothread 2026-05-17). When the user says "tier-graduated sizes" or any RULE without specifying MAGNITUDE, surface a single-question check ("tier 4 = pebble-sized?") before coding. Avoids the wasted-iteration cycle of implementing default values → screenshotting → user reacts → re-implementing.
-- **`.interaction-assessment.json` cleanup may have silent failure mode** (echothread 2026-05-17). Prior session's `/work pause` left `.interaction-assessment.json` on disk; this session's Write tool refused because file existed and hadn't been Read. Worth a quick check of the pause procedure's cleanup step — possible silent partial-completion bug.
-- **`/walkthrough` or `/preflight` command for major workflow transitions** (SIREN 2026-05-18). Erik benefited from a "walk through plus implement plus sanity check" pattern when changing a workflow surface. Possible new command. Cross-couples with FB-072's help-me-think family review — could be part of that survey.
+- ~~**Magnitude check when user specifies rule without absolute value**~~ — closed 2026-05-24 during walk-through triage. Pattern is covered by `/grill` (FB-068, v4.2.0). The "ask one focused question to resolve ambiguity before coding" pattern is what `/grill` does at interview granularity; magnitude-check is a special case of /grill's broader interrogation. Decline standalone promotion.
+- ~~**`.interaction-assessment.json` cleanup may have silent failure mode**~~ — promoted to FB-089 on 2026-05-24 during walk-through triage (gap confirmed by direct read of `commands/work.md § Session Export step 7`).
+- ~~**`/walkthrough` or `/preflight` command for major workflow transitions**~~ — added to FB-072's `/research` scope on 2026-05-24 during walk-through triage (sibling candidate to `/zoom-out` / `/grill` / `/diagnose` help-me-think family).
 
 A seventh candidate — `file-status-taxonomy.md` starter reference doc (CANONICAL/REFERENCE/OPERATIONAL/HISTORICAL/etc.) — is speculative enough (one-project signal, abstract pattern) that it's not worth even queue capture; revisit only if a second project independently raises the need.
 
@@ -773,44 +713,9 @@ Option 1 (behavioral rule) is the cheap action; catches the issue across all pro
 
 Tags: template-side, verify-agent, runtime-validation, owner-both, behavioral-rule-candidate, writer-reviewer-blindspot, single-project-signal
 
-## FB-086: `files_affected` declaration drift detection (declared vs actual touched files)
+## FB-086: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
 
-**Status:** research-light-candidate + ready
-**Captured:** 2026-05-24
-**Triaged:** 2026-05-24 — mechanism (git diff cross-check) is mechanical but the surrounding plumbing needs schema decisions before shipping: (a) which friction kind (existing `verification_gap` vs new `scope_drift`), (b) fold into FB-066 or stand alone, (c) timing — every verify-agent dispatch or only when `[Multi-file]` flagged. `/research` to scope when signal queue permits.
-**Source:** Bridged from styler 2026-05-22 session (T708, template_version 4.7.1) via `/health-check` Part 7 aggregation.
-
-## Observation
-
-T708's task JSON `files_affected` declared 3 files; implementation actually touched 10. Implement-agent flagged the multi-file scope via `[Multi-file: 10]` in its return report, but there's no structural cross-check between the declared `files_affected` array and the actual files touched (per `git diff` against the pre-implementation HEAD).
-
-The drift is benign for completed tasks (the work is done correctly) but blocks parallel-execution heuristics: `/work` Step 2c keys on `files_affected` overlap to decide parallel-safety. If declared `files_affected` is incomplete, a future parallel-dispatch decision could create real file collisions.
-
-## Meta-pattern
-
-`files_affected` is currently advisory metadata — populated at decomposition time, drifted away from at implementation time. There's no enforcement, no validation, no warning when implementation expands scope.
-
-## Proposed template surface
-
-Tier 2 scope-validation extension in verify-agent: when `[Multi-file]` is flagged by implement-agent's report, run `git diff --name-only <pre-impl-sha>..HEAD` and compare against declared `files_affected`. If actual is a superset:
-
-1. **Pass with warning** — verify-agent emits a `scope_drift` friction marker (or sub-field on `checks.scope_validation`) noting the additional files. Allows the task to land but surfaces the drift for orchestrator to update `files_affected` (or flag for next decomposition pass).
-2. **Block until update** — verify-agent fails until orchestrator updates `files_affected` to match actual. Stricter; prevents the drift from compounding but slows landing.
-
-## Triage recommendation
-
-Option 1 (pass with warning) is the more sustainable route — drift is benign for completed work but the signal helps future parallel-dispatch decisions and decomposition-pass calibration. Implement-agent already flags `[Multi-file: N]`; the verify-agent extension just consumes the signal and emits the friction marker.
-
-**Implementation cost:** small. Single check in verify-agent's `scope_validation`. Friction marker emission already exists (per `agents.md § "Friction Register"`).
-
-**Open question:** does `files_affected` drift also belong in the post-decomposition pre-pass check (per FB-058's 5 heuristics) for ripple inference? Possible secondary surface — flag at decomposition if a sibling task's `files_affected` significantly outsizes its difficulty, suggesting under-declared scope.
-
-## Source trace
-
-- Bridged from `interaction-logs/processed/.session-export-2026-05-22-1435.json` § `automated_markers[1]` (type: `verification_gap`, `template_area: task-schema files_affected`).
-- Originally captured as a marker in styler's session export; promoted to template feedback per `/health-check` Part 7 aggregation.
-
-Tags: template-side, verify-agent, scope-validation, files-affected, parallel-execution, friction-marker, single-project-signal
+**Status:** promoted 2026-05-24 via v4.8.0 (5-FB cheap-action bundle). Drift detection sub-check at `verify-agent.md § Step T2b step 4b` (existing `verification_gap` kind; pass-with-warning); orchestrator auto-update of `files_affected` at `commands/work.md § "After verify-agent returns" step 8`. Pre-pass parallel surface (FB-058 6th heuristic) deferred. Research at `.claude/support/workspace/fb-086-research.md`. See archive for full entry.
 
 ## FB-087: Playwright MCP large-DOM token-limit pattern — prefer browser_evaluate over browser_snapshot
 
@@ -853,3 +758,11 @@ One-paragraph addition to `.claude/rules/agents.md § "MCP and Parallel Executio
 - Single-session signal. Cheap-action threshold is low — one paragraph addition. Capture now, ship in next template patch.
 
 Tags: template-side, mcp, playwright, result-size, browser-snapshot, browser-evaluate, agents-md-extension, cheap-action-candidate, single-project-signal
+
+## FB-088: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
+
+**Status:** promoted 2026-05-24 via v4.8.0 (5-FB cheap-action bundle). Step 0e inline uncommitted-work check at `commands/work.md § "Step 0e: Uncommitted-Work Check"`. Always runs; surface only when N≥3 finished tasks since last commit AND non-zero modified/untracked. Heuristic-only `.claude/` exclusion filter. Dashboard sentinel deferred. Research at `.claude/support/workspace/fb-088-research.md`. See archive for full entry.
+
+## FB-089: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
+
+**Status:** promoted 2026-05-24 via v4.8.0 (5-FB cheap-action bundle). Option 1.5 (recover-by-compile-then-cleanup) shipped as Step 0f in `commands/work.md § "Step 0f: Track 2 Stale-File Recovery"`. New `export_quality: "recovered"` enum value. PreCompact hook unchanged (disjoint Track 2 territory). Research at `.claude/support/workspace/fb-089-research.md`. See archive for full entry.

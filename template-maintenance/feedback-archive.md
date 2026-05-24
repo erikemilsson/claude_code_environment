@@ -1570,3 +1570,111 @@ No DEC (research-light deliverable with three-route analysis in workspace; route
 - Refactoring the 8-step regen procedure itself — Route C1 is about *when* regen fires, not *how*.
 
 Tags: dashboard, regeneration, partial-regen, freshness, multi-project-signal, workflow, sidecar-sentinel
+
+## FB-078: /work Step 2b post-decision check conflates inflection_point with chosen-option spec_impact
+
+**Status:** promoted 2026-05-24 via v4.8.0 (5-FB cheap-action bundle)
+**Captured:** 2026-05-20 (styler 2026-05-16 session export)
+**Research artifact:** `.claude/support/workspace/fb-078-research.md`
+**Implementation anchor:** `.claude/support/reference/phase-decision-gates.md § "Post-Decision Check"` — added Step 2a.1 chosen-option no-op scan between the `inflection_point: true` branch and the `spec_revised` check.
+
+### Summary of fix
+
+`/work` Step 2b's post-decision check fired `/iterate` based on the decision-level `inflection_point` flag alone, ignoring whether the chosen option had spec impact. Observed false-positive: styler DEC-083 (inflection_point: true) → user chose option δ (explicit no-spec-impact close) → Step 2b suggested `/iterate` unnecessarily.
+
+Option 1 heuristic shipped (rejected Option 2 schema field — would require migration of all existing decisions). The heuristic scans the chosen option's first paragraph for canonical markers ("no spec amendment", "no spec impact", "no spec change", "no-op") with a contradicting-phrase guard ("will need spec", "requires spec", "spec change in v2") to prevent false-positives on "no spec impact NOW but v2 will need it" prose.
+
+**Escalation criterion:** if heuristic accumulates ≥3 false-negatives across projects within 6 months, escalate to Option 2 (per-option `spec_impact: true | false | unclear` schema field). Track via `false_positive` friction kind.
+
+Tags: work, step-2b, post-decision-check, inflection-point, heuristic, spec-impact, single-project-signal
+
+## FB-081: Long autonomous batches lack heartbeat or user-check-in default
+
+**Status:** promoted 2026-05-24 via v4.8.0 (5-FB cheap-action bundle)
+**Captured:** 2026-05-20 (styler 2026-05-17 session export, T683→T687 chain)
+**Research artifact:** `.claude/support/workspace/fb-081-research.md`
+**Implementation anchors:**
+- `.claude/commands/work.md § "Step 3" — "Autonomous batch heartbeat"` (Pattern 1)
+- `.claude/rules/agents.md § "Behavioral Rules" — "Acknowledge mid-batch user messages"` (Pattern 2)
+
+### Summary of fix
+
+When 3+ implement+verify cycles ran autonomously, the user lost visibility into batch state. Erik's "is it stuck?" mid-batch (after ~30 min of T683→T687 silence) was interpreted as "confirm I'm working" rather than "you should check whether to continue."
+
+Two patterns shipped together (composable, shared counter):
+
+**Pattern 1 — Heartbeat.** Maintain `autonomous_batch_position` counter incremented on each sequential auto-continuation. When `position >= 3`, replace standard `Moving to task` line with bracketed heartbeat: `[Auto-batch: task {position} of {batch_total} — {task_id}: "{title}"]`. Counter resets on natural stops / user messages / `/work` exit. Parallel-batch dispatches do NOT increment the counter (parallel pre-dispatch confirmation already gates).
+
+**Pattern 2 — Ping-mid-batch behavioral rule.** When user sends ANY message during autonomous batch (`position >= 3`), default to: (a) acknowledge, (b) summarize batch state, (c) offer `[C] Continue | [P] Pause | redirect`. Override word: `C` / `continue` / `keep going`.
+
+Heartbeat is Tier 2 inline only — NOT a dashboard Recent Activity write (heartbeats are progress signals, not state transitions; flooding Recent Activity would violate its 7-entry cap).
+
+Tags: autonomous-batch, heartbeat, user-ping, work-step, behavioral-rule, single-project-signal
+
+## FB-086: files_affected declaration drift detection (declared vs actual)
+
+**Status:** promoted 2026-05-24 via v4.8.0 (5-FB cheap-action bundle)
+**Captured:** 2026-05-24 (styler 2026-05-22 session export, T708)
+**Research artifact:** `.claude/support/workspace/fb-086-research.md`
+**Implementation anchors:**
+- `.claude/agents/verify-agent.md § "Step T2b"` — new step 4b distinguishes drift (same-directory undeclared files + `[Multi-file]` flag) from violation
+- `.claude/commands/work.md § "After verify-agent returns" step 8` — orchestrator auto-updates task JSON's `files_affected` when drift marker fires
+- `.claude/support/reference/friction-register.md § "Existing template-only kinds"` — extended `verification_gap` row with sub-use note
+
+### Summary of fix
+
+styler T708's task JSON declared 3 files; implementation touched 10. Implement-agent flagged `[Multi-file: 10]` but no structural cross-check between declared `files_affected` and `git diff`. Benign for completed tasks; blocked parallel-execution heuristics (Step 2c keys on `files_affected` overlap).
+
+**Schema decisions resolved:**
+- Friction kind: existing `verification_gap` (NOT new `scope_drift` — drift is task-metadata-vs-implementation, not spec-vs-implementation; doesn't fit audit-coherence consumer model)
+- Standalone sub-check at T2b (NOT FB-066 fold — T2b is scope-validation, T5 is production-consumption)
+- Selective timing: only when `[Multi-file]` flagged
+- Pre-pass parallel surface (FB-058 6th heuristic): deferred — verify-time check has ground truth; decomp-time would be speculative
+- Action: pass-with-warning (NOT block-until-update — drift is benign for completed task)
+
+Tags: verify-agent, scope-validation, files-affected, parallel-execution, friction-marker, single-project-signal
+
+## FB-088: Uncommitted-work check at /work entry-time
+
+**Status:** promoted 2026-05-24 via v4.8.0 (5-FB cheap-action bundle) — promoted from 2026-05-20 signal queue during walk-through triage
+**Captured:** 2026-05-24 (styler 2026-05-20 session export, ~14-task uncommitted backlog)
+**Research artifact:** `.claude/support/workspace/fb-088-research.md`
+**Implementation anchor:** `.claude/commands/work.md § "Step 0e: Uncommitted-Work Check"` — new Step 0e between Step 0d (friction-marker catchup) and Step 1 (gather context).
+
+### Summary of fix
+
+Long-running multi-session projects accumulate uncommitted state when sessions don't bind to git boundaries. `/work pause` writes a handoff file but does not commit; `/work complete` may complete tasks without enforcing a commit boundary. Erik discovered ~14-task uncommitted backlog mid-commit (styler 2026-05-20).
+
+**Design decisions:**
+- Frequency: always run, surface only when N≥3 finished tasks since last commit AND non-zero modified/untracked source files
+- Surface format: inline status line matching Step 0d convention (NOT blocker prompt, NOT dashboard sentinel — sentinel deferred)
+- Handoff interaction: NOT special-cased (a paused-with-N=8 state IS the failure mode); pointed message variant on post-handoff entry
+- Source-file filter: heuristic-only (exclude `.claude/`); future configurability deferred
+- No helper script; procedure is 5 lines of conceptual bash
+
+Tags: work-command, step-0e, recovery-scan, git-boundary, uncommitted-work, single-project-signal
+
+## FB-089: .interaction-assessment.json stale-file recovery gap in /work entry
+
+**Status:** promoted 2026-05-24 via v4.8.0 (5-FB cheap-action bundle) — promoted from 2026-05-20 signal queue during walk-through triage; gap confirmed by direct read of `commands/work.md § Session Export step 7`
+**Captured:** 2026-05-24 (echothread 2026-05-17 session export)
+**Research artifact:** `.claude/support/workspace/fb-089-research.md`
+**Implementation anchors:**
+- `.claude/commands/work.md § "Step 0f: Track 2 Stale-File Recovery"` — new Step 0f after Step 0e
+- `.claude/commands/work.md § "Session Export step 7"` — added interrupted-pause recovery cross-reference to Step 0f
+
+### Summary of fix
+
+`/work pause § Session Export step 7` cleans up `.interaction-assessment.json` after compiling the export. If pause is interrupted between the Track 2 write and the cleanup, the file persists into the next session. Next session's Write fails (file exists and hasn't been Read). Observed in echothread 2026-05-17.
+
+**Design resolved with Option 1.5 — recover-by-compile-then-cleanup** (Pareto improvement over Option 1 cleanup-only and Option 2 ingest-as-friction-stream):
+- Step 0f compiles a recovered export from orphaned Track 1 + Track 2 files
+- Writes to `.session-export-{timestamp}-recovered.json` (new `export_quality: "recovered"`)
+- Copies to inbox if `template_inbox_path` configured
+- Deletes both stale files
+
+**No PreCompact hook coordination needed:** hook never reads `.interaction-assessment.json` (writes `claude_assessment: None` and produces markers-only exports). Step 0f and hook operate on disjoint Track 2 territory.
+
+**`.session-log.jsonl` standalone case:** does NOT trigger Step 0f recovery — Step 0d handles catchup; PreCompact hook is the canonical disposal mechanism.
+
+Tags: work-command, step-0f, pause-procedure, interaction-assessment, stale-file, recovery, single-project-signal

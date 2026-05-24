@@ -64,6 +64,12 @@ This complements DEC-005's permission-layer gate (which stops unauthorized tool 
 
 Note: starting a dev server for UI verification is a feature (per root `CLAUDE.md` guidance on UI testing), not a violation. The rule applies to *restarting after a kill*, not to initial starts.
 
+**Acknowledge mid-batch user messages.** When the user sends any message during an active autonomous batch (`autonomous_batch_position >= 3` per `commands/work.md § "Autonomous batch heartbeat"`), default to: (a) acknowledge receipt of the message, (b) summarize current batch state (which task is in progress, position N of M, what was verified so far), and (c) offer the user `[C] Continue batch | [P] Pause here | [reply with instructions to redirect]`. Do NOT treat the message as a green light to auto-continue — even seemingly-incidental remarks during long autonomous stretches are likely check-in signals.
+
+The rule applies regardless of message intent (question, observation, instruction). The user can override by replying `C`, `continue`, or `keep going` — the explicit override is the green light. Below `autonomous_batch_position < 3`, the orchestrator's normal message-interpretation flow applies.
+
+This complements the heartbeat (which reduces ping frequency) by catching the pings that still happen. Both rules share the same `autonomous_batch_position >= 3` threshold — one configuration knob, one set of reset rules, one mental model.
+
 ## Command Invocation Gates
 
 Slash commands that perform substantive or irreversible work carry `disable-model-invocation: true` in YAML frontmatter to prevent autonomous invocation by the model. User-typed slash invocation continues to work; the model can still *suggest* the command in conversation. The gate only blocks the model's autonomous decision to fire the command via the `Skill` tool.
