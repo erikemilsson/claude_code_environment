@@ -1711,3 +1711,55 @@ DEC-017 selected Option B (footer + `/health-check` lens) over alternatives (foo
 **Future option (deferred):** `/audit-coherence` capability-claim lens for retroactive sweep — Wave 2 if signal accumulates.
 
 Tags: template-side, capability-grounding, claude-code-platform-knowledge, freshness-mechanism, dec-017, reference-doc, multi-project-signal
+
+## FB-090: Dashboard Recent Activity cap enforcement is ambiguous (re-scope post-FB-080)
+
+**Status:** promoted 2026-05-24 via v4.10.1 — same-session capture + promotion + ship during a `/feedback review` walk-through (cheap action).
+**Captured:** 2026-05-24 — promoted from the "Signal queue from 2026-05-20 scan" in `template-maintenance/feedback.md`.
+**Source:** styler 2026-05-20 session signal, originally queued (not promoted) because its fix cross-coupled with the then-unshipped FB-080.
+**Shipped (v4.10.1):** two edits each to `.claude/skills/dashboard-style/SKILL.md` + its mirror `.claude/support/reference/dashboard-regeneration.md`:
+1. Added `Recent Activity cap-trim (drop entries above the 7-entry cap)` as a targeted-edit-eligible row in the "Targeted Edits (mid-session lite path)" decision table.
+2. Added a **"Cap enforcement is non-discretionary (FB-090)"** sub-bullet to the Recent Activity Section Display Rule — ties cap-trim to any edit that touches the section (full regen OR targeted edit) and removes the regen-cost excuse now that FB-080 made single-section trims cheap.
+
+PATCH per SemVer (rule tightening of an existing cap + the existing targeted-edit table; no breaking change). No DEC. No sync-manifest change (both files already in `sync`).
+
+### Observation
+
+The dashboard-style skill caps the `Recent Activity` section at 7 entries, but enforcement was at the writer's discretion. In practice the cap drifted: aggressive cleanup got deferred because — at capture time — trimming required a full dashboard regen, which is expensive. So the writer let the list grow past the cap rather than pay the regen cost.
+
+### What changed since capture (the promotion trigger)
+
+FB-080 shipped in v4.7.0 (Route C1 — targeted-edit path + `pending_full_regen` sidecar sentinel). A single-section edit such as trimming Recent Activity to the cap is now a sanctioned targeted `Edit`, not a full regen. The original deferral reason ("regen-scope cost is high") is substantially weakened.
+
+### Relationship to existing items
+
+- **FB-080** (PROMOTED, v4.7.0) — the targeted-edit path this FB builds on. No longer a "cross-coupled future"; it shipped and changed FB-090's calculus.
+- Distinct from the dashboard format-staleness refresh (v4.7.2, no FB) — a one-time META/Selected-column drift fix, not a cap-enforcement rule.
+
+Tags: template-side, dashboard, recent-activity, cap-enforcement, dashboard-style-skill, extends-FB-080, cheap-action-shipped, single-project-signal, promoted-from-signal-queue
+
+## FB-072: Command routing as a UX pattern (interpretive vs explicit-arg dispatch)
+
+**Status:** closed 2026-05-24 — decided against via **DEC-018 Option B** (status quo, explicit-arg dispatch).
+**Captured:** 2026-05-20 (session-level reflection after the FB-068 `/grill` ship).
+**Closed:** 2026-05-24 — value deep-dive concluded the interpretive-router proposal solves a problem CCE does not currently have.
+
+### Original ask
+
+User framing (2026-05-20): *"from a UX perspective it is one more command to remember. I think we should look into making `/iterate` a router that routes to other commands depending on what is being asked. … the larger question is how effective routing is at all, and perhaps that is something to do research on."* Proposal: make `/iterate` an interpretive umbrella that classifies natural-language intent → sub-mode (review / distill / propose / hygiene / grill) instead of explicit-arg dispatch.
+
+### What was done (research-first track ran to completion)
+
+1. **Boundary survey** — `.claude/support/workspace/router-survey.md` (2026-05-20). Surveyed five candidate umbrellas; net recommendation "prototype interpretive routing on `/iterate` only; keep `/work` + `/research` explicit; `/audit-*` menu-dispatched; defer help-me-think."
+2. **`/research` → DEC-018** — `decisions/decision-018-command-routing-interpretive-vs-explicit.md` + research archive `decisions/.archive/decision-018-research-2026-05-24.md`. Research-agent validated the survey + recommended Option A (prototype-gated) with four refinements; explicitly flagged value as the weak point (high confidence on safety, moderate on value).
+3. **Value deep-dive** — empirical probe of CCE's 26 cross-project session exports: **zero** recorded instances of the recall-the-token friction Option A removes; `/iterate` used heavily but almost always *bare*; named sub-mode tokens (`distill`, `hygiene`) barely appear. Value front-loaded/transient + diffuse/unmeasurable; costs permanent/concrete. → **Option B selected.**
+
+### Resolution
+
+DEC-018 = Option B (status quo). No template change. Option A remains a correct, safe design that solves a non-problem for the current audience (primary user already knows the tokens).
+
+**Re-open condition (DEC-018 Impact):** if Wave 2 (`/tdd`, `/prototype`, …) materially grows the command surface and routing-as-a-pattern resurfaces, open a fresh DEC from the survey + research archive.
+
+**Not part of this decision:** the `/walkthrough` / `/preflight` sibling idea (SIREN 2026-05-18) folded into FB-072 during triage — re-capture as its own FB if it resurfaces with signal.
+
+Tags: closed, command-routing, interpretive-router, dec-018, decided-against, research-complete, full-original-in-git-history

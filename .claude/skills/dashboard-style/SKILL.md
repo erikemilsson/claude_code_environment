@@ -164,6 +164,7 @@ For single-section changes that would otherwise trigger Tier 1 full regen, the o
 | Single task moved into Action Required | ✓ | |
 | META `generated` timestamp refresh after a status flip | ✓ | |
 | Format-staleness fix that touches only META | ✓ | |
+| Recent Activity cap-trim (drop entries above the 7-entry cap) | ✓ | |
 | Decomposition complete (new tasks added) | | ✓ |
 | Parallel batch end (multi-task changes land together) | | ✓ |
 | `/work complete` | | ✓ |
@@ -488,6 +489,7 @@ The user selects an option when prompted, and `/work` updates the task according
 - Timeline sub-section in Progress: only render when tasks have `due_date` or `external_dependency.expected_date` (part of Progress, not an independent toggle)
 - **Recent Activity sub-section in Progress** (auto-renders when ≥3 tasks transitioned status in the last 7 days):
   - **Strict cap: max 7 entries, each ≤1 line.**
+  - **Cap enforcement is non-discretionary (FB-090):** whenever any edit touches this section — full regen OR a targeted edit (see § "Targeted Edits (mid-session lite path)") — trim to the 7-entry cap as a required step, dropping the oldest entries first. FB-080 made a single-section trim a cheap targeted edit, so there is no regen-cost justification for letting the list drift past the cap; do not defer the trim to "next full regen".
   - Format per entry: `- **YYYY-MM-DD** — {Task ID or short commit ref} — {one-line outcome}`
   - **Strictly forbidden in entries:** prose paragraphs (>1 line per entry), friction markers, session-summary blocks, scope contradictions, design-thesis narratives, embedded "captured for /iterate" notes, multi-part outcome lists. All of those belong in the friction register (`.claude/support/friction.jsonl` once Stage 2 lands), task JSON `notes`, handoff file, or git log. Dashboard Recent Activity is a chronological pointer, not narrative.
   - **Migration on existing dashboards with prose-style entries:** during regeneration, condense each entry to its task ID + 1-line outcome (drop the prose). Do not archive the prose anywhere new — it belongs in handoff/git log, not duplicated. If an entry's content can't compress to 1 line meaningfully, drop the entry entirely.

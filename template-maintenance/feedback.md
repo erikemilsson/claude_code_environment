@@ -262,68 +262,9 @@ In the Styler audit run, this left two captured-inputs files missing (`meta.json
 
 **Status:** promoted 2026-05-20 — `disable-model-invocation: true` frontmatter applied to all 5 strong-candidate commands (`/breakdown`, `/research`, `/iterate`, `/work`, `/feedback`) shipped in template_version 4.1.0. Live empirical verification: model-invocable skills list shrank immediately from 10 template commands to 5. New `## Command Invocation Gates` section in `rules/agents.md` documents the convention, selection criteria, sub-mode coupling trade-off, and defense-in-depth interaction with DEC-005 + DEC-016. Medium candidates deferred for trial-period observation. See archive for full text.
 
-## FB-072: Command routing as a UX pattern (interpretive vs explicit-arg dispatch + boundary survey)
+## FB-072: [CLOSED — moved to `template-maintenance/feedback-archive.md`]
 
-**Status:** ready (route through `/research` directly)
-**Captured:** 2026-05-20
-**Triaged:** 2026-05-24 — Route through `/research` directly rather than walking the survey's 3 decision points inline. Survey `.claude/support/workspace/router-survey.md` becomes input artifact for research-agent. Larger investment but produces a DEC-shaped output. Research scope: net-recommendation from survey ("prototype interpretive routing on `/iterate` only; defer others") is the starting point; research-agent validates or extends. **Additional candidate added during walk-through:** `/walkthrough` or `/preflight` command for major workflow transitions (SIREN 2026-05-18 signal) — sibling to existing help-me-think family (`/zoom-out`, `/grill`, `/diagnose`) per FB-072's candidate list.
-**Source:** session-level reflection after shipping FB-068 (`/grill` as standalone command rather than `/iterate grill` sub-mode). User observed 2026-05-20: *"from a UX perspective it is one more command to remember. I think we should look into making `/iterate` a router that routes to other commands depending on what is being asked. ... I guess the larger question is how effective routing is at all, and perhaps that is something to do research on."*
-
-**Observation:** CCE currently dispatches sub-modes via explicit string args (`/iterate distill`, `/work complete`, `/work pause`, `/feedback review`). Each multi-mode command grows its own file (e.g., `iterate.md` ~700 lines covering distill/propose/hygiene/no-args; `work.md` ~1700 lines covering many sub-modes). Adding new spec-adjacent commands (FB-068's `/grill`, FB-069's `/diagnose`, FB-070's `/zoom-out`, likely Wave 2 entries) increases the surface area users have to remember.
-
-**The router pattern (proposed by user 2026-05-20):**
-
-`/iterate` becomes an interpretive umbrella for "everything that has to do with nailing down the single source of truth spec." Sub-purposes dispatch based on Claude's interpretation of intent:
-
-- `/iterate "I want to stress-test this plan"` → router invokes `/grill` internally
-- `/iterate "let's distill a buildable spec from this vision"` → router invokes the distill sub-flow
-- `/iterate "the spec is fuzzy on cancellation semantics"` → router invokes the propose sub-flow
-- `/iterate "check the spec against the registry"` → router invokes the hygiene sub-flow
-
-Sub-flows can live in separate files (per-purpose, focused) or stay in `iterate.md`. The key difference from current explicit-arg dispatch: **the user doesn't need to know the sub-mode name**; Claude classifies from natural language.
-
-**Two interesting twists:**
-
-1. **Interpretive vs explicit-arg dispatch.** Current pattern is structural: user types `/iterate distill`, matcher fires. Proposed pattern is interpretive: user types `/iterate <natural language>`, Claude classifies intent before firing. Failure mode: wrong sub-mode runs silently. Mitigation candidate: router announces its interpretation (*"I read this as a distill request — proceeding with `/iterate distill` flow. Say 'no' to redirect."*) before any substantive action.
-
-2. **Boundary discovery comes first.** Worth surveying which CCE commands have clean "umbrella" semantics before committing to the architecture. Concrete candidates:
-   - **`/iterate` as spec-source-of-truth umbrella** — covers distill / propose / hygiene / grill / possibly research-dispatch for spec-adjacent decisions
-   - **`/work`** — currently covers many concerns (decomposition, agent routing, parallel batching, completion, pause); some might split out under interpretive routing
-   - **`/research` and `/iterate` overlap** — both touch decisions and spec adjacency. Unified umbrella, or correctly distinct?
-   - **`/audit-coherence` and `/audit-ui`** — already dispatched from `/health-check` Part 8 menu (different pattern: menu-based). Similar umbrella-vs-discrete tension.
-   - **Help-me-think family** — `/zoom-out`, `/grill`, `/diagnose`. Pattern: *user-asks-for-help-in-a-specific-mode*. Loose grouping ("I need broader context" / "I need to be interrogated about this plan" / "I need to debug rigorously"). Less obviously umbrella-shaped than `/iterate` (the family is small and the modes are quite distinct), but worth surveying for whether a single `/help` or `/think` entry point + interpretive dispatch produces a better UX than three discrete commands. Surfaced 2026-05-20 during FB-069 ship (post-FB-068/FB-070 reflection — three help-me-think commands now exist, none has a natural umbrella home).
-
-**Research questions:**
-
-- **Accuracy of intent classification.** Can Claude correctly classify the sub-mode from user input across candidate umbrellas? Failure rate? Recovery cost when wrong?
-- **Discoverability.** Do users learn the umbrella surface (one command, many sub-purposes) faster than the discrete surface (many commands)? Or does the umbrella obscure capability?
-- **Latency / cost.** Does interpretive routing add a noticeable LLM pass? Sub-modes have their own context loads (iterate.md is large) — is the router pass cheap or expensive?
-- **Boundary clarity.** When should a piece of work be a sub-mode of an umbrella vs a standalone command? Are there cases where an umbrella forces unnatural couplings?
-
-**Deliverables (if pursued):**
-
-1. **Boundary survey** (`.claude/support/workspace/router-survey.md` or similar) — for each candidate umbrella, list sub-purposes that would route through it; flag any that don't fit cleanly. ~1-2 sessions.
-2. **Prototype** — pick one umbrella (likely `/iterate`, the immediate driver) and implement interpretive routing as proof-of-concept. Trial in a real downstream session.
-3. **Effectiveness data** — track router accuracy, recovery cost, and user feedback across N sessions. Threshold candidate: ≥ ~85% classification accuracy with ≤ 1 redirect per recovery to justify the pattern.
-4. **DEC candidate** — if survey + prototype + data are favorable, `/research` opens a DEC. If unfavorable, FB-072 closes; explicit-arg pattern stays.
-
-**Dependencies / interactions:**
-
-- **FB-071 (Command Invocation Gates):** if `/iterate` becomes a router, the gating story stays — `disable-model-invocation: true` blocks ambient autonomous fire of the umbrella. Sub-modes don't need individual gates because the router gates them collectively. Potentially *simplifies* the FB-071 sub-mode coupling trade-off.
-- **DEC-016 (spec/decision/vision Edit/Write ask):** unchanged. The permission-layer ask fires at the write boundary regardless of how the write was reached.
-- **FB-068 (`/grill` as standalone):** if FB-072 ships favorably, `/grill` could migrate to `/iterate grill` as a sub-mode. The standalone command file stays as the dispatch target; only the entry point shifts. No re-work of `/grill` itself.
-- **FB-070 (`/zoom-out`):** standalone micro-command; doesn't obviously belong under an umbrella (no "zoom-out family" of related commands). If router shipping reveals a help-the-user umbrella, revisit. Most likely outcome: `/zoom-out` stays standalone.
-
-**Trial-gate:** the research-first nature is important. The user explicitly said *"perhaps that is something to do research on."* Do NOT implement before:
-- Boundary survey is complete (which commands have clean umbrella semantics?)
-- At least one prototype is trialed in a real session
-- Effectiveness data accumulates
-
-**Likely route:** research-light (boundary survey) → prototype → `/research` opens DEC if signal is positive. No template change in the first session; the survey is a workspace doc, not a template artifact.
-
-**Impact scope if pursued:** large — touches `iterate.md` (router refactor), possibly `work.md` and `research.md`, `/grill` (entry-point migration), `/health-check` Part 8 menu (if `/audit-*` commands also umbrella-ize), and the Command Invocation Gates story.
-
-**Likely outcome:** candidate DEC after survey + prototype + data accumulate.
+**Status:** closed 2026-05-24 — DEC-018 resolved to **Option B** (status quo, explicit-arg dispatch); the interpretive-router proposal was declined after a value deep-dive (CCE's own 26-session usage logs showed near-absent recall-the-token friction → marginal value vs. permanent costs). Decision: `decisions/decision-018-command-routing-interpretive-vs-explicit.md` (`approved`). Re-open condition in DEC-018 Impact if Wave 2 grows the command surface. Durable records: that DEC + `decisions/.archive/decision-018-research-2026-05-24.md` + `.claude/support/workspace/router-survey.md`. See archive for the full closure record.
 
 ## FB-073: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
 
@@ -506,8 +447,8 @@ The 2026-05-20 scan of `interaction-logs/processed/` surfaced six additional wea
 
 *(Item 1 — Uncommitted-work check — promoted to FB-088 on 2026-05-24 during walk-through triage.)*
 
-- **Math-check before commit-to-pixels on layout iterations** (styler 2026-05-20). When changing a layout/composition dimension that affects vertical flow or composition (object-position, viewport-relative heights, crop modes), pre-compute arithmetic trade-off BEFORE committing to a screenshot iteration. Behavioral pattern; could land in `agents.md` as a UI-iteration rule.
-- **Dashboard Recent Activity prose-style cap enforcement is ambiguous** (styler 2026-05-20). The dashboard-style skill's strict cap is at the writer's discretion; aggressive cleanup gets deferred because the regen-scope cost is high. Two routes: automatic cleanup during regen vs relax the rule for substantial work. Cross-couples with FB-080 (partial-regen would make cleanup cheaper).
+- **Math-check before commit-to-pixels on layout iterations** (styler 2026-05-20). When changing a layout/composition dimension that affects vertical flow or composition (object-position, viewport-relative heights, crop modes), pre-compute arithmetic trade-off BEFORE committing to a screenshot iteration. Behavioral pattern; could land in `agents.md` as a UI-iteration rule. *Reviewed 2026-05-24 (walk-through triage): **keep queued** — single-project + niche; hold for a 2nd-project signal before promoting (consistent with FB-076 / FB-085 gating).*
+- ~~**Dashboard Recent Activity prose-style cap enforcement is ambiguous** (styler 2026-05-20).~~ — promoted to **FB-090** on 2026-05-24 during walk-through triage. Promotion trigger: FB-080 (targeted-edit path) shipped in v4.7.0 since capture, weakening the "regen-scope cost is high" deferral reason that originally kept this in the queue. See FB-090 below for the re-scoped entry.
 - ~~**Magnitude check when user specifies rule without absolute value**~~ — closed 2026-05-24 during walk-through triage. Pattern is covered by `/grill` (FB-068, v4.2.0). The "ask one focused question to resolve ambiguity before coding" pattern is what `/grill` does at interview granularity; magnitude-check is a special case of /grill's broader interrogation. Decline standalone promotion.
 - ~~**`.interaction-assessment.json` cleanup may have silent failure mode**~~ — promoted to FB-089 on 2026-05-24 during walk-through triage (gap confirmed by direct read of `commands/work.md § Session Export step 7`).
 - ~~**`/walkthrough` or `/preflight` command for major workflow transitions**~~ — added to FB-072's `/research` scope on 2026-05-24 during walk-through triage (sibling candidate to `/zoom-out` / `/grill` / `/diagnose` help-me-think family).
@@ -661,3 +602,7 @@ Tags: template-side, mcp, playwright, result-size, browser-snapshot, browser-eva
 ## FB-089: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
 
 **Status:** promoted 2026-05-24 via v4.8.0 (5-FB cheap-action bundle). Option 1.5 (recover-by-compile-then-cleanup) shipped as Step 0f in `commands/work.md § "Step 0f: Track 2 Stale-File Recovery"`. New `export_quality: "recovered"` enum value. PreCompact hook unchanged (disjoint Track 2 territory). Research at `.claude/support/workspace/fb-089-research.md`. See archive for full entry.
+
+## FB-090: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
+
+**Status:** promoted 2026-05-24 via v4.10.1 (cheap action). Made Recent Activity cap enforcement non-discretionary + added "cap-trim" as a targeted-edit-eligible pattern in `dashboard-style/SKILL.md` + `dashboard-regeneration.md` mirror (two edits each). Promotion trigger: FB-080 (targeted-edit path) shipped in v4.7.0, weakening the regen-cost deferral reason. See archive for full entry.
