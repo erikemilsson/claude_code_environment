@@ -1,6 +1,6 @@
 # Grill Command
 
-Interview-style interrogation. The model asks questions one at a time, walks branch-by-branch through a decision tree, resolves dependencies, and recommends an answer to each.
+Interview-style interrogation. The model asks questions one at a time, walks branch-by-branch through a decision tree, resolves dependencies, and recommends an answer to each. When invoked without arguments, the model first triages — surfacing 2-4 candidate areas and recommending a starter — then drills the picked area.
 
 Auto-detects `./CONTEXT.md` (project-owned domain glossary, if present) and runs the with-docs flow: challenges fuzzy language against the glossary, cross-references with code, updates `./CONTEXT.md` inline as terms resolve, and offers to route precedent-setting decisions through `/research`.
 
@@ -9,7 +9,7 @@ Adapted from `mattpocock/skills/engineering/grill-with-docs` — preserved the i
 ## Usage
 
 ```
-/grill                       # Grill on the current topic (model picks based on conversation context)
+/grill                       # Triage: surface 2-4 candidate areas, recommend one, then drill the picked area
 /grill {topic-or-question}   # Grill specifically on this topic
 /grill {vision-file}         # Grill the contents of a vision doc (pre-distill enrichment)
 ```
@@ -20,12 +20,34 @@ Adapted from `mattpocock/skills/engineering/grill-with-docs` — preserved the i
 - You want help making implicit assumptions explicit.
 - You're about to run `/iterate distill` on a vision doc and want to enrich it first.
 - You want to harden domain vocabulary before the spec phase, or repair it mid-project when fuzzy language has crept in.
+- Project-state triage in an unfamiliar or broad-scope context — surface where interrogation would help most before committing to a topic. (No-args invocation does this.)
 
 ## Process
+
+This command has two invocation shapes. The no-args triage flow surfaces candidates and recommends a starter; the explicit-topic flow drills the named topic directly. Both ultimately drill a topic; the only difference is whether triage picks it or you bring it.
+
+### Explicit-topic flow (`/grill {topic}` or `/grill {vision-file}`)
 
 Interview relentlessly about every aspect until reaching a shared understanding. Walk down each branch of the design tree, resolving dependencies between decisions one-by-one. For each question, provide a recommended answer.
 
 **Ask questions one at a time.** Wait for the answer before moving on. If a question can be resolved by reading the codebase or other project state (`.claude/spec_v*.md`, decisions, vision docs), explore those instead of asking.
+
+### No-args triage flow (`/grill`)
+
+1. **Scan project state.** Default scope: spec + decisions + recent FB items + (if present) `./CONTEXT.md`. Widen to code if those don't surface enough. Use judgment for what's worth grilling within scope — no prescribed criteria.
+
+2. **Surface 2-4 candidates via AskUserQuestion.** Each option:
+   - **Label:** short area name; append "(Recommended)" to the suggested starter (first in list, per AskUserQuestion convention).
+   - **Description:** one-line rationale — what makes this area worth grilling now.
+
+   User picks via UI or types "Other" with a custom topic.
+
+3. **Handoff.** Acknowledge the pick, name the area, then begin drilling per the explicit-topic flow.
+
+**Edges:**
+
+- **Zero good candidates.** *"The project looks well-defined to me — nothing flagged. Pick a topic explicitly with `/grill {topic}` if you want a deeper look anywhere specific."*
+- **Multiple in sequence.** If the user wants to drill another after the first one completes, the model can reference the original triage list (*"I had also flagged X and Y — pick one or name a different area"*).
 
 ### Auto-detected modes
 
