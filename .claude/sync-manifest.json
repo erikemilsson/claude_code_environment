@@ -49,6 +49,7 @@
       ".claude/vision/README.md",
       ".claude/support/feedback/README.md",
       ".claude/support/retired/README.md",
+      ".claude/support/shakedowns/README.md",
       ".claude/hooks/pre-compact-handoff.sh"
     ],
     "customize": [

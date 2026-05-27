@@ -23,6 +23,7 @@ This environment is designed for **Claude Opus 4.7** (`claude-opus-4-7[1m]`). Al
 | Reference docs | `.claude/support/reference/` |
 | Claude Code authoring hazards | `.claude/support/reference/claude-code-authoring.md` (DEC-017) |
 | Vision documents | `.claude/vision/` |
+| Shakedown corpus (capability maps) | `.claude/support/shakedowns/` (DEC-019) |
 | Workspace (scratch) | `.claude/support/workspace/` |
 | Reference documents (inputs) | `.claude/support/documents/` |
 | Feedback | `.claude/support/feedback/` |
@@ -52,6 +53,7 @@ This environment is designed for **Claude Opus 4.7** (`claude-opus-4-7[1m]`). Al
 | `/work complete` | Complete current in-progress task |
 | `/iterate` | Spec review and refinement |
 | `/grill` | Interview-style interrogation; no-args triages candidate areas first; auto-detects `./CONTEXT.md` |
+| `/shakedown` | Acceptance-by-example: probe the built system against real-use examples to map its capability boundary (DEC-019) |
 | `/review` | Implementation quality review (advisory, read-only) |
 | `/status` | Quick view of project state |
 | `/research` | Investigate options for decisions |

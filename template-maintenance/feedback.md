@@ -621,3 +621,81 @@ Tags: template-side, mcp, playwright, result-size, browser-snapshot, browser-eva
 ## FB-090: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
 
 **Status:** promoted 2026-05-24 via v4.10.1 (cheap action). Made Recent Activity cap enforcement non-discretionary + added "cap-trim" as a targeted-edit-eligible pattern in `dashboard-style/SKILL.md` + `dashboard-regeneration.md` mirror (two edits each). Promotion trigger: FB-080 (targeted-edit path) shipped in v4.7.0, weakening the regen-cost deferral reason. See archive for full entry.
+
+## FB-091: Guard precondition probes in orchestrator bash batches (a failing speculative check shouldn't abort the batch)
+
+**Status:** new
+**Captured:** 2026-05-25
+**Source:** 2026-05-25 insights-report scan (`~/.claude/usage-data/report-2026-05-24-233016.html` § "New Ways to Use Claude Code" → "Batch-proof file edits against single-command failures"). Aggregate signal over the 26-day window; one concrete reproduction cited.
+
+## Observation
+
+A `bash` exit-1 from an `ls` probe on a deleted file short-circuited a chained 9-edit batch (`&&`-joined), forcing full re-execution. With ~11,589 Bash calls over the window, small robustness habits compound.
+
+## Proposed template surface
+
+One short paragraph in `.claude/rules/agents.md` (candidate home: `## Tool Preferences` or `## Behavioral Rules`): when batching bash operations, guard precondition probes so a non-zero exit from a speculative check (`ls`, `test`, `grep`) can't abort the batch — `ls … || true`, or `test -f X &&` before the dependent step, or keep each operation independent.
+
+## Triage recommendation
+
+**Cheap-action candidate — but check coverage first.** The most common form of this friction (chaining *edits* through bash) is already discouraged by the existing Tool Preferences table (use the `Edit` tool, not `sed`/`echo >`; Edit-tool calls are independent and don't abort each other). If the template's own rule were followed, the 9-edit-via-bash case largely doesn't arise. The genuine *residual* is legitimate bash batches (git sequences, test runs, script chains) where a probe short-circuits — narrow. Decide whether that residual earns a one-paragraph rule or is too thin to bother. Single-source signal (insights report); no session-export reproduction with markers.
+
+Cross-ref: FB-092 (sibling orchestrator-bash-hygiene item; would ship together if both promoted).
+
+Tags: template-side, orchestrator-bash, tool-preferences-adjacent, cheap-action-candidate, single-source-signal, insights-report
+
+## FB-092: Prefer absolute paths in orchestrator bash ops; don't assume CWD persists across steps
+
+**Status:** new
+**Captured:** 2026-05-25
+**Source:** 2026-05-25 insights-report scan (same report § "Suggested CLAUDE.md Additions" → File Operations item). Aggregate signal.
+
+## Observation
+
+Working-directory assumptions caused validation retries and a truncate-vs-append error on the session log (`.session-log.jsonl`) across multiple sessions. The report's suggested line: *"Always use absolute paths for file operations and validation scripts; never assume the current working directory persists across steps."*
+
+## Proposed template surface
+
+One line in `.claude/rules/agents.md` (candidate home: `## Tool Preferences`): prefer absolute paths for bash-tool file operations and validation-script invocations; don't assume CWD persists. Optionally a `>>`-not-`>` note for append-mode log writes (`.session-log.jsonl`).
+
+## Triage recommendation
+
+**Cheap-action candidate, with two coverage caveats.** (1) File ops are already steered to the dedicated tools (Read/Glob/Grep/Edit/Write), which take absolute paths — so the file-ops half is largely covered; the residual is *bash-tool* ops (validation scripts, git). (2) The Bash tool's own contract states the working directory **does** persist between calls, so "CWD drift across steps" is partly a non-issue at the harness level — the real residual is relative paths inside invoked scripts. The most concrete sub-signal (session-log truncate-vs-append, `>` vs `>>`) may deserve a targeted note more than a broad absolute-path rule. Decide: minimal `>>`-discipline note vs broad absolute-path line vs decline (mostly covered). Single-source signal.
+
+Cross-ref: FB-091 (sibling orchestrator-bash-hygiene item).
+
+Tags: template-side, orchestrator-bash, absolute-paths, session-log, tool-preferences-adjacent, cheap-action-candidate, single-source-signal, insights-report
+
+## FB-093: Empirical capability-probe workflow — brain-dump examples → verdict each against the live system → accumulate a snapshot-anchored capability-boundary corpus
+
+**Status:** PROMOTED — shipped **v4.11.0** (2026-05-27). DEC-019 approved (Option A); `/shakedown` command + `.claude/support/shakedowns/` + integrations shipped. Records: `decisions/decision-019-shakedown-command.md`, `template-maintenance/shakedown-workflow-vision.md § "Resolution (post-grill, 2026-05-27)"`, research `.claude/support/workspace/fb-093-research.md`.
+**Captured:** 2026-05-27
+**Source:** Surfaced by Erik from two styler CLI transcripts (2026-05-27). A `/grill` session scaffolded `personal-style-rule-corpus-2026-05-27.md` (protocol + verdict legend + "Model so far" + seeded examples R-01..R-04); a fresh session then *ran the brain-dump* — Erik fed personal style rules one at a time, Claude broke each down against the engine's actual rule model, verdicted it (✓ expressible / ⚠ needs new capability / ✗ out-of-model / 🎨 dose-nuance / ❓ ambiguous), refined a shared "Model so far / Parked / Boundary criteria" between examples, steered toward edge-revealing inputs, and wrote each entry into the doc as the persistence layer. Companion `engine-rule-expressiveness-gap-2026-05-27.md` (both docs live in the styler repo, not CCE). Full transcripts + extracted meta-protocol in this session; design analysis in `.claude/support/workspace/fb-093-research.md`.
+
+## The workflow (generalizable; domain-agnostic)
+
+A structured probe of an **existing** system against the user's real / desired examples — "working from the end" (the built product) rather than forward from the spec. Six phases:
+
+0. **Calibrate the lens** — read the current system (spec + code + glossary); state back, *before any input*: the dimensions each example is decomposed against, the verdict legend, the cleave/heuristic, what trips a "new dimension" finding, the per-example output contract. *(This is the "narrow down what it's checking my feedback for" preamble Erik flagged as essential.)*
+1. **Probe loop** (per example) — plain restatement (+ flag if it forks into 2+ items) → structured breakdown → **ground against the actual system** (expressible? *why not*, precisely? is there an approximation, and does it *flatten* the intent?) → verdict → write the entry immediately (the doc is the persistence layer; survives `/clear`).
+2. **Maintain the model** between examples — refine the shared "Model so far / Parked / Boundary criteria" as findings accumulate (model-*building*, not a checklist).
+3. **Steer** — hypothesis-driven; request the highest-signal next input ("the model has never been tested on a relation between two items — I bet that's where it breaks").
+4. **Stop signal** — saturation: stop when new examples stop revealing new dimensions; announce proximity.
+5. **Defer & route** — batch hard sub-questions ("is this already in the engine?") to `/research` instead of breaking flow; surface genuine forks with a recommendation + record the user's call with attribution + date; exit → distill the model → `/research` the forks → `/iterate` → `/work`.
+
+**Output is triple-duty + snapshot-anchored:** ✓ = acceptance probes (what works now); ⚠/✗ = gap analysis (what to build / what's out); Parked + boundary map = forward-direction. The dated doc = *"where the system is and where I want it, as of date X"* — direction for a large, long-running project.
+
+**Genericization principle:** ship the *meta-protocol*; **derive the lens per-project** at Phase 0 (the styler dimensions — mechanism/bite/direction/when/unless — are an *instance*, not the spec). Same pattern as `/diagnose` shipping a methodology, not bug-knowledge.
+
+## Design forks (full analysis in the research doc)
+
+1. **Surface — the governing decision.** New `/probe` command vs `/grill` sub-mode vs fold-as-recipe-into-`/grill` vs document-as-workflow-pattern (rule/reference, no command). **Must clear the strong CCE prior:** DEC-018 declined the interpretive router after a value deep-dive; `/visual-verify` was *folded into `/diagnose`* rather than shipped (FB-085 § "Resolved design") — default is *fold unless standalone is earned*. The case FOR standalone: the probe is the **inverse flow** of grill (user *asserts* → Claude *verdicts*, vs grill's Claude *asks* → user *answers*) — not an instance of grill the way visual-verify was an instance of diagnose.
+2. **Artifact home / type.** A new artifact (empirical, snapshot-anchored, triple-duty). Candidates: `.claude/vision/` sibling, new `.claude/support/probes/`, `.claude/support/learnings/`, or workspace-graduate. Styler put it in `workspace/` (scratch — wrong for a durable artifact).
+3. **Genericization mechanism** — Phase 0 calibration is the seam (ship the instruction + verdict-legend schema + the styler lens as a marked illustration).
+4. **Routing onward** — exit ramps from verdicts to `/iterate` / `/research` / FB items / `test_protocol` seeds.
+
+## Triage recommendation
+
+Research-gated → **likely DEC on fork #1** (surface) only if the resolution is *standalone command* (real surface, DEC-018-class). The CCE-native way to settle fork #1 is to **`/grill` the design itself** — exactly how `/visual-verify` was resolved (`template-maintenance/visual-verify-vision.md`) — seeded by a `template-maintenance/probe-workflow-vision.md`. If the grill concludes *fold / pattern-doc*, no DEC (trivially reversible, per FB-085's reasoning). Forks 2-4 resolve downstream of fork #1. Adjacent to FB-067 Wave 2 (`/prototype`, `/improve-codebase-architecture`) and the deferred "help-me-think umbrella" (`router-survey.md` § 5) — cross-check family membership before adding standalone surface.
+
+Tags: workflow, new-command-candidate, grill-adjacent, vision-adjacent, capability-probe, gap-analysis, snapshot-anchored, surface-discipline, research-gated, dec-candidate, styler-bridge

@@ -43,6 +43,8 @@ Primary command: `/work` — checks spec alignment, decomposes tasks, routes to 
 
 **Bug tasks:** when a task's failure mode isn't obvious from inspection (hard bugs, non-deterministic failures, performance regressions), prefer `/diagnose` (`.claude/commands/diagnose.md`) — its 6-phase methodology produces a falsifiable hypothesis + regression test before the fix lands, which is what verify-agent expects under `.claude/rules/agents.md § "Root Cause Over Symptom"`.
 
+**Working backward from the built product:** when you want to test how the built (or envisioned) system handles real use — typical paths and edge cases — and map where it falls short of how you picture it, run `/shakedown` (`.claude/commands/shakedown.md`). It's *acceptance-by-example*: a directed-grill Phase 0 calibrates the lens, then each example is grounded against the system and verdicted into a snapshot-anchored capability-boundary corpus. `⚠` findings route back into this cycle via `/iterate` (spec-expressible gaps) or `/research` (design forks). The mirror of `/grill` (which sharpens *meaning*); see DEC-019.
+
 Parallel execution is the default when `/work` finds multiple pending tasks with no mutual dependencies or file conflicts.
 
 ## References
