@@ -43,7 +43,6 @@ Your project uses three instruction sources. Understanding the split is importan
 | `tasks/` | Task data (JSON files managed by `/work`) |
 | `commands/` | Slash commands (`/work`, `/iterate`, `/status`, etc.) |
 | `agents/` | Specialist agents (implement-agent builds, verify-agent validates, research-agent investigates) |
-| `skills/` | On-demand reference content Claude auto-invokes when needed (spec-checklist, decomposition-heuristics, dashboard-style) |
 | `support/` | Reference docs, decisions, workspace, archived specs |
 | `vision/` | Vision/design documents from ideation (required before spec creation) |
 
@@ -53,7 +52,7 @@ Understanding which files are yours to edit vs. which are managed by the templat
 
 **Template-owned** (updated via template sync, don't edit):
 - `.claude/CLAUDE.md`, `.claude/rules/{template-rules}.md`
-- `.claude/commands/*.md`, `.claude/agents/*.md`, `.claude/skills/*/SKILL.md`
+- `.claude/commands/*.md`, `.claude/agents/*.md`
 - `.claude/support/reference/*.md` (except `project-*.md`)
 - `.claude/settings.json` (base `permissions.allow` — never edit; template sync replaces it)
 
@@ -88,20 +87,6 @@ Claude Code supports a `--permission-mode auto` flag (available on Max, Team, En
 
 See Claude Code's permission-modes documentation (`https://code.claude.com/docs/en/permission-modes`) for full classifier behavior, fallback conditions, and plan availability.
 
-### Skills
-
-`.claude/skills/` holds on-demand reference content. Each skill is a directory with a `SKILL.md` entrypoint whose frontmatter description tells Claude when to auto-invoke it — the content loads only when relevant, rather than living in always-on context. Skills can also be invoked explicitly via `/skill-name` for inspection.
-
-Current skills (template-owned):
-
-| Skill | When Claude auto-invokes |
-|-------|--------------------------|
-| `decomposition-heuristics` | During `/work` decomposition — task creation, provenance fields, stages |
-| `spec-checklist` | During `/iterate` — evaluating spec readiness, red flags, calibration |
-| `dashboard-style` | When regenerating `.claude/dashboard.md` — sections, critical path, diagram rules |
-
-Skills currently mirror companion files in `.claude/support/reference/` (decomposition.md, spec-checklist.md, dashboard-regeneration.md). This duplication is temporary for the DEC-007 adoption trial; one of the two locations will be retired once the Skill auto-invocation pattern is validated.
-
 ## Commands
 
 | Command | Description |
@@ -110,12 +95,18 @@ Skills currently mirror companion files in `.claude/support/reference/` (decompo
 | `/work pause` | Graceful wind-down — preserve context for next session |
 | `/work complete` | Complete current in-progress task (or `/work complete {id}`) |
 | `/iterate` | Structured spec review and refinement (checks gaps, asks questions, proposes spec changes) |
+| `/grill` | Interview-style interrogation to sharpen fuzzy requirements; builds a `./CONTEXT.md` domain glossary |
+| `/shakedown` | Acceptance-by-example — probe the built system against real-use examples to map its capability boundary |
+| `/diagnose` | Discipline for hard bugs / performance regressions (reproduce → falsifiable hypotheses → fix + regression test) |
+| `/zoom-out` | Step up a layer of abstraction to re-anchor on the bigger picture when stuck |
 | `/review` | Implementation quality review (architecture, integration, patterns — advisory) |
 | `/status` | Quick read-only view of project state |
 | `/research` | Investigate options for decisions (spawns research-agent) |
 | `/feedback` | Capture and review project improvement ideas |
 | `/breakdown {id}` | Split complex tasks into subtasks |
 | `/health-check` | Validate system health and check for template updates |
+| `/audit-coherence` | Cross-artifact coherence audit (spec/code/doc drift); usually run via `/health-check` |
+| `/audit-ui` | UI/UX audit of the running web app (Playwright); usually run via `/health-check` |
 
 ## Core Concepts
 
@@ -223,7 +214,6 @@ flowchart TD
 | Task details | `tasks/task-*.json` |
 | Decision records | `support/decisions/decision-*.md` |
 | Reference documentation | `support/reference/` |
-| On-demand reference skills | `skills/` (auto-invoked by description match) |
 | Scratch/draft documents | `support/workspace/` |
 | Feedback and ideas | `support/feedback/` |
 | Previous spec versions | `support/previous_specifications/` |

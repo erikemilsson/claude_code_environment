@@ -6,7 +6,6 @@
       ".claude/settings.json",
       ".claude/commands/*.md",
       ".claude/agents/*.md",
-      ".claude/skills/*/SKILL.md",
       ".claude/scripts/*.py",
       ".claude/scripts/README.md",
       ".claude/scripts/tests/*.py",

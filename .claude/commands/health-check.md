@@ -548,7 +548,7 @@ Group files by the per-file status from Step 2. Files classified as "Template co
 Template updates available (v1.5.0 → v1.6.0):
 
   Template content not yet applied (default: APPLY):
-    .claude/skills/dashboard-style/SKILL.md (+12 -0 lines)
+    .claude/support/reference/dashboard-regeneration.md (+12 -0 lines)
 
   Modified upstream (review before applying):
     .claude/commands/work.md (+15 -8 lines)

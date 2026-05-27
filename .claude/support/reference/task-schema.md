@@ -356,7 +356,7 @@ Written by verify-agent when runtime validation is `"partial"` or the task needs
 
 ### Runtime Constraints
 
-When a test_protocol step exercises behavior not runnable under the project's primary runtime (e.g., Expo Go can't cold-launch offline because it fetches its JS bundle from Metro on every cold-launch), the step should be either substituted (background-mode / server-only-kill) or annotated as deferred. Steps can carry an optional `constraint` informational field (e.g., `"constraint": "Requires dev client (EAS); skip in Expo Go"`) that verify-agent surfaces during guided testing. See `.claude/skills/decomposition-heuristics/SKILL.md § Test-Protocol Runtime Constraints` for authoring guidance.
+When a test_protocol step exercises behavior not runnable under the project's primary runtime (e.g., Expo Go can't cold-launch offline because it fetches its JS bundle from Metro on every cold-launch), the step should be either substituted (background-mode / server-only-kill) or annotated as deferred. Steps can carry an optional `constraint` informational field (e.g., `"constraint": "Requires dev client (EAS); skip in Expo Go"`) that verify-agent surfaces during guided testing. See `.claude/support/reference/decomposition.md § Test-Protocol Runtime Constraints` for authoring guidance.
 
 ## Interaction Hint Field
 

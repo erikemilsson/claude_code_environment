@@ -96,7 +96,6 @@ When a session is about to recommend the **template→sync flow** — typically 
 
 - `.claude/CLAUDE.md`
 - `.claude/rules/*.md` (template-shipped names — not `project-*.md` which is project-owned)
-- `.claude/skills/*/SKILL.md`
 - `.claude/support/reference/*.md` (template-shipped names — not `project-*.md`)
 - `.claude/agents/*.md`
 - `.claude/commands/*.md` (template-shipped names — project commands like `audit-{name}.md` are project-owned)

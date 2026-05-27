@@ -1,5 +1,3 @@
-<!-- During Skills trial (DEC-007 Option B, 2026-04-17): this file mirrors `.claude/skills/dashboard-style/SKILL.md`. Update both files in sync until one is retired. -->
-
 # Dashboard Regeneration Procedure
 
 Every dashboard regeneration MUST follow this procedure. All commands and agents reference this file for consistency.

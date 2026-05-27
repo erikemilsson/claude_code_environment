@@ -699,3 +699,20 @@ A structured probe of an **existing** system against the user's real / desired e
 Research-gated → **likely DEC on fork #1** (surface) only if the resolution is *standalone command* (real surface, DEC-018-class). The CCE-native way to settle fork #1 is to **`/grill` the design itself** — exactly how `/visual-verify` was resolved (`template-maintenance/visual-verify-vision.md`) — seeded by a `template-maintenance/probe-workflow-vision.md`. If the grill concludes *fold / pattern-doc*, no DEC (trivially reversible, per FB-085's reasoning). Forks 2-4 resolve downstream of fork #1. Adjacent to FB-067 Wave 2 (`/prototype`, `/improve-codebase-architecture`) and the deferred "help-me-think umbrella" (`router-survey.md` § 5) — cross-check family membership before adding standalone surface.
 
 Tags: workflow, new-command-candidate, grill-adjacent, vision-adjacent, capability-probe, gap-analysis, snapshot-anchored, surface-discipline, research-gated, dec-candidate, styler-bridge
+
+## FB-094: `claude-code-authoring.md` skill-listing-budget facts drifted from live Claude Code docs
+
+**Status:** ready
+**Captured:** 2026-05-27 — surfaced by the research-agent during DEC-020 (Skills/reference trial conclusion). The capability doc `.claude/support/reference/claude-code-authoring.md` (DEC-017; footer "Last verified … @ 2026-05-24; against template_version: 4.9.0") has drifted from current Claude Code docs on three points:
+
+1. **Skill-listing cap is now dynamic, not a flat 1,536 chars.** The doc states a hard "1,536-char cap on `description + when_to_use`." Live docs: the *total* listing budget "scales at 1% of the model's context window" (`skillListingBudgetFraction` / `SLASH_COMMAND_TOOL_CHAR_BUDGET`), with least-used descriptions dropped first on overflow; 1,536 is now the *per-entry* cap (`maxSkillDescriptionChars`). The doc conflates per-entry cap with total budget. (Source: https://code.claude.com/docs/en/skills)
+2. **`/doctor` now surfaces description-budget overflow** ("which skills are affected") — the doc has no observability note.
+3. **`/context` + `/skills` presence-inspection** — absent from the doc; relevant to "did the skill load?" questions.
+
+Confirmed still-consistent (no change needed): turn-scoped `model:`/`effort:`, the 25K auto-compaction re-attachment budget, one-message-and-stays lifecycle, `context: fork` inheritance, `disable-model-invocation` semantics.
+
+**Disposition:** cheap-action / `/health-check` Part 2d `[V]` candidate — this is exactly the capability-doc freshness lens DEC-017 (v4.9.0) shipped to catch. Fix inline on the next Part 2d verify pass, or promote as a standalone PATCH; bump the footer's `Last verified` date + `template_version` on fix. Low controversy (mechanical doc correction).
+
+**Source:** DEC-020 research archive `decisions/.archive/decision-020-research-2026-05-27.md § Q2`.
+
+Tags: capability-doc, claude-code-authoring, dec-017, freshness, health-check-part-2d, cheap-action, doc-drift, dec-020-bridge

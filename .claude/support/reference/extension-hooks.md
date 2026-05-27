@@ -2,7 +2,7 @@
 
 A canonical map of **where project-specific content goes** when extending the template environment. The template ships a shared core; projects add domain-specific rules, reference docs, decisions, commands, and operational documents — but where those additions land matters for both `/health-check` Part 5 sync hygiene and the cross-project capture protocol (`.claude/rules/agents.md § "Cross-Project Capture Protocol"`).
 
-The rule: **never modify template-owned files** (`.claude/CLAUDE.md`, `.claude/rules/*.md` template-shipped names, `.claude/skills/*/SKILL.md`, `.claude/support/reference/*.md` template-shipped names, `.claude/agents/*.md`, `.claude/commands/*.md` template-shipped names). Project additions go to one of the project-owned locations below.
+The rule: **never modify template-owned files** (`.claude/CLAUDE.md`, `.claude/rules/*.md` template-shipped names, `.claude/support/reference/*.md` template-shipped names, `.claude/agents/*.md`, `.claude/commands/*.md` template-shipped names). Project additions go to one of the project-owned locations below.
 
 ## Extension need → canonical home
 
@@ -13,7 +13,7 @@ The rule: **never modify template-owned files** (`.claude/CLAUDE.md`, `.claude/r
 | Project-specific rule files | `.claude/rules/project-*.md` (e.g., `project-domain-vocabulary.md`) | No — `project-*.md` is in sync-manifest `ignore` |
 | Project-specific reference docs (extracted from CLAUDE.md or new) | `.claude/support/reference/project-*.md` | No — `project-*.md` is in sync-manifest `ignore` |
 | Project-specific slash commands (audit family or custom) | `.claude/commands/audit-{name}.md` or other non-template name | Custom names not in sync-manifest `sync` are untouched by sync |
-| Project-specific skills | `.claude/skills/{name}/SKILL.md` (custom name; template-shipped `dashboard-style/`, etc. are template-owned) | Custom skill dirs untouched by sync |
+| Project-specific skills | `.claude/skills/{name}/SKILL.md` (the template ships no skills — any skill dir here is project-owned) | Custom skill dirs untouched by sync |
 | Project decisions (architectural choices, /research outcomes) | `.claude/support/decisions/decision-*.md` | No — `decision-*.md` is in sync-manifest `ignore` |
 | Decision research archives | `.claude/support/decisions/.archive/*` | No — in sync-manifest `ignore` |
 | Captured feedback (ideas, friction, deferred work) | `.claude/support/feedback/feedback.md` | No — in sync-manifest `ignore`. `/feedback` writes here, `/feedback review` triages |

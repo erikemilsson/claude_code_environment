@@ -8,7 +8,7 @@ decided: 2026-04-17
 implemented: 2026-04-17
 related:
   tasks: []
-  decisions: [DEC-004]
+  decisions: [DEC-004, DEC-020]
   feedback: [FB-020]
 implementation_anchors:
   - .claude/skills/spec-checklist/SKILL.md           # first Skill from Option B recommendation
@@ -21,6 +21,8 @@ blocks: [FB-033]
 ---
 
 # Skills adoption scope — where Skills fit in the template
+
+**Trial concluded 2026-05-27 (DEC-020 → Option A):** the three Skills were retired; the reference docs in `.claude/support/reference/` (`decomposition.md`, `spec-checklist.md`, `dashboard-regeneration.md`) are now the sole source. This record stands as the original adopt-Skills decision; `decisions/decision-020-conclude-skills-reference-trial.md` carries the conclusion, rationale, and research.
 
 ## Select an Option
 

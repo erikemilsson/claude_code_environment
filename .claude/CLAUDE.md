@@ -54,12 +54,16 @@ This environment is designed for **Claude Opus 4.7** (`claude-opus-4-7[1m]`). Al
 | `/iterate` | Spec review and refinement |
 | `/grill` | Interview-style interrogation; no-args triages candidate areas first; auto-detects `./CONTEXT.md` |
 | `/shakedown` | Acceptance-by-example: probe the built system against real-use examples to map its capability boundary (DEC-019) |
+| `/diagnose` | Hard-bug / performance-regression discipline: 6 phases (feedback loop → reproduce → hypothesise → instrument → fix → cleanup + post-mortem) |
+| `/zoom-out` | Go up a layer of abstraction — map the focus area's components and connections (uses `./CONTEXT.md` when present) |
 | `/review` | Implementation quality review (advisory, read-only) |
 | `/status` | Quick view of project state |
 | `/research` | Investigate options for decisions |
 | `/feedback` | Capture and manage improvement ideas |
 | `/breakdown {id}` | Split complex tasks into subtasks |
 | `/health-check` | Validate system health and template sync |
+| `/audit-coherence` | Spec-vs-reality coherence audit (drift, vocab, paths, retired-feature markers); usually dispatched by `/health-check`; has a `triage` mode |
+| `/audit-ui` | UI/UX audit — walks the running web app with Playwright across quality lenses; usually dispatched by `/health-check`; has a `triage` mode |
 
 ## Session Management
 
