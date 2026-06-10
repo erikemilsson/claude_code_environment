@@ -92,17 +92,16 @@ Rules files are loaded via explicit imports (Claude Code auto-reads `@path` refe
 @.claude/rules/agents.md
 @.claude/rules/archiving.md
 @.claude/rules/session-management.md
-@.claude/rules/feature-retirement.md
 
 Summary of each:
 - `task-management.md` — statuses, difficulty, ownership, parallel execution
 - `spec-workflow.md` — spec lifecycle, propose-approve-apply, vision documents
 - `decisions.md` — decision records, inflection points
 - `dashboard.md` — navigation hub, interaction modes, regeneration strategy
-- `agents.md` — agent separation, tool preferences, model requirement
+- `agents.md` — agent separation, tool preferences, model requirement (MCP patterns + cross-project capture protocol live in lazy reference docs; the stubs inside say when to read them)
 - `archiving.md` — file placement, archive locations, credentials
-- `session-management.md` — ending sessions, resuming, plans, context survival
-- `feature-retirement.md` — frozen+restorable feature retirement (snapshot, manifest, spec annotation, restore path)
+- `session-management.md` — ending sessions, persistence mechanisms, plans, context survival (user-facing session ops: `.claude/README.md § "Session Operations"`)
+- `feature-retirement.md` — **lazy, NOT auto-loaded:** before retiring or restoring ANY feature, READ `.claude/rules/feature-retirement.md` first (snapshot, manifest, spec annotation, restore path)
 
 ## Glossary
 

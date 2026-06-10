@@ -894,7 +894,7 @@ Both artifacts MUST be returned. The orchestrator writes both.
 ## Why this shape
 
 - **One file, multiple modes.** Walk + lenses + synth + promote in one command keeps state colocated. The artifact dir is the only persistence beyond `friction.jsonl` updates (via promote).
-- **Walker is the orchestrator, not a sub-agent.** Playwright MCP is a single browser session — parallel walkers would conflict (`.claude/rules/agents.md` § "MCP and Parallel Execution"). Lens parallelism happens AFTER capture, against static artifact files.
+- **Walker is the orchestrator, not a sub-agent.** Playwright MCP is a single browser session — parallel walkers would conflict (`.claude/support/reference/mcp-patterns.md` § "MCP and Parallel Execution"). Lens parallelism happens AFTER capture, against static artifact files.
 - **Lenses cap context.** Each lens agent reads only what it needs (the artifact dir), with sharp in/out-of-scope rules. No anchor bias from other lenses' findings.
 - **Synthesizer does not see the live UI.** It only sees lens reports + meta. This forces it to trust the lens evidence, not re-litigate.
 - **Synthesizer enforces the hard rule structurally.** The "spec/decision/vision read-only outside /iterate" rule is enforced in step 5 (HARD RULE FIRST) AND in the post-synth sanity check (step 12). Two independent enforcement points.

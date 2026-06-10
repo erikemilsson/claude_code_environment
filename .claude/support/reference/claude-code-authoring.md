@@ -146,8 +146,8 @@ Per `rules/agents.md § "Dispatch Convention"`: the three dispatch sites (`comma
 
 (Pointers — do NOT consolidate. Full rules live with the surrounding agent dispatch context.)
 
-- **`rules/agents.md § "MCP and Parallel Execution"`** — single-session MCPs (Playwright, browser automation) cannot be safely fanned out across parallel subagents. Orchestrator pattern: route MCP-driving work through one agent; parallelize the rest.
-- **`rules/agents.md § "MCP and Result-Size Constraints"`** — Playwright MCP `browser_snapshot` returns full accessibility tree; on long-scroll pages (~10K+ char DOM) the result truncates silently. Prefer `browser_evaluate` with targeted DOM queries.
+- **`support/reference/mcp-patterns.md § "MCP and Parallel Execution"`** — single-session MCPs (Playwright, browser automation) cannot be safely fanned out across parallel subagents. Orchestrator pattern: route MCP-driving work through one agent; parallelize the rest.
+- **`support/reference/mcp-patterns.md § "MCP and Result-Size Constraints"`** — Playwright MCP `browser_snapshot` returns full accessibility tree; on long-scroll pages (~10K+ char DOM) the result truncates silently. Prefer `browser_evaluate` with targeted DOM queries.
 
 ---
 

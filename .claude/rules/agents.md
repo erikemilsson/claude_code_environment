@@ -90,48 +90,15 @@ Slash commands that perform substantive or irreversible work carry `disable-mode
 
 ## Cross-Project Capture Protocol
 
-When a session is about to recommend the **template→sync flow** — typically after surfacing a generally-useful rule, command, agent, skill, or reference doc in the current project that could ship to the template — run a boundary check FIRST. The template→sync flow can silently lose local additions to template-owned files if those additions weren't reconciled before the sync.
-
-**Template-owned file globs** (sync-manifest `sync` category — projects should NOT modify these directly):
-
-- `.claude/CLAUDE.md`
-- `.claude/rules/*.md` (template-shipped names — not `project-*.md` which is project-owned)
-- `.claude/support/reference/*.md` (template-shipped names — not `project-*.md`)
-- `.claude/agents/*.md`
-- `.claude/commands/*.md` (template-shipped names — project commands like `audit-{name}.md` are project-owned)
-
-Before recommending the sync, enumerate the project's local additions to any of the above (diff against last-synced template state, OR explicitly walk each known-template-owned file looking for project-specific content).
-
-**Routing the findings:**
-
-- **Generically-applicable additions** (rule clarifications, agent guidance, command refinements that any project could benefit from) → recommend **project→template promotion first** (FB-002/FB-003-style: capture as feedback in the template repo, ship via `/feedback review`, then sync). The promoted content lands in the template; the subsequent sync becomes a no-op convergence rather than a conflict.
-- **Project-specific additions** (domain-specific rules, vocabulary, behaviors that don't generalize) → recommend **migration to a project-owned location first**. See `.claude/support/reference/extension-hooks.md` for the canonical map of extension need → project-owned location (rule imports → root `./CLAUDE.md`; project rules → `.claude/rules/project-*.md` gitignored; etc.).
-
-Either way, surface the boundary check at suggestion time, not at sync time. Catching the violation at sync exit (after the user has already integrated local additions into a template-owned file) means manual reconciliation is the only path forward. Catching it upstream means clean ship paths.
-
-**Why behavioral, not permission-layer:** the sync layer can structurally detect "local additions to template-owned file" at sync time (FB-059 / FB-060 structural fix, not yet shipped — see `template-maintenance/feedback.md` § FB-059 + FB-060). This rule reduces the *frequency* of the violation by preventing the upstream condition. Both layers compound.
+**Moved to `.claude/support/reference/extension-hooks.md § "Cross-Project Capture Protocol"` (lazy — not auto-loaded).** READ it BEFORE recommending the template→sync flow or a project→template promotion — its pre-sync boundary check prevents silently losing local additions to template-owned files.
 
 ## MCP and Parallel Execution
 
-Single-session MCP servers cannot be safely fanned out across parallel subagents. Servers that expose stateful single-instance resources — Playwright MCP (one browser session), browser-automation MCPs, auth-session MCPs, connection-pooled MCPs — share their underlying state across all concurrent calls. Two parallel subagents calling the same MCP drive the **same** tab / session / connection; navigations, clicks, snapshots, and reads interleave silently. The failure mode is invisible — snapshots look fine but reflect another agent's mid-action state.
-
-**Orchestrator pattern when a parallel batch involves MCP-driving work:**
-
-1. **Route MCP-driving work through one agent.** Dispatch a single agent to handle all calls to the shared MCP (e.g., one Playwright agent for all UI inspection across routes).
-2. **Parallelize the rest.** Other agents in the same batch do code reads, greps, test runs — anything that doesn't touch the shared MCP server.
-3. **For multi-route inspection.** Dispatch sequential agents with focused scopes ("audit /coloring", then "audit /wardrobe"), not a parallel batch driving the browser.
-
-True parallel browser inspection would require multiple MCP server instances on different ports or `user-data-dir`s — not how the template ships and not trivial to set up. Out of scope for most projects.
-
-**Detection (lower priority):** `/work` Step 2c parallel-batch heuristic currently keys on `files_affected` only. It could be extended to check `mcp_resource_overlap` (any pair of tasks both expected to use the same single-instance MCP server) — same dispatch site as `shared_contract` detection in `parallel-execution.md`. Tracked separately if it becomes a recurring foot-gun.
+**Moved to `.claude/support/reference/mcp-patterns.md` (lazy — not auto-loaded).** READ it before dispatching any parallel batch that involves MCP-driving work. The one-line rule: single-session MCPs (Playwright/browser, auth-session, connection-pooled) cannot fan out across parallel subagents — route all calls to a shared MCP through ONE agent, sequentially.
 
 ## MCP and Result-Size Constraints
 
-Playwright MCP `browser_snapshot` returns the full accessibility tree of the current page. For long-scroll pages or sites with many sections (over ~10K characters of DOM), the result can exceed the model's per-tool-call token budget and truncate silently — the snapshot appears empty or partial without an error.
-
-For audits and verifications that only need specific elements, prefer `browser_evaluate` with targeted DOM queries (e.g., `document.querySelectorAll('h2').map(h => h.textContent)`). Reserve `browser_snapshot` for small pages or when you genuinely need the full tree.
-
-The same pattern applies to other MCP servers that return large result objects: prefer targeted queries over full-state dumps when the task only needs specific data.
+**Moved to `.claude/support/reference/mcp-patterns.md`.** The one-line rule: `browser_snapshot` on long pages silently truncates past the per-call token budget — prefer `browser_evaluate` with targeted queries; the same applies to any MCP returning large result objects.
 
 ## Tool Preferences
 

@@ -26,7 +26,7 @@ The template's reliability rests on long prose procedures the model must execute
 3. Model pin: make work.md's 3 dispatch sites reference the pin in `.claude/CLAUDE.md § Model Requirement` (one source of truth) instead of a hardcoded variant.
 4. `status.md` icon vocabulary: align to canonical statuses or annotate explicitly as a display-layer mapping.
 
-### P2 — Lazy-load diet (MINOR, ~25K chars/session reclaimed)
+### P2 — Lazy-load diet (MINOR, ~25K chars/session reclaimed) — ✅ SHIPPED v4.16.0 (2026-06-10; measured −22.3K/−33%; dispatch-rationale move deferred)
 
 1. **`feature-retirement.md`:** remove from `.claude/CLAUDE.md` `@imports`; its summary line becomes a trigger: "Before retiring or restoring any feature, READ `.claude/rules/feature-retirement.md` first — it is not auto-loaded." File stays where it is (audit-coherence retired-features lens and `support/retired/README.md` cross-refs remain valid).
 2. **`agents.md`:** move "MCP and Parallel Execution", "MCP and Result-Size Constraints", "Cross-Project Capture Protocol", and the dispatch-convention *rationale* paragraphs to `support/reference/` (candidates: a new `mcp-patterns.md` + fold capture protocol into `extension-hooks.md` or `claude-code-authoring.md`); leave 2-line stubs with explicit MUST-read triggers ("before dispatching a parallel batch involving MCP work, read X").
