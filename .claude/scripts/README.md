@@ -8,6 +8,9 @@ Deterministic helpers invoked by the `/work` orchestrator (or by the user direct
 |--------|---------|---------|
 | `fingerprint.py` | Spec/section/dashboard-rollup SHA-256 hashes | `support/reference/drift-reconciliation.md` lines 70-84, `commands/status.md` line 36 |
 | `validate-tasks.py` | Task JSON schema validation + verification debt count | `support/reference/task-schema.md`, `commands/health-check.md` Part 1 |
+| `dashboard-render.py` | **PoC (Family C, v4.19.0):** deterministic render of the dashboard `## 📋 Tasks` section | `support/reference/dashboard-regeneration.md` § "Section Display Rules" (Tasks rules) + § "Per-Section Format" |
+
+**`dashboard-render.py` status:** proof-of-concept only — NOT yet wired into the regeneration flow. The full-port decision (script renders all structural sections between marker pairs; LLM keeps Action Required + Notes) gates on this PoC per `template-maintenance/scripts-candidates.md § Family C`. Until then the prose procedure in `dashboard-regeneration.md` remains the operative path; the script is available for orchestrator-side spot checks (`python3 .claude/scripts/dashboard-render.py --tasks-section`).
 
 ## Invocation contract
 

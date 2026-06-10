@@ -169,6 +169,18 @@ Nine candidates grouped into five families. Each row: current home, current shap
 
 ---
 
+### Family F — Post-batch state-invariant checker (candidate, added 2026-06-10)
+
+| # | What | Current home | Writes `.claude/`? |
+|---|------|--------------|--------------------|
+| F1 | Post-return / post-batch invariant check: friction markers actually appended when an agent report carried friction kinds (DEC-011 / FB-089 class), task-JSON status transitions legal, expected files exist at the expected moments (handoff + export at pause, `verification-result.json` at phase end), `pending_full_regen` sidecar consistency | `support/reference/work-procedures.md § "State Persistence Protocol"` (the prose the check would verify ran) | N (read-only report) |
+
+**Rationale:** the ship history's recurring root cause is "documented but not executed" (FB-017, FB-045/DEC-011, FB-038). Families A/B validate *artifacts*; Family F validates *that the protocol ran* — converting "did I remember every State Persistence step?" from recall into a checklist diff the orchestrator runs after each batch / before pause. Same shape and invocation contract as `validate-tasks.py`.
+
+**Trigger:** ship if post-v4.18.0 telemetry still shows skipped persistence steps — the work.md split + STOP-read gates (v4.18.0) are the first-line fix; Family F is the mechanized backstop if prose-skipping survives the split. Re-assess alongside the Family C full-port decision.
+
+---
+
 ## Recommended extraction order
 
 **Tier 1 — extracted ✅** (low risk, high ROI, minimal scope):
@@ -243,7 +255,7 @@ Recommended file layout:
 
 **Tier 1 complete.** Families A + B shipped in `template_version 3.0.0`, bug-fixed in `3.1.1` (FB-039).
 
-**Tier 2 (Family C) — trigger declared MET 2026-06-10** (user decision; substituted evidence — see Trigger amendment in the Family C section). Next concrete step: the PoC — `dashboard-render.py` rendering the Tasks-by-phase section only, with a byte-identical re-render test; staged in root `ship-plan-2-prose-diet-and-mechanization.md § P5` (temporary working file). Full-port decision gates on PoC results.
+**Tier 2 (Family C) — PoC SHIPPED v4.19.0 (2026-06-10).** `.claude/scripts/dashboard-render.py --tasks-section` renders the Tasks-by-phase section deterministically (phase grouping/sort, completed-phase collapse, >10-finished summarization, blocked-phase collapse with deterministic blocker summary, all per-task status displays, per-phase + overall footers). 13 tests incl. the byte-identical re-render gate (`tests/test_dashboard_render.py`); 25/25 suite green. NOT yet wired into the regen flow — advisory per scripts README. **Next: the full-port decision** — script renders all structural sections between marker pairs, LLM keeps synthesis (Action Required, Notes); decide after observing PoC output against a real project's dashboard (run it in styler and diff against the LLM-rendered Tasks section). Known PoC simplification: per-phase qualifier lines are deterministic count enumerations, not the example's judgment-flavored phrasing — acceptable for structural sections, revisit at full port.
 
 **Tier 3 (Families D + E) — observed-need gates.**
 - Family D: trigger if real parallel-batch conflicts surface that the LLM missed (low frequency expected; FB-036 Pre-Dispatch Confirmation reduces this risk).
