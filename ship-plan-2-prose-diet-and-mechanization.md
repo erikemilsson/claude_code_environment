@@ -45,7 +45,7 @@ Extract into `support/reference/` procedure docs, each behind an explicit "STOP 
 
 Keep inline: step skeleton, routing logic, dispatch prompt templates (load-bearing at dispatch time). Target: work.md ≤ ~40K chars. Trace tests for pause + persistence flows after the split.
 
-### P4 — Audit-family shared core (MINOR, ~15–20K saved + drift-proofing)
+### P4 — Audit-family shared core (MINOR, ~15–20K saved + drift-proofing) — ✅ SHIPPED v4.17.0 (2026-06-10; lens-output-format extraction cut — the two formats differ materially; splice-at-dispatch pattern used for synthesizer contract)
 
 Create one reference doc (name per P1 item 2) holding: lens-output format block, synthesizer `description` constraints, `digest.json` schema, promote-mode algorithm, triage algorithm. Both audit commands delegate with per-command substitution tables — the exact pattern audit-ui triage already uses. The two copies stop drifting apart (the v4.12.0 mirror-kill for dashboard SKILL.md is precedent that mirrors rot).
 
