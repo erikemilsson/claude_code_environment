@@ -29,7 +29,7 @@ Keep FB-032's "Decisions in This Proposal" structural contract fully intact (eve
 
 **Files:** `commands/iterate.md` (Step 4→5 gate + menu text).
 
-### T2 — `/health-check` batch triage (MINOR)
+### T2 — `/health-check` batch triage (MINOR) — ✅ SHIPPED v4.21.0 (2026-06-11)
 
 Flatten the nested menus: each part *collects* its proposed fixes instead of prompting inline; the run ends with one consolidated table (id, part, file, one-line diff summary, risk flag) and a single response — `[A]` apply all · `A except 3,5` · `[N]` none · `[D]` show full diff for listed ids first. Items that overwrite local content (sync-category APPLYs) stay individually flagged in the table with a ⚠ and require explicit inclusion (never bundled into bare `[A]`).
 
