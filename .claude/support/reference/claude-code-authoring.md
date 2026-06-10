@@ -130,9 +130,11 @@ Skills declared with `context: fork` inherit SKILL.md body + agent system prompt
 
 ### `Agent` tool `model` parameter granularity
 
-The `Agent` tool's `model` parameter exposes only `sonnet | opus | haiku`. There is no per-call effort control, no model-version specificity (no `claude-opus-4-7[1m]` granularity), no per-call thinking-budget setting. Effort selection is conversation-level (set at session start), not call-level.
+The subagent model surface (per-invocation `model` parameter + agent-definition `model:` frontmatter) accepts: the aliases `sonnet | opus | haiku | fable`; a **full model ID** (e.g., `claude-opus-4-8` — same values as the `--model` flag); or `inherit` (the default — use the main conversation's model). Per-invocation resolution order: `CLAUDE_CODE_SUBAGENT_MODEL` env var → per-invocation `model` parameter → agent definition's `model:` frontmatter → main conversation's model. (Verified against the sub-agents docs page 2026-06-11. The template's dispatch value `"opus[1m]"` — alias + `[1m]` context modifier — is harness-observed working but not enumerated in the docs' value list.)
 
-**Implication:** spec authors cannot write task descriptions that vary effort per subagent dispatch. If a spec needs different effort levels for different tasks, the orchestrator (`/work`) must handle that through prompt-engineering ("ultrathink" inclusion), not through `model` parameters.
+Effort: there is no per-invocation effort parameter, but agent definitions take an `effort:` frontmatter field (`low | medium | high | xhigh | max`; available levels depend on the model) that overrides the session effort while that subagent is active. Ad-hoc dispatches without a custom agent definition inherit session-level effort — prompt-engineering ("ultrathink") remains the lever there.
+
+**Implication:** spec authors CAN vary the model per subagent dispatch (alias or explicit full-ID pin), and can vary effort by defining a custom agent with `effort:` frontmatter. For ad-hoc dispatches, effort still rides the session level.
 
 ### `subagent_type: "general-purpose"` portability convention
 
@@ -151,4 +153,4 @@ Per `rules/agents.md § "Dispatch Convention"`: the three dispatch sites (`comma
 
 ---
 
-<!-- Last verified against Claude Code docs: https://code.claude.com/docs @ 2026-05-27; against template_version: 4.12.1 -->
+<!-- Last verified against Claude Code docs: https://code.claude.com/docs @ 2026-06-11; against template_version: 4.21.3 -->

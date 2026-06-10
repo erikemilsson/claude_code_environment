@@ -663,9 +663,11 @@ Tags: template-side, spec-workflow, scale, research-gated, dec-candidate, iterat
 
 ## FB-096: Model-surface refresh — authoring-doc Agent-model enum drift (`fable`) + deliberate pin re-evaluation
 
-**Status:** open — sub-issue A verify-then-fix (Part 2d `[V]` candidate); sub-issue B user-decision-gated
+**Status:** sub-issue A RESOLVED 2026-06-11 (shipped v4.21.3 — docs-verified; drift was broader than captured, see resolution note); sub-issue B open, user-decision-gated — decision-ready with verified facts
 **Captured:** 2026-06-10
 **Source:** surfaced during the v4.13.1 pointer-rot sweep (Plan 2 P1; root `ship-plan-2-prose-diet-and-mechanization.md`, temporary working file). Both sub-issues touch the model surface centralized in `.claude/CLAUDE.md § Model Requirement` by v4.13.1.
+
+**Sub-issue A resolution (2026-06-11, v4.21.3):** verified against `code.claude.com/docs/en/sub-agents` (WebFetch, per Part 2d `[V]` discipline — live-harness observation was NOT the sole evidence). Docs confirm `fable` AND reveal broader drift than captured: the model surface accepts aliases `sonnet|opus|haiku|fable`, **full model IDs** (e.g., `claude-opus-4-8`, same values as `--model`), and `inherit` (default); per-invocation resolution order is `CLAUDE_CODE_SUBAGENT_MODEL` env → invocation param → frontmatter → main model; agent definitions also take `effort:` frontmatter (`low|medium|high|xhigh|max`) overriding session effort. Capability-doc section rewritten accordingly (old claims "only sonnet|opus|haiku" / "no model-version specificity" / "no per-call effort control" all corrected); footer bumped to 2026-06-11 / 4.21.3. **Facts feeding sub-issue B:** option (b) explicit-pin CONFIRMED feasible (full IDs documented); the `"opus[1m]"` alias+modifier form is harness-observed working but not docs-enumerated (noted as such in the doc).
 
 ### Sub-issue A — capability-doc drift: Agent tool `model` enum missing `fable`
 
