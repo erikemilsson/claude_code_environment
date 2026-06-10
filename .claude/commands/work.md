@@ -694,7 +694,7 @@ After any agent (implement-agent or verify-agent) returns a structured report, t
 
 1. **Read task's current `verification_attempts`** (default 0), compute `new_attempts = current + 1`
 2. **Build `verification_history` entry** from report's `checks`, `issues`, `notes`, with `{"attempt": new_attempts, "result": report.result, "timestamp": report.timestamp}`. Append to task's `verification_history[]` array (create array if absent).
-3. **Write `task_verification`** field to task JSON using report's `result`, `timestamp`, `checks`, `notes`, `issues`
+3. **Write `task_verification`** field to task JSON using report's `result`, `timestamp`, `checks`, `notes`, `issues` — plus `evidence[]` when the Empirical Evidence Gate ran (see "If Verifying (Per-Task)")
 4. **Status transition** based on `result`:
    - `pass`: set `status: "Finished"`, `updated_date: today`. If `report.user_review_pending == true`, also write `user_review_pending: true`, `test_protocol: report.test_protocol`, `interaction_hint: report.interaction_hint`
    - `fail` AND `new_attempts < 3`: set `status: "In Progress"`, `updated_date: today`. Clear `completion_date`. Prepend `[VERIFICATION FAIL #{new_attempts}]` to notes with the fail summary
@@ -781,7 +781,17 @@ Task tool call:
 
 **Timeout handling:** If verify-agent exhausts `max_turns` without returning a valid report, treat as verification failure — per State Persistence Protocol, increment `verification_attempts`, set task to "Blocked" with `[VERIFICATION TIMEOUT]` note, report to user.
 
-**After per-task verification completes:** verify-agent returns a structured per-task report. Apply "After verify-agent returns (per-task mode)" from State Persistence Protocol.
+**Empirical Evidence Gate (before persisting a pass):** when `report.result == "pass"` AND the task's output is a web-UI route/component in a project with a web framework (same applies-when detection as `/audit-ui`) AND `checks.runtime_validation` is `"partial"` — or `"pass"` reached without browser measurement — run the evidence step at orchestrator level BEFORE applying the persistence protocol:
+
+1. Ensure Playwright MCP tools are loaded (ToolSearch if absent) and a dev server is available (starting one for verification is sanctioned; respect-prior-kills applies).
+2. Execute `report.empirical_assertions[]` (named by verify-agent per `verify-agent.md § Step T4b` item 5; if absent, default to HTTP status + console-error scan per affected route). Use `browser_evaluate` targeted queries — never full-tree snapshots on long pages.
+3. **Client-bundle check (FB-076 mitigation 1):** if the task touched client-marked files (`'use client'` or framework equivalent) and root `./CLAUDE.md` declares a build command (§ Verification Hooks), run the production build; record as a `build`-type evidence entry.
+4. Record each outcome into `task_verification.evidence[]` (schema: `task-schema.md § "Evidence Sub-field"`).
+5. Any failing assertion → treat the verification as `fail`: route through the normal fail path with the failing evidence appended to `issues[]`. All passing → proceed to the persistence protocol with `evidence[]` included.
+
+Non-web tasks, projects without a web framework, and `runtime_validation: "not_applicable"` tasks skip this gate entirely — zero change for non-software domains.
+
+**After per-task verification completes:** verify-agent returns a structured per-task report. Run the Empirical Evidence Gate above when it applies, then apply "After verify-agent returns (per-task mode)" from State Persistence Protocol.
 
 **Auto-continuation:** after the orchestrator persists verification state:
 - **Pass**: announce inline `Task {id} verified`. If `report.user_review_pending == true`, check `interaction_hint` for routing (see below). Before looping, check if any human-owned or both-owned tasks just became unblocked by this completion — if so, surface them inline: `Note: Task {id} ("{title}") is now available for you — {brief description}`. Then loop back to Step 3 (auto-continuation). Dashboard regen deferred to next strategic moment.
@@ -866,6 +876,8 @@ Task tool call:
 ```
 
 **After phase-level verification completes:** verify-agent returns a structured phase-level report. Apply "After verify-agent returns (phase-level mode)" from State Persistence Protocol.
+
+**Phase UI smoke (orchestrator-level, web projects only):** before acting on a phase-level `pass`, if any task in the phase touched web-UI routes/components (same applies-when detection as `/audit-ui`), run one lite pass over the affected routes: navigate each, assert HTTP status, scan console errors, and re-check that the phase's accumulated `task_verification.evidence[]` assertions still hold (`browser_evaluate` targeted queries; load Playwright tools via ToolSearch if absent). Failures create fix tasks exactly like phase-level verification failures — loop to Execute. For depth beyond the smoke (visual quality, IA, affordances), suggest `/audit-ui`; this gate is the in-loop minimum, not a replacement. Non-web projects skip.
 
 | Result | Action |
 |--------|--------|

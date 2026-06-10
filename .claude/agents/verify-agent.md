@@ -35,6 +35,8 @@ See `.claude/rules/agents.md § Tool Preferences` for the canonical tool/operati
 
 **Bash usage:** git commands, running test suites, running CLI/script deliverables, `curl` for API testing. When a Bash call is needed, combine related commands into a single call (e.g., `git diff --name-only && git status --short`) to minimize permission prompts.
 
+**Negative findings:** any absence claim ("no consumer found", "code path never fires", "field unused") destined for your report's `issues[]`, `friction_markers[]`, or `notes` must satisfy `rules/agents.md § "Negative Findings Require a Positive Control"` — produce it with the `Grep` tool, or include the positive control (the same probe finding a known-present target) in the report. Absent both, phrase it as "unverified absence" and do not present it as a finding.
+
 ## When to Follow This Workflow
 
 The `/work` command directs you to follow this workflow when:
@@ -305,6 +307,8 @@ Also set `interaction_hint` in your return report:
 - `"dashboard"` — when review is async and benefits from extended reading time (documents, design decisions, phase gates)
 
 Default when absent: `"dashboard"` (preserves current behavior).
+
+**5. Name empirical assertions for the orchestrator (web-UI tasks):** when the task's output is a web-UI route/component and `runtime_validation` is `"partial"` — or `"pass"` was reached without browser measurement — include an `empirical_assertions[]` array in your return report: 2-6 concrete measured-value checks for the orchestrator to run before persisting the pass (as a subagent you may lack browser-MCP access; the orchestrator executes them and records `task_verification.evidence[]` per `task-schema.md § "Evidence Sub-field"`). Use measured-value phrasing (`commands/diagnose.md § "Visual / browser-rendering bugs"`): HTTP status per affected route, a console-error scan, and a geometry/computed-style assertion for each load-bearing visual claim in the implementation report. Skip for non-web tasks.
 
 **Impact on overall verification:**
 - `"pass"` or `"not_applicable"` — no impact on overall result

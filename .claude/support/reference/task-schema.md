@@ -216,8 +216,33 @@ Per-task verification result recorded by verify-agent when a task is in "Awaitin
 | `checks.self_attested` | String | `"pass"` | Present only on human-owned tasks. Indicates the user attested to completion via `/work complete`. When present, the standard 7 checks are absent. |
 | `issues` | Array | Issue objects `{severity, description}` | Issues found during verification |
 | `notes` | String | Free text | Brief summary of verification |
+| `evidence` | Array | Evidence objects (optional) | Empirical artifacts backing the result on runtime-validatable tasks — written by the orchestrator's Empirical Evidence Gate. See Evidence Sub-field below |
 
 **Human task self-attestation:** When `/work complete` is run for an `owner: "human"` task that has no existing `task_verification`, a self-attestation record is auto-generated with `checks: { "self_attested": "pass" }`. This satisfies the structural invariant (every Finished task has `task_verification.result == "pass"`) without spawning verify-agent. The standard 7-check suite does not apply to human tasks since there is no Claude-produced implementation to verify.
+
+### Evidence Sub-field
+
+Optional `task_verification.evidence[]` — empirical artifacts backing a pass on tasks whose failure mode is runtime-observable. Written by the **orchestrator** (not verify-agent — subagents lack reliable browser-MCP access); verify-agent *names* the assertions to run via `empirical_assertions[]` in its report (`verify-agent.md § Step T4b` item 5). Populated by the Empirical Evidence Gate in `commands/work.md § "If Verifying (Per-Task)"`.
+
+```json
+{
+  "evidence": [
+    {"type": "http_status", "target": "/outfits", "assertion": "GET returns 200", "observed": "200", "result": "pass"},
+    {"type": "computed_style", "target": ".score-pill", "assertion": "font-variant-numeric is tabular-nums", "observed": "tabular-nums", "result": "pass"},
+    {"type": "build", "target": "npm run build", "assertion": "production build exits 0", "observed": "exit 0", "result": "pass"}
+  ]
+}
+```
+
+| Field | Values |
+|-------|--------|
+| `type` | `"http_status"` \| `"console"` \| `"computed_style"` \| `"geometry"` \| `"screenshot"` \| `"build"` |
+| `target` | Route, selector, command, or artifact the assertion addresses |
+| `assertion` | The falsifiable expectation — measured-value phrasing per `commands/diagnose.md § "Visual / browser-rendering bugs"` |
+| `observed` | What was actually measured |
+| `result` | `"pass"` \| `"fail"` |
+
+**When expected:** web-UI tasks with `runtime_validation` `"partial"` (or `"pass"` reached without browser measurement) in projects with a web framework — a pass on such tasks without `evidence[]` is incomplete; the gate runs before `result: "pass"` is persisted. Optional everywhere else (back-compat: absent field is valid).
 
 ### State Detection
 

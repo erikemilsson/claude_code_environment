@@ -153,6 +153,12 @@ Subagents cannot write to `.claude/` paths, cannot spawn nested `Task` tool call
 
 Template-owned `.claude/settings.json` includes `Bash(python3 .claude/scripts/*.py:*)` in `permissions.allow` so orchestrator script invocations don't prompt. Tests for the scripts live in `.claude/scripts/tests/`; run with `python3 -m unittest discover .claude/scripts/tests/`.
 
+## Negative Findings Require a Positive Control
+
+A **negative finding** — "X is absent / dormant / unused / has no consumer / never fires" — may only be persisted to durable state (friction register, handoff, dashboard, verification result, retirement proposal) when the probe that produced it is shown to work: either (a) it used the dedicated `Grep` tool (ripgrep — reliable empty-vs-error semantics), or (b) it includes a **positive control** — the same probe demonstrably finding a known-present target. Without one of these, report the claim as "unverified absence" and do not write it to state.
+
+Why: bash `grep` on macOS/BSD can silently produce no output on certain files, and an empty result is indistinguishable from "not found". Observed cost (styler FR-040, 2026-06-10): a silent grep failure became a false "engine dormant" finding, propagated into the handoff, dashboard, and memory, and consumed a full session to unwind. Complements the Pre-Retirement Engine-Consumer Audit in `rules/feature-retirement.md` (FB-084 covers *which patterns* to search; this rule covers *whether the probe works at all*).
+
 ## Dispatch Convention
 
 When dispatching implement-agent, verify-agent, or research-agent via the `Task` tool, set `subagent_type: "general-purpose"` and direct the agent persona via prompt content ("You are the verify-agent. Read `.claude/agents/verify-agent.md`..."). The three current dispatch sites — `commands/work.md` (§ "If Verifying (Per-Task)" and § "If Verifying (Phase-Level)") and `commands/research.md` (§ "Step 3: Spawn Research Agent") — follow this convention. (Cross-file references use section names, not line numbers — line numbers go stale on every edit.)

@@ -318,7 +318,7 @@ Tags: harness, task-system, system-reminders, upstream-anthropic, friction-aggre
 
 ## FB-076: verify-agent runtime_validation misses bundle-boundary breaks and catalog-state-dependent gaps
 
-**Status:** deferred (single-project signal; research-gated)
+**Status:** mitigation 1 shipped (v4.15.0) — production-build check runs in `/work`'s Empirical Evidence Gate when a task touches client-marked files and root `./CLAUDE.md § Verification Hooks` declares a build command (catches failure mode 1, the client/server bundle boundary). Mitigations 2 (ESLint client-import rule) + 3 (live-data cross-reference — failure mode 2) remain deferred, research-gated.
 **Captured:** 2026-05-20
 **Defer condition:** Re-assess when (a) 2nd project signals the same verification gap, OR (b) FB-066 downstream telemetry suggests broader runtime_validation hardening is needed. Single-project signal (styler T667) doesn't justify the design work (build-command discovery + catalog-path declaration; mitigations 1+3 are not as mechanical as FB-066's regex+grep). If signal escalates: route through `/research` for design — similar to FB-072's trial-gated DEC candidate path. Tracked in root CLAUDE.md § Active Follow-ups as of v4.6.1.
 **Source:** Aggregated from styler session export 2026-05-17 (T667 markers — two distinct verification_gap entries). Extends FB-066 (production-consumption check, shipped v3.16.0).
