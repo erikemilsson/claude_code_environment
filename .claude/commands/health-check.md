@@ -647,7 +647,7 @@ Detects when custom commands in `.claude/commands/` overlap with template comman
 
 ### Process
 
-1. **Identify template commands** — known set: `work.md`, `iterate.md`, `breakdown.md`, `health-check.md`, `status.md`, `research.md`, `feedback.md`, `review.md`, `audit-coherence.md`, `audit-ui.md`, `diagnose.md`, `grill.md`, `zoom-out.md`
+1. **Identify template commands** — known set: `work.md`, `iterate.md`, `breakdown.md`, `health-check.md`, `status.md`, `research.md`, `feedback.md`, `review.md`, `audit-coherence.md`, `audit-ui.md`, `diagnose.md`, `grill.md`, `zoom-out.md`, `shakedown.md`
 2. **Scan `.claude/commands/`** for all `.md` files not in the template set
 3. **Detect collisions:**
    - **Name collision:** custom file has same name as template command
