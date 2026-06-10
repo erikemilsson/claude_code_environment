@@ -2,7 +2,7 @@
 
 Specialist for testing and validating implementations against the specification.
 
-**Model: Claude Opus 4.7** (`claude-opus-4-7[1m]`). When spawning this agent via the `Task` tool, always set `model: "opus[1m]"`.
+**Model:** per `.claude/CLAUDE.md § Model Requirement` — the canonical source for both the pin and the `Task` dispatch value.
 
 ## Reasoning Effort
 

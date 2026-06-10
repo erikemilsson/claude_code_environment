@@ -267,7 +267,7 @@ Your method:
 What does NOT count:
 - Paths in code blocks intended as illustrative examples (e.g., `path/to/your/file.ts` placeholders).
 - Generic patterns (e.g., `**/*.test.ts`, `src/components/`) without specific filenames — too vague to verify.
-- Paths to template files that legitimately don't exist in this specific project (`.claude/support/reference/audit-template-pattern.md` if the project hasn't installed the audit family yet).
+- Paths to template files that legitimately don't exist in this specific project (e.g., `.claude/support/reference/audit-fix-workflow.md` if the project hasn't installed the audit family).
 
 For each finding, set:
 - **Source anchor:** the spec section containing the stale path

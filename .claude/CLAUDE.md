@@ -4,7 +4,9 @@ Environment instructions for Claude Code. This file is template-owned — do not
 
 ## Model Requirement
 
-This environment is designed for **Claude Opus 4.7** (`claude-opus-4-7[1m]`). All agents (implement-agent, verify-agent, research-agent) must run on Opus 4.7.
+This environment is designed for **Claude Opus 4.7** (`claude-opus-4-7[1m]`). All agents (implement-agent, verify-agent, research-agent) run on the Opus tier.
+
+**Canonical dispatch value** (single source — dispatch sites and agent files cite this section rather than restating it): `Task` dispatches set `model: "opus[1m]"`. The alias tracks the latest Opus release; the pin above records the version this environment was designed and tested against. If they diverge and agent regressions appear, switch dispatches to the explicit pinned ID via a deliberate template change rather than letting the two drift silently.
 
 **Output token constraint:** Claude Code caps output at 32K tokens per response (thinking + text + tool arguments share this budget). Agents should avoid writing large artifacts and reasoning deeply in the same response.
 

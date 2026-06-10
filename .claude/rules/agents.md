@@ -155,7 +155,7 @@ Template-owned `.claude/settings.json` includes `Bash(python3 .claude/scripts/*.
 
 ## Dispatch Convention
 
-When dispatching implement-agent, verify-agent, or research-agent via the `Task` tool, set `subagent_type: "general-purpose"` and direct the agent persona via prompt content ("You are the verify-agent. Read `.claude/agents/verify-agent.md`..."). The three current dispatch sites — `commands/work.md` (per-task verify, line ~605; phase-level verify, line ~688) and `commands/research.md` (research-agent, line ~74) — follow this convention.
+When dispatching implement-agent, verify-agent, or research-agent via the `Task` tool, set `subagent_type: "general-purpose"` and direct the agent persona via prompt content ("You are the verify-agent. Read `.claude/agents/verify-agent.md`..."). The three current dispatch sites — `commands/work.md` (§ "If Verifying (Per-Task)" and § "If Verifying (Phase-Level)") and `commands/research.md` (§ "Step 3: Spawn Research Agent") — follow this convention. (Cross-file references use section names, not line numbers — line numbers go stale on every edit.)
 
 **Why not named subagent_types?** Claude Code can auto-discover `.claude/agents/*.md` and expose each definition file as a named subagent_type (`implement-agent`, `verify-agent`, etc.), which would align dispatch shape with definition shape. As of 2026-05-13, the runtime availability of named-from-disk subagent types is not uniform across Claude Code harness versions — relying on auto-discovery risks dispatch failures in harnesses where it's absent. The persona-via-prompt-content pattern is portable across all current harness versions.
 
@@ -165,7 +165,7 @@ Until then, keep all three call sites uniform on `subagent_type: "general-purpos
 
 ## Model Requirement
 
-All agents must run on Claude Opus 4.7 (`claude-opus-4-7[1m]`).
+All agents run on the model pinned in `.claude/CLAUDE.md § Model Requirement` — the canonical source for both the design pin and the `Task` dispatch value.
 
 **Effort defaults:** Max/Team subscriptions default to medium reasoning effort. Use "ultrathink" in prompts when deeper reasoning is needed (phase-level verification, complex design decisions).
 

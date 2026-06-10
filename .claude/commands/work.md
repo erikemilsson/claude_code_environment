@@ -722,7 +722,7 @@ After any agent (implement-agent or verify-agent) returns a structured report, t
    ```
 5. **After re-dispatch returns** `completed` or a fresh `partial_resume_pending`: clear the `partial_completion` field from the task JSON. (For fresh `partial_resume_pending`, the new envelope replaces the old.)
 
-Dispatch implement-agent (Task tool with `model: "opus[1m]"`) instructing it to read `.claude/agents/implement-agent.md` and follow Steps 1-6. Agent returns a structured report.
+Dispatch implement-agent (Task tool; set `model` per `.claude/CLAUDE.md § Model Requirement`) instructing it to read `.claude/agents/implement-agent.md` and follow Steps 1-6. Agent returns a structured report.
 
 **After agent returns:** apply "After implement-agent returns" from State Persistence Protocol. Then, if `implementation_status == "completed"`, dispatch verify-agent per "If Verifying (Per-Task)" and apply "After verify-agent returns" protocol.
 
@@ -751,7 +751,7 @@ When Step 2c produces a parallel batch of >= 2 tasks, execute them concurrently.
 ```
 Task tool call:
   subagent_type: "general-purpose"
-  model: "opus[1m]"
+  model: "opus[1m]"  # canonical value: .claude/CLAUDE.md § Model Requirement
   max_turns: 30
   description: "Verify task {id}"
   prompt: |
@@ -834,7 +834,7 @@ Task {id}: "{title}" — ready for your review
 ```
 Task tool call:
   subagent_type: "general-purpose"
-  model: "opus[1m]"
+  model: "opus[1m]"  # canonical value: .claude/CLAUDE.md § Model Requirement
   max_turns: 50
   description: "Phase-level verification"
   prompt: |
