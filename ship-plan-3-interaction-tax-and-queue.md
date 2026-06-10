@@ -18,7 +18,7 @@ Erik's sessions are short, frequent, and pause-disciplined — so per-session ce
 
 ## Ship items
 
-### T1 — Single-response batch approval in `/iterate` (MINOR)
+### T1 — Single-response batch approval in `/iterate` (MINOR) — ✅ SHIPPED v4.20.0 (2026-06-11)
 
 Keep FB-032's "Decisions in This Proposal" structural contract fully intact (every non-trivial choice enumerated with `[NEEDS APPROVAL]` / `[FROM EXISTING SPEC]` / `[USER REQUESTED]` tags and proposed text). Change only the resolution mechanics at the Step 4→5 gate:
 
