@@ -70,11 +70,20 @@ DELETE — after successful restoration
 
   "decisions_in_flight": [],
 
-  "session_knowledge": "User prefers explicit error messages over silent fallbacks. The prototype audience is non-technical analysts.",
+  "open_question_refs": ["dashboard § Action Required → DEC-007", "dashboard § Action Required → task 12 (API key)"],
 
-  "recovery_action": "Continue implementation of task 7. Column mapping and type coercion are complete, aggregation pipeline remains."
+  "session_knowledge": [
+    "User prefers explicit error messages over silent fallbacks",
+    "The prototype audience is non-technical analysts"
+  ],
+
+  "recovery_action": "Continue implementation of task 7. Column mapping and type coercion are complete, aggregation pipeline remains.",
+
+  "overflow_ref": null
 }
 ```
+
+**The handoff is a bounded index, not a memoir.** Target ≤ ~2.5KB total. Every field has a cap (see "Bounds and Overflow" below); detail that exceeds a cap goes to a workspace overflow file that `overflow_ref` points at. A 7.8KB free-prose handoff is write-expensive and read-unreliable — the next session skims it; the dashboard's Action Required rows and task JSONs carry the durable load.
 
 ---
 
@@ -131,31 +140,54 @@ Null when not in parallel mode. When parallel execution was in progress:
 
 Array of decision IDs actively being researched or awaiting user input during this session. Empty array if none.
 
+### `open_question_refs`
+
+Optional array of short pointer strings — one per user-gated item the pause sweep wrote to the dashboard (per `work.md § Context Transition` key rules: every open question lands as a 🚨 Action Required row with the concrete question inline). Pointers only (e.g., `"dashboard § Action Required → DEC-007"`) — the rows hold the questions; the handoff must never be a blocking question's only home.
+
 ### `session_knowledge`
 
-Free-form string capturing insights from conversation not persisted elsewhere:
+Array of bullet strings capturing insights from conversation not persisted elsewhere:
 - User preferences stated in conversation (not in CLAUDE.md or spec)
 - Informal decisions not yet in decision records
 - Patterns discovered during implementation
 - Warnings or gotchas encountered
 
+**Bounds:** ≤ ~10 bullets, one fact each (≤ ~25 words). More to say → keep the 10 most load-bearing bullets here, move the rest to the overflow file (see "Bounds and Overflow"). Legacy string form still parses (additive union, same convention as `partial_notes`); new handoffs use the array.
+
 **Guidelines:**
 - Include things the next session's Claude would benefit from knowing
 - Don't repeat what's already in task JSONs, spec, or decision records
 - Favor "why" over "what" — files have the "what"; conversation has the "why"
-- Keep it concise — a paragraph, not an essay
 - May be empty if the session was purely mechanical
 
 **Boundary:** `session_knowledge` is available to the `/work` coordinator for routing decisions and implement-agent context enrichment. It is NOT passed to verify-agent — context separation is preserved.
 
 ### `recovery_action`
 
-Free-form string giving the next session explicit instructions for how to resume. A note from current-Claude to future-Claude.
+Free-form string giving the next session explicit instructions for how to resume. A note from current-Claude to future-Claude. **Bound: ≤ ~3 sentences** — name the task, the resume point, and any special handling; anything longer belongs in `partial_notes` or the overflow file.
 
 **Guidelines:**
 - Be specific: "Continue task 7, aggregation pipeline remains" not "Continue working"
 - Call out special handling: "Task 7 has partial files — don't restart from scratch"
 - Mention if normal `/work` routing will handle it or if something unusual is needed
+
+### `overflow_ref`
+
+Optional path to a workspace overflow file, null when everything fit. Set it when any field's content exceeds its bound.
+
+## Bounds and Overflow
+
+Per-field caps (the handoff targets ≤ ~2.5KB total):
+
+| Field | Bound |
+|-------|-------|
+| `position.phase_context` | 1–2 sentences (existing rule) |
+| `active_work[].partial_notes` | ≤ ~6 sentences (string form) or the DEC-010 envelope |
+| `open_question_refs` | pointers only — never question text + discussion |
+| `session_knowledge` | ≤ ~10 bullets, ≤ ~25 words each |
+| `recovery_action` | ≤ ~3 sentences |
+
+**Overflow procedure:** when content genuinely exceeds a bound, write the excess to `.claude/support/workspace/handoff-overflow-{YYYY-MM-DD}.md` (organized by field name), set `overflow_ref` to that path, and keep only the most load-bearing content inline. The next session reads the handoff always, the overflow file only when `overflow_ref` is non-null and the inline summary isn't enough. Do not create the overflow file preemptively — most sessions fit the bounds.
 
 ---
 
