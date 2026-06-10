@@ -45,7 +45,7 @@ New invariant: **anything blocked on the user must exist as a dashboard 🚨 Act
 
 **Evidence anchor:** both styler "paused mid-decision (unanswered)" items would have been visible rows instead of buried prose.
 
-### T4 — Pause-ceremony slimming + run the insights backlog (PATCH + maintenance) — ✅ schema cap SHIPPED v4.21.1 (2026-06-11); maintenance run below
+### T4 — Pause-ceremony slimming + run the insights backlog (PATCH + maintenance) — ✅ FULLY DONE (schema cap v4.21.1; insights run + cadence note 2026-06-11, see ship-log maintenance entry)
 
 - **Handoff schema cap:** give `.handoff.json` bounded fields (active-task state, next step, open-question pointers, session knowledge ≤ ~10 bullets); overflow goes to a workspace file the handoff points at. Today's 7.8KB free-prose blob is write-expensive and read-unreliable.
 - **Maintenance action (not a ship):** run `/health-check` in the template repo so Part 7 processes the inbox and pipeline stage 4 finally writes `interaction-logs/insights/` documents over the 47 accumulated exports. Then decide a cadence (e.g., every N exports or monthly) and note it in `interaction-logs/README.md`.

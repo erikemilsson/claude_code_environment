@@ -39,6 +39,12 @@ Processing is triggered automatically via `/health-check` (when run in the templ
 4. **Generate insights** — write insight documents to `insights/`
 5. **Route to `/feedback`** — high-confidence insights become feedback items for the normal review pipeline
 
+## Processing Cadence
+
+Run `/health-check` in this repo (Part 7 fires the pipeline) **whenever the inbox reaches ~15 exports, or monthly, whichever comes first**. Rationale: the first aggregation (2026-06-11) ran over a 64-export backlog accumulated since 2026-03-30 — patterns were detectable but much of the evidence had already been independently rediscovered and shipped against in the meantime (FB-058/075/076/086, Family C), which is the cost of letting the backlog grow. ~15 exports is enough for cross-session patterns (the 3-occurrence bar) while keeping insights ahead of the ship loop, and one monthly floor keeps the inbox from silently stalling when export volume dips.
+
+Aggregation (pipeline stage 3) spans `processed/` too, not just the new batch — recurrence counts should reflect the whole corpus, with a version-skew caveat for evidence predating the template fix that covers it.
+
 ## Export Format
 
 See `decisions/.archive/2026-03-30_cross-project-interaction-logs.md` for the full export schema and pipeline design (DEC-001).
