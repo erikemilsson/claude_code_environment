@@ -252,6 +252,21 @@ Recover from a prior session's interrupted `/work pause` that left `.claude/supp
 
 **`.session-log.jsonl` standalone case:** if Track 2 is absent but Track 1 markers exist, Step 0f does NOT trigger recovery — Step 0d's catchup already handles the pending-buffer half, and the PreCompact hook is the canonical disposal mechanism for orphan logs.
 
+#### Step 0g: Waiting-on-You Queue (always runs)
+
+Enumerate every item currently gated on the user and surface it before routing. This is the session-start half of the **human-gated coverage invariant** (`rules/dashboard.md § Sections`): nothing blocked on the user may live only in handoff prose.
+
+1. Scan task files for: `owner: "human"` with status `"Pending"` and all dependencies `"Finished"`; `owner: "both"` with `user_review_pending: true`; any task with status `"On Hold"`.
+2. Scan `.claude/support/decisions/decision-*.md` for unresolved records (status `proposed`/`draft` — a selection is awaited).
+3. If a handoff was consumed in Step 0a: extract any questions asked of the user last session that were never answered (mid-decision pauses).
+4. Output, merged into Step 0c's summary when both fire (skip the block entirely when N == 0):
+   ```
+   Waiting on you ({N}):
+   1. {item} — {concrete question or action} → {file link}
+   ...
+   ```
+5. **Dashboard cross-check:** every item found must have a 🚨 Action Required row with the question/action inline. Add missing rows via the targeted-edit path (set the `pending_full_regen` sentinel per FB-080) — do not defer to the next full regen.
+
 ### Step 1: Gather Context
 
 **Version discovery:** Determine the current spec version:
@@ -1087,6 +1102,7 @@ Read `.claude/support/reference/context-transitions.md` and follow the Path A (U
 - Do NOT increment `verification_attempts` if verify-agent was interrupted
 - Do NOT skip the handoff file — that's the whole point
 - `session_knowledge` captures what would otherwise be lost: user preferences, informal decisions, discovered patterns
+- **Open-question sweep (human-gated coverage):** before writing the handoff, enumerate every question asked of the user this session that went unanswered, plus any newly user-gated items (tasks put On Hold, unblocked `owner: "human"` tasks, unresolved decisions). Each MUST land as a dashboard 🚨 Action Required row with the concrete question inline — the targeted-edit path + `pending_full_regen` sentinel (FB-080) is sufficient. The handoff may point at those rows; it must never be a blocking question's only home. (Counterpart: Step 0g prints this queue at the next session start.)
 
 ### Interaction Assessment (Track 2 — Cross-Project Logging)
 

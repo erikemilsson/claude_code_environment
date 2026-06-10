@@ -23,7 +23,7 @@ For single-section changes that would otherwise trigger Tier 1, the orchestrator
 ## Sections
 
 The dashboard has a **Sections** checklist at the top — check or uncheck items to control which sections Claude generates:
-- 🚨 Action Required — decisions, tasks, reviews needing user input
+- 🚨 Action Required — decisions, tasks, reviews needing user input. **Human-gated coverage invariant:** every item blocked on the user — `owner: human` tasks with satisfied dependencies, `owner: both` tasks awaiting review, On Hold tasks, unresolved decisions, and unanswered questions from a paused session — must have a row here with the concrete question/action inline; handoff prose must never be a blocking item's only home. `/work` prints this queue at session start (Step 0g) and sweeps it at pause.
 - 📊 Progress — phase breakdown, critical path, timeline, status summary (>20 tasks)
 - 📋 Tasks — task list by phase (auto-collapses completed and fully-blocked phases)
 - 📋 Decisions — decision log with status

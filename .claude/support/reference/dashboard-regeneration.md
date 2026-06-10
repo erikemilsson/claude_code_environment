@@ -406,6 +406,8 @@ Every item in "Action Required" must be:
 
 **Must NOT include:** work summaries, completion reports, or recent-activity recaps. "Action Required" is a list of things the user still needs to do — not a record of what has happened. Git log and task JSON already preserve history; duplicating it here slows the user down when scanning for next actions. If an item describes completed work (e.g., "Task 5 finished — added X"), it belongs elsewhere (or nowhere). This rule applies to every sub-section under Action Required (Phase Transitions, Verification Pending, Your Tasks, Reviews, etc.): each entry must be an action the user takes, not a status report on one they already took. Do not add a "Recent Activity", "Work Summary", "Completed This Session" or similar sub-section — the canonical Sections list in `.claude/rules/dashboard.md` intentionally omits them.
 
+**Coverage (human-gated items — the other half of the contract):** beyond per-item quality, Action Required must be *complete* over user-gated state. Every one of the following must appear as a row: `owner: "human"` tasks with all dependencies Finished; `owner: "both"` tasks with `user_review_pending: true`; On Hold tasks; unresolved decision records; and any question asked of the user during a session that went unanswered (recorded at `/work pause`). An item blocked on the user that exists only in the handoff file violates the contract — the handoff may reference rows, never replace them. `/work` Step 0g cross-checks coverage at session start; the pause flow's open-question sweep enforces it at session end (both may use the targeted-edit path with the `pending_full_regen` sentinel).
+
 ### Review Item Derivation
 
 Review items are derived, not stored. During regeneration:
