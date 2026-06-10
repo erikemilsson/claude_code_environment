@@ -318,3 +318,68 @@ Turn Budget Protocol already handles writing partial `verification-result.json`.
 ### Empty session (no work done)
 If `/work pause` is triggered but no work was in flight, write a minimal handoff with only `position` and empty `active_work`. Or skip the handoff entirely — if nothing is in flight, session recovery handles everything.
 
+## Pause Follow-Through (Track 2 — Cross-Project Logging)
+
+After the Path A handoff file is written, two more artifacts complete the pause. *(Moved here verbatim from `commands/work.md` in v4.18.0 — this file is where the pause procedure already lives; work.md keeps a stub.)*
+
+### Interaction Assessment
+
+After writing the handoff file but before ending the session, generate an interaction assessment. This is the nuanced "why" layer that automated friction markers (Track 1) cannot capture — insights about design pushback opportunities, workflow friction patterns, and observations that only Claude with conversation context can identify.
+
+**Write to:** `.claude/support/workspace/.interaction-assessment.json`
+
+```json
+{
+  "session_date": "YYYY-MM-DD",
+  "template_version": "[from version.json]",
+  "design_pushback_opportunities": [
+    "Description of a moment where Claude should have suggested a different approach"
+  ],
+  "workflow_friction_notes": [
+    "Description of template workflow friction observed during the session"
+  ],
+  "unstructured_observations": "Free-form text about anything else relevant to template improvement"
+}
+```
+
+**Guidelines:**
+- Focus on template-improvement signals, not project-specific details
+- `design_pushback_opportunities` captures the "styler scenario" — moments where a different approach would have been better
+- `workflow_friction_notes` captures repeated user workarounds or skipped steps
+- Keep it concise — this supplements Track 1 markers, not replaces them
+- If the session had no template-relevant observations, write the file with empty arrays
+
+### Session Export
+
+After writing both the handoff file and interaction assessment, compile the session export:
+
+1. Read `.claude/support/workspace/.session-log.jsonl` (Track 1 friction markers, if any exist)
+2. Read `.claude/support/workspace/.interaction-assessment.json` (Track 2, just written above)
+3. Read `.claude/version.json` for template version
+4. Compile into a unified export:
+
+```json
+{
+  "export_version": 1,
+  "source_project": "[project name from git remote or root CLAUDE.md]",
+  "template_version": "[from version.json]",
+  "session_date": "YYYY-MM-DD",
+  "automated_markers": [ /* Track 1 markers from session log */ ],
+  "session_metrics": {
+    "tasks_completed": 0,
+    "verification_pass_rate": 0.0,
+    "recovery_events": 0
+  },
+  "claude_assessment": { /* Track 2 assessment */ },
+  "export_quality": "full"
+}
+```
+
+5. Write to `.claude/support/workspace/.session-export-YYYY-MM-DD-HHMM.json` (minute-granularity timestamp; same-day pauses do not collide per FB-079)
+6. If `template_inbox_path` is configured in `.claude/version.json`, copy the export there
+7. Clean up: delete `.session-log.jsonl` and `.interaction-assessment.json` (data is now in the export)
+
+**Interrupted-pause recovery (FB-089):** if `/work pause` is interrupted between writing `.interaction-assessment.json` and step 7 cleanup (usage limit, Ctrl+C, harness crash), the stale file persists into the next session. The next `/work` invocation's Step 0f compiles a recovered export from the orphaned files (Track 1 + Track 2), copies to inbox if configured, then deletes both stale files. See work.md § "Step 0f: Track 2 Stale-File Recovery".
+
+**If `/work pause` is not run** (PreCompact hook fires instead): The hook compiles a markers-only export (`"export_quality": "markers_only"`, `"claude_assessment": null`) from whatever Track 1 markers exist on disk. See § "Path B: PreCompact Hook" above.
+

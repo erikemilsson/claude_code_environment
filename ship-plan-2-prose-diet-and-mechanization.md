@@ -35,7 +35,7 @@ The template's reliability rests on long prose procedures the model must execute
 
 **Hazards:** `/health-check` Part 5 sync manifest must reflect moved/added files; trace test that a retirement scenario actually reads the rule via the trigger (the lazy-load failure mode is "model doesn't read it when needed" — the trigger line is the mitigation, and `/health-check` can spot-check for retirements lacking manifests).
 
-### P3 — `work.md` decomposition (MINOR)
+### P3 — `work.md` decomposition (MINOR) — ✅ SHIPPED v4.18.0 (2026-06-10; four extractions, content fidelity diff-verified; ≤40K target not fully reached — see ship log)
 
 Extract into `support/reference/` procedure docs, each behind an explicit "STOP — read X now" gate at its step (precedent: Step 1a/1b already delegates to `drift-reconciliation.md`):
 
