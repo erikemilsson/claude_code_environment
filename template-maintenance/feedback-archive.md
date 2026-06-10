@@ -1804,3 +1804,59 @@ Original drift points (as captured):
 Confirmed still-consistent (no change needed): turn-scoped `model:`/`effort:`, the 25K auto-compaction re-attachment budget, one-message-and-stays lifecycle, `context: fork` inheritance, `disable-model-invocation` semantics.
 
 Tags: capability-doc, claude-code-authoring, dec-017, freshness, health-check-part-2d, cheap-action, doc-drift, dec-020-bridge, verified-then-fixed
+
+## FB-085: Load-bearing browser-behavior assumption verification gap (runtime_validation: partial + owner: both)
+
+**Status:** promoted
+**Captured:** 2026-05-24
+**Triaged:** 2026-05-24 — proposed cheap action (behavioral rule in `agents.md`) has fragile enforcement scope: verify-agent's subagent sandbox limits direct Playwright access, so the empirical-verification step might need to route through the orchestrator instead — a different design problem. Re-assess if a 2nd project signals the same writer/reviewer shared-premise blindspot. *(The "Resolved design" below later dissolved this blocker.)*
+**Gate overridden:** 2026-06-10 (user decision) — the 2nd-project signal gate was overridden on cross-repo evidence review: cost known post-grill (~20 lines, zero new surface, trivially reversible per this entry's own no-DEC reasoning); within-styler evidence volume grew past the gate's protective intent (62/391 verification-themed session-export notes; T731 verified-pass-but-500; UI-drift dominant theme in styler's archived feedback; 806 verifications with zero terminal fails). Recorded at decision time in root `ship-plan-1-evidence-based-verification.md § S1` (temporary working file).
+**Promoted:** 2026-06-10 — shipped **v4.13.0** (MINOR). New `## Visual / browser-rendering bugs` section in `.claude/commands/diagnose.md` (between Phase 6 and Out of scope) implementing the locked design verbatim: orchestrator-level loop, measured-value contract (no pixel-diffs/golden images), `browser_evaluate` measurement with screenshots reporting-only, N=3 loop with pre-computed predicted value-effects (absorbs the signal-queue "math-check before commit-to-pixels" item), non-convergence surfacing (never silent), harness-conditional persistence. Trace test: `tests/scenarios/32-diagnose-visual-recipe.md`.
+**Source:** Bridged from styler 2026-05-21 session (T697 pass-2, template_version 4.6.3) via `/health-check` Part 7 aggregation.
+
+## Observation
+
+T697 pass-2 attempted a CSS-only fix for an anchor-scroll bug. Implement-agent's report claimed the fix relied on the load-bearing property "native browser anchor scroll re-evaluates the target during smooth-scroll animation". Verify-agent confirmed it as the load-bearing property. Both reads of the diff missed that this claim was empirically false. The faulty premise was caught only by orchestrator-driven Playwright re-test during user_review hand-off.
+
+The eventual landing fix (min-height reservation) was structurally different from the CSS-only approach implement-agent + verify-agent both shipped under the false premise.
+
+## Meta-pattern
+
+When implement-agent's report claims a load-bearing browser/runtime behavior on `runtime_validation: partial` + `owner: both` tasks, the writer/reviewer (implement-agent + verify-agent) separation can fail to catch incorrect assumptions because both share the same documentation-derived (rather than empirically-verified) model of the behavior. Verify-agent's fresh-eyes review is valuable for code correctness but doesn't independently verify runtime claims unless empirical re-test happens.
+
+The current pattern: implement-agent claims → verify-agent confirms or denies based on code reading → orchestrator-Playwright cycle for `owner: both`. The gap is that empirical verification happens *after* the writer/reviewer cycle, so wrong premises propagate through both.
+
+## Proposed template surface
+
+Two candidate routes (mutually compatible):
+
+1. **Behavioral rule in `.claude/rules/agents.md`** — when implement-agent's report claims a load-bearing browser/runtime behavior on `runtime_validation: partial`, verify-agent MUST empirically validate via dispatched tool (Playwright snapshot, dev-tools eval, etc.) before passing — not rely solely on code-reading. One paragraph, after "Root Cause Over Symptom" or as a sub-section of "Context Separation".
+2. **Schema field on task_verification.checks** — `runtime_validation: partial` could split into `partial_empirical` vs `partial_documented` so the verify-agent verdict carries forward whether load-bearing claims were empirically verified.
+
+## Triage recommendation
+
+Option 1 (behavioral rule) is the cheap action; catches the issue across all projects without schema migration. Option 2 (schema split) is heavier but produces a more durable signal that the orchestrator can use to decide whether `owner: both` empirical re-test is mandatory before user hand-off.
+
+**Likely route:** start with Option 1 as a rule addition; consider Option 2 only if Option 1's enforcement proves insufficient.
+
+## Resolved design (via `/visual-verify` grill, 2026-05-24)
+
+A `/grill` of a candidate `/visual-verify` command (`template-maintenance/visual-verify-vision.md`) walked the full design tree and concluded the work should **fold into `/diagnose`**, not ship as a new command. This supersedes the two-route framing under "Proposed template surface" / "Triage recommendation" above. Locked decisions:
+
+- **Contract** — falsifiable assertions on *measured values* (geometry + computed style, incl. sampled interaction states); NO pixel-diff / golden images (excluded: needs a baseline the broken state can't provide, carries rendering noise, and "looks different" isn't falsifiable).
+- **Outcome-not-mechanism rule** — predictions assert observable end-states, never mechanisms. This is what converts the FB-085 silent-wrong-premise into a loud failed assertion. *(General-merit; shipped to `/diagnose` Phase 3 in v4.10.2.)*
+- **Measurement** — `browser_evaluate` reads asserted values; `browser_take_screenshot` is reporting-only (already shipped as FB-087).
+- **Persistence** — conditional on a test harness existing (= `/diagnose` Phase 5 "correct seam" logic; harness detection per FB-064): offer-to-persist the passing contract as a test when present, ephemeral otherwise.
+- **Loop** — N=3 configurable; each iteration = one falsifiable hypothesis with a predicted value-effect (folds in the queued "math-check before commit-to-pixels" signal); early-exit when out of distinct hypotheses; non-convergence surfaces a rich routed report (unmet contract + per-iteration hypothesis→prediction→result trace + before/after screenshots), and **never auto-escalates or silently stops**.
+- **Surface** — fold into `/diagnose` as a `## Visual / browser-rendering bugs` recipe (~20 lines) + the Phase 3 sharpen (shipped). No new command, no flag. `/diagnose`'s existing placement (un-gated auto-fire per FB-071; bug-task routing per `spec-workflow.md`) covers it — zero new `/work` wiring.
+
+**Why this dissolves the original blocker:** the prior triage feared the empirical step had "fragile enforcement scope" in the verify-agent subagent sandbox. The fold runs the browser loop in `/diagnose` at orchestrator level — exactly where the triage said it "might need to route." The enforcement-scope problem disappears.
+
+**Ship split + gate:** the general-merit Phase 3 sharpen shipped v4.10.2 (improves all diagnosis, not just UI). The UI-specific recipe section was captured here ready-to-ship on a 2nd-project signal; that gate was overridden 2026-06-10 (see Gate overridden line) and the recipe shipped in v4.13.0. **No DEC** (the fold fails the hard-to-reverse criterion — a 20-line recipe edit is trivially reversible; landed as feedback → edit).
+
+## Source trace
+
+- Bridged from `interaction-logs/processed/.session-export-2026-05-21.json` § `claude_assessment.design_pushback_opportunities[0]`.
+- Single-session signal. Pattern is structural (writer/reviewer shared-premise blindspot) and worth capturing despite the 1-session bar — recurring class of "both agents agree but both are wrong" failures.
+
+Tags: template-side, verify-agent, runtime-validation, owner-both, writer-reviewer-blindspot, diagnose-recipe, gate-override, promoted-v4.13.0

@@ -2,7 +2,7 @@
 
 **Purpose:** Identify template procedures where a deterministic script would outperform LLM-executed natural-language instructions, propose extraction order, and surface the decisions needed before any script lands.
 
-**Status:** Stage 2 partial — Tier 1 (Families A + B) shipped in `template_version 3.0.0` and bug-fixed in `3.1.1` (FB-039). Tier 2 (Family C) and Tier 3 (Families D + E) remain deferred per the trigger criteria below. Last updated: 2026-05-13.
+**Status:** Stage 2 partial — Tier 1 (Families A + B) shipped in `template_version 3.0.0` and bug-fixed in `3.1.1` (FB-039). **Family C trigger declared MET 2026-06-10** (user decision on substituted evidence — see Trigger amendment in the Family C section); PoC authorized. Family D remains deferred per its trigger; Family E dropped 2026-05-20. Last updated: 2026-06-10.
 
 **Scope:** Audit-only. No code written. No files outside this inventory touched.
 
@@ -117,6 +117,8 @@ Nine candidates grouped into five families. Each row: current home, current shap
 
 **Trigger (added 2026-05-13 via FB-038 ship):** `commands/health-check.md` Part 6 check 4b detects retrospective summary content leaking into Action Required despite the FB-015 negative rule. If 4b fires repeatedly across `/health-check` runs on the same project (≥2 different projects, OR ≥3 runs on one project), the LLM-emitter approach is structurally unreliable — escalate to Family C extraction. Track via downstream `/health-check` reports once telemetry exists.
 
+**Trigger amendment (2026-06-10, user decision): declared MET on substituted evidence.** The 4b telemetry channel proved structurally unsampled — `/health-check` shows ~7 mentions across the 47-session `interaction-logs/` corpus and is effectively never run in the most active downstream project (styler), so the named sensor cannot fire regardless of emitter reliability. Substituted standard: *recurrent post-fix regressions in shipped dashboard behavior* — the same underlying fact 4b was designed to detect ("the LLM emitter is structurally unreliable"). Satisfied by the patch history: FB-015 → FB-038 (regression five days after the fix) → FB-080 (Tier-1 regen triggers ignored in two projects in one week) → FB-090 (discretion removed outright) + v4.7.2 example drift — five dashboard-discipline ships in ~6 weeks. **Scope authorized: the PoC only** (Tasks-by-phase section, byte-identical re-render test); the full-port decision gates on PoC results. Counterweight noted at decision time: no confirmed regression in the ~2.5 weeks since FB-090 (v4.10.1) — judged insufficient against the treadmill history plus Family C's independent token-cost value leg.
+
 ---
 
 ### Family D — Parallel-execution orchestration
@@ -174,7 +176,7 @@ Nine candidates grouped into five families. Each row: current home, current shap
 2. **Family B** — task validation + verification debt (B1, B2 as one script) — shipped in `template_version 3.0.0` (`validate-tasks.py`); bug-fixed in `3.1.1`. `task-schema.json` deferred as separate decision.
 
 **Tier 2 — extract after Tier 1 stabilizes** (medium scope or dependency on Tier 1):
-3. **Family C** — dashboard regeneration, hybrid (script for structural sections, LLM for synthesis). Start with Tasks-by-phase as proof-of-concept. **Trigger (2026-05-13):** `health-check.md` Part 6 check 4b firing repeatedly indicates the LLM emitter is structurally unreliable — proceed with Family C extraction.
+3. **Family C** — dashboard regeneration, hybrid (script for structural sections, LLM for synthesis). Start with Tasks-by-phase as proof-of-concept. **Trigger declared MET 2026-06-10** on substituted evidence (see Trigger amendment in the Family C section); PoC authorized, full port gates on PoC results.
 
 **Tier 3 — extract on observed need** (low frequency or overlaps with just-landed fixes):
 4. **Family D** — parallel-plan computation. Only if real conflicts surface in downstream parallel-batch sessions.
@@ -241,7 +243,7 @@ Recommended file layout:
 
 **Tier 1 complete.** Families A + B shipped in `template_version 3.0.0`, bug-fixed in `3.1.1` (FB-039).
 
-**Tier 2 (Family C) — watch for trigger.** Track downstream `/health-check` Part 6 check 4b reports; escalate to Family C extraction if 4b fires across ≥2 projects or ≥3 runs on one project.
+**Tier 2 (Family C) — trigger declared MET 2026-06-10** (user decision; substituted evidence — see Trigger amendment in the Family C section). Next concrete step: the PoC — `dashboard-render.py` rendering the Tasks-by-phase section only, with a byte-identical re-render test; staged in root `ship-plan-2-prose-diet-and-mechanization.md § P5` (temporary working file). Full-port decision gates on PoC results.
 
 **Tier 3 (Families D + E) — observed-need gates.**
 - Family D: trigger if real parallel-batch conflicts surface that the LLM missed (low frequency expected; FB-036 Pre-Dispatch Confirmation reduces this risk).
