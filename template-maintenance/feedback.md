@@ -686,3 +686,69 @@ Affected on any outcome: `.claude/CLAUDE.md § Model Requirement` (canonical), `
 **Triage recommendation:** one session: run Part 2d `[V]` on the authoring doc (resolves A), then decide B with verified facts in hand. A is cheap-mechanical; B is decision-gated (no `/research` unless option (c)'s shakedown surfaces surprises).
 
 Tags: template-side, model-pin, capability-doc, dec-017, part-2d, fable, verify-then-fix, user-decision-gated
+
+## FB-097: Spec acceptance-criteria boxes never reconciled with phase-level verification
+
+**Status:** new
+**Captured:** 2026-05-24 (bridged into the maintenance queue 2026-06-11 via `/health-check` Part 7 step 3c)
+**Source:** Bridged from flirty-gym (template_version 4.7.1) via `/feedback template:` — direct inbox write, no local flirty-gym FB entry (per user choice 2026-05-24).
+
+The template keeps two representations of phase acceptance-criteria state and never reconciles them: (1) the spec's inline `- [ ]` per-phase acceptance boxes (the authored definition of done), and (2) `verification-result.json`'s `criteria[]`, which verify-agent writes and the dashboard renders as a [x]/[ ] checklist. After phase-level verification PASSES, the documented completion flow updates verification-result.json, the dashboard, and — at the final phase only — the spec `status:` frontmatter, but it NEVER touches the spec's inline acceptance boxes. Three things are left undefined:
+
+- **Authority:** which artifact is the source of truth for "this phase's acceptance criteria are met"? spec-workflow.md calls the spec "the living source of truth" (which implies the inline boxes), yet nothing keeps them in sync with the verifier — so the source-of-truth document silently goes stale/false.
+- **Tick responsibility:** if the inline boxes are meant to be ticked post-verification, by whom and at what step? verify-agent can't write the spec; the /work orchestrator's completion flow doesn't do it.
+- **DEC-016 classification:** ticking a `- [ ]` → `- [x]` in spec BODY text is, by DEC-016's literal carveout (which names only archiving / version transitions / frontmatter), a substantive text edit → routes through /iterate. That couples routine phase-closure box-ticking to a full /iterate cycle — almost certainly not the intent, and undocumented.
+
+No /health-check or /audit-coherence lens detects spec-box vs verification-result.json divergence, so it accrues silently.
+
+**Evidence (real bite):** In flirty-gym (template v4.7.1), Phase 1's spec acceptance boxes are all [x] but Phase 2's are all [ ] — despite BOTH phases having a recorded phase-level verification-result.json PASS (Phase 2 = 7/7, all per-task verifications passing, all friction markers resolved). The spec asserts Phase 2 is incomplete while every other artifact says it passed. The split arose precisely because the template gives no rule: Phase 1 got ticked (manually, under spec_v2), Phase 2 didn't. Any multi-phase project hits this.
+
+**Possible directions (from the capture — not prescribing):** (A) declare the inline boxes authored-only and verification-result.json authoritative, document it, add a /health-check note that inline boxes are informational (lowest churn; leaves the source-of-truth doc visibly stale). (B) the /work orchestrator ticks the spec's phase boxes at phase-level PASS as an infrastructure operation (state-reflection of a verifier result — same class as the `status:` flip), with an explicit DEC-016 carveout clause for "acceptance-box state-sync" (keeps the source of truth honest without an /iterate cycle; needs the DEC-016 amendment). (C) detection-only: a /health-check or /audit-coherence lens that flags spec-box vs verification-result.json divergence and prompts reconciliation (catches drift without deciding authority; weakest).
+
+**Triage recommendation:** likely `/research` → decision record (root `decisions/`, next free DEC number) — option (B) amends DEC-016's carveout list, which shouldn't happen as a direct edit.
+
+Tags: template-side, spec-workflow, verification, dec-016-boundary, dec-candidate, flirty-gym-evidence, bridged
+
+## FB-098: persist-friction.py — mechanize the friction dual-write + FR-NNN assignment
+
+**Status:** new
+**Captured:** 2026-06-11
+**Source:** Insight aggregation over the 70-export corpus (first pipeline stage-4 run since 2026-03-30) — full evidence in `interaction-logs/insights/2026-06-11_work_friction-persistence-bookkeeping-weight.md` (gitignored working doc, template repo only). 5 occurrences across styler (v4.7.1–v4.11.0, ×3) + Personal (v4.11.0) + flirty-gym (v4.7.1 collision incident); a 6th styler note asks for exactly this script by name.
+
+The State Persistence Protocol's per-marker bookkeeping (`.session-log.jsonl` + `.pending-markers.jsonl` dual-write, plus `friction.jsonl` projection with FR-NNN assignment for audit-eligible kinds) is orchestrator-side hand-written Python-in-Bash. Observed failure modes at build scale: outright deferral (Personal 06-03 — three markers parked in task notes/handoff and never reached the register), duplicate FR ids from naive max+1 (flirty-gym FR-001 collision; styler FR-031 textual-reference collision), and per-marker verbosity ("three writes per marker").
+
+**Proposal:** `.claude/scripts/persist-friction.py` per the scripts invocation contract (stdlib-only, structured stdout, orchestrator-invoked — subagents still return markers in reports). Takes a marker batch (stdin JSON or args); performs the dual-write + audit projection; assigns collision-safe FR-NNN by reading BOTH `friction.jsonl` ids and textual `FR-\d+` references; returns assigned ids for the orchestrator to echo into task notes. Composes with the parked Family F checker (scripts-candidates.md): helper makes compliance cheap, checker catches non-compliance.
+
+**Triage recommendation:** direct template edit (script + tests, Family A/B precedent — v3.0.0/v3.1.1). Above the 3-occurrence mechanization bar; no DEC (advisory script, trivially reversible).
+
+Tags: template-side, scripts, friction-register, state-persistence, work, mechanization, insights-derived
+
+## FB-099: Gitignored `.claude/` state — surface the un-backed-up-source-of-truth hazard
+
+**Status:** new
+**Captured:** 2026-06-11
+**Source:** Insight aggregation (first stage-4 run) — full evidence in `interaction-logs/insights/2026-06-11_work_gitignored-claude-state-hazard.md`. 5 occurrences across styler (v4.0.0–v4.11.0) + Personal (v4.11.0); in-corpus ask: "/health-check could surface this so the user knows" (styler 05-27).
+
+When a project gitignores `.claude/**` (styler's deliberate fork convention), the spec, decisions, tasks, dashboard, and friction register are untracked — never committed, invisible to git safety nets. Observed bites: `/iterate` spec edits that "live only as working state"; a session asserting "spec_v15.md is tracked, just commit it" with the premise inverted by the gitignore; `/work pause` Step 0e excluding ALL `.claude/` paths from the uncommitted-work check, which also hides git-TRACKED `.claude/vision/*.md` edits (the filter assumes `.claude/` is state-not-source). The template repo itself has the same shape: `interaction-logs/` insights are gitignored working data.
+
+**Proposal (both cheap, report-level):** (a) `/health-check` informational check — if `.claude/spec_v*.md` / `tasks/` / `support/decisions/` match the project's gitignore, report once per run: "template state is untracked — deliberate? consider a backup convention"; (b) `/work pause` Step 0e — scope the exclusion to *gitignored* `.claude/` paths only, so tracked `.claude/` files participate in the uncommitted-work check. Neither forces behavior on projects with deliberate conventions. Distinct from FB-063 (worktree reads of gitignored state).
+
+**Triage recommendation:** direct template edit (two small additions; PATCH-to-MINOR).
+
+Tags: template-side, health-check, work-pause, gitignore, data-safety, insights-derived
+
+## FB-100: `owner: both` tasks lack a templated routing predicate + completion path
+
+**Status:** new
+**Captured:** 2026-06-11
+**Source:** Insight aggregation (first stage-4 run) — full evidence in `interaction-logs/insights/2026-06-11_work_owner-both-completion-path.md`. 4 occurrences across styler (v3.13.0, v4.10.2 ×2) + OEMMatInsightBI (v4.0.0).
+
+The completion machinery is two-track (claude: implement→verify; human: self-attestation via `/work complete`); `owner: both` falls between. Observed: the self-attestation auto-generate rule is documented for `owner: human` only — both-owned "lived gates where Claude's half is done" have no clean close (styler 05-28); Step 1d's fast-path predicate (`owner == human OR Blocked OR On Hold`) misses both-owned tasks user-gated on physical-world prerequisites — found independently in two projects; both-owned capture flows run as conversational design-partner work the routing model doesn't anticipate (styler T751).
+
+**Partial coverage shipped:** v4.14.0's waiting-on-you queue enumerates `owner: both` awaiting review (visibility half done). Not covered: routing (Step 1d predicate) and completion shape.
+
+**Proposal:** (a) extend Step 1d's fast-path predicate with `owner == "both" AND user_review_pending` (or equivalent user-gated condition); (b) document the `owner: both` completion shape in `/work complete` — Claude's half verified by verify-agent as usual; user's half closes via the same self-attestation mechanism as `owner: human` (one rule extension, no new schema).
+
+**Triage recommendation:** direct template edit (MINOR — routing behavior change); low urgency given the v4.14.0 visibility half.
+
+Tags: template-side, work, routing, owner-both, task-completion, insights-derived
