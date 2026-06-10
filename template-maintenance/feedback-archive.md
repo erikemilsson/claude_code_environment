@@ -1763,3 +1763,44 @@ DEC-018 = Option B (status quo). No template change. Option A remains a correct,
 **Not part of this decision:** the `/walkthrough` / `/preflight` sibling idea (SIREN 2026-05-18) folded into FB-072 during triage — re-capture as its own FB if it resurfaces with signal.
 
 Tags: closed, command-routing, interpretive-router, dec-018, decided-against, research-complete, full-original-in-git-history
+
+---
+
+## FB-091: Guard precondition probes in orchestrator bash batches (a failing speculative check shouldn't abort the batch)
+
+**Status:** closed
+**Captured:** 2026-05-25
+**Closed:** 2026-05-27 — Declined during a `/feedback review` walk-through of `template-maintenance/feedback.md`. Coverage analysis: the most common form of this friction — chaining *edits* through bash — is already discouraged by the Tool Preferences table in `rules/agents.md` (use the `Edit` tool; Edit-tool calls are independent and don't `&&`-abort each other). The genuine residual is legitimate bash batches (git sequences, test runs, script chains) where a speculative `ls`/`test`/`grep` probe short-circuits intended work — narrow, and the orchestrator rarely structures bash that way. Single-source signal (2026-05-25 insights-report aggregate; no session-export reproduction with markers). Sibling FB-092 closed in the same pass. **Re-open condition:** a real session-export reproduction of a probe aborting a legit bash batch.
+**Source:** 2026-05-25 insights-report scan (`~/.claude/usage-data/report-2026-05-24-233016.html` § "Batch-proof file edits against single-command failures"). One concrete reproduction cited: a `bash` exit-1 from an `ls` probe on a deleted file short-circuited a chained 9-edit batch (`&&`-joined), forcing full re-execution.
+
+Proposed (declined) template surface: one paragraph in `rules/agents.md` (`## Tool Preferences` or `## Behavioral Rules`) — guard precondition probes so a non-zero exit from a speculative check can't abort the batch (`ls … || true`; `test -f X &&` before the dependent step; or keep each operation independent).
+
+Tags: template-side, orchestrator-bash, tool-preferences-adjacent, single-source-signal, insights-report, declined-coverage
+
+## FB-092: Prefer absolute paths in orchestrator bash ops; don't assume CWD persists across steps
+
+**Status:** closed
+**Captured:** 2026-05-25
+**Closed:** 2026-05-27 — Declined during a `/feedback review` walk-through. Two coverage problems sank it: (1) the central premise — "never assume the current working directory persists across steps" — is **contradicted by the Bash tool's harness contract**, which states the working directory *does* persist between calls; only shell *state* (env vars, functions) doesn't. (2) Absolute-path discipline is already implied: dedicated file tools (Read/Glob/Grep/Edit/Write) take absolute paths, and the harness itself recommends absolute paths (to avoid `cd` permission prompts), so the file-ops half is covered. The one concrete residual — the `>`-vs-`>>` truncate-vs-append session-log sub-signal — is too thin to warrant a broad rule. Single-source signal (insights report). Sibling FB-091 closed in the same pass.
+**Source:** 2026-05-25 insights-report scan (§ "Suggested CLAUDE.md Additions" → File Operations). Suggested line: "Always use absolute paths for file operations and validation scripts; never assume the current working directory persists across steps." Observed friction: working-directory assumptions caused validation retries and a truncate-vs-append error on `.session-log.jsonl` across multiple sessions.
+
+Proposed (declined) template surface: one line in `rules/agents.md § Tool Preferences` — prefer absolute paths for bash-tool file ops + validation scripts; optional `>>`-not-`>` note for append-mode log writes.
+
+Tags: template-side, orchestrator-bash, absolute-paths, session-log, tool-preferences-adjacent, single-source-signal, insights-report, declined-premise-contradicted
+
+## FB-094: `claude-code-authoring.md` skill-listing-budget facts drifted from live Claude Code docs
+
+**Status:** promoted
+**Captured:** 2026-05-27 — surfaced by the research-agent during DEC-020 (Skills/reference trial conclusion).
+**Verified:** 2026-05-27 — points 1 + 2 confirmed against `code.claude.com/docs/en/skills`: the *total* listing budget scales at ~1% of the model's context window (raisable via `skillListingBudgetFraction` / `SLASH_COMMAND_TOOL_CHAR_BUDGET`); **1,536 is the per-entry cap** on `description`+`when_to_use` (`maxSkillDescriptionChars`); on overflow the least-invoked skills' descriptions drop first while names always stay; `/doctor` reports overflow + which skills are affected. Point 3 only partially held — the page documents `/skills` as a visibility-override menu (not a load inspector) and doesn't mention `/context`, so the `/context`-as-presence-inspector claim was **dropped** as unverified.
+**Promoted:** 2026-05-27 — shipped **v4.12.1** (PATCH). Rewrote `claude-code-authoring.md § "Skill listing budget"` to separate the dynamic total budget from the per-entry cap (with settings knobs + overflow behavior) and added a `/doctor` + `/skills` observability line. Footer `Last verified` date → 2026-05-27 and `template_version` → 4.12.1. Reference-doc edit is autonomous-OK (not in DEC-016's spec/decision/vision protected set). Low controversy (mechanical correction). This is the capability-doc freshness case the DEC-017 (v4.9.0) `/health-check` Part 2d `[V]` lens was built to catch — actioned ahead of the next Part 2d pass during a `/feedback review` walk-through.
+**Source:** DEC-020 research archive `decisions/.archive/decision-020-research-2026-05-27.md § Q2`.
+
+Original drift points (as captured):
+1. Skill-listing cap is dynamic, not a flat 1,536 total — the doc conflated per-entry cap with total budget.
+2. `/doctor` surfaces description-budget overflow — doc had no observability note.
+3. `/context` + `/skills` presence-inspection — absent from doc (point 3 dropped on verification; see Verified line).
+
+Confirmed still-consistent (no change needed): turn-scoped `model:`/`effort:`, the 25K auto-compaction re-attachment budget, one-message-and-stays lifecycle, `context: fork` inheritance, `disable-model-invocation` semantics.
+
+Tags: capability-doc, claude-code-authoring, dec-017, freshness, health-check-part-2d, cheap-action, doc-drift, dec-020-bridge, verified-then-fixed

@@ -77,9 +77,14 @@ A skill can declare `context: fork` to execute in a forked context (separate fro
 
 A skill's `allowed-tools` frontmatter declares which tools it expects to use. This pre-approves those tools for the skill's invocation (subject to project-level `permissions.allow` settings). Skills should declare only the tools they actually need — over-declaration grants unnecessary access; under-declaration triggers permission prompts mid-execution.
 
-### Skill listing budget: 1,536 character cap on `description + when_to_use`
+### Skill listing budget: dynamic total (~1% of context) + 1,536-char per-entry cap
 
-The skill listing context window has a budget for each skill's metadata. `description` + `when_to_use` combined must fit within ~1,536 characters or the listing truncates. Authors should keep `when_to_use` focused — usage criteria, not feature catalog.
+Two distinct limits govern the skill listing (the metadata the model sees to decide what to invoke) — don't conflate them:
+
+- **Total listing budget — dynamic, not fixed.** It scales at **~1% of the model's context window**. All skill *names* are always included; when the budget overflows, the *descriptions* of the least-invoked skills are dropped first, so the skills you actually use keep their full text. Raise it with the `skillListingBudgetFraction` setting (e.g. `0.02` = 2%) or the `SLASH_COMMAND_TOOL_CHAR_BUDGET` env var (fixed char count); set low-priority entries to `"name-only"` in `skillOverrides` to reclaim budget.
+- **Per-entry cap — 1,536 chars.** Each skill's combined `description` + `when_to_use` is capped at **1,536 characters regardless of the total budget** (configurable via `maxSkillDescriptionChars`). Put the key use case first; keep `when_to_use` to usage criteria, not a feature catalog.
+
+**Observability:** `/doctor` reports whether the listing budget is overflowing and which skills are affected; the `/skills` menu shows per-skill visibility state.
 
 ### Auto-compaction re-attachment budget: 25K tokens
 
@@ -146,4 +151,4 @@ Per `rules/agents.md § "Dispatch Convention"`: the three dispatch sites (`comma
 
 ---
 
-<!-- Last verified against Claude Code docs: https://code.claude.com/docs @ 2026-05-24; against template_version: 4.9.0 -->
+<!-- Last verified against Claude Code docs: https://code.claude.com/docs @ 2026-05-27; against template_version: 4.12.1 -->

@@ -622,49 +622,13 @@ Tags: template-side, mcp, playwright, result-size, browser-snapshot, browser-eva
 
 **Status:** promoted 2026-05-24 via v4.10.1 (cheap action). Made Recent Activity cap enforcement non-discretionary + added "cap-trim" as a targeted-edit-eligible pattern in `dashboard-style/SKILL.md` + `dashboard-regeneration.md` mirror (two edits each). Promotion trigger: FB-080 (targeted-edit path) shipped in v4.7.0, weakening the regen-cost deferral reason. See archive for full entry.
 
-## FB-091: Guard precondition probes in orchestrator bash batches (a failing speculative check shouldn't abort the batch)
+## FB-091: [CLOSED — moved to `template-maintenance/feedback-archive.md`]
 
-**Status:** new
-**Captured:** 2026-05-25
-**Source:** 2026-05-25 insights-report scan (`~/.claude/usage-data/report-2026-05-24-233016.html` § "New Ways to Use Claude Code" → "Batch-proof file edits against single-command failures"). Aggregate signal over the 26-day window; one concrete reproduction cited.
+**Status:** closed 2026-05-27 — declined during a `/feedback review` walk-through. Residual too thin: the common form (chaining edits via bash) is already discouraged by the Tool Preferences `Edit`-not-bash-chain rule; the genuine residual (a speculative probe short-circuiting a legit git/test/script batch) is narrow and unreproduced in session exports. Single-source signal (insights report). Sibling FB-092 closed in the same pass. Re-open on a real session-export reproduction. See archive for full entry.
 
-## Observation
+## FB-092: [CLOSED — moved to `template-maintenance/feedback-archive.md`]
 
-A `bash` exit-1 from an `ls` probe on a deleted file short-circuited a chained 9-edit batch (`&&`-joined), forcing full re-execution. With ~11,589 Bash calls over the window, small robustness habits compound.
-
-## Proposed template surface
-
-One short paragraph in `.claude/rules/agents.md` (candidate home: `## Tool Preferences` or `## Behavioral Rules`): when batching bash operations, guard precondition probes so a non-zero exit from a speculative check (`ls`, `test`, `grep`) can't abort the batch — `ls … || true`, or `test -f X &&` before the dependent step, or keep each operation independent.
-
-## Triage recommendation
-
-**Cheap-action candidate — but check coverage first.** The most common form of this friction (chaining *edits* through bash) is already discouraged by the existing Tool Preferences table (use the `Edit` tool, not `sed`/`echo >`; Edit-tool calls are independent and don't abort each other). If the template's own rule were followed, the 9-edit-via-bash case largely doesn't arise. The genuine *residual* is legitimate bash batches (git sequences, test runs, script chains) where a probe short-circuits — narrow. Decide whether that residual earns a one-paragraph rule or is too thin to bother. Single-source signal (insights report); no session-export reproduction with markers.
-
-Cross-ref: FB-092 (sibling orchestrator-bash-hygiene item; would ship together if both promoted).
-
-Tags: template-side, orchestrator-bash, tool-preferences-adjacent, cheap-action-candidate, single-source-signal, insights-report
-
-## FB-092: Prefer absolute paths in orchestrator bash ops; don't assume CWD persists across steps
-
-**Status:** new
-**Captured:** 2026-05-25
-**Source:** 2026-05-25 insights-report scan (same report § "Suggested CLAUDE.md Additions" → File Operations item). Aggregate signal.
-
-## Observation
-
-Working-directory assumptions caused validation retries and a truncate-vs-append error on the session log (`.session-log.jsonl`) across multiple sessions. The report's suggested line: *"Always use absolute paths for file operations and validation scripts; never assume the current working directory persists across steps."*
-
-## Proposed template surface
-
-One line in `.claude/rules/agents.md` (candidate home: `## Tool Preferences`): prefer absolute paths for bash-tool file operations and validation-script invocations; don't assume CWD persists. Optionally a `>>`-not-`>` note for append-mode log writes (`.session-log.jsonl`).
-
-## Triage recommendation
-
-**Cheap-action candidate, with two coverage caveats.** (1) File ops are already steered to the dedicated tools (Read/Glob/Grep/Edit/Write), which take absolute paths — so the file-ops half is largely covered; the residual is *bash-tool* ops (validation scripts, git). (2) The Bash tool's own contract states the working directory **does** persist between calls, so "CWD drift across steps" is partly a non-issue at the harness level — the real residual is relative paths inside invoked scripts. The most concrete sub-signal (session-log truncate-vs-append, `>` vs `>>`) may deserve a targeted note more than a broad absolute-path rule. Decide: minimal `>>`-discipline note vs broad absolute-path line vs decline (mostly covered). Single-source signal.
-
-Cross-ref: FB-091 (sibling orchestrator-bash-hygiene item).
-
-Tags: template-side, orchestrator-bash, absolute-paths, session-log, tool-preferences-adjacent, cheap-action-candidate, single-source-signal, insights-report
+**Status:** closed 2026-05-27 — declined during a `/feedback review` walk-through. Core premise ("don't assume CWD persists across steps") is contradicted by the harness contract: the Bash tool's working directory *does* persist between calls; only shell *state* (env vars, functions) doesn't. Absolute-path discipline is already implied (dedicated tools take absolute paths; harness recommends absolute paths to avoid `cd` prompts). Only concrete residual was the `>`-vs-`>>` session-log sub-signal — too thin for a rule. Single-source signal (insights report). Sibling FB-091 closed in the same pass. See archive for full entry.
 
 ## FB-093: Empirical capability-probe workflow — brain-dump examples → verdict each against the live system → accumulate a snapshot-anchored capability-boundary corpus
 
@@ -700,19 +664,6 @@ Research-gated → **likely DEC on fork #1** (surface) only if the resolution is
 
 Tags: workflow, new-command-candidate, grill-adjacent, vision-adjacent, capability-probe, gap-analysis, snapshot-anchored, surface-discipline, research-gated, dec-candidate, styler-bridge
 
-## FB-094: `claude-code-authoring.md` skill-listing-budget facts drifted from live Claude Code docs
+## FB-094: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
 
-**Status:** ready
-**Captured:** 2026-05-27 — surfaced by the research-agent during DEC-020 (Skills/reference trial conclusion). The capability doc `.claude/support/reference/claude-code-authoring.md` (DEC-017; footer "Last verified … @ 2026-05-24; against template_version: 4.9.0") has drifted from current Claude Code docs on three points:
-
-1. **Skill-listing cap is now dynamic, not a flat 1,536 chars.** The doc states a hard "1,536-char cap on `description + when_to_use`." Live docs: the *total* listing budget "scales at 1% of the model's context window" (`skillListingBudgetFraction` / `SLASH_COMMAND_TOOL_CHAR_BUDGET`), with least-used descriptions dropped first on overflow; 1,536 is now the *per-entry* cap (`maxSkillDescriptionChars`). The doc conflates per-entry cap with total budget. (Source: https://code.claude.com/docs/en/skills)
-2. **`/doctor` now surfaces description-budget overflow** ("which skills are affected") — the doc has no observability note.
-3. **`/context` + `/skills` presence-inspection** — absent from the doc; relevant to "did the skill load?" questions.
-
-Confirmed still-consistent (no change needed): turn-scoped `model:`/`effort:`, the 25K auto-compaction re-attachment budget, one-message-and-stays lifecycle, `context: fork` inheritance, `disable-model-invocation` semantics.
-
-**Disposition:** cheap-action / `/health-check` Part 2d `[V]` candidate — this is exactly the capability-doc freshness lens DEC-017 (v4.9.0) shipped to catch. Fix inline on the next Part 2d verify pass, or promote as a standalone PATCH; bump the footer's `Last verified` date + `template_version` on fix. Low controversy (mechanical doc correction).
-
-**Source:** DEC-020 research archive `decisions/.archive/decision-020-research-2026-05-27.md § Q2`.
-
-Tags: capability-doc, claude-code-authoring, dec-017, freshness, health-check-part-2d, cheap-action, doc-drift, dec-020-bridge
+**Status:** promoted 2026-05-27 — shipped **v4.12.1** (PATCH). `claude-code-authoring.md § "Skill listing budget"` rewritten to separate the dynamic total budget (~1% of context; `skillListingBudgetFraction` / `SLASH_COMMAND_TOOL_CHAR_BUDGET`) from the per-entry 1,536-char cap (`maxSkillDescriptionChars`), with overflow behavior + a `/doctor` + `/skills` observability note. Verified against `code.claude.com/docs/en/skills` (2026-05-27) before fixing; the unverified `/context`-as-load-inspector half of point 3 was dropped. Footer `Last verified` + `template_version` bumped. See archive for full entry.
