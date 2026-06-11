@@ -20,6 +20,8 @@ Dashboard does NOT regenerate on every task change. Two tiers:
 
 For single-section changes that would otherwise trigger Tier 1, the orchestrator may apply a **targeted `Edit`** to the affected section instead and set a `pending_full_regen` sentinel in `.claude/dashboard-state.json` so the next Step 1a still runs full regen. See `.claude/support/reference/dashboard-regeneration.md § "Targeted Edits (mid-session lite path)"` for the decision table and procedure.
 
+**Script-first (v4.22.0):** full regens render the structural sections via `python3 .claude/scripts/dashboard-render.py --render` — the LLM writes the output, then fills only the synthesis placeholders (Action Required, Custom Views content). See `dashboard-regeneration.md § "Script-First Rendering"` for the division of labor and the canonical `task_hash` mode.
+
 ## Sections
 
 The dashboard has a **Sections** checklist at the top — check or uncheck items to control which sections Claude generates:

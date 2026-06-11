@@ -132,6 +132,8 @@ Script ran clean (exit 0, 176 lines, zero stderr). Comparator: styler's LLM-rend
 
 **Read:** byte-determinism holds and correctness already beats the LLM where it matters (finding 4); the real port scope is *inputs* (archive index, canonical phase names) + two display rules — not rendering mechanics. Demand-side evidence: `interaction-logs/insights/2026-06-11_user-experience_dashboard-regen-cost-at-scale.md` (~18 friction notes; prescribed regens structurally bypassed at scale). Decision remains the user's.
 
+**FULL PORT SHIPPED — v4.22.0 (2026-06-11, user decision "go" on the evidence above).** `dashboard-render.py --render` now emits every structural section (META incl. canonical `task_hash`, header lines, toggles, Progress with critical path + Mermaid, archive-aware Tasks, Decisions, Notes preservation, footer); LLM fills `<!-- CLAUDE: fill -->` placeholders for Action Required + Custom Views content. All six evidence findings addressed: (1) archive-index input (full archived task files, index fallback), (2) phase-name union vote across active+archive, (3) absorbed-only/unphased display rules, (4) deterministic deps rendering, (5) cosmetic deltas resolved to golden-example style, (6) `--task-hash` is the single hash authority. Wired via `dashboard-regeneration.md § "Script-First Rendering"`; prose remains the hand-render fallback. 54 tests. Family C CLOSED; ship-log entry v4.22.0 is the durable record.
+
 ---
 
 ### Family D — Parallel-execution orchestration

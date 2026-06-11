@@ -8,9 +8,9 @@ Deterministic helpers invoked by the `/work` orchestrator (or by the user direct
 |--------|---------|---------|
 | `fingerprint.py` | Spec/section/dashboard-rollup SHA-256 hashes | `support/reference/drift-reconciliation.md` lines 70-84, `commands/status.md` line 36 |
 | `validate-tasks.py` | Task JSON schema validation + verification debt count | `support/reference/task-schema.md`, `commands/health-check.md` Part 1 |
-| `dashboard-render.py` | **PoC (Family C, v4.19.0):** deterministic render of the dashboard `## 📋 Tasks` section | `support/reference/dashboard-regeneration.md` § "Section Display Rules" (Tasks rules) + § "Per-Section Format" |
+| `dashboard-render.py` | **Family C full port (v4.22.0):** deterministic render of all structural dashboard sections (`--render`), the Tasks section alone (`--tasks-section`, archive-aware), and the canonical META `task_hash` (`--task-hash`) | `support/reference/dashboard-regeneration.md` § "Script-First Rendering" + § Regeneration Steps 3–6 + § Section Display Rules + § Critical Path Generation + § Project Overview Diagram |
 
-**`dashboard-render.py` status:** proof-of-concept only — NOT yet wired into the regeneration flow. The full-port decision (script renders all structural sections between marker pairs; LLM keeps Action Required + Notes) gates on this PoC per `template-maintenance/scripts-candidates.md § Family C`. Until then the prose procedure in `dashboard-regeneration.md` remains the operative path; the script is available for orchestrator-side spot checks (`python3 .claude/scripts/dashboard-render.py --tasks-section`).
+**`dashboard-render.py` status:** full port WIRED into the regeneration flow (v4.22.0, user decision 2026-06-11 on the PoC evidence run). `--render` emits the complete dashboard with `<!-- CLAUDE: fill … -->` placeholders for the synthesis sections (Action Required, Custom Views content); the orchestrator writes the output and fills the placeholders per `dashboard-regeneration.md § "Script-First Rendering"`. Read-only: the orchestrator performs all file writes. Pass `--now <ISO>` for deterministic output. The prose procedure remains the complete hand-render fallback when python3 is unavailable.
 
 ## Invocation contract
 

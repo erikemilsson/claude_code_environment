@@ -4,6 +4,31 @@ Every dashboard regeneration MUST follow this procedure. All commands and agents
 
 ---
 
+## Script-First Rendering (Family C full port, v4.22.0)
+
+Structural sections are rendered by the deterministic script — the LLM no longer hand-writes them:
+
+```
+python3 .claude/scripts/dashboard-render.py --render --claude-dir .claude [--now <ISO>]
+```
+
+**Division of labor:**
+
+| Owner | Sections |
+|-------|----------|
+| **Script** (deterministic) | `# Dashboard` title, META block (incl. the canonical `task_hash`), section-toggle checklist, header/completion/freshness lines, 📊 Progress (status summary, phase table, acceptance criteria, timeline, critical path, Project Overview Mermaid, this-week, recent activity), 📋 Tasks (archive-aware), 📋 Decisions, Notes preservation (sidecar `user_notes` between markers), Custom Views instruction-marker block, footer line |
+| **LLM** (synthesis) | 🚨 Action Required (every sub-section — the Action Item Contract + human-gated coverage need judgment) and Custom Views *rendered* content. The script emits `<!-- CLAUDE: fill … -->` placeholders for these; filling them is a REQUIRED step, validated in Step 8 |
+
+**Flow:** run Step 2 (extract/merge/write sidecar) first — the script reads user content from the **sidecar**, not from dashboard markers — then run the script, `Write` its stdout to `.claude/dashboard.md`, and fill the placeholders via `Edit` per the Section Format Reference below. The script is read-only (per `scripts/README.md` invocation contract); the orchestrator performs all writes.
+
+**The script is the executable contract** for the structural rules in this file (§ Regeneration Steps 3–6, § Section Display Rules for Tasks/Progress/Decisions, § Critical Path Generation, § Project Overview Diagram). On divergence between prose and script for a script-owned section, the script is authoritative; fix the prose (or the script, deliberately) rather than hand-rendering. Documented simplifications live in the script's docstring. The prose remains load-bearing for: Action Required (LLM-owned), targeted edits (§ below), and as the specification the script's tests pin.
+
+**Canonical `task_hash`:** `dashboard-render.py --task-hash` (sha256 over sorted `id:status:difficulty:owner` rows, newline-joined + trailing newline, active tasks only). This is the single hash authority — `fingerprint.py --dashboard-rollup` computes a *different* hash (`id:status`, for `/status`) and must not be used for dashboard META.
+
+**When the script is unavailable** (e.g., no python3): the prose procedure below remains the complete fallback — render by hand exactly as pre-v4.22.0.
+
+---
+
 ## Section Toggle Configuration
 
 The primary source for section toggles is the **dashboard.md section toggle checklist** — a visible, editable checklist near the top of the dashboard between `<!-- SECTION TOGGLES -->` and `<!-- END SECTION TOGGLES -->` markers. The checklist is wrapped in an HTML `<details>` element so it renders collapsed by default (one line), keeping the dashboard header compact. Users expand it to change toggle settings.
@@ -238,6 +263,8 @@ This ensures user content is always persisted in a structured file before the da
 
 ### 3. Generate Dashboard
 
+**Script-first (v4.22.0):** run `dashboard-render.py --render` and `Write` its output (see § "Script-First Rendering" above) — it implements this step plus Steps 4–6 for the structural sections; then fill the `<!-- CLAUDE: fill … -->` placeholders (Action Required, Custom Views content) per the rules below. The bullets that follow are the full specification — the script's contract for its sections, the LLM's instructions for placeholder sections, and the hand-render fallback.
+
 - Follow the Section Format Reference below for all formatting rules
 - Use exact section headings: `# Dashboard`, `## 🚨 Action Required`, `## 📊 Progress`, `## 📋 Tasks`, `## 📋 Decisions`, `## 💡 Notes`
 - **Freshness line:** After the completion % line, add a visible timestamp: `*Updated [YYYY-MM-DD HH:MM] — may not reflect changes made outside `/work`*`. This warns users who view the dashboard without running a command that data could be stale.
@@ -383,6 +410,7 @@ After writing the new dashboard.md, verify structural integrity:
 1. **Marker pair check:** For each expected marker type, confirm both open and close markers exist in the output
 2. **Section order check:** Verify required headings appear in correct order (same as health-check Part 1 Check 5)
 3. **Metadata check:** Confirm `<!-- DASHBOARD META -->` block was written with valid task_hash
+4. **Placeholder check (v4.22.0):** Confirm no `<!-- CLAUDE: fill` placeholder remains — an unfilled synthesis section means the regeneration is incomplete; fill it before finishing
 
 If any check fails:
 - Log: "Dashboard regeneration produced invalid output — {specific issue}"

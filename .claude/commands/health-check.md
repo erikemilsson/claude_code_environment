@@ -165,7 +165,7 @@ Reports tasks with `"out_of_spec": true` in a separate section of the report. In
 #### 10. Dashboard Staleness
 
 **Task state hash check:**
-1. Compute: `SHA-256(sorted list of task_id + ":" + status + ":" + difficulty + ":" + owner)`
+1. Compute: `python3 .claude/scripts/dashboard-render.py --task-hash` — the canonical convention (sha256 over sorted `id:status:difficulty:owner` rows, newline-joined + trailing newline). Hand-compute only when the script is unavailable. Do NOT use `fingerprint.py --dashboard-rollup` (different algorithm, for `/status`).
 2. Read dashboard metadata block (if exists)
 3. Compare hashes — if different, dashboard is stale
 
