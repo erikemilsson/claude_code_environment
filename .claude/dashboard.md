@@ -7,7 +7,7 @@ task_hash: sha256:a3f8c91d2e7b4056890cd1ef23456789abcdef0123456789abcdef01234567
 spec_version: spec_v1
 spec_status: active
 spec_fingerprint: sha256:b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2
-template_version: 4.22.0
+template_version: 4.23.0
 verification_debt: 1
 drift_deferrals: 0
 decision_count: 2

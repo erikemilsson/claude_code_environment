@@ -1892,3 +1892,55 @@ Tags: template-side, model-pin, capability-doc, dec-017, part-2d, fable, verify-
 **Sub-issue B resolution (2026-06-11, v4.21.4):** user selected **option (a) — ratify the float**. Rationale: the `opus[1m]` alias has governed every real dispatch since v4.13.1 documented the de-facto behavior, with zero observed agent regressions across the 70-export interaction-logs corpus spanning v3.5.1 → v4.11.0 downstream sessions — the 4.7 pin documented a fiction. Shipped: `.claude/CLAUDE.md § Model Requirement` restated as current-Opus-tier target with the float explicit and a regression escape hatch (pin to last-known-good explicit full ID — feasibility docs-verified under sub-issue A); `shared-definitions.md` calibration note, `.claude/README.md` design-target + recommended-setup lines, agent-file capability prose ×4, and `automation.md`'s CLI example ID all genericized/updated. Entry archived; both sub-issues closed.
 
 **Status:** resolved — A shipped v4.21.3 (docs-verified section rewrite), B decided 2026-06-11 → option (a) ratify float, shipped v4.21.4
+
+---
+
+## FB-098: persist-friction.py — mechanize the friction dual-write + FR-NNN assignment
+
+**Status:** promoted 2026-06-12 — shipped in **v4.23.0** (3-FB `/work`-family bundle from a `/feedback review` of the maintenance queue). `.claude/scripts/persist-friction.py` (stdlib-only, read-only) + `scripts/tests/test_persist_friction.py` (11 tests, full suite 65/65 green) + advisory wiring in `work-procedures.md § "State Persistence Protocol"` step 2 + `scripts/README.md` row; recorded against the parked Family F checker in `scripts-candidates.md`. Live smoke-test confirmed. Ship-log v4.23.0 is the durable record.
+**Captured:** 2026-06-11
+**Source:** Insight aggregation over the 70-export corpus (first pipeline stage-4 run since 2026-03-30) — full evidence in `interaction-logs/insights/2026-06-11_work_friction-persistence-bookkeeping-weight.md` (gitignored working doc, template repo only). 5 occurrences across styler (v4.7.1–v4.11.0, ×3) + Personal (v4.11.0) + flirty-gym (v4.7.1 collision incident); a 6th styler note asks for exactly this script by name.
+
+The State Persistence Protocol's per-marker bookkeeping (`.session-log.jsonl` + `.pending-markers.jsonl` dual-write, plus `friction.jsonl` projection with FR-NNN assignment for audit-eligible kinds) is orchestrator-side hand-written Python-in-Bash. Observed failure modes at build scale: outright deferral (Personal 06-03 — three markers parked in task notes/handoff and never reached the register), duplicate FR ids from naive max+1 (flirty-gym FR-001 collision; styler FR-031 textual-reference collision), and per-marker verbosity ("three writes per marker").
+
+**Proposal:** `.claude/scripts/persist-friction.py` per the scripts invocation contract (stdlib-only, structured stdout, orchestrator-invoked — subagents still return markers in reports). Takes a marker batch (stdin JSON or args); performs the dual-write + audit projection; assigns collision-safe FR-NNN by reading BOTH `friction.jsonl` ids and textual `FR-\d+` references; returns assigned ids for the orchestrator to echo into task notes. Composes with the parked Family F checker (scripts-candidates.md): helper makes compliance cheap, checker catches non-compliance.
+
+**Triage recommendation:** direct template edit (script + tests, Family A/B precedent — v3.0.0/v3.1.1). Above the 3-occurrence mechanization bar; no DEC (advisory script, trivially reversible).
+
+**Ship note (2026-06-12):** shipped as specified, with one contract clarification — the script is **read-only** (computes the dual-write + register payload + collision-safe ids and emits them to stdout; the orchestrator performs the appends), consistent with the scripts README's "None of these scripts write to `.claude/`" invariant and the `dashboard-render.py` precedent. Collision-safety implemented exactly as captured (max over register `id`s AND textual `FR-<n>` references in `--scan` paths).
+
+Tags: template-side, scripts, friction-register, state-persistence, work, mechanization, insights-derived
+
+## FB-099: Gitignored `.claude/` state — surface the un-backed-up-source-of-truth hazard
+
+**Status:** promoted 2026-06-12 — shipped in **v4.23.0**. (a) `/work` Step 0e `.claude/`-exclusion scoped to gitignored paths only; (b) new `/health-check` Part 4 check 5 (informational untracked-source-of-truth report). Ship-log v4.23.0 is the durable record.
+**Captured:** 2026-06-11
+**Source:** Insight aggregation (first stage-4 run) — full evidence in `interaction-logs/insights/2026-06-11_work_gitignored-claude-state-hazard.md`. 5 occurrences across styler (v4.0.0–v4.11.0) + Personal (v4.11.0); in-corpus ask: "/health-check could surface this so the user knows" (styler 05-27).
+
+When a project gitignores `.claude/**` (styler's deliberate fork convention), the spec, decisions, tasks, dashboard, and friction register are untracked — never committed, invisible to git safety nets. Observed bites: `/iterate` spec edits that "live only as working state"; a session asserting "spec_v15.md is tracked, just commit it" with the premise inverted by the gitignore; `/work pause` Step 0e excluding ALL `.claude/` paths from the uncommitted-work check, which also hides git-TRACKED `.claude/vision/*.md` edits (the filter assumes `.claude/` is state-not-source). The template repo itself has the same shape: `interaction-logs/` insights are gitignored working data.
+
+**Proposal (both cheap, report-level):** (a) `/health-check` informational check — if `.claude/spec_v*.md` / `tasks/` / `support/decisions/` match the project's gitignore, report once per run: "template state is untracked — deliberate? consider a backup convention"; (b) `/work pause` Step 0e — scope the exclusion to *gitignored* `.claude/` paths only, so tracked `.claude/` files participate in the uncommitted-work check. Neither forces behavior on projects with deliberate conventions. Distinct from FB-063 (worktree reads of gitignored state).
+
+**Triage recommendation:** direct template edit (two small additions; PATCH-to-MINOR).
+
+**Ship note (2026-06-12):** sub-issue (b) targets `/work` **Step 0e** (the Uncommitted-Work Check that runs once per `/work` invocation — the capture's "`/work pause` Step 0e" label; same check). Implemented by removing the blanket `.claude/` filter and relying on git's native gitignore semantics (`git diff HEAD` lists only tracked files; `--exclude-standard` honors `.gitignore`), so gitignored state stays excluded while tracked `.claude/` source counts. Sub-issue (a) landed as `/health-check` Part 4 check 5 using `git check-ignore` (reliable exit codes) rather than a `.gitignore` text grep.
+
+Tags: template-side, health-check, work-pause, gitignore, data-safety, insights-derived
+
+## FB-100: `owner: both` tasks lack a templated routing predicate + completion path
+
+**Status:** promoted 2026-06-12 — shipped in **v4.23.0**. (a) Step 1d fast-path predicate + modeling note; (b) `work-procedures.md` both-owned completion shape. Ship-log v4.23.0 is the durable record.
+**Captured:** 2026-06-11
+**Source:** Insight aggregation (first stage-4 run) — full evidence in `interaction-logs/insights/2026-06-11_work_owner-both-completion-path.md`. 4 occurrences across styler (v3.13.0, v4.10.2 ×2) + OEMMatInsightBI (v4.0.0).
+
+The completion machinery is two-track (claude: implement→verify; human: self-attestation via `/work complete`); `owner: both` falls between. Observed: the self-attestation auto-generate rule is documented for `owner: human` only — both-owned "lived gates where Claude's half is done" have no clean close (styler 05-28); Step 1d's fast-path predicate (`owner == human OR Blocked OR On Hold`) misses both-owned tasks user-gated on physical-world prerequisites — found independently in two projects; both-owned capture flows run as conversational design-partner work the routing model doesn't anticipate (styler T751).
+
+**Partial coverage shipped:** v4.14.0's waiting-on-you queue enumerates `owner: both` awaiting review (visibility half done). Not covered: routing (Step 1d predicate) and completion shape.
+
+**Proposal:** (a) extend Step 1d's fast-path predicate with `owner == "both" AND user_review_pending` (or equivalent user-gated condition); (b) document the `owner: both` completion shape in `/work complete` — Claude's half verified by verify-agent as usual; user's half closes via the same self-attestation mechanism as `owner: human` (one rule extension, no new schema).
+
+**Triage recommendation:** direct template edit (MINOR — routing behavior change); low urgency given the v4.14.0 visibility half.
+
+**Ship note (2026-06-12):** both halves shipped as captured. Added a modeling note that both-tasks gated on a physical-world prerequisite *before Claude can act* should carry `Blocked`/`On Hold` (so the existing predicate clauses catch them) — this closes the "found independently in two projects" miss without a schema change. The completion-shape doc additionally covers the lived/conversational-gate sub-case (auto-`self_attested` with no verify-agent round-trip).
+
+Tags: template-side, work, routing, owner-both, task-completion, insights-derived

@@ -194,6 +194,8 @@ Script ran clean (exit 0, 176 lines, zero stderr). Comparator: styler's LLM-rend
 
 **Trigger:** ship if post-v4.18.0 telemetry still shows skipped persistence steps — the work.md split + STOP-read gates (v4.18.0) are the first-line fix; Family F is the mechanized backstop if prose-skipping survives the split. Re-assess alongside the Family C full-port decision.
 
+**Complement shipped (2026-06-12, FB-098 — not Family F itself):** `.claude/scripts/persist-friction.py` (v4.23.0) mechanizes the *write* side of the same `State Persistence Protocol § step 2` that F1 would *check* — it computes the friction dual-write payload + collision-safe `FR-NNN` ids (read-only; orchestrator appends; canonical inventory in `scripts/README.md`). The two compose: the helper makes per-marker compliance cheap, Family F (still parked per the Trigger above) catches non-compliance. The helper does **not** satisfy Family F's trigger — F1 verifies *that the protocol ran*, which the helper does not do.
+
 ---
 
 ## Recommended extraction order

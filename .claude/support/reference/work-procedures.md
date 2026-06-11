@@ -35,6 +35,8 @@ After any agent (implement-agent or verify-agent) returns a structured report, t
 
    Register write is append-only at insert time. Status updates (later, by `audit-coherence` or user dismissal) use a read-modify-write of the entire file keyed by `id` — see friction-register.md § "Status update protocol".
 
+   **Script helper (advisory, FB-098).** The orchestrator MAY compute this entire step's payload with `python3 .claude/scripts/persist-friction.py` (markers as a JSON array on stdin). It reads the existing `friction.jsonl` — and any `--scan` paths (e.g. `.claude/tasks/`, the handoff, the dashboard) — and returns the dual-write `markers`, the `register` projection with **collision-safe `FR-NNN` ids** (one past the max of register ids AND textual `FR-<n>` references, which a naive max+1 misses — the flirty-gym FR-001 / styler FR-031 collisions), the `assigned_ids` to echo into task notes, and any `warnings` (e.g. an audit-eligible marker missing `source_anchor`). It is read-only — the orchestrator still performs the appends described above. The prose here remains the source of truth; if the script is absent or fails, follow it by hand, and keep the two in lockstep (`.claude/scripts/README.md § "Dual-location risk"`).
+
 3. **Persist decisions:** for each entry in `report.decisions_to_record[]`, scan `.claude/support/decisions/decision-*.md` for the highest existing DEC-NNN, assign the next available ID (zero-padded to 3 digits), and Write a new `decision-NNN-{slug}.md` file using the template in `.claude/support/reference/decisions.md`. Populate the Selected/Rationale/Options sections from the report entry. Set frontmatter `status: approved`, `decided: today`, `decided_by: implement-agent`. Subagents cannot write under `.claude/`, so this step is the orchestrator's responsibility — implement-agent only generates content (DEC-004; `rules/agents.md § State Ownership`).
 
 4. **Dashboard regeneration:** in sequential mode, regenerate `dashboard.md` per `.claude/support/reference/dashboard-regeneration.md` — newly persisted decisions surface in the Decisions section. In parallel mode, defer — handled at batch-end.
@@ -97,6 +99,10 @@ Use `/work complete` for manual task completion outside of implement-agent's wor
      }
      ```
      Write to task JSON and proceed. Human tasks are verified by the user's attestation of completion, not by verify-agent.
+   - If the task has `owner: "both"` → close each half on its own track (FB-100):
+     - **Claude's half** is verified the normal way. If `user_review_pending: true` (verify-agent already passed Claude's contribution and set the flag, per the State Persistence Protocol § "After verify-agent returns"), proceed — the user's completion attests their half.
+     - If there is no `task_verification` yet and Claude's contribution was a **mechanical deliverable**, spawn verify-agent first (as in the next bullet), then let the user attest their half on the pass.
+     - If Claude's contribution was a **lived/conversational gate** with nothing mechanical to verify, auto-generate the same `self_attested` block as `owner: "human"` above, with `"notes": "Both-owned task — Claude's contribution delivered in-session; user attested completion"`. This is the clean close for "lived gates where Claude's half is done" — no verify-agent round-trip needed. (Distinguish the two sub-cases from the task's deliverable expectations; when ambiguous, ask the user which applies rather than defaulting to verify-agent.)
    - If the task has NO `task_verification` or `task_verification.result != "pass"` → **spawn verify-agent (per-task)** before allowing completion. Do not mark Finished without passing verification.
    - This ensures the structural invariant: no task reaches "Finished" without `task_verification.result == "pass"`.
 3b. **Human deliverable validation** (for `human` and `both`-owned tasks):

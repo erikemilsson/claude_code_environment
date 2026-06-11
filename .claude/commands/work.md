@@ -193,9 +193,9 @@ Detect silent drift between "tasks marked Finished" and "code committed". Runs o
 1. If `.git` is absent (no git repository), this step is a no-op — proceed to Step 0f.
 2. Run `git log -1 --format=%ct HEAD` to get last-commit Unix timestamp. If the command fails (no commits in repo), skip Step 0e — proceed to Step 0f.
 3. Convert timestamp to YYYY-MM-DD format (last-commit date).
-4. Compute working-copy state:
-   - `MODIFIED = git diff --name-only HEAD` (excluding paths starting with `.claude/`)
-   - `UNTRACKED = git ls-files --others --exclude-standard` (excluding paths starting with `.claude/`)
+4. Compute working-copy state (git's native gitignore handling does the `.claude/` scoping — see note below):
+   - `MODIFIED = git diff --name-only HEAD` (tracked files only — gitignored `.claude/` state never appears here)
+   - `UNTRACKED = git ls-files --others --exclude-standard` (`--exclude-standard` omits gitignored paths)
    - Count = len(MODIFIED) + len(UNTRACKED)
 5. Scan task files for finished-since-commit count: tasks where `status == "Finished"` AND `completion_date >= last-commit-date`.
 6. If `finished_since_commit < 3` OR `(MODIFIED + UNTRACKED) == 0`: silent, proceed to Step 0f.
@@ -208,7 +208,7 @@ Detect silent drift between "tasks marked Finished" and "code committed". Runs o
 
 **Why threshold N≥3:** smallest count that meaningfully exceeds "single in-flight feature about to be committed." Empirical tuning is cheap (single integer constant).
 
-**Why heuristic `.claude/`-only filter:** `.claude/` is the only universally-template-owned state-not-source path. Build artifacts (`node_modules`, `dist/`, etc.) typically live in `.gitignore`; `--exclude-standard` honors `.gitignore` natively. Future configurability deferred until cross-project friction surfaces.
+**Why gitignore-scoped (not blanket) `.claude/` filter (FB-099):** whether `.claude/` is state-not-source is decided by whether the project tracks it — exactly what `.gitignore` already encodes. Projects that gitignore `.claude/**` (a deliberate fork convention) never surface `.claude/` paths here: `git diff HEAD` lists only tracked files and `--exclude-standard` honors `.gitignore`, so gitignored state (spec, tasks, dashboard) is already excluded with no manual filter. Projects that *track* `.claude/` (committed vision docs, command edits, or task JSON under version control) should see those uncommitted source changes counted — an earlier blanket `.claude/` exclusion silently hid git-tracked `.claude/vision/*.md` edits. So: rely on git's native gitignore semantics and do not blanket-filter `.claude/`. Build artifacts (`node_modules`, `dist/`, etc.) live in `.gitignore` and are already excluded. Future configurability deferred until cross-project friction surfaces. (A complementary informational surfacing of *untracked source-of-truth* lives in `/health-check` Part 4 check 5.)
 
 #### Step 0f: Track 2 Stale-File Recovery (FB-089)
 
@@ -347,10 +347,13 @@ After Step 1c, check whether the project state has any Claude-actionable work. T
 IF remaining_tasks is NOT empty
    AND every task in remaining_tasks satisfies at least one of:
      - owner == "human" (regardless of status)
+     - owner == "both" AND user_review_pending == true (Claude's half done, awaiting the user — FB-100)
      - status == "Blocked"
      - status == "On Hold"
    → FAST EXIT
 ```
+
+**`owner: "both"` and the fast path (FB-100):** a both-owned task is Claude-actionable while Claude's half is unstarted — it becomes non-actionable only once Claude's contribution is delivered and the task is waiting on the user, signalled by `user_review_pending == true` (set when verify-agent passes Claude's half, per the State Persistence Protocol). A both-owned task gated on a *physical-world prerequisite before Claude can act* should carry `status: "Blocked"` (e.g., a dependency on a human-owned setup task) or `"On Hold"` so it is caught by those clauses — do not leave it `Pending`, or the fast path will treat the project as having actionable work when it does not.
 
 **Before presenting fast-exit output:** Verify dashboard freshness (same check as Step 5 item 4). If stale, regenerate first — the user may check the dashboard after seeing this message.
 

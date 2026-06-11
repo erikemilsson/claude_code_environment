@@ -470,6 +470,23 @@ Scan non-canonical locations for `spec_v*.md` files:
 
 For archived specs where tasks reference that version, check if `spec_v{i}_decomposed.md` exists. Warning-level only.
 
+#### 5. Untracked Source-of-Truth (informational, FB-099)
+
+The project's authored memory under `.claude/` — the spec (`.claude/spec_v*.md`), task files (`.claude/tasks/`), and decision records (`.claude/support/decisions/`) — is the source of truth. When a project gitignores these paths (a deliberate fork convention in some projects), they are never committed: invisible to git history, `git diff`, and recovery. This check surfaces that once per run so the choice is conscious, not accidental. It never blocks and never auto-fixes.
+
+```
+For each of `.claude/spec_v*.md` (current spec), `.claude/tasks/`, `.claude/support/decisions/`:
+  run `git check-ignore -q <path>` (exit 0 = ignored, 1 = not ignored, 128 = no git / error)
+
+IF git absent (128 for all) OR none are ignored → silent (no finding)
+IF any are ignored → Info (not a warning), once per run:
+  "Part 4.5: Source-of-truth state is untracked — {gitignored paths} match this project's .gitignore.
+   Deliberate? If so, consider a backup convention (periodic archive, a separate private remote, or export).
+   If not, removing the ignore rule restores git's safety net."
+```
+
+Use `git check-ignore` (reliable exit-code semantics), not a grep against `.gitignore` text — a path can be ignored by a parent-directory or negated rule that a literal grep misses. Informational only; respects deliberate conventions. Distinct from FB-063 (worktree reads of gitignored state) and `/work` Step 0e (uncommitted *tracked* work — the inverse: tracked `.claude/` files that git *does* see).
+
 ### Archive Auto-Fixes
 
 | Issue | Auto-Fix |
