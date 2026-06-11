@@ -661,33 +661,9 @@ The template's spec workflow assumes a monolithic spec readable in one pass. sty
 
 Tags: template-side, spec-workflow, scale, research-gated, dec-candidate, iterate, drift-detection, fingerprinting, styler-evidence
 
-## FB-096: Model-surface refresh — authoring-doc Agent-model enum drift (`fable`) + deliberate pin re-evaluation
+## FB-096: [RESOLVED — moved to `template-maintenance/feedback-archive.md`]
 
-**Status:** sub-issue A RESOLVED 2026-06-11 (shipped v4.21.3 — docs-verified; drift was broader than captured, see resolution note); sub-issue B open, user-decision-gated — decision-ready with verified facts
-**Captured:** 2026-06-10
-**Source:** surfaced during the v4.13.1 pointer-rot sweep (Plan 2 P1; root `ship-plan-2-prose-diet-and-mechanization.md`, temporary working file). Both sub-issues touch the model surface centralized in `.claude/CLAUDE.md § Model Requirement` by v4.13.1.
-
-**Sub-issue A resolution (2026-06-11, v4.21.3):** verified against `code.claude.com/docs/en/sub-agents` (WebFetch, per Part 2d `[V]` discipline — live-harness observation was NOT the sole evidence). Docs confirm `fable` AND reveal broader drift than captured: the model surface accepts aliases `sonnet|opus|haiku|fable`, **full model IDs** (e.g., `claude-opus-4-8`, same values as `--model`), and `inherit` (default); per-invocation resolution order is `CLAUDE_CODE_SUBAGENT_MODEL` env → invocation param → frontmatter → main model; agent definitions also take `effort:` frontmatter (`low|medium|high|xhigh|max`) overriding session effort. Capability-doc section rewritten accordingly (old claims "only sonnet|opus|haiku" / "no model-version specificity" / "no per-call effort control" all corrected); footer bumped to 2026-06-11 / 4.21.3. **Facts feeding sub-issue B:** option (b) explicit-pin CONFIRMED feasible (full IDs documented); the `"opus[1m]"` alias+modifier form is harness-observed working but not docs-enumerated (noted as such in the doc).
-
-### Sub-issue A — capability-doc drift: Agent tool `model` enum missing `fable`
-
-`claude-code-authoring.md § "Tool & Dispatch Surface"` (~line 133) states the Agent tool's `model` parameter exposes only `sonnet | opus | haiku`. Observed in the live harness this session (template repo, Claude Code running Fable 5): the parameter enum also includes `fable`. Route per DEC-017 discipline (FB-094 verified-then-fixed precedent): verify against official Claude Code docs via `/health-check` Part 2d `[V]` (or a manual verify-then-fix pass), then update the enum + footer `Last verified`. Do NOT edit from session observation alone.
-
-### Sub-issue B — pin re-evaluation: should the environment stay pinned to Opus 4.7?
-
-v4.13.1 made `.claude/CLAUDE.md § Model Requirement` the single canonical source for both the design pin (Opus 4.7) and the `Task` dispatch value (`"opus[1m]"`), and documented honestly that the alias floats with the latest Opus while the pin records the tested version. With Opus 4.8 and Fable 5 released, pin and alias have **already diverged** — dispatches today run newer-than-pin. Decision needed (user's):
-
-- **(a) Ratify the float** — restate the pin as "current Opus tier"; spot-check the difficulty-calibration note in `shared-definitions.md` still holds.
-- **(b) Pin explicitly to 4.7** — switch dispatch values to the explicit ID; FIRST verify the `Task`/Agent `model` param accepts full model IDs (sub-issue A's verification covers this).
-- **(c) Move the pin forward deliberately** (4.8 or Fable) — after a `/shakedown`-style pass on agent behavior at the new tier.
-
-Affected on any outcome: `.claude/CLAUDE.md § Model Requirement` (canonical), `shared-definitions.md` calibration note, `.claude/README.md` design-target line, agent-file capability prose ("Opus 4.7's interleaved/adaptive thinking") ×3.
-
-**Ordering:** A precedes B — option (b)'s feasibility depends on what the param actually accepts, which A's verification establishes.
-
-**Triage recommendation:** one session: run Part 2d `[V]` on the authoring doc (resolves A), then decide B with verified facts in hand. A is cheap-mechanical; B is decision-gated (no `/research` unless option (c)'s shakedown surfaces surprises).
-
-Tags: template-side, model-pin, capability-doc, dec-017, part-2d, fable, verify-then-fix, user-decision-gated
+**Status:** resolved 2026-06-11 — sub-issue A (capability-doc model-surface drift) docs-verified + rewritten in v4.21.3; sub-issue B (pin re-evaluation) decided → option (a) ratify the float, shipped v4.21.4 (`.claude/CLAUDE.md § Model Requirement` now targets the current Opus tier via `opus[1m]` with an explicit-pin regression escape hatch). See archive for full entry + both resolution notes.
 
 ## FB-097: Spec acceptance-criteria boxes never reconciled with phase-level verification
 

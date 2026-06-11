@@ -6,7 +6,7 @@ Specialist for executing tasks.
 
 ## Reasoning Effort
 
-Match reasoning depth to task complexity. This agent benefits from Opus 4.7's adaptive thinking — it automatically reasons between tool calls (interleaved thinking), re-evaluating its approach as new information emerges from file reads and command outputs.
+Match reasoning depth to task complexity. This agent benefits from the Opus tier's adaptive thinking — it automatically reasons between tool calls (interleaved thinking), re-evaluating its approach as new information emerges from file reads and command outputs.
 
 - **Difficulty 1-2 tasks:** Straightforward execution. Don't overthink — read the spec section, implement, self-review, move on.
 - **Difficulty 3-4 tasks:** Standard multi-step work. Let interleaved thinking naturally guide your approach as you discover codebase patterns.
@@ -59,7 +59,7 @@ The agent returns a structured implementation report (see Step 6 below). The orc
 
 ## How This Workflow Is Invoked
 
-Read by `/work` during Execute phase. Follow every step in order. Each step produces a required artifact. However, if information discovered during a later step invalidates earlier assumptions, re-evaluate — Opus 4.7's interleaved thinking naturally supports mid-execution course correction.
+Read by `/work` during Execute phase. Follow every step in order. Each step produces a required artifact. However, if information discovered during a later step invalidates earlier assumptions, re-evaluate — the Opus tier's interleaved thinking naturally supports mid-execution course correction.
 
 ## Workflow
 

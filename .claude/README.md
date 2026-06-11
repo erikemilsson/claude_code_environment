@@ -2,7 +2,7 @@
 
 A structured development environment for Claude Code using the **Spec → Execute → Verify** workflow.
 
-**Designed for Claude Opus 4.7.** The difficulty scale, task breakdown thresholds, and agent workflows are calibrated for Opus-level reasoning.
+**Designed for the current Claude Opus tier** (floating `opus[1m]` alias; originally validated on Opus 4.7). The difficulty scale, task breakdown thresholds, and agent workflows are calibrated for Opus-level reasoning.
 
 ## Quick Start
 
@@ -83,7 +83,7 @@ Claude Code supports a `--permission-mode auto` flag (available on Max, Team, En
 - Broad rules like `Bash(*)` are dropped when auto mode activates; narrow rules like the template's `Bash(git status:*)` carry through.
 - Classifier coverage overlaps substantially with the template's base allowlist, but the allowlist remains useful for: hot paths (repeated read-only operations), hooks (which don't get classifier intelligence), and `dontAsk` / CI contexts (where auto mode isn't available).
 
-**Recommended setup for Max + Opus 4.7:** enable auto mode for interactive sessions (`claude --permission-mode auto`, or persist via `settings.local.json`) and keep the template's base `permissions.allow` for latency-sensitive paths and hook compatibility. Users on Pro plans, on Sonnet/Haiku, or in `dontAsk` / CI contexts should extend the base allowlist in `settings.local.json` as needed — auto mode is not available there.
+**Recommended setup for Max + Opus:** enable auto mode for interactive sessions (`claude --permission-mode auto`, or persist via `settings.local.json`) and keep the template's base `permissions.allow` for latency-sensitive paths and hook compatibility. Users on Pro plans, on Sonnet/Haiku, or in `dontAsk` / CI contexts should extend the base allowlist in `settings.local.json` as needed — auto mode is not available there.
 
 See Claude Code's permission-modes documentation (`https://code.claude.com/docs/en/permission-modes`) for full classifier behavior, fallback conditions, and plan availability.
 
