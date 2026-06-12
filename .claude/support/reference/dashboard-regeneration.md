@@ -313,7 +313,7 @@ This ensures user content is always persisted in a structured file before the da
   - [ ] Session expires after 1h — *Currently no expiration*
   **4/5 criteria passed**
   ```
-  Rules: `status: "pass"` renders as `[x]`, `status: "fail"` renders as `[ ]`. Notes are italicized and truncated at 60 characters. The summary count line uses `criteria_passed` / (`criteria_passed` + `criteria_failed`). When the `criteria` array is absent (backward compatibility), fall back to summary-only: `**{criteria_passed}/{criteria_passed + criteria_failed} criteria passed**`.
+  Rules: `status: "pass"` renders as `[x]`, `status: "fail"` renders as `[ ]`. Notes are italicized and truncated at 60 characters. The summary count line uses `criteria_passed` / (`criteria_passed` + `criteria_failed`). When the `criteria` array is absent (backward compatibility), fall back to summary-only: `**{criteria_passed}/{criteria_passed + criteria_failed} criteria passed**`. **This checklist is the authoritative acceptance-*status* surface (DEC-022)** — distinct from any inline `- [ ]` acceptance boxes a project may render in the spec, which are authored input, not live status; divergence is surfaced by `/audit-coherence`'s `acceptance-reconciliation` lens.
 - **Spec Drift sub-section:** When `drift-deferrals.json` exists with active deferrals, render each deferred section:
   ```
   - ⚠️ **{section}** — {N} tasks affected, deferred {M} days ago

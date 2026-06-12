@@ -20,7 +20,7 @@ This command is the first audit shipped by the audit family (proposal: `template
 ## Usage
 
 ```
-/audit-coherence                            # full audit, all 6 lenses
+/audit-coherence                            # full audit, all 7 lenses
 /audit-coherence --lens {name}              # run only the listed lens (comma-separated for multiple)
 /audit-coherence --since {YYYY-MM-DD}       # restrict to friction register entries / FB items captured after date
 /audit-coherence triage [audit-ts]          # interactive walker: per-finding fix/promote/dismiss (default audit-ts: latest)
@@ -36,7 +36,7 @@ Stage 5 (`/health-check` Part 6) will dispatch this command automatically based 
 
 ## Lenses
 
-Six lenses, each running as a fresh-context sub-agent in parallel:
+Seven lenses, each running as a fresh-context sub-agent in parallel:
 
 | Lens | Catches | Detection mode |
 |------|---------|---------------|
@@ -46,6 +46,7 @@ Six lenses, each running as a fresh-context sub-agent in parallel:
 | `feedback-decay` | `FB-*` entries open >30 days with no status change | Parse feedback.md status fields |
 | `retired-features` | Manifests in `.claude/support/retired/` without a corresponding retirement marker in spec | Filesystem + spec scan |
 | `friction-register` | Cluster open `friction.jsonl` entries by `kind` and `source_anchor`, surface high-frequency themes | Read register + thematic grouping |
+| `acceptance-reconciliation` | Spec inline `- [ ]` acceptance boxes that diverge from `verification-result.json` `criteria[]` (e.g., boxes unticked despite a phase PASS) — DEC-022 | Spec box scan + verification-result read (advisory) |
 
 Bias preservation: each lens runs with no knowledge of other lenses' output, mirroring `audit-ui`'s context-separation pattern.
 
@@ -61,6 +62,7 @@ Bias preservation: each lens runs with no knowledge of other lenses' output, mir
 │   ├── friction-open.jsonl      # open entries from friction.jsonl
 │   ├── feedback-status.json     # parsed FB-* entries with status + age
 │   ├── retired-manifests.json   # contents of all .claude/support/retired/*/manifest.json
+│   ├── verification-result.json # copy of .claude/verification-result.json (phase criteria[]) if present
 │   └── meta.json                # audit run config: timestamp, lenses requested, --since filter
 ├── lenses/
 │   ├── superseded-decisions.md
@@ -68,7 +70,8 @@ Bias preservation: each lens runs with no knowledge of other lenses' output, mir
 │   ├── path-drift.md
 │   ├── feedback-decay.md
 │   ├── retired-features.md
-│   └── friction-register.md
+│   ├── friction-register.md
+│   └── acceptance-reconciliation.md
 ├── findings.md                  # full clustered report (Claude-readable)
 ├── digest.json                  # 4-8 user-facing items with kind classification + eligibility flags
 └── synth-input.md               # concatenated lens output passed to synthesizer (audit trail)
@@ -83,17 +86,18 @@ Project rule (DEC-004): sub-agents cannot write to `.claude/`. The orchestrator 
 ### Phase 1 — Capture (orchestrator drives directly)
 
 1. Compute audit dir: `.claude/support/audits/coherence-{YYYY-MM-DD-HHmm}/`. Create with subdirs `inputs/` and `lenses/`.
-2. Write `meta.json` with run config: timestamp, lenses requested (default: all 6), `--since` filter if set.
+2. Write `meta.json` with run config: timestamp, lenses requested (default: all 7), `--since` filter if set.
 3. **Capture decisions.** Glob `.claude/support/decisions/decision-*.md`. For each file, parse YAML frontmatter and extract: `id`, `title`, `status`, `superseded_by` (if present), `superseded_date` (if present), `related.tasks` (if present). Write the array to `inputs/decisions.json`.
 4. **Capture spec.** Read the active `.claude/spec_v*.md` (exactly one per single-spec invariant). Build a section map: for each `## ` heading, record `{heading_text, section_id (e.g. "5.2"), line_start, line_end, fingerprint: sha256(section_body)}`. Write to `inputs/spec-sections.json`.
 5. **Capture friction register.** If `.claude/support/friction.jsonl` exists, read all lines, filter `status == "open"` (and `captured >= --since` if set), write to `inputs/friction-open.jsonl`. If file doesn't exist, write empty file.
 6. **Capture feedback statuses.** If `.claude/support/feedback/feedback.md` exists, parse for `## FB-NNN` headers and `**Status:**` + `**Captured:**` lines beneath. For each FB entry, compute age in days from captured date. Write `[{id, status, captured, age_days, title}]` to `inputs/feedback-status.json`.
 7. **Capture retired-feature manifests.** Glob `.claude/support/retired/*/manifest.json`. Read each. Write the combined array to `inputs/retired-manifests.json`.
 8. **(Optional) Sample task notes for friction-marker prose.** This is a fallback for projects that haven't accumulated friction register entries yet — sample up to 20 most-recently-modified `.claude/tasks/task-*.json`, extract any `notes` containing keywords `"friction"`, `"captured for /iterate"`, `"spec drift"`. Append to `friction-open.jsonl` as synthetic register entries with `id: "FR-SYNTHETIC-{N}"`, `kind: "spec_implementation_gap"`, `captured_in: {agent: "task_notes_sample"}`.
+9. **Capture verification result.** If `.claude/verification-result.json` exists, copy it to `inputs/verification-result.json` (it holds the latest phase-level `criteria[]` PASS/FAIL). If absent, write `{}` — the `acceptance-reconciliation` lens returns 0 findings without it.
 
 Capture should complete within 30s. If any input source is missing or fails to parse, log a warning to `meta.json` and continue with empty data — lenses handle empty inputs gracefully (return 0 findings).
 
-### Phase 2 — Lenses (6 parallel sub-agents)
+### Phase 2 — Lenses (7 parallel sub-agents)
 
 Spawn N sub-agents in a **single Task tool message** so they run concurrently. Each:
 - Runs as `general-purpose` agent (per `.claude/rules/agents.md` § "Dispatch Convention" — persona-via-prompt-content)
@@ -106,7 +110,7 @@ Orchestrator:
 2. Write to `lenses/{lens-name}.md`.
 3. Concatenate all into `synth-input.md` for Phase 3.
 
-If `--lens` is set, run only those lenses; if unset, run all 6.
+If `--lens` is set, run only those lenses; if unset, run all 7.
 
 ### Phase 3 — Synthesize
 
@@ -162,7 +166,7 @@ Findings: {N}
 ...
 ```
 
-`lens-prefix` = first three letters of the lens name (`sup`, `voc`, `pat`, `fee`, `ret`, `fri`).
+`lens-prefix` = first three letters of the lens name (`sup`, `voc`, `pat`, `fee`, `ret`, `fri`, `acc`).
 
 If the lens has no findings:
 ```markdown
@@ -364,14 +368,48 @@ For each finding, set:
 If the register is empty or has <3 open entries, return `Findings: 0` — no premature clustering.
 ```
 
+### Lens 7 — `acceptance-reconciliation`
+
+```
+You are auditing a project for the ACCEPTANCE-RECONCILIATION lens only (DEC-022).
+
+Read {AUDIT_DIR}/inputs/verification-result.json (a copy of the project's `.claude/verification-result.json` — the latest phase-level verification result, with a `criteria[]` array of `{name, status, notes}`; may be `{}` if absent) and the active `.claude/spec_v*.md`.
+
+**This lens only applies when the project renders acceptance criteria as inline `- [ ]` / `- [x]` checkboxes in the spec.** If the spec has no inline acceptance checkboxes, OR verification-result.json is empty/absent, return `Findings: 0` — there is nothing to reconcile (inline boxes are an optional project convention).
+
+Background (DEC-022): `verification-result.json` `criteria[]` (rendered as the dashboard's `### Acceptance Criteria`) is the AUTHORITATIVE acceptance-*status* surface. Inline spec `- [ ]` boxes are authored input and are NOT auto-ticked on phase PASS — so they can read stale. This lens surfaces that staleness ADVISORILY; it never edits the spec.
+
+What counts:
+1. A phase whose acceptance criteria the spec renders as inline boxes that are unticked (`- [ ]`), while the corresponding phase-level verification shows PASS (verification-result.json `result: "pass"` and/or the matching `criteria[]` entries are `status: "pass"`). This is the flirty-gym symptom: boxes `[ ]` despite a recorded PASS.
+2. The inverse, lower severity: a box ticked `- [x]` in the spec while the matching `criteria[]` entry is `status: "fail"` (or no passing verification exists) — an over-claim.
+
+Your method:
+1. Scan the active spec for inline acceptance checkboxes (`- [ ]` / `- [x]`), grouping by the phase / section they sit under. If none, return Findings: 0.
+2. Read verification-result.json. Note its `result`, `phase` (if recorded), and `criteria[]` names + statuses.
+3. Match boxes to `criteria[]` entries ADVISORILY — by fuzzy text similarity between the box label and the `criteria[].name`. The match is imperfect by design (criteria names are free-text and re-segmented; there is no ID link — DEC-022 Q2). Treat a match as a *suspected* correspondence for human review, NEVER as ground truth. When you cannot confidently match a box to a criterion, say so in the evidence rather than guessing.
+4. Flag divergence per phase: e.g., "Phase 2: 0/4 inline acceptance boxes ticked, but verification-result.json records result=pass (7/7 criteria)."
+
+What does NOT count:
+- Specs with no inline acceptance checkboxes (the common case — nothing to reconcile).
+- Phases with no recorded verification yet (boxes legitimately `[ ]` because the phase hasn't passed) — only flag when a verification PASS exists.
+- A box/criterion pair you cannot match with reasonable confidence — note the ambiguity, do not assert divergence on a guess.
+
+For each finding, set:
+- **Source anchor:** the spec phase / section whose boxes diverge (e.g., "spec_v2.md § Phase 2 — Acceptance Criteria")
+- **Files to touch (potential fix):** spec_v*.md — synthesizer will classify as `kind: decision` (reconciliation routes via /iterate; boxes are spec body)
+- **Suggested fix:** "Reconcile via /iterate: spec § {phase} acceptance boxes are stale vs verification-result.json (DEC-022 — boxes are authored input; the dashboard `### Acceptance Criteria` is the live status). Tick to match, or drop the inline boxes and rely on the dashboard."
+
+Cluster per phase: if a phase has 4 unticked boxes under one verified phase PASS, that is ONE finding listing the phase, not 4 findings. The match is advisory — never edit the spec; only surface.
+```
+
 ---
 
 ## Synthesizer prompt
 
 ```
-You are merging the output of 6 parallel coherence-audit lens agents into one ranked report. You did not run the lenses yourself. You have:
+You are merging the output of 7 parallel coherence-audit lens agents into one ranked report. You did not run the lenses yourself. You have:
 
-- {AUDIT_DIR}/lenses/*.md  — 6 lens reports (some may be "Findings: 0")
+- {AUDIT_DIR}/lenses/*.md  — 7 lens reports (some may be "Findings: 0")
 - {AUDIT_DIR}/inputs/*     — the raw inputs (decisions, spec-sections, friction-open, feedback-status, retired-manifests, meta)
 - Read access to project files for verification (especially `.claude/spec_v*.md`, `.claude/support/decisions/decision-*.md`, `.claude/tasks/task-*.json`)
 
@@ -430,7 +468,7 @@ Return TWO artifacts:
 ```markdown
 # Coherence Audit — {today} — {project name from CLAUDE.md or directory name}
 
-`{audit dir relative path}` · 6 lenses · {raw} raw findings → {clustered} after dedupe → {items_count} surfaced ({deduped_count} routed to in-flight tasks)
+`{audit dir relative path}` · 7 lenses · {raw} raw findings → {clustered} after dedupe → {items_count} surfaced ({deduped_count} routed to in-flight tasks)
 
 ## Top findings
 

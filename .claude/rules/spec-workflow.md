@@ -4,6 +4,14 @@
 
 The spec is the living source of truth. All work aligns with it, or the spec is updated intentionally. Tasks follow the spec, not the other way around.
 
+## Acceptance-criteria authority (DEC-022)
+
+The spec is the source of truth for *what the acceptance criteria are* — the authored definition of done. It is **not** the authority for *whether they are met right now*: phase acceptance **status** is owned by verify-agent's `criteria[]` array in `.claude/verification-result.json`, which the dashboard renders as the `### Acceptance Criteria` checklist (the live status surface).
+
+If a project renders acceptance criteria as inline `- [ ]` checkboxes in the spec, **those boxes are authored input, not a live status field** — nothing ticks them on phase PASS, and they may read stale. This is intentional: auto-ticking them was evaluated (DEC-022 Option B) and declined — the `criteria[]`→box mapping is unsafe (free-text, re-segmented, no ID link), and editing spec body text on every phase-close would trip drift detection and the DEC-016 guardrail. Read the dashboard's `### Acceptance Criteria` for status; read the spec for the criteria themselves.
+
+Divergence between inline boxes and `criteria[]` is surfaced advisorily by `/audit-coherence`'s `acceptance-reconciliation` lens; reconciliation, when wanted, routes through `/iterate` (boxes are spec body). This mirrors the per-task layer, where `task_verification.result` — not any inline marker — is the structural gate.
+
 ## Spec Location
 
 The project specification lives at `.claude/spec_v{N}.md` (exactly one file; `/work` discovers N by globbing). Exactly one spec file exists in `.claude/` at any time.

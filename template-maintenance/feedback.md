@@ -220,8 +220,9 @@ In the Styler audit run, this left two captured-inputs files missing (`meta.json
 
 ## FB-067: External-source recheck — mattpocock/skills Wave 2 candidates
 
-**Status:** deferred — re-assess on/after 2026-06-02
+**Status:** deferred — signal-gated (fixed recheck date dropped 2026-06-12; long backstop only)
 **Captured:** 2026-05-19
+**Re-assessed:** 2026-06-12 — Manual maintenance-queue review. Wave 1 complete (FB-068/069/070/071, v4.1.0–v4.4.0). The 2026-06-02 recheck date passed but fired **empty** — a ripgrep sweep (with positive control) of `interaction-logs/` + maintenance docs found zero downstream signal for any Wave 2 candidate (every hit was a self-reference). Disposition: **closed** `/caveman` + hard-vs-soft cleanup (see inline notes below); kept `/tdd`, `/prototype`, `/improve-codebase-architecture`, bucketing **signal-gated**; **dropped the fixed recheck date** for pure signal-gating + a long backstop (2026-12-12). The lapsed date proved calendar rechecks on signal-gated items generate busywork, not information.
 **Source:** video https://www.youtube.com/watch?v=6BB6exR8Zd8 reviewed 2026-05-19; repo `mattpocock/skills` (clone at `/Users/erikemilsson/Downloads/skills-main` as of 2026-05-19; mirror github.com/mattpocock/skills).
 
 **Reason for deferral:** Wave 1 (FB-068 + FB-069 + FB-070 + FB-071) ships first. Wave 2 candidates depend on Wave 1 signal — some compound only with their Wave 1 sibling in place.
@@ -231,14 +232,14 @@ In the Styler audit run, this left two captured-inputs files missing (`meta.json
 - **`/tdd` skill** — vertical-slice red-green-refactor + anti-horizontal-slicing discipline. Pocock files at `skills/engineering/tdd/SKILL.md` + `tests.md` + `mocking.md` + `interface-design.md` + `deep-modules.md` + `refactoring.md`. Open question: does CCE's verify-agent already cover the "correctness" angle sufficiently?
 - **`/prototype` skill** — throwaway design exploration. Two branches: terminal app for state/logic, multi-variation UI on one route. Trigger to ship: how often CCE work hits "I don't know what shape this should be."
 - **`/improve-codebase-architecture` skill** — complement to `/audit-coherence`. Architectural vocabulary (Module/Interface/Depth/Seam/Adapter/Leverage/Locality) + deletion test heuristic. Most valuable AFTER CONTEXT.md (FB-068) and AFTER `/diagnose` (FB-069) — `/diagnose`'s Phase 6 post-mortem explicitly hands off here.
-- **`/caveman` ultra-compressed mode** — ~75% token cut. Niche; ship only if cost pressure becomes a recurring concern.
-- **Hard-vs-soft dependency cleanup pass** — apply Pocock's ADR-0001 pattern across CCE command files. Distinguish load-bearing cross-references from advisory. Cosmetic.
+- **`/caveman` ultra-compressed mode** — ~75% token cut. Niche; ship only if cost pressure becomes a recurring concern. **→ CLOSED 2026-06-12:** token-compression value largely absorbed by the 1M context window + current Opus tier; the context-pressure failure mode it addresses rarely bites here. Re-open only on real, recurring cost pressure.
+- **Hard-vs-soft dependency cleanup pass** — apply Pocock's ADR-0001 pattern across CCE command files. Distinguish load-bearing cross-references from advisory. Cosmetic. **→ CLOSED 2026-06-12:** cosmetic by its own description; no signal, marginal value. Re-open only on a real cross-reference-fragility incident.
 - **Bucketed skill organization** (`engineering/` / `productivity/` / `misc/` / etc.) — only worth considering if skill count grows much further.
 
-**Trigger to escalate from deferred → ready:**
-1. Any Wave 1 ship produces signal that a specific Wave 2 sibling compounds. Concrete example: `/diagnose` Phase 6 post-mortems repeatedly identify architectural friction → `/improve-codebase-architecture` becomes load-bearing.
-2. The 2-week recheck on 2026-06-02 (default if no earlier signal).
-3. Separate user request to re-evaluate.
+**Trigger to escalate from deferred → ready (signal-gated; no fixed recheck date as of 2026-06-12):**
+1. Any ship produces signal that a specific **live** Wave 2 sibling compounds (`/tdd`, `/prototype`, `/improve-codebase-architecture`, bucketing — `/caveman` + hard-vs-soft cleanup are closed). Concrete example: `/diagnose` Phase 6 post-mortems repeatedly identify architectural friction → `/improve-codebase-architecture` becomes load-bearing.
+2. Separate user request to re-evaluate.
+3. Backstop (not a scheduled review): if neither fires, re-confirm relevance by 2026-12-12. The prior 2026-06-02 fixed-date recheck fired empty — calendar rechecks on signal-gated items generate busywork, not information.
 
 **Source pointers preserved:**
 - Local clone: `/Users/erikemilsson/Downloads/skills-main` (may be cleaned later)
@@ -626,27 +627,9 @@ Tags: workflow, new-command-candidate, grill-adjacent, vision-adjacent, capabili
 
 **Status:** resolved 2026-06-11 — sub-issue A (capability-doc model-surface drift) docs-verified + rewritten in v4.21.3; sub-issue B (pin re-evaluation) decided → option (a) ratify the float, shipped v4.21.4 (`.claude/CLAUDE.md § Model Requirement` now targets the current Opus tier via `opus[1m]` with an explicit-pin regression escape hatch). See archive for full entry + both resolution notes.
 
-## FB-097: Spec acceptance-criteria boxes never reconciled with phase-level verification
+## FB-097: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
 
-**Status:** new
-**Captured:** 2026-05-24 (bridged into the maintenance queue 2026-06-11 via `/health-check` Part 7 step 3c)
-**Source:** Bridged from flirty-gym (template_version 4.7.1) via `/feedback template:` — direct inbox write, no local flirty-gym FB entry (per user choice 2026-05-24).
-
-The template keeps two representations of phase acceptance-criteria state and never reconciles them: (1) the spec's inline `- [ ]` per-phase acceptance boxes (the authored definition of done), and (2) `verification-result.json`'s `criteria[]`, which verify-agent writes and the dashboard renders as a [x]/[ ] checklist. After phase-level verification PASSES, the documented completion flow updates verification-result.json, the dashboard, and — at the final phase only — the spec `status:` frontmatter, but it NEVER touches the spec's inline acceptance boxes. Three things are left undefined:
-
-- **Authority:** which artifact is the source of truth for "this phase's acceptance criteria are met"? spec-workflow.md calls the spec "the living source of truth" (which implies the inline boxes), yet nothing keeps them in sync with the verifier — so the source-of-truth document silently goes stale/false.
-- **Tick responsibility:** if the inline boxes are meant to be ticked post-verification, by whom and at what step? verify-agent can't write the spec; the /work orchestrator's completion flow doesn't do it.
-- **DEC-016 classification:** ticking a `- [ ]` → `- [x]` in spec BODY text is, by DEC-016's literal carveout (which names only archiving / version transitions / frontmatter), a substantive text edit → routes through /iterate. That couples routine phase-closure box-ticking to a full /iterate cycle — almost certainly not the intent, and undocumented.
-
-No /health-check or /audit-coherence lens detects spec-box vs verification-result.json divergence, so it accrues silently.
-
-**Evidence (real bite):** In flirty-gym (template v4.7.1), Phase 1's spec acceptance boxes are all [x] but Phase 2's are all [ ] — despite BOTH phases having a recorded phase-level verification-result.json PASS (Phase 2 = 7/7, all per-task verifications passing, all friction markers resolved). The spec asserts Phase 2 is incomplete while every other artifact says it passed. The split arose precisely because the template gives no rule: Phase 1 got ticked (manually, under spec_v2), Phase 2 didn't. Any multi-phase project hits this.
-
-**Possible directions (from the capture — not prescribing):** (A) declare the inline boxes authored-only and verification-result.json authoritative, document it, add a /health-check note that inline boxes are informational (lowest churn; leaves the source-of-truth doc visibly stale). (B) the /work orchestrator ticks the spec's phase boxes at phase-level PASS as an infrastructure operation (state-reflection of a verifier result — same class as the `status:` flip), with an explicit DEC-016 carveout clause for "acceptance-box state-sync" (keeps the source of truth honest without an /iterate cycle; needs the DEC-016 amendment). (C) detection-only: a /health-check or /audit-coherence lens that flags spec-box vs verification-result.json divergence and prompts reconciliation (catches drift without deciding authority; weakest).
-
-**Triage recommendation:** likely `/research` → decision record (root `decisions/`, next free DEC number) — option (B) amends DEC-016's carveout list, which shouldn't happen as a direct edit.
-
-Tags: template-side, spec-workflow, verification, dec-016-boundary, dec-candidate, flirty-gym-evidence, bridged
+**Status:** promoted 2026-06-12 — `/research` → **DEC-022 (Option D = A+C)** shipped in **v4.26.0**. Declares `.claude/verification-result.json` `criteria[]` (dashboard `### Acceptance Criteria`) the authoritative phase acceptance-*status* surface; inline spec `- [ ]` boxes are authored input (not auto-ticked); new advisory `/audit-coherence` `acceptance-reconciliation` lens flags divergence. Research **declined** the FB-097-leaned Option B (unsafe `criteria[]`→box mapping, drift-fingerprint cost, RTM/BDD/DOORS anti-pattern). See archive for full entry + Q1–Q7 findings.
 
 ## FB-098: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
 
