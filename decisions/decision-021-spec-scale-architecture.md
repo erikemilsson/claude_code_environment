@@ -23,6 +23,10 @@ implementation_anchors:
     description: "section-scoped spec-read pointer (subagent context)"
   - file: ".claude/agents/verify-agent.md"
     description: "section-scoped spec-read pointer (subagent context)"
+  - file: ".claude/support/reference/drift-reconciliation.md"
+    description: "§ Subsection-level drift narrowing — drift consumes --depth 3 (companion follow-up, v4.25.0)"
+  - file: ".claude/support/reference/task-schema.md"
+    description: "optional spec_subsection + subsection_fingerprint fields for narrowing (v4.25.0)"
 inflection_point: true
 spec_revised:
 spec_revised_date:
@@ -156,7 +160,7 @@ The reversibility + invariant-preservation + small-blast-radius profile matches 
 3. An index-freshness check (regenerate when the full-spec fingerprint changes — reuse existing machinery: `/work` Step 1a freshness / `drift-reconciliation.md`).
 4. A section-scoped read discipline added to the ~11 spec-reading sites (blast-radius rows 3, 4, 6, 8, 10, 11, 12, 15, 23, 24 + `status.md`).
 5. Docs: `spec-workflow.md` + a reference note; `.claude/CLAUDE.md` Navigation row for the index.
-6. **Companion actions** (orthogonal — decide at implementation): (a) finer `### ` fingerprinting in `fingerprint.py --sections`; (b) the index *is* the "index-as-derivative" companion.
+6. **Companion actions:** (a) finer `### ` fingerprinting via `fingerprint.py --sections --depth 3` (shipped v4.24.0); (b) the index *is* the "index-as-derivative" companion; (c) **drift-reconciliation consumes the `### ` granularity** — subsection-level drift narrowing + optional `spec_subsection`/`subsection_fingerprint` provenance (shipped **v4.25.0**, `drift-reconciliation.md § "Subsection-level drift narrowing"`).
 Invariant, `settings.json` DEC-016 globs, `drift-reconciliation.md`, and task/decision provenance are **untouched** (rows 1, 5, 13, 16, 18, 19 in the blast-radius table stay put — `fingerprint.py` only gains an additive `--index` mode).
 
 **Affected Areas:**

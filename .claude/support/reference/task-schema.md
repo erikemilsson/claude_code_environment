@@ -115,6 +115,8 @@
 | spec_section | String | Originating section heading from spec |
 | section_fingerprint | String | SHA-256 hash of the specific section content at decomposition |
 | section_snapshot_ref | String | Reference to snapshot file for generating diffs (e.g., "spec_v1_decomposed.md") |
+| spec_subsection | String (optional) | `### ` subsection heading a task maps to, when its work is scoped to one subsection of a large `spec_section`. Enables subsection-level drift narrowing (DEC-021). Absent → drift uses `## `-level only (default). |
+| subsection_fingerprint | String (optional) | SHA-256 of the `### ` subsection (from `fingerprint.py --sections --depth 3`) at decomposition. Paired with `spec_subsection`. |
 | out_of_spec | Boolean | Task not aligned with spec (user chose "proceed anyway") |
 | out_of_spec_rejected | Boolean | Task rejected during out-of-spec review (archived, preserved for audit) |
 | rejection_reason | String | User's reason for rejecting an out-of-spec task (optional) |
@@ -178,6 +180,8 @@ Only critical and high show emoji prefixes in the dashboard to reduce visual noi
 These fields track spec-to-task alignment. All are set during decomposition (see `decomposition.md`) and used by `/work` for drift detection (see `drift-reconciliation.md`).
 
 The fields `spec_fingerprint`, `spec_version`, `spec_section`, `section_fingerprint`, and `section_snapshot_ref` are defined in the Field Definitions table above. Together they enable granular per-section drift detection: when `/work` runs, it compares current section hashes against task fingerprints and only flags tasks from changed sections.
+
+The optional `spec_subsection` + `subsection_fingerprint` add a finer tier (DEC-021): when a large `## ` section changes, drift detection drills into `### ` subsections (`fingerprint.py --sections --depth 3`) and a task carrying these fields is narrowed out if its own subsection is unchanged — sparing tasks in unchanged subsections of a changed mega-section. Tasks without them fall back to `## `-level flagging (no regression). See `drift-reconciliation.md § "Subsection-level drift narrowing"`.
 
 The `out_of_spec` and `out_of_spec_rejected` fields mark tasks outside the spec scope. See `workflow.md` § "Out-of-Spec Task Handling" for behavior rules.
 

@@ -109,6 +109,19 @@ When stale → regenerate (orchestrator owns the write):
 
 `/work` Step 1b regenerates the index proactively whenever it detects a full-spec fingerprint change (it has the hash in hand). Consumers reading the spec outside `/work` (audits, `/iterate`, agents) apply the same missing-or-mismatched guard before trusting the index, and fall back to a direct scoped/full read otherwise (subagents cannot write `.claude/`, so they read the index only if already fresh, else read the spec directly). The index carries **no task provenance** and is **not** fingerprinted into tasks — it never participates in drift reconciliation, so a stale index is a performance miss, never a correctness risk.
 
+### Subsection-level drift narrowing (DEC-021)
+
+When granular analysis (above) flags a changed `## ` section that is **large** (the section index reports a high `char_count` — tens of KB), a one-line edit rehashes the entire `## ` section and would re-flag every task under it, even tasks whose actual `### ` subsection is untouched. Drill down to spare them:
+
+1. **Compute the subsection diff.** Hash the `### ` subsections of the current spec and of the snapshot with `fingerprint.py --sections --depth 3` (the `### ` hashes are additive — `## ` hashes are unchanged, so this never alters the `## `-level comparison above). Diff the two `### ` maps → the set of changed `### ` headings within the changed `## ` section.
+2. **Surface the subsection breakdown** in the Granular Reconciliation UI regardless of task provenance: *"`## Phase 40` changed — specifically `### X`, `### Y` (subsections `### A`–`### F` unchanged)."* This sharpens reconciliation even for legacy tasks.
+3. **Narrow the affected-task set** using optional task provenance (`spec_subsection` / `subsection_fingerprint`, see `task-schema.md`):
+   - Task **with** `spec_subsection` → flagged **only if** its `spec_subsection` is in the changed-`### ` set (or its `subsection_fingerprint` differs from the current subsection hash). If its subsection is unchanged, present it in a **"likely unaffected (subsection unchanged)"** group with `[S] Skip` recommended — never silently dropped; the user can still review.
+   - Task **without** `spec_subsection` (legacy / small-section / whole-section task) → flagged at `## `-level exactly as today. **No regression.**
+4. **On apply** for a narrowed task that IS reconciled: update `subsection_fingerprint` alongside `section_fingerprint`.
+
+**Fallbacks (each → `## `-level behavior, never an error):** no snapshot to diff; `--depth 3` unavailable; section not large enough to bother; no tasks carry `spec_subsection`. Narrowing is a precision *refinement* layered on top of `## `-level drift — it can only spare tasks the user would otherwise hand-skip, and the conservative "likely unaffected" grouping (surface-don't-drop) keeps it safe.
+
 ---
 
 ## Substantial Change Detection
@@ -162,7 +175,7 @@ For each task:
     → Check if task's spec_section heading still exists in new spec
     │
     ├─ Section exists, content matches:
-    │  → Update task: spec_version, spec_fingerprint, section_fingerprint
+    │  → Update task: spec_version, spec_fingerprint, section_fingerprint (and subsection_fingerprint if present)
     │  → Task continues normally
     │
     ├─ Section exists, content changed:
@@ -279,7 +292,7 @@ Apply changes? [Y] Yes, reset and re-verify  [N] No, review individually instead
 If the user selects `[N]`, fall through to `[R] Review individually` for that section (allows per-task decisions).
 
 **On apply (confirmed):**
-1. Update `spec_fingerprint` and `section_fingerprint` to current values
+1. Update `spec_fingerprint` and `section_fingerprint` (and `subsection_fingerprint` if the task carries one) to current values
 2. Clear `task_verification` (remove the field)
 3. Set `status` back to `"Pending"`
 4. Add note: `"Reset to Pending — spec section changed after verification. Needs re-implementation and re-verification."`

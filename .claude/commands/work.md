@@ -302,7 +302,7 @@ Also read `.claude/dashboard-state.json`'s `pending_full_regen` field. If non-nu
 
 ### Step 1b: Spec Drift Detection
 
-Compare the current spec's SHA-256 fingerprint against task fingerprints. If different, perform section-level analysis to identify which sections changed and group affected tasks.
+Compare the current spec's SHA-256 fingerprint against task fingerprints. If different, perform section-level analysis to identify which sections changed and group affected tasks. For a large changed `## ` section, narrow to `### ` subsection level so tasks in unchanged subsections aren't re-flagged (DEC-021; see `drift-reconciliation.md § "Subsection-level drift narrowing"`).
 
 **Script alternative:** `.claude/scripts/fingerprint.py --spec` / `--sections` for deterministic hashes when the orchestrator runs the drift check.
 

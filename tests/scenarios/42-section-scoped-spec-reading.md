@@ -46,6 +46,24 @@ Command path: `scripts/fingerprint.py` / `drift-reconciliation.md`.
 
 **Pass criteria:** `--depth 2` output ⊆ `--depth 3` output; `## ` values identical across depths. (Mechanically covered by `test_sections_depth3_is_additive`.)
 
+## Trace D — subsection narrowing spares unaffected tasks (DEC-021 companion, v4.25.0)
+
+Command path: `drift-reconciliation.md § "Subsection-level drift narrowing"` → `commands/work.md § "Step 1b"`.
+
+State: `## Phase 40` (58K, subsections `### A`–`### H`) has 47 tasks. A one-line edit lands in `### X` only. Some tasks carry `spec_subsection` (DEC-021 optional provenance), some are legacy (none).
+
+1. Granular analysis flags `## Phase 40` (its `## ` hash changed).
+2. Because the section is large, drift computes the `### ` diff (`fingerprint.py --sections --depth 3`, current vs snapshot) → only `### X` changed.
+3. UI surfaces: *"Phase 40 changed — specifically `### X` (`### A`–`### H` minus X unchanged)."*
+4. Task grouping:
+   - Tasks with `spec_subsection == "### X"` (or a differing `subsection_fingerprint`) → flagged for reconciliation.
+   - Tasks with `spec_subsection` in an unchanged subsection → "likely unaffected (subsection unchanged)" group, `[S] Skip` recommended (surfaced, not dropped).
+   - Tasks with no `spec_subsection` (legacy) → flagged at `## `-level exactly as today.
+
+**Expected:** tasks whose subsection is provably unchanged are spared mandatory reconciliation; legacy tasks behave exactly as before; nothing is silently dropped.
+
+**Pass criteria:** narrowing only spares tasks with provenance + unchanged subsection; conservative "surface, don't drop"; full fallback to `## `-level when there's no provenance / no snapshot / `--depth 3` unavailable / the section is small. (Additive `### ` hashing is mechanically covered by `test_sections_depth3_is_additive`.)
+
 ## Invariant checks
 
 - Exactly one `spec_v{N}.md` still exists — Option 2 changed no file-structure invariant (the higher-bar edit Options 1/3 would have required).
