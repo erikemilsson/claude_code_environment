@@ -90,7 +90,7 @@ If any check fails, do not proceed to Step 2.
 
 Before starting:
 - Read task description fully
-- Read `.claude/spec_v{N}.md` and find the relevant sections (use task's `spec_section` field if present)
+- Read `.claude/spec_v{N}.md` **section-scoped** (specs can exceed 200K tokens): if `.claude/spec_v{N}.index.json` exists, resolve the task's `spec_section` heading to its `line_start`/`line_end` and `Read` only that range (`offset`/`limit`); else `Grep` the heading then scoped-`Read`. See `rules/spec-workflow.md § "Section-scoped spec reading"`.
 - Check what files will be affected
 - Understand the "done" criteria from spec acceptance criteria
 

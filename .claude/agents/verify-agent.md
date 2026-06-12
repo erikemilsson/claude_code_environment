@@ -120,7 +120,7 @@ Follow this workflow when spawned in **per-task** mode — a single task was jus
 ### Step T1: Read Task and Spec Context
 
 1. Read the task JSON file in full (status should be "Awaiting Verification")
-2. Read the spec section referenced by `spec_section` field
+2. Read the spec section referenced by `spec_section` field — **section-scoped**: if `.claude/spec_v{N}.index.json` exists, resolve the heading to its `line_start`/`line_end` and `Read` only that range; else `Grep` + scoped-`Read` (specs can exceed 200K tokens). See `rules/spec-workflow.md § "Section-scoped spec reading"`.
 3. Read the task description and completion notes
 4. Verify independently without assumptions. Judge solely on task JSON, spec, and file artifacts.
 

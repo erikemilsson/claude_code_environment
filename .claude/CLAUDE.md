@@ -17,6 +17,7 @@ This environment targets the **current Claude Opus tier** via the floating `opus
 | What | Where |
 |------|-------|
 | Project specification | `.claude/spec_v{N}.md` (source of truth) |
+| Spec section index (generated, scoped reads) | `.claude/spec_v{N}.index.json` (DEC-021; `fingerprint.py --index`) |
 | Dashboard (navigation hub) | `.claude/dashboard.md` |
 | Task data | `.claude/tasks/task-*.json` |
 | Commands | `.claude/commands/*.md` |

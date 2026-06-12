@@ -6,7 +6,7 @@ Deterministic helpers invoked by the `/work` orchestrator (or by the user direct
 
 | Script | Purpose | Mirrors |
 |--------|---------|---------|
-| `fingerprint.py` | Spec/section/dashboard-rollup SHA-256 hashes | `support/reference/drift-reconciliation.md` lines 70-84, `commands/status.md` line 36 |
+| `fingerprint.py` | Spec/section/dashboard-rollup SHA-256 hashes; `--index` (spec section index for scoped reads, DEC-021) + `--sections --depth 3` (additive `### ` subsection hashes) | `support/reference/drift-reconciliation.md`, `rules/spec-workflow.md § "Section-scoped spec reading"`, `commands/status.md` |
 | `validate-tasks.py` | Task JSON schema validation + verification debt count | `support/reference/task-schema.md`, `commands/health-check.md` Part 1 |
 | `persist-friction.py` | Friction-marker dual-write payload + collision-safe `FR-NNN` ids from a marker batch (read-only; orchestrator appends) | `support/reference/work-procedures.md § "State Persistence Protocol"` step 2, `support/reference/friction-register.md § "Write protocol"` |
 | `dashboard-render.py` | **Family C full port (v4.22.0):** deterministic render of all structural dashboard sections (`--render`), the Tasks section alone (`--tasks-section`, archive-aware), and the canonical META `task_hash` (`--task-hash`) | `support/reference/dashboard-regeneration.md` § "Script-First Rendering" + § Regeneration Steps 3–6 + § Section Display Rules + § Critical Path Generation + § Project Overview Diagram |

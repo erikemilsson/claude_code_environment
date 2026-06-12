@@ -618,48 +618,9 @@ Tags: workflow, new-command-candidate, grill-adjacent, vision-adjacent, capabili
 
 **Status:** promoted 2026-05-27 — shipped **v4.12.1** (PATCH). `claude-code-authoring.md § "Skill listing budget"` rewritten to separate the dynamic total budget (~1% of context; `skillListingBudgetFraction` / `SLASH_COMMAND_TOOL_CHAR_BUDGET`) from the per-entry 1,536-char cap (`maxSkillDescriptionChars`), with overflow behavior + a `/doctor` + `/skills` observability note. Verified against `code.claude.com/docs/en/skills` (2026-05-27) before fixing; the unverified `/context`-as-load-inspector half of point 3 was dropped. Footer `Last verified` + `template_version` bumped. See archive for full entry.
 
-## FB-095: Spec-scale ceiling — single-file spec architecture strains at large-project scale (styler at 837KB)
+## FB-095: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
 
-**Status:** open — research-gated (recommend `/research` → DEC before any mechanism ships)
-**Captured:** 2026-06-10
-**Source:** template-side cross-repo usage analysis (2026-06-10 session: styler project state + 47-export `interaction-logs/` corpus + ship-log classification). Captured directly in the maintenance queue per the FB-062 convention (template-side session; design-discussion-needed item). The same analysis produced three temporary root-level ship-plan files (`ship-plan-{1,2,3}-*.md`) covering separate findings; this item is independent of them.
-
-## Observation
-
-The template's spec workflow assumes a monolithic spec readable in one pass. styler — the most active downstream project — has outgrown that assumption:
-
-- `spec_v15.md` = **837,049 chars (~200K+ tokens)** — larger than a 200K context window outright; even at 1M-context economics it cannot be casually re-read, and combined with code it dominates any working set.
-- 15 prior spec versions archived (56 files incl. decomposed snapshots); 132 decision records.
-- Friction register: **22 of 39 markers are `spec_implementation_gap`**, and 8 of the 10 currently-open markers are spec-vs-code gaps.
-- 35 of 391 hand-written session-export friction notes are spec-drift-themed.
-- `/iterate` is the #2 command by usage (59 mentions vs `/work`'s 87 across the 47-export corpus), and 38% of sessions are zero-task meta-sessions — a substantial share of Erik's time is spec upkeep on a file no agent can hold whole.
-
-## Why this is template-level (not just a styler problem)
-
-- `.claude/CLAUDE.md § Critical Invariants` mandates **"Exactly one `spec_v{N}.md` exists in `.claude/` at any time"** — the invariant itself is the scaling bottleneck.
-- The tooling assumes the monolith: `/iterate` proposes against the whole file; `fingerprint.py --sections` hashes per-`##`-section of one path; `/audit-coherence` lenses, decomposition provenance fields, and `/shakedown` Phase 0 grounding all address a single spec path.
-- Every long-running project trends this way: the spec grows monotonically by design (feature retirement *annotates* rather than excises, per `rules/feature-retirement.md` — correct for drift detection, but it means specs only grow).
-
-## Candidate directions (for `/research`; not pre-decided)
-
-1. **Sharded spec:** `spec/` directory with per-domain files + a generated index/manifest (the invariant becomes "exactly one spec manifest").
-2. **Single file + mandatory generated index:** keep the invariant; add a compiled TOC/section-index artifact and section-scoped read discipline (tooling change only).
-3. **Tiered spec:** stable-core file + active-surface file, with periodic merge (mirrors task-archive tiering).
-4. **Status quo + spec-diet discipline:** `/iterate hygiene` gains a "move historical/retired detail to archive" pass — cheapest; may only delay the ceiling.
-
-## Research questions
-
-- **Threshold:** at what spec size does quality measurably degrade (proposal accuracy, drift-detection reliability, token cost)? styler's history can calibrate; survey other downstream projects' spec sizes for the growth curve.
-- **Drift detection:** can section fingerprints span multiple files — does `fingerprint.py` need a manifest mode? What happens to existing provenance fields in task JSON?
-- **Migration:** cost and procedure for an existing 837KB `spec_v15.md` (fingerprints, task provenance, decision cross-refs, retirement markers).
-- **Blast radius:** `/work` spec-discovery glob, all `/iterate` modes, audit lenses, `/shakedown` grounding, decomposition, DEC-016 path patterns in `settings.json` `permissions.ask`.
-- **Interaction with FB-093/`/shakedown`:** capability-boundary corpora absorb some "where the system is" duty — does that relieve spec growth pressure or add a parallel surface?
-
-## Triage recommendation
-
-**`/research`** (template-level → root `decisions/`, next free DEC number). This touches a Critical Invariant plus drift fingerprinting plus `/iterate` — inflection-point-shaped, not a direct edit. If research concludes direction 4 (discipline only), no DEC needed per the FB-085 reversibility precedent; directions 1–3 warrant the full record.
-
-Tags: template-side, spec-workflow, scale, research-gated, dec-candidate, iterate, drift-detection, fingerprinting, styler-evidence
+**Status:** promoted 2026-06-12 — `/research` → **DEC-021 Option 2** (single file + generated spec section index + section-scoped read discipline) shipped in **v4.24.0**. `fingerprint.py --index` + `--sections --depth 3` (additive `### ` hashes); canonical `rules/spec-workflow.md § "Section-scoped spec reading"`; `work.md` Step 1b index-freshness; subagent scoped-read pointers. **Preserves the "exactly one `spec_v{N}.md`" Critical Invariant** (sharding/tiering declined on the blast-radius asymmetry). DEC-021 `implemented` (7 anchors); record `decisions/decision-021-spec-scale-architecture.md`; research archive `.archive/decision-021-research-2026-06-12.md`. See archive for full entry.
 
 ## FB-096: [RESOLVED — moved to `template-maintenance/feedback-archive.md`]
 

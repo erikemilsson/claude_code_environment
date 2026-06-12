@@ -1944,3 +1944,42 @@ The completion machinery is two-track (claude: implement→verify; human: self-a
 **Ship note (2026-06-12):** both halves shipped as captured. Added a modeling note that both-tasks gated on a physical-world prerequisite *before Claude can act* should carry `Blocked`/`On Hold` (so the existing predicate clauses catch them) — this closes the "found independently in two projects" miss without a schema change. The completion-shape doc additionally covers the lived/conversational-gate sub-case (auto-`self_attested` with no verify-agent round-trip).
 
 Tags: template-side, work, routing, owner-both, task-completion, insights-derived
+
+## FB-095: Spec-scale ceiling — single-file spec architecture strains at large-project scale (styler at 837KB)
+
+**Status:** promoted 2026-06-12 — `/research` → **DEC-021 Option 2** shipped in **v4.24.0** (single file + generated spec section index + section-scoped read discipline; preserves the "exactly one `spec_v{N}.md`" Critical Invariant). DEC-021 `implemented` (7 anchors); research archive `decisions/.archive/decision-021-research-2026-06-12.md`. Ship-log v4.24.0 is the durable record.
+**Captured:** 2026-06-10
+**Source:** template-side cross-repo usage analysis (2026-06-10 session: styler project state + 47-export `interaction-logs/` corpus + ship-log classification). Captured directly in the maintenance queue per the FB-062 convention (template-side session; design-discussion-needed item).
+
+## Observation
+
+The template's spec workflow assumes a monolithic spec readable in one pass. styler — the most active downstream project — has outgrown that assumption:
+
+- `spec_v15.md` = **837,049 chars (~200K+ tokens)** — larger than a 200K context window outright; even at 1M-context economics it cannot be casually re-read, and combined with code it dominates any working set. (Read empirically during DEC-021 research: 846,107 chars, 57 `## Phase` sections, 406 `### `, largest `## Phase 40` = 58K.)
+- 15 prior spec versions archived (56 files incl. decomposed snapshots); 132 decision records.
+- Friction register: **22 of 39 markers are `spec_implementation_gap`**, and 8 of the 10 currently-open markers are spec-vs-code gaps.
+- 35 of 391 hand-written session-export friction notes are spec-drift-themed.
+- `/iterate` is the #2 command by usage (59 mentions vs `/work`'s 87 across the 47-export corpus), and 38% of sessions are zero-task meta-sessions — a substantial share of time is spec upkeep on a file no agent can hold whole.
+
+## Why this is template-level (not just a styler problem)
+
+- `.claude/CLAUDE.md § Critical Invariants` mandates **"Exactly one `spec_v{N}.md` exists in `.claude/` at any time"** — the invariant itself is the scaling bottleneck.
+- The tooling assumes the monolith: `/iterate` proposes against the whole file; `fingerprint.py --sections` hashes per-`##`-section of one path; `/audit-coherence` lenses, decomposition provenance fields, and `/shakedown` Phase 0 grounding all address a single spec path.
+- Every long-running project trends this way: the spec grows monotonically by design (feature retirement *annotates* rather than excises — correct for drift detection, but it means specs only grow).
+
+## Candidate directions (researched)
+
+1. **Sharded spec:** `spec/` directory + manifest (invariant → "exactly one manifest").
+2. **Single file + mandatory generated index** + section-scoped reads (tooling change only). ← **SELECTED**
+3. **Tiered spec:** stable-core + active-surface, periodic merge.
+4. **Status quo + spec-diet discipline.**
+
+## Triage recommendation (original)
+
+**`/research`** (template-level → root `decisions/`). Touches a Critical Invariant + drift fingerprinting + `/iterate` — inflection-point-shaped. Direction 4 → no DEC; directions 1–3 → full record.
+
+## Resolution note (2026-06-12)
+
+`/research` (research-agent, Opus) compared all 4 directions against the live blast-radius surface — 16 template files + styler's `spec_v15.md` read empirically. **Option 2 selected** (single file + generated index + scoped reads) over sharding/tiering/diet on a decisive **blast-radius asymmetry**: Option 2 changes ZERO Critical-Invariant rows and leaves `fingerprint.py` + all task/decision provenance untouched (derived, deletable artifact → reversible), whereas Opt 1/3 break the "exactly one spec" invariant and migrate all task provenance. The operative pain was consumption (a file no agent can hold whole), not storage — which the index targets directly. Research questions answered in the archive (threshold; per-option drift-detection survival; migration cost; full 25-touchpoint blast radius; /shakedown interaction). **Shipped v4.24.0**; both companion actions resolved at ship (finer `### ` fingerprinting → additive `--sections --depth 3`; the index IS the "index-as-derivative"). Notable research finding: a `/iterate hygiene` "diet" (Opt 4) would have collided with `feature-retirement.md`'s annotate-never-excise rule — an internal contradiction, so Opt 4 was not standalone-viable. **Optional remaining follow-up:** wire drift-reconciliation to *consume* the `### ` granularity the script now emits. **Escalation path documented:** Option 1 (shard) if edit-ergonomics/git-diff-noise later prove the dominant bottleneck over read-working-set.
+
+Tags: template-side, spec-workflow, scale, research-gated, dec-021, iterate, drift-detection, fingerprinting, styler-evidence, promoted

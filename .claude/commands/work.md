@@ -306,6 +306,8 @@ Compare the current spec's SHA-256 fingerprint against task fingerprints. If dif
 
 **Script alternative:** `.claude/scripts/fingerprint.py --spec` / `--sections` for deterministic hashes when the orchestrator runs the drift check.
 
+**Spec index refresh (DEC-021):** while you have the full-spec fingerprint in hand, refresh the section index if stale — if `.claude/spec_v{N}.index.json` is missing or its `spec_fingerprint` ≠ the current full-spec hash, regenerate it: `python3 .claude/scripts/fingerprint.py --index .claude/spec_v{N}.md > .claude/spec_v{N}.index.json`. The index powers section-scoped spec reads (`rules/spec-workflow.md § "Section-scoped spec reading"`); it carries no task provenance, so this never affects drift reconciliation. Full rule: `drift-reconciliation.md § "Spec Index Freshness"`.
+
 **Full procedure:** `.claude/support/reference/drift-reconciliation.md` § "Spec Drift Detection"
 
 ### Step 1c: Spec State Summary
@@ -650,7 +652,7 @@ The safety gate applies to implement-agent dispatch, verify-agent runtime valida
 
 #### If Decomposing (spec → tasks)
 
-Read `.claude/support/reference/decomposition.md` and follow its 10-step procedure to break the spec into granular tasks with full provenance fields.
+Read `.claude/support/reference/decomposition.md` and follow its 10-step procedure to break the spec into granular tasks with full provenance fields. (First decomposition legitimately reads the whole spec — the "whole when warranted" case in `rules/spec-workflow.md § "Section-scoped spec reading"`. Afterward, generate the section index so downstream per-task agents scope-read: `python3 .claude/scripts/fingerprint.py --index .claude/spec_v{N}.md > .claude/spec_v{N}.index.json`.)
 
 **Capability-claim cross-check (DEC-017):** when decomposing spec sections that reference Claude Code primitives (skill `model:`/`effort:` frontmatter, subagent dispatch, MCP fan-out, `Agent` tool model granularity, parallel execution boundaries), cross-reference `.claude/support/reference/claude-code-authoring.md` before generating task JSON. The reference doc surfaces load-bearing platform facts that aren't obvious from spec text alone (e.g., `model:` is turn-scoped, not session-scoped — multi-turn chat skills cannot use it for cross-turn model continuity). Task descriptions that depend on unsupported platform behavior produce wasted-iteration cycles at implementation time.
 
