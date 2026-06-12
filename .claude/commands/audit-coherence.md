@@ -46,7 +46,7 @@ Seven lenses, each running as a fresh-context sub-agent in parallel:
 | `feedback-decay` | `FB-*` entries open >30 days with no status change | Parse feedback.md status fields |
 | `retired-features` | Manifests in `.claude/support/retired/` without a corresponding retirement marker in spec | Filesystem + spec scan |
 | `friction-register` | Cluster open `friction.jsonl` entries by `kind` and `source_anchor`, surface high-frequency themes | Read register + thematic grouping |
-| `acceptance-reconciliation` | Spec inline `- [ ]` acceptance boxes that diverge from `verification-result.json` `criteria[]` (e.g., boxes unticked despite a phase PASS) — DEC-022 | Spec box scan + verification-result read (advisory) |
+| `acceptance-reconciliation` | Spec inline `- [ ]` acceptance boxes unticked despite a verified phase PASS, across **all completed phases** — DEC-022 | Spec box scan + verification-result (latest, authoritative) + per-phase task-verification rollup (history, proxy); advisory |
 
 Bias preservation: each lens runs with no knowledge of other lenses' output, mirroring `audit-ui`'s context-separation pattern.
 
@@ -62,7 +62,8 @@ Bias preservation: each lens runs with no knowledge of other lenses' output, mir
 │   ├── friction-open.jsonl      # open entries from friction.jsonl
 │   ├── feedback-status.json     # parsed FB-* entries with status + age
 │   ├── retired-manifests.json   # contents of all .claude/support/retired/*/manifest.json
-│   ├── verification-result.json # copy of .claude/verification-result.json (phase criteria[]) if present
+│   ├── verification-result.json # copy of .claude/verification-result.json (LATEST phase criteria[]) if present
+│   ├── phase-verification.json  # per-phase task-verification rollup (historical proxy — DEC-022 v4.27.0)
 │   └── meta.json                # audit run config: timestamp, lenses requested, --since filter
 ├── lenses/
 │   ├── superseded-decisions.md
@@ -93,7 +94,9 @@ Project rule (DEC-004): sub-agents cannot write to `.claude/`. The orchestrator 
 6. **Capture feedback statuses.** If `.claude/support/feedback/feedback.md` exists, parse for `## FB-NNN` headers and `**Status:**` + `**Captured:**` lines beneath. For each FB entry, compute age in days from captured date. Write `[{id, status, captured, age_days, title}]` to `inputs/feedback-status.json`.
 7. **Capture retired-feature manifests.** Glob `.claude/support/retired/*/manifest.json`. Read each. Write the combined array to `inputs/retired-manifests.json`.
 8. **(Optional) Sample task notes for friction-marker prose.** This is a fallback for projects that haven't accumulated friction register entries yet — sample up to 20 most-recently-modified `.claude/tasks/task-*.json`, extract any `notes` containing keywords `"friction"`, `"captured for /iterate"`, `"spec drift"`. Append to `friction-open.jsonl` as synthetic register entries with `id: "FR-SYNTHETIC-{N}"`, `kind: "spec_implementation_gap"`, `captured_in: {agent: "task_notes_sample"}`.
-9. **Capture verification result.** If `.claude/verification-result.json` exists, copy it to `inputs/verification-result.json` (it holds the latest phase-level `criteria[]` PASS/FAIL). If absent, write `{}` — the `acceptance-reconciliation` lens returns 0 findings without it.
+9. **Capture verification state (for the `acceptance-reconciliation` lens).** Two artifacts:
+   - **Latest phase-level result:** if `.claude/verification-result.json` exists, copy it to `inputs/verification-result.json` (the authoritative latest-phase `criteria[]` PASS/FAIL). If absent, write `{}`.
+   - **Per-phase task-verification rollup (historical proxy):** glob `.claude/tasks/task-*.json`, group by `phase`, and for each phase write `{phase, phase_name, task_count, finished, verified_pass, phase_complete, task_ids}` to `inputs/phase-verification.json` — where `phase_complete` = every non-`Absorbed`, non-`On Hold` task in the phase has `status == "Finished"` AND `task_verification.result == "pass"` (the phase gate's own completion condition). This lets the lens reconcile *every completed phase*, not just the latest. If no task files exist, write `[]`.
 
 Capture should complete within 30s. If any input source is missing or fails to parse, log a warning to `meta.json` and continue with empty data — lenses handle empty inputs gracefully (return 0 findings).
 
@@ -373,33 +376,41 @@ If the register is empty or has <3 open entries, return `Findings: 0` — no pre
 ```
 You are auditing a project for the ACCEPTANCE-RECONCILIATION lens only (DEC-022).
 
-Read {AUDIT_DIR}/inputs/verification-result.json (a copy of the project's `.claude/verification-result.json` — the latest phase-level verification result, with a `criteria[]` array of `{name, status, notes}`; may be `{}` if absent) and the active `.claude/spec_v*.md`.
+Read:
+- {AUDIT_DIR}/inputs/verification-result.json — the LATEST phase-level verification result (`criteria[]` of `{name, status, notes}`; may be `{}` if absent). AUTHORITATIVE for the phase it covers.
+- {AUDIT_DIR}/inputs/phase-verification.json — a per-phase task-verification rollup `[{phase, phase_name, task_count, finished, verified_pass, phase_complete, task_ids}]` (may be `[]`). `phase_complete: true` means every non-Absorbed / non-On-Hold task in that phase is Finished with passing verification — a PROXY for "this phase's work is done".
+- the active `.claude/spec_v*.md`.
 
-**This lens only applies when the project renders acceptance criteria as inline `- [ ]` / `- [x]` checkboxes in the spec.** If the spec has no inline acceptance checkboxes, OR verification-result.json is empty/absent, return `Findings: 0` — there is nothing to reconcile (inline boxes are an optional project convention).
+**This lens only applies when the project renders acceptance criteria as inline `- [ ]` / `- [x]` checkboxes in the spec.** If the spec has no inline acceptance checkboxes, return `Findings: 0` — there is nothing to reconcile (inline boxes are an optional project convention).
 
-Background (DEC-022): `verification-result.json` `criteria[]` (rendered as the dashboard's `### Acceptance Criteria`) is the AUTHORITATIVE acceptance-*status* surface. Inline spec `- [ ]` boxes are authored input and are NOT auto-ticked on phase PASS — so they can read stale. This lens surfaces that staleness ADVISORILY; it never edits the spec.
+Background (DEC-022): the AUTHORITATIVE acceptance-*status* surface is `verification-result.json` `criteria[]` (rendered as the dashboard's `### Acceptance Criteria`). Inline spec `- [ ]` boxes are authored input and are NOT auto-ticked on phase PASS — so they can read stale. This lens surfaces that staleness ADVISORILY across ALL completed phases; it never edits the spec.
+
+**Two evidence tiers (DEC-022 v4.27.0 — full historical reconciliation).** `verification-result.json` is overwritten each phase, so it only holds the latest phase's `criteria[]`. To reconcile earlier phases too:
+- **Authoritative (the latest phase):** use `verification-result.json`'s real `criteria[]` PASS/FAIL.
+- **Proxy (earlier completed phases):** use `phase-verification.json` — a phase with `phase_complete: true` is done, so its unticked acceptance boxes are stale. There is no persisted `criteria[]` for these phases, so label the finding as a per-task proxy.
 
 What counts:
-1. A phase whose acceptance criteria the spec renders as inline boxes that are unticked (`- [ ]`), while the corresponding phase-level verification shows PASS (verification-result.json `result: "pass"` and/or the matching `criteria[]` entries are `status: "pass"`). This is the flirty-gym symptom: boxes `[ ]` despite a recorded PASS.
-2. The inverse, lower severity: a box ticked `- [x]` in the spec while the matching `criteria[]` entry is `status: "fail"` (or no passing verification exists) — an over-claim.
+1. A phase the spec renders inline boxes for, whose boxes are unticked (`- [ ]`) AND the phase is verified done — either (a) it is the latest phase and `verification-result.json` records `result: "pass"` (authoritative), or (b) `phase-verification.json` marks it `phase_complete: true` (proxy). This is the flirty-gym symptom, now caught for every completed phase, not only the latest.
+2. Lower severity: a box ticked `- [x]` while the matching `criteria[]` entry is `status: "fail"` (latest phase), or while the phase is NOT complete per the rollup — an over-claim.
 
 Your method:
 1. Scan the active spec for inline acceptance checkboxes (`- [ ]` / `- [x]`), grouping by the phase / section they sit under. If none, return Findings: 0.
-2. Read verification-result.json. Note its `result`, `phase` (if recorded), and `criteria[]` names + statuses.
-3. Match boxes to `criteria[]` entries ADVISORILY — by fuzzy text similarity between the box label and the `criteria[].name`. The match is imperfect by design (criteria names are free-text and re-segmented; there is no ID link — DEC-022 Q2). Treat a match as a *suspected* correspondence for human review, NEVER as ground truth. When you cannot confidently match a box to a criterion, say so in the evidence rather than guessing.
-4. Flag divergence per phase: e.g., "Phase 2: 0/4 inline acceptance boxes ticked, but verification-result.json records result=pass (7/7 criteria)."
+2. For each phase that renders boxes, determine its verified status: the latest phase → `verification-result.json` (`result` + `criteria[]`); any other phase → look up `phase_complete` in `phase-verification.json` by `phase`.
+3. For the latest phase, match boxes to `criteria[]` entries ADVISORILY by fuzzy text similarity (free-text names, re-segmented, no ID link — DEC-022 Q2). Treat a match as a *suspected* correspondence; when you cannot confidently match a box to a criterion, say so rather than guessing. For proxy phases there is no `criteria[]` to match — flag at phase granularity ("all N boxes unticked for a completed phase").
+4. Flag divergence per phase, naming the tier: e.g. "Phase 2 (authoritative): 0/4 boxes ticked but verification-result.json records result=pass (7/7)." or "Phase 1 (proxy): 0/3 boxes ticked but all 6 tasks Finished+verified (phase_complete)."
 
 What does NOT count:
-- Specs with no inline acceptance checkboxes (the common case — nothing to reconcile).
-- Phases with no recorded verification yet (boxes legitimately `[ ]` because the phase hasn't passed) — only flag when a verification PASS exists.
-- A box/criterion pair you cannot match with reasonable confidence — note the ambiguity, do not assert divergence on a guess.
+- Specs with no inline acceptance checkboxes (the common case).
+- Phases that are NOT complete — the current / in-progress phase, or any phase with `phase_complete: false` that the latest `verification-result.json` does not record as passed. Unticked boxes there are legitimate (the work isn't done).
+- A box/criterion pair you cannot match with reasonable confidence (latest phase) — note the ambiguity; do not assert divergence on a guess.
 
 For each finding, set:
 - **Source anchor:** the spec phase / section whose boxes diverge (e.g., "spec_v2.md § Phase 2 — Acceptance Criteria")
 - **Files to touch (potential fix):** spec_v*.md — synthesizer will classify as `kind: decision` (reconciliation routes via /iterate; boxes are spec body)
-- **Suggested fix:** "Reconcile via /iterate: spec § {phase} acceptance boxes are stale vs verification-result.json (DEC-022 — boxes are authored input; the dashboard `### Acceptance Criteria` is the live status). Tick to match, or drop the inline boxes and rely on the dashboard."
+- **Evidence:** state the tier (authoritative / proxy) and the numbers (boxes ticked vs phase status).
+- **Suggested fix:** "Reconcile via /iterate: spec § {phase} acceptance boxes are stale vs verified status (DEC-022 — boxes are authored input; the dashboard `### Acceptance Criteria` is the live status). Tick to match, or drop the inline boxes and rely on the dashboard."
 
-Cluster per phase: if a phase has 4 unticked boxes under one verified phase PASS, that is ONE finding listing the phase, not 4 findings. The match is advisory — never edit the spec; only surface.
+Cluster per phase: one finding per phase (listing its unticked boxes), never one per box. If several completed phases are stale with the same root, you may emit a single clustered finding ("Phases 1–3 acceptance boxes never ticked despite completion"). The match is advisory — never edit the spec; only surface.
 ```
 
 ---

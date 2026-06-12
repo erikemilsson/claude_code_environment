@@ -59,13 +59,32 @@ State: Phase 2 verified PASS (`criteria[]` 7/7); spec Phase 2 inline boxes still
 
 **Pass criteria:** the authority split is applied consistently (spec = criteria authorship; `verification-result.json` / dashboard = status); no artifact treats stale inline boxes as authoritative status.
 
-## Known scope (honest caveat)
+## Trace E — historical coverage: a completed *earlier* phase is reconciled via proxy (v4.27.0)
 
-The lens reconciles against the **current** `.claude/verification-result.json`, which holds only the **latest** phase-level result (it is overwritten each phase). Earlier phases whose results have been overwritten are not reconciled by this lens — it catches the live/most-recent case (the flirty-gym Phase 2 symptom), not full phase history. Full historical reconciliation would additionally cross-check per-task `task_verification` (persisted per task JSON); that was deliberately left out of DEC-022's scope.
+Command path: `commands/audit-coherence.md` Phase 1 capture step 9 (per-phase rollup) → Lens 7 "Two evidence tiers".
+
+State: the project has progressed to **Phase 3** (in progress). `verification-result.json` now holds Phase 3's result (Phase 2's was overwritten). Phases 1 and 2 are complete (all their tasks Finished+verified); the spec's **Phase 2** inline boxes are all `- [ ]` (the flirty-gym leftover); Phase 3's boxes are legitimately `- [ ]` (in progress).
+
+1. Capture builds `inputs/phase-verification.json`: Phase 1 `phase_complete: true`, Phase 2 `phase_complete: true`, Phase 3 `phase_complete: false`.
+2. The lens checks each phase that renders boxes:
+   - Phase 2 → not the phase in `verification-result.json`, but `phase_complete: true` in the rollup → **proxy divergence** (boxes unticked, phase done).
+   - Phase 3 → `phase_complete: false` and not a passing `verification-result.json` → NOT flagged (in-progress; unticked boxes are legitimate).
+
+**Expected:** ONE proxy finding at Phase 2 — *"Phase 2 (proxy): 0/N boxes ticked but all M tasks Finished+verified (phase_complete)."* — even though `verification-result.json` has moved on to Phase 3. Phase 3 is not flagged. This is the gap the single-file model missed: the flirty-gym symptom is now caught after the project advances past the stale phase.
+
+**Pass criteria:** completed earlier phases are reconciled from the per-phase rollup (not just the latest `verification-result.json` phase); the in-progress phase is never flagged; proxy findings are labeled "(proxy)" and still route `kind: decision` → `/iterate`.
+
+## Coverage tiers (DEC-022 v4.27.0 — full historical reconciliation)
+
+The lens reconciles **every completed phase**, via two evidence tiers:
+- **Authoritative (latest phase):** `.claude/verification-result.json` (overwritten each phase) gives the real `criteria[]` PASS/FAIL for the phase it currently covers.
+- **Proxy (earlier completed phases):** the capture's per-phase rollup (`inputs/phase-verification.json`) marks a phase `phase_complete` when all its non-Absorbed/non-On-Hold tasks are Finished+verified (the phase gate's own completion condition). An unticked box for a `phase_complete` phase is stale.
+
+Residual (honest): the proxy is a per-task signal, marginally weaker than a persisted phase-level `criteria[]` — a phase's cross-task *integration* acceptance criteria aren't separately recorded once `verification-result.json` is overwritten. The lens labels proxy findings as such and routes all reconciliation to a human via `/iterate`, so the weaker signal is adequate for an advisory detector. Persisting per-phase verification history (to make every phase authoritative) is a separate, larger change deliberately left out of DEC-022's scope.
 
 ## Invariant checks
 
 - The lens **never edits the spec** — reconciliation routes through `/iterate` (DEC-016 unchanged; spec/decision/vision remain read-only outside `/iterate`).
-- **Zero** changes to `agents/verify-agent.md`, `commands/work.md` completion flow, `.claude/settings.json`, or `support/reference/drift-reconciliation.md` — A+C adds doctrine + a read-only advisory lens only (the economy of A+C over the rejected Option B).
+- **Zero** changes to `agents/verify-agent.md`, `commands/work.md` completion flow, `.claude/settings.json`, or `support/reference/drift-reconciliation.md` — A+C adds doctrine + a read-only advisory lens only (the economy of A+C over the rejected Option B). The v4.27.0 historical-reconciliation enhancement holds this line: the per-phase rollup is computed read-only at capture from existing task state (`phase` + `task_verification`) — no new persistence, no change to the verification model.
 - The lens returns `Findings: 0` for box-less specs — an opt-in convention, not a mandate (Q3); it adds no friction to the majority of projects.
 - HARD RULE holds: any finding whose `files_to_touch` includes a spec path is `kind: decision`, never `bundle-eligible` — no inline auto-fix path exists for acceptance-box reconciliation.

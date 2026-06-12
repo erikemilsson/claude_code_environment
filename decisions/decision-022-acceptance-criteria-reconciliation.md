@@ -226,6 +226,8 @@ Scoring: ✓✓ strong / ✓ acceptable / – neutral-conditional / ✗ weak. **
 
 Shipped in template_version 4.26.0 (2026-06-12), MINOR — new doctrine + optional lens; no permission-layer or task-schema change. Status `implemented`; `implementation_anchors` populated above.
 
+**Follow-up (v4.27.0, 2026-06-12):** the `acceptance-reconciliation` lens (Option C) was extended to **full historical reconciliation** — it now reconciles every completed phase via a two-tier scheme (latest phase authoritative via `verification-result.json`; earlier completed phases via a per-phase task-verification rollup proxy, `inputs/phase-verification.json`), using only existing task state (no verification-model change). Closes the "latest-phase-only" limitation noted at ship. The larger alternative — persisting per-phase verification history for authoritative historical `criteria[]` — remains a separate future DEC if the proxy proves insufficient.
+
 Planned files:
 
 *Option A (doctrine):*
