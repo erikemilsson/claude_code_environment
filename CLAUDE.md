@@ -44,7 +44,7 @@ These are template-maintenance artifacts that don't ship to projects.
 
 Template-maintenance work staged for later sessions. Read these first if resuming template work after a gap.
 
-**Active build (DEC-023 — approved 2026-06-22):** spec-shaping workflow redesign — vision-as-development-hub + target-driven grill/shakedown (vision · spec · build) + capture/develop/route family (`/feedback` dispatcher, impact-assessment home) + lightweight re-entry merge-queue. Substrate: `template-maintenance/command-workflow-analysis.md` (§ 1–12); decision: `decisions/decision-023-vision-hub-and-spec-shaping-workflow.md`. **Phased build:** Phase 0 (feature-vision structure) → A (merge-queue transport) → B (target-aware grill/shakedown + `/iterate` drain) → C (feedback dispatcher). **Amends DEC-016** (vision editable-during-dev / frozen-after-graduation — open mechanism resolved in Phase 0). Resume here if picking up the workflow effort.
+**DEC-023 (spec-shaping workflow redesign) — COMPLETE 2026-06-23 (v4.28.0–v4.31.0).** Vision-as-development-hub + target-driven grill/shakedown (vision · spec · build) + merge-queue re-entry transport + `/feedback` dispatcher. Record `decisions/decision-023-vision-hub-and-spec-shaping-workflow.md` (`implemented`, 10 anchors); substrate `template-maintenance/command-workflow-analysis.md`; per-ship detail in `ship-log.md`. **Amended DEC-016** (vision editable-during-dev / frozen-after-graduation; gate kept as per-session confirm). No open follow-ups.
 
 **Active feedback items** (`template-maintenance/feedback.md` — triage manually; do NOT run `/feedback review` against this path, that command targets the shipped `.claude/support/feedback/` queue):
 

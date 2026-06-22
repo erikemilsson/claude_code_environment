@@ -1,16 +1,36 @@
 ---
 id: DEC-023
 title: Spec-shaping workflow — vision-as-development-hub, target-driven grill/shakedown, and the capture/develop/route family
-status: approved
+status: implemented
 category: process
 created: 2026-06-22
 decided: 2026-06-22
-implemented:
+implemented: 2026-06-23
 related:
   tasks: []
   decisions: [DEC-016, DEC-018, DEC-019, DEC-021, DEC-022, DEC-004]
   feedback: [FB-101, FB-102]
-implementation_anchors: []
+implementation_anchors:
+  - file: ".claude/vision/_feature-vision-template.md"
+    description: "Phase 0 — feature-vision scaffold (maturity banners, one fork-tracker, structured amendments)"
+  - file: ".claude/rules/spec-workflow.md"
+    description: "Vision-as-hub lifecycle + target-awareness + DEC-016 vision carve-out + working-backward pointer"
+  - file: ".claude/support/reference/merge-queue.md"
+    description: "Phase A — the re-entry transport contract (schema + protocols + composition with the vision fork-tracker)"
+  - file: ".claude/commands/iterate.md"
+    description: "Phase B — Step 1c drains the merge queue on entry"
+  - file: ".claude/commands/grill.md"
+    description: "Phase B — emit to merge queue + general-first conduct"
+  - file: ".claude/commands/shakedown.md"
+    description: "Phase B — purpose reframe + target-awareness + general-first + extract-more + use-the-user-more + emit"
+  - file: ".claude/commands/feedback.md"
+    description: "Phase C — dispatcher (escalation offers + impact-assessment home for returning deltas)"
+  - file: ".claude/CLAUDE.md"
+    description: "Navigation (merge-queue) + Critical Invariant (vision editability) + /shakedown one-liner"
+  - file: "decisions/decision-016-spec-file-edit-guardrail.md"
+    description: "Amended — vision portion (editable-during-dev / frozen-after-graduation)"
+  - file: ".claude/version.json"
+    description: "template_version 4.28.0 → 4.31.0 (Phases 0 / A+B / B-reframe / C)"
 inflection_point: false
 spec_revised:
 spec_revised_date:
@@ -141,3 +161,14 @@ Supersedes the earlier §10 phasing where it conflicts (the vision-structure wor
 **Rationale:** Option C targets the friction that actually bites — handoff/re-entry, not forward-recall — which neither the status quo (A) nor the interpretive router (B, declined again per DEC-018) addresses. It formalizes a workflow the user has already validated in practice (the styler vision-as-hub: ~11 visions + 26 shakedown corpora), adds **no new command surface**, and stays clear of DEC-018's declined router while honoring its re-open call for a fresh DEC. The one open mechanism (encoding DEC-016's dev-editable / graduated-frozen vision gate) is bounded to Phase 0 and resolved with the user there.
 
 Design parameters as tabled (D1/D2/D3, G1–G4, F1/F3). DEC-023 **amends DEC-016's vision stance** (D2): vision is editable during development, immutable after graduation — DEC-016 gets a reciprocal cross-reference when the carve-out lands in Phase 0.
+
+## Implementation
+
+Shipped across four MINOR releases (2026-06-22 → 2026-06-23), status `implemented`:
+
+- **v4.28.0 — Phase 0:** feature-vision scaffold + hub-model lifecycle + DEC-016 vision carve-out (editable-during-dev / frozen-after-graduation; gate kept).
+- **v4.29.0 — Phase A+B:** merge-queue transport contract (`merge-queue.md`) + `/iterate` Step 1c drain + `/grill`/`/shakedown` emit hooks — re-entry live.
+- **v4.30.0 — Phase B reframe:** `/shakedown` purpose-leads + target-aware (vision/spec/build) + general-first + extract-more + use-the-user-more; `/grill` general-first.
+- **v4.31.0 — Phase C:** `/feedback` dispatcher — `[G] Develop` escalation + the light-clarify-vs-deep-develop boundary + impact-assessment home for returning merge-queue deltas (G2).
+
+Per-ship detail in `template-maintenance/ship-log.md`; substrate/analysis in `template-maintenance/command-workflow-analysis.md`.
