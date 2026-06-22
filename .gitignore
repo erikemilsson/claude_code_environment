@@ -21,6 +21,9 @@ __pycache__/
 # Dashboard state sidecar (project state, not template content)
 .claude/dashboard-state.json
 
+# Spec merge-queue transport (project state, not template content) — DEC-023
+.claude/support/.spec-merge-queue.jsonl
+
 # Prevent nested .claude directories
 .claude/.claude/
 
