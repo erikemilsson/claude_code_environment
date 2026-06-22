@@ -36,7 +36,9 @@ To create or revise specifications, run `/iterate`.
 
 ## Direct edits to spec, decision, and vision files (DEC-016)
 
-**Substantive text edits to `.claude/spec_v*.md`, `.claude/support/decisions/decision-*.md`, and `.claude/vision/**/*.md` MUST route through `/iterate` (or, for decisions, `/research` + the decision record's `## Select an Option` checkbox; for vision, the user pastes from outside Claude Code).** This applies regardless of how small the change appears and regardless of context — including audit findings whose `iterate_routing` field already names `/iterate` as the route, drift-sweep cleanups inferred from `/work` or `/audit-coherence` output, and direct user requests that touch spec language without being formally framed as an `/iterate` proposal.
+**Substantive text edits to `.claude/spec_v*.md` and `.claude/support/decisions/decision-*.md` MUST route through `/iterate` (or, for decisions, `/research` + the decision record's `## Select an Option` checkbox).** This applies regardless of how small the change appears and regardless of context — including audit findings whose `iterate_routing` field already names `/iterate` as the route, drift-sweep cleanups inferred from `/work` or `/audit-coherence` output, and direct user requests that touch spec language without being formally framed as an `/iterate` proposal.
+
+**Vision files (`.claude/vision/**/*.md`) — DEC-023 carve-out.** A vision is a co-developed workspace, not a frozen source of truth, so its edit rule is lifecycle-dependent: **while developing** (maturity 🟡/🔵, `status: vision`) Claude **may edit the vision in-place** — `/grill`/`/shakedown` findings, fork resolutions, and amendment-log entries are the normal flow, and the vision's own structure (amendments log + fork tracker) preserves the audit trail of intent that `/iterate` provides for the spec. **After graduation** (a section reaches 🟢 / `status: distilled-to-spec`) the vision is **frozen** — the spec is the source of truth and further changes route through `/iterate` against the spec, not vision edits. The structural `permissions.ask` gate on `.claude/vision/**/*.md` **remains** (a per-session confirm via platform-native "don't ask again") as a lightweight backstop; it does not require `/iterate` routing for development-phase vision edits.
 
 **Infrastructure operations remain autonomous** under Propose-Approve-Apply's existing carveout — archiving (e.g., moving `spec_v{N}.md` to `previous_specifications/` on version bump), version transitions (creating `spec_v{N+1}.md`), and frontmatter updates (e.g., setting `decided:` on a decision record after user selection). These don't require `/iterate` because they don't change substantive text.
 
@@ -46,14 +48,18 @@ To create or revise specifications, run `/iterate`.
 
 ## Vision Documents
 
-Every project starts with ideation. A vision document is required before spec creation.
+A vision document is the **development hub for a larger feature** (DEC-023) — and the required ideation artifact before *initial* spec creation. It is not a one-time pre-spec brainstorm: it's a recurring per-feature workspace where a larger feature is developed broadly — repeated `/grill` and `/shakedown` passes folding findings *into the vision* — until it's tight enough to graduate to the spec.
 
-1. Brainstorm in Claude Desktop (or any tool)
-2. Save the result to `.claude/vision/`
-3. *(Optional pre-distill enrichment)* Run `/grill {vision-file}` to surface fuzzy language, sharpen domain vocabulary against `./CONTEXT.md` (created lazily on first resolved term), and resolve ambiguity branch-by-branch before distilling. See `.claude/commands/grill.md`.
-4. Run `/iterate distill` to extract a buildable spec
+**Structure.** Start from the scaffold `.claude/vision/_feature-vision-template.md` (copy it to `.claude/vision/<feature-slug>.md`). It formalizes the feature-vision shape: an immutable header (`status` / `supersedes` / scope), a thesis, `§`-sections each carrying a **maturity banner** (🟡 DRAFTED → 🔵 RESEARCHED → 🟢 SHIPPED) with citable evidence, one canonical **Open-forks tracker** (each fork → its probe tool + resolution/pending), a **status map**, an **evidence index** (cite corpora, never copy), and a structured **amendments** log. `_`-prefixed files are scaffolds, not visions — consumers skip them.
 
-Vision docs can be added throughout the project lifecycle — the vision folder is a living input, not a one-time artifact. `/grill` can be re-run mid-project when fuzzy language creeps into the spec or codebase; it updates `./CONTEXT.md` inline as terms resolve.
+**Lifecycle.**
+1. Capture the vision (copy the scaffold; ideation in Claude Desktop or in-session).
+2. **Develop it** — `/grill` (sharpen meaning) and `/shakedown` (capture edge-cases / world-knowledge) targeting the vision; findings fold into the structured vision; sections mature 🟡→🔵.
+3. **Graduate** — when a section is tight (🔵), `/iterate distill` (initial spec) or `/iterate` (amend an existing spec) lands it in the spec; flip the banner to 🟢 and move `status:` toward `distilled-to-spec`.
+
+**Editability (DEC-023, amending DEC-016).** A vision is **editable in-place while developing** (maturity 🟡/🔵) — co-refinement is the point; the vision's own amendments log + fork tracker *are* the audit trail of intent. Once a section graduates to spec (🟢) it is **frozen**: the spec is the source of truth and further changes route through `/iterate`, not vision edits. See § "Direct edits…" above.
+
+**Target-awareness (DEC-023).** `/grill` and `/shakedown` are target-aware: point them at a vision (develop a larger feature), a spec section (refine committed scope directly — the lighter path, no vision needed), or the running build (behavior probe). *The target you choose sets the altitude.* `/grill` also updates `./CONTEXT.md` inline as domain terms resolve, in any mode.
 
 ## Workflow Cycle
 

@@ -8,7 +8,7 @@ decided: 2026-05-16
 implemented: 2026-05-16
 related:
   tasks: []
-  decisions: [DEC-013, DEC-005, DEC-008]
+  decisions: [DEC-013, DEC-005, DEC-008, DEC-023]
   feedback: [FB-007]
 implementation_anchors:
   - .claude/settings.json
@@ -25,6 +25,8 @@ blocks: []
 ---
 
 # Claude direct-edit guardrail on `.claude/spec_v*.md` — beyond audit-system [Fix it]
+
+> **Amended by DEC-023 (2026-06-22):** the **vision** portion of this guardrail is superseded. `.claude/vision/**/*.md` is now *editable in-place during development, frozen after graduation to spec* (the `permissions.ask` gate remains as a per-session confirm; it no longer implies `/iterate`-routing for development-phase vision edits). The spec and decision-record guardrails are **unchanged**. See `decisions/decision-023-vision-hub-and-spec-shaping-workflow.md` + `.claude/rules/spec-workflow.md § "Direct edits to spec, decision, and vision files (DEC-016)"`.
 
 ## Select an Option
 

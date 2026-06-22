@@ -49,6 +49,7 @@
       ".claude/support/workspace/README.md",
       ".claude/support/previous_specifications/README.md",
       ".claude/vision/README.md",
+      ".claude/vision/_feature-vision-template.md",
       ".claude/support/feedback/README.md",
       ".claude/support/retired/README.md",
       ".claude/support/shakedowns/README.md",
