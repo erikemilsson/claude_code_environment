@@ -27,6 +27,7 @@ This environment targets the **current Claude Opus tier** via the floating `opus
 | Claude Code authoring hazards | `.claude/support/reference/claude-code-authoring.md` (DEC-017) |
 | Vision documents | `.claude/vision/` |
 | Shakedown corpus (capability maps) | `.claude/support/shakedowns/` (DEC-019) |
+| Spec merge queue (re-entry transport) | `.claude/support/reference/merge-queue.md` (DEC-023) |
 | Workspace (scratch) | `.claude/support/workspace/` |
 | Reference documents (inputs) | `.claude/support/documents/` |
 | Feedback | `.claude/support/feedback/` |

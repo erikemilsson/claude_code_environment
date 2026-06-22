@@ -74,6 +74,8 @@ As verdicts accrue (and at the end), name the exit per verdict — but **propose
 - **✓ expressible** → optionally seed a `test_protocol` acceptance step so the confirmed behaviour can't regress.
 - **Parked** → the forward-direction backlog the next shakedown or `/iterate` consumes.
 
+**Emit to the merge queue (DEC-023).** Rather than relying on the user to remember these routes, persist them: for each `⚠` (gap) and any drafted spec/vision delta, append a `.claude/support/.spec-merge-queue.jsonl` entry (`source: shakedown`, `target: vision|spec` per what this shakedown is probing, `kind: gap|delta`, `origin_ref` = the corpus entry, plus `target_ref` / `summary`). `/iterate` (or your next vision session) then surfaces them on return — the corpus stays the full record; the queue is the *notification* that a finding hasn't been folded in yet. Exception: if you're developing a vision *in this same conversation*, fold straight into its Open-forks tracker (no queue entry). See `.claude/support/reference/merge-queue.md`.
+
 ## Verdict legend
 
 Base set (extend per project — styler added `🎨` for dose/nuance):
