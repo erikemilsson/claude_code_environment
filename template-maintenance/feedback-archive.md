@@ -2001,3 +2001,60 @@ Manual maintenance-queue review (2026-06-12) verified the premise at the **templ
 `/research` (research-agent, Opus) evaluated four options against 7 research questions + external requirements-traceability precedent (RTM / BDD-Gherkin / DOORS). **Option D = A + C selected** (user, 2026-06-12), **declining the FB-097-leaned Option B**: B's `criteria[]`→box mapping is structurally unsafe (free-text, re-segmented, no ID link → fuzzy-match only — Q2); ticking a spec box changes the section fingerprint, risking Finished→Pending resets (Q5); and "write status into the authored doc" is the pattern RTM/BDD/DOORS deliberately avoid (Q4). **A (doctrine):** `verification-result.json` `criteria[]` (dashboard `### Acceptance Criteria`) is the authoritative acceptance-*status* surface; inline spec boxes are authored input, not live status (an optional convention the template never mandated — Q3); the spec stays source of truth for the *criteria*. **C (lens):** new advisory 7th `/audit-coherence` lens `acceptance-reconciliation` flags box-vs-`criteria[]` divergence per phase (`kind: decision` → reconciliation via /iterate; advisory fuzzy match never mutates the spec). **Shipped v4.26.0** (MINOR; 6 implementation files; zero edits to verify-agent / work completion flow / settings.json / drift-reconciliation — the economy of A+C over B). Record `decisions/decision-022-acceptance-criteria-reconciliation.md` (`implemented`, 6 anchors); research archive `.archive/decision-022-research-2026-06-12.md`.
 
 Tags: template-side, spec-workflow, verification, dec-016-boundary, dec-022, flirty-gym-evidence, bridged, promoted
+
+## FB-101: Output-token-limit truncation kills whole cascade sessions (vs. graceful pause)
+
+**Status:** closed
+**Captured:** 2026-06-22
+**Closed:** 2026-06-22 — Declined during a `/feedback review` walk-through of `template-maintenance/feedback.md` (same-day capture → same-day triage). The value-validation gate could not be cleared from the source, AND the template-side evidence runs *against* a template gap:
+- **Report can't attribute or quantify.** The insights report names only "several"/"multiple" sessions — no count, no session IDs, no project split (template-cascade vs personal-prose). It prints "500 output token maximum," its own report-generator artifact (real cap is 32K/response, already canon in `.claude/CLAUDE.md § Model Requirement`). So the gate's question — *how many dying sessions were template cascades?* — is unanswerable from the report.
+- **Zero template-side reproduction.** A positive-control grep (friction = 69 files, session = 66 files → grep demonstrably sound) over all 66 `interaction-logs/processed/` exports (CCE + styler + echothread + flirty-gym, the same 2026-05-22→06 window the report covers) found **0** hits for the report's death-marker `unclear_from_transcript` and **0** explicit session-death phrasing. Every output-token / truncation mention in the corpus was either the already-shipped FB-087 Playwright `browser_snapshot` pattern, or sessions **successfully self-regulating** against the 32K budget via already-shipped mechanisms (FB-080 targeted-edit + `pending_full_regen` sentinel, v4.7.0; script-first dashboard render, v4.22.0). Sample hits: *"Doing 3 full regens would have spent significant output tokens… Did targeted edits instead"*; *"could not comfortably perform a full dashboard regen… under the 32K output budget… Did focused-Edits instead."*
+- **Cheap mitigation already substantially in place.** The template's big cascades (`/work`, `/audit-coherence`, `/audit-ui`, `/health-check`) already fan heavy work to subagents and write artifacts to disk (confirmed via the FB-102 triage in the same pass), so the orchestrator never holds a large analysis artifact in a single response. The report's dying sessions are almost certainly the personal-prose projects (dating-trip briefs) — which the FB itself flagged as *"a usage-habit note, not a template gap."*
+
+This is the **FB-091/FB-092 shape** (single-source insights-report signal, residual already covered → closed). **Re-open condition:** an *attributed* template-workflow cascade truncation death in a session export (surfaced via `/health-check` Part 7) — not the aggregate insights report.
+**Source:** Claude Code Insights report (`~/.claude/usage-data/report-2026-06-22-181154.html`) — "Where Things Go Wrong" § *Output Token Limit Truncation*, and "New Ways to Use CC" § *Output token limits keep killing sessions*.
+
+### Observation (as captured)
+
+The report flagged "several sessions" that died **entirely** to output-token-limit / API errors mid-cascade — transcripts ended as `unclear_from_transcript`, the work unrecoverable. Stated pattern: large multi-step cascades pack too much into single responses and overflow the per-response output budget. **Figure caveat:** the report repeatedly cites a "500 output token maximum" — a report-generator artifact, not the real limit (32K tokens/response: thinking + text + tool args, per `.claude/CLAUDE.md § Model Requirement`).
+
+### What the template already had vs. the (claimed) gap
+
+- **Has:** `.claude/CLAUDE.md § Model Requirement` documents the 32K cap + *"agents should avoid writing large artifacts and reasoning deeply in the same response."*
+- **Claimed gap:** no structural defense in the orchestrator/cascade — `/work pause` is a boundary wind-down, but these deaths happen mid-response. The subagent "write-to-file, emit one-line status" discipline wasn't restated for the main/orchestrator thread. *(Triage finding: in practice the named cascades already follow this discipline — see closure note.)*
+
+### Mitigation candidates (as captured; not pursued)
+
+1. **Cheap — orchestrator output-discipline note.** Generalize the subagent write-to-file rule to the main thread for large artifacts. *(Triage: largely redundant — already canon + practiced.)*
+2. **Heavier — output-budget heartbeat.** Proactive checkpoint/pause when a cascade runs long, sibling to FB-081's `autonomous_batch_position` heartbeat. *(Triage: speculative; value gate failed.)*
+
+### Cross-link
+
+- **FB-102** (subagent fan-out) — coupled mitigation; the FB-102 triage confirmed the template cascades already fan out + capture to disk, which is why no template-side deaths appear.
+- Adjacent to the script-first lever (Family C / `dashboard-render.py`, v4.22.0).
+
+Tags: insights-report, output-token-limit, cascade-truncation, work-orchestrator, value-validation-gated, cross-project-aggregate, couples-FB-102, single-source-signal, declined-coverage
+
+## FB-102: Big cross-file audits / template-syncs under-use subagent fan-out
+
+**Status:** closed
+**Captured:** 2026-06-22
+**Closed:** 2026-06-22 — Named-sweep half declined during a `/feedback review` walk-through (same-day capture → triage); ad-hoc usage-habit note also declined. Triage Q1 ("do the named sweeps fan file-discovery out to a subagent, or grep+read inline?") was answered by reading the command defs:
+- **The sweeps already fan the *analysis* phase out to subagents and capture inputs to disk.** `/audit-coherence` Phase 1 captures enumerated inputs to `inputs/*.json`; Phase 2 lenses run as `general-purpose` subagents off that JSON. `/audit-ui` Phase 1 walks via Playwright (orchestrator), Phase 2 lenses fan out off static artifacts. `/health-check` runs the audits inline (same conversation), each then fanning its own lenses.
+- **The inline part is *deterministic capture of enumerated known paths*, not open-ended discovery — and it MUST be inline.** It writes to `.claude/` (subagents structurally cannot, per DEC-004) and, for `/audit-ui`, Playwright MCP cannot be fanned across parallel agents (the MCP single-session rule). So a "file-discovery subagent pre-pass" is both unneeded (nothing to *discover* — the paths are enumerated) and structurally blocked (the capture writes to `.claude/`).
+- **The FB-101 triage (same pass) reinforces this:** 0/66 template-side exports show an output-token death, precisely because these cascades already keep the main-thread output budget low via fan-out + disk capture. FB-102's "fan-out mitigates FB-101" coupling is therefore already satisfied for template work.
+- **Residual = thin ad-hoc usage-habit note** (FB-102 Q3 predicted this). Declined: the read-only `Explore`/Task capability is already documented (`rules/agents.md § Dispatch Convention`) and discoverable — dogfooded in this very triage. A nudge note adds surface for marginal value (single-source insights signal; Agent-vs-Edit 9% does not by itself indicate under-use of a well-documented capability).
+
+**Re-open condition:** a concrete reproduction of a named-sweep missing drift *because* discovery was inline, or repeated ad-hoc-session evidence that the fan-out capability is being missed despite documentation. The report's **"Parallel Agents Per Spec Phase"** (multi-worktree parallel-phase orchestration) remains a separate horizon DEC-class item adjacent to FB-067 Wave 2 — **not** folded in here.
+**Source:** Claude Code Insights report (`~/.claude/usage-data/report-2026-06-22-181154.html`) — "Features to Try" (*Custom Skills* / Task Agents), "New Ways to Use CC" § *Lean into Task Agents for your big cross-file audits*, "On the Horizon" § *Parallel Agents Per Spec Phase*. Tool-usage chart: Agent 498 vs Edit 5384 (~9%).
+
+### Observation (as captured)
+
+Coherence sweeps + template syncs routinely touch 20–38 files but are run largely in the main thread; the report recommended spawning a Task agent to *map all affected files first*. **Triage finding:** not a pure template gap — the template documents subagent dispatch heavily and the audits *are* dispatched-internally-parallel; the inline portion is enumerated-path capture that must stay inline (see closure note).
+
+### Cross-link & scope boundary
+
+- **FB-101** (output-budget) — coupled; fan-out is one of its mitigations, already satisfied for template cascades.
+- "Parallel Agents Per Spec Phase" = maximal multi-worktree version → horizon item, out of scope, cross-check FB-067 Wave 2 family before adding surface.
+
+Tags: insights-report, subagent-fan-out, audit-coherence, health-check, template-sync, usage-habit, couples-FB-101, horizon-parallel-phases, single-source-signal, declined-coverage, structural-constraint
