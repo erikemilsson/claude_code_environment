@@ -30,6 +30,8 @@ This command has two invocation shapes. The no-args triage flow surfaces candida
 
 Interview relentlessly about every aspect until reaching a shared understanding. Walk down each branch of the design tree, resolving dependencies between decisions one-by-one. For each question, provide a recommended answer.
 
+**Work general-first** (DEC-023). Open at the conceptual level — establish the shape of the thing and confirm the frame — *then* descend into specifics. Don't lead with repo internals (file/field-level detail) before the general picture is shared; the deep dive lands better once the frame is agreed.
+
 **Ask questions one at a time.** Wait for the answer before moving on. If a question can be resolved by reading the codebase or other project state (`.claude/spec_v*.md`, decisions, vision docs), explore those instead of asking.
 
 ### No-args triage flow (`/grill`)

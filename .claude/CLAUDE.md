@@ -58,7 +58,7 @@ This environment targets the **current Claude Opus tier** via the floating `opus
 | `/work complete` | Complete current in-progress task |
 | `/iterate` | Spec review and refinement |
 | `/grill` | Interview-style interrogation; no-args triages candidate areas first; auto-detects `./CONTEXT.md` |
-| `/shakedown` | Acceptance-by-example: probe the built system against real-use examples to map its capability boundary (DEC-019) |
+| `/shakedown` | Acceptance-by-example: capture the edge-cases & real-world knowledge only you have, probing examples against a vision, the spec, or the build (DEC-019, DEC-023) |
 | `/diagnose` | Hard-bug / performance-regression discipline: 6 phases (feedback loop → reproduce → hypothesise → instrument → fix → cleanup + post-mortem) |
 | `/zoom-out` | Go up a layer of abstraction — map the focus area's components and connections (uses `./CONTEXT.md` when present) |
 | `/review` | Implementation quality review (advisory, read-only) |
