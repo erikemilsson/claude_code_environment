@@ -61,7 +61,9 @@ Exit codes: 0 success, 2 runtime/usage error.
 
 import argparse
 import hashlib
+import html
 import json
+import math
 import re
 import sys
 from collections import Counter
@@ -939,22 +941,622 @@ def render_full(claude_dir: Path, now: datetime):
     return "\n".join(blocks) + "\n"
 
 
+# ============================================================ HTML rendering
+# DEC-024 Option A: a single read-only, offline, file://-openable HTML file.
+# Every visualization is inline SVG rendered HERE in Python — zero runtime/CDN
+# deps. (The file:// crux: fetch() and ES-module CDN imports both fail from a
+# double-clicked file; classic CDN <script> needs network. Only an all-inline,
+# build-time-rendered file is single-file + offline + double-click-openable.)
+# This layer REUSES the data layer above (load_tasks/build_phases/phase_status/
+# build_graph/longest_path/…); it never scrapes rendered Markdown (the prototype
+# viz.py's sin). Determinism: byte-identical for a fixed --now (no Date/random).
+
+STATUS_COLOR = {
+    "Finished": "#2f7d4f", "Pending": "#9a6212", "In Progress": "#1565c0",
+    "Awaiting Verification": "#3b7fc4", "Blocked": "#a8331f",
+    "On Hold": "#5a6b86", "Broken Down": "#7a6f57", "Absorbed": "#b8ad97",
+}
+DONUT_STATUS_ORDER = ["Finished", "In Progress", "Awaiting Verification",
+                      "Pending", "Blocked", "On Hold"]
+# Owner → (fill, stroke) for dependency-graph nodes (❗ human / 🤖 claude / 👥 both).
+OWNER_FILL = {"human": ("#fff9c4", "#f57f17"), "claude": ("#bbdefb", "#1565c0"),
+              "both": ("#d4eae4", "#0f5f54")}
+
+
+def _esc(value):
+    return html.escape(str(value))
+
+
+def _mdi(text):
+    """Minimal inline markdown → HTML: escape + links + bold + code. The curated
+    overview needs almost no markdown (DEC-024 research: 3 regexes suffice)."""
+    s = html.escape(str(text))
+    s = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", r'<a href="\2">\1</a>', s)
+    s = re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", s)
+    s = re.sub(r"`([^`]+)`", r"<code>\1</code>", s)
+    return s
+
+
+def _status_class(status):
+    s = str(status).lower()
+    if "complete" in s or "finished" in s:
+        return "ok"
+    if "active" in s or "in progress" in s:
+        return "active"
+    if "partial" in s:
+        return "warn"
+    if "blocked" in s:
+        return "bad"
+    if "hold" in s:
+        return "hold"
+    return "mute"
+
+
+# ---- inline SVG charts (ported from viz.py; data-driven here) ----------------
+
+def _polar(cx, cy, r, f):
+    a = 2 * math.pi * f - math.pi / 2
+    return cx + r * math.cos(a), cy + r * math.sin(a)
+
+
+def _ring(frac, size=150, th=14):
+    cx = cy = size / 2
+    r = (size - th) / 2
+    circ = 2 * math.pi * r
+    return (
+        f'<svg viewBox="0 0 {size} {size}" width="{size}" height="{size}" class="ring">'
+        f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="none" stroke="var(--paper-2)" stroke-width="{th}"/>'
+        f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="none" stroke="url(#g)" stroke-width="{th}" '
+        f'stroke-linecap="round" stroke-dasharray="{circ:.1f}" stroke-dashoffset="{circ * (1 - frac):.1f}" '
+        f'transform="rotate(-90 {cx} {cy})"/>'
+        f'<text x="50%" y="48%" class="ringn">{int(round(frac * 100))}<tspan class="rp">%</tspan></text>'
+        f'<text x="50%" y="63%" class="ringl">COMPLETE</text></svg>'
+    )
+
+
+def _donut(segs, size=128, th=22):
+    cx = cy = size / 2
+    r = (size - th) / 2
+    nonzero = [(lbl, v, col) for lbl, v, col in segs if v > 0]
+    if not nonzero:
+        body = f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="none" stroke="var(--paper-2)" stroke-width="{th}"/>'
+        return f'<svg viewBox="0 0 {size} {size}" width="{size}" height="{size}">{body}</svg>'
+    if len(nonzero) == 1:  # a single full segment can't draw as an arc — use a circle
+        col = nonzero[0][2]
+        body = f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="none" stroke="{col}" stroke-width="{th}"/>'
+        return f'<svg viewBox="0 0 {size} {size}" width="{size}" height="{size}">{body}</svg>'
+    tot = sum(v for _, v, _ in nonzero)
+    out, acc = [], 0.0
+    for _, v, col in nonzero:
+        f0, f1 = acc / tot, (acc + v) / tot
+        acc += v
+        x0, y0 = _polar(cx, cy, r, f0)
+        x1, y1 = _polar(cx, cy, r, f1)
+        lg = 1 if f1 - f0 > 0.5 else 0
+        out.append(f'<path d="M {x0:.1f} {y0:.1f} A {r:.1f} {r:.1f} 0 {lg} 1 {x1:.1f} {y1:.1f}" '
+                   f'fill="none" stroke="{col}" stroke-width="{th}"/>')
+    return f'<svg viewBox="0 0 {size} {size}" width="{size}" height="{size}">{"".join(out)}</svg>'
+
+
+# ---- per-phase status map (mirrors render_phase_table's stateful loop) --------
+
+def _phase_status_map(phases_model, decisions):
+    ordered = sorted(phases_model.keys(), key=lambda k: (k == "?", numeric_key(k)))
+    all_complete, out = True, {}
+    for key in ordered:
+        status = phase_status(key, phases_model[key], all_complete, decisions)
+        if status != "Complete":
+            all_complete = False
+        out[key] = status
+    return out
+
+
+# ---- dependency graph: hand-rolled layered-DAG → inline SVG (DEC-024) ---------
+
+def _adjacent_in(path, a, b):
+    return any(path[i] == a and path[i + 1] == b for i in range(len(path) - 1))
+
+
+def render_svg_graph(active, decisions):
+    """Layered-DAG → inline SVG over build_graph/longest_path. Returns '' when
+    degenerate (auto-hide): <4 task nodes, no edges, or a dependency cycle —
+    the same guards render_mermaid/render_critical_path use."""
+    nodes, edges = build_graph(active, decisions)
+    task_nodes = [k for k, v in nodes.items() if v["kind"] == "task"]
+    if len(task_nodes) < 4 or not edges:
+        return ""
+    crit = longest_path(nodes, edges)
+    if crit is None:  # cycle
+        return ""
+    crit_set = set(crit)
+
+    note = ""
+    if len(task_nodes) > 15:  # scale: critical path + immediate neighbors only
+        keep = set(crit)
+        for n in list(crit):
+            keep.update(edges.get(n, []))
+            for src, succs in edges.items():
+                if n in succs:
+                    keep.add(src)
+        omitted = len(task_nodes) - sum(1 for k in keep if nodes.get(k, {}).get("kind") == "task")
+        nodes = {k: v for k, v in nodes.items() if k in keep}
+        edges = {k: [s for s in v if s in keep] for k, v in edges.items() if k in keep}
+        if omitted > 0:
+            note = f"Showing critical path + immediate neighbors — {omitted} more tasks omitted"
+
+    preds = {}
+    for src, succs in edges.items():
+        for d in succs:
+            preds.setdefault(d, []).append(src)
+    depth = {}
+
+    def _depth(n):
+        if n in depth:
+            return depth[n]
+        depth[n] = -1  # cycle backstop (shouldn't trigger — longest_path checked)
+        ps = preds.get(n, [])
+        depth[n] = 0 if not ps else 1 + max(_depth(p) for p in ps)
+        return depth[n]
+
+    for n in nodes:
+        _depth(n)
+    layers = {}
+    for n in sorted(nodes, key=numeric_key):
+        layers.setdefault(depth[n], []).append(n)
+
+    NW, NH, DX, DY, MX, MY = 168, 38, 224, 64, 14, 44
+    pos = {}
+    for layer in sorted(layers):
+        for i, n in enumerate(layers[layer]):
+            pos[n] = (MX + layer * DX, MY + i * DY)
+    width = MX * 2 + max(layers) * DX + NW
+    height = MY * 2 + (max(len(c) for c in layers.values()) - 1) * DY + NH
+
+    edge_svg = []
+    for src, succs in sorted(edges.items(), key=lambda kv: numeric_key(kv[0])):
+        if src not in pos:
+            continue
+        sx, sy = pos[src]
+        x1, y1 = sx + NW, sy + NH / 2
+        for d in succs:
+            if d not in pos:
+                continue
+            dx, dy = pos[d]
+            x2, y2 = dx, dy + NH / 2
+            on_crit = src in crit_set and d in crit_set and _adjacent_in(crit, src, d)
+            mx = (x1 + x2) / 2
+            edge_svg.append(f'<path class="{"gedge gcrit" if on_crit else "gedge"}" '
+                            f'd="M {x1:.0f} {y1:.0f} C {mx:.0f} {y1:.0f} {mx:.0f} {y2:.0f} {x2:.0f} {y2:.0f}"/>')
+
+    node_svg = []
+    for n in sorted(nodes, key=numeric_key):
+        x, y = pos[n]
+        info = nodes[n]
+        if info["kind"] == "decision":
+            fill, stroke, label = "#f4ddd5", "#a8331f", f"❗ {info['id']}"
+        else:
+            t = info["task"]
+            fill, stroke = OWNER_FILL.get(t.get("owner", "claude"), OWNER_FILL["claude"])
+            label = f"{OWNER_EMOJI.get(t.get('owner', 'claude'), '🤖')} {str(t.get('title', ''))[:22]}"
+        crit_cls = " gncrit" if n in crit_set else ""
+        node_svg.append(
+            f'<g class="gnode{crit_cls}"><rect x="{x}" y="{y}" width="{NW}" height="{NH}" rx="8" '
+            f'fill="{fill}" stroke="{stroke}"/>'
+            f'<text x="{x + NW / 2:.0f}" y="{y + NH / 2 + 4:.0f}" text-anchor="middle">{_esc(label)}</text></g>')
+
+    cap = "Owners: ❗ you · 🤖 Claude · 👥 both · heavier stroke = critical path"
+    cap = f"{_esc(note)} · {cap}" if note else cap
+    return (
+        f'<section><h2 class="st">Flow · dependency &amp; critical path</h2>'
+        f'<div class="flowcard"><svg class="depgraph" viewBox="0 0 {width:.0f} {height:.0f}" '
+        f'width="{width:.0f}" height="{height:.0f}" role="img" aria-label="dependency graph">'
+        f'{"".join(edge_svg)}{"".join(node_svg)}</svg></div><div class="cap">{cap}</div></section>'
+    )
+
+
+# ---- curated HTML sections (all data-driven) ---------------------------------
+
+def _html_heatmap(phases_model, status_map):
+    ordered = sorted(phases_model.keys(), key=lambda k: (k == "?", numeric_key(k)))
+    cells = []
+    for key in ordered:
+        entry = phases_model[key]
+        done, total, _ = phase_counts(entry)
+        pct = round(100 * done / total) if total else 100
+        status = status_map.get(key, "")
+        label = "U" if key == "?" else str(key)
+        name = entry.get("name") or ("Unphased" if key == "?" else f"Phase {key}")
+        head = "Unphased" if key == "?" else f"Phase {key} — {name}"
+        cells.append(
+            f'<div class="cell {_status_class(status)}" title="{_esc(head)} · {done}/{total} · {_esc(status)}">'
+            f'<span class="cn">{_esc(label)}</span>'
+            f'<span class="cbar"><i style="height:{pct}%"></i></span></div>')
+    return "".join(cells)
+
+
+def _html_front(phases_model, status_map):
+    ordered = sorted(phases_model.keys(), key=lambda k: (k == "?", numeric_key(k)))
+    active = [k for k in ordered if status_map.get(k) != "Complete"]
+    cards = []
+    for key in active[:8]:
+        entry = phases_model[key]
+        done, total, _ = phase_counts(entry)
+        status = status_map.get(key, "")
+        pct = round(100 * done / total) if total else 0
+        name = entry.get("name") or ("Unphased" if key == "?" else "")
+        head = "Unphased" if key == "?" else f"Phase {key}"
+        cards.append(
+            f'<div class="af"><div class="afh"><b>{_esc(head)}</b> '
+            f'<span class="bdg {_status_class(status)}">{_esc(status)}</span>'
+            f'<span class="affrac">{done}/{total}</span></div>'
+            f'<div class="afn">{_esc(name)}</div>'
+            f'<div class="afbar"><i style="width:{pct}%"></i></div></div>')
+    return "".join(cards)
+
+
+def _html_recent(active, now):
+    completed, started, _ = week_activity(active, now)
+    entries = [(d, t, "Finished") for d, t in completed] + [(d, t, "Started") for d, t in started]
+    entries.sort(key=lambda e: (e[0], numeric_key(e[1].get("id"))), reverse=True)
+    if not entries:
+        return '<div class="rr"><span class="rt" style="color:var(--soft)">No activity in the last 7 days</span></div>'
+    rows = []
+    for d, t, _verb in entries[:7]:
+        rows.append(
+            f'<div class="rr"><span class="rd">{d.isoformat()[5:]}</span>'
+            f'<span class="tid">T{_esc(t.get("id"))}</span>'
+            f'<span class="rt">{_esc(str(t.get("title", ""))[:64])}</span></div>')
+    return "".join(rows)
+
+
+def _html_decisions(decisions):
+    if not decisions:
+        return ""
+    rows = []
+    for d in sorted(decisions, key=lambda d: numeric_key(d["id"])):
+        display = DECISION_STATUS_DISPLAY.get(d["status"], d["status"].title())
+        st = "superseded" if "superseded" in d["status"].lower() else \
+             ("decided" if display == "Decided" else "pending")
+        search = html.escape((d["id"] + " " + d["title"] + " " + (d.get("selected") or "")).lower(), quote=True)
+        href = f"support/decisions/{d['file']}"
+        sel = d.get("selected")
+        sel_html = f'<span class="sel">{_mdi(sel)}</span>' if (display == "Decided" and sel) else ""
+        rows.append(
+            f'<details class="dec" data-status="{st}" data-search="{search}"><summary>'
+            f'<span class="did">{_esc(d["id"])}</span><span class="dt">{_esc(d["title"])}</span>'
+            f'<span class="bdg {_status_class(display)}">{_esc(display)}</span></summary>'
+            f'<div class="dbody">{sel_html}<a href="{_esc(href)}">open record →</a></div></details>')
+    ndec = len(decisions)
+    nsup = sum(1 for d in decisions if "superseded" in d["status"].lower())
+    ndecided = sum(1 for d in decisions if DECISION_STATUS_DISPLAY.get(d["status"], "") == "Decided")
+    return (
+        f'<details class="decwrap"><summary><b>📋 Decisions</b> <span class="pill">{ndec}</span>'
+        f'<span class="decsum">{ndecided} decided · {nsup} superseded</span>'
+        f'<span class="open">browse ▾</span></summary><div class="decin">'
+        f'<div class="dtools"><input id="dq" placeholder="search {ndec} decisions… ( / )" oninput="decFilter()">'
+        f'<button class="fbtn on" data-f="all">all</button>'
+        f'<button class="fbtn" data-f="decided">decided</button>'
+        f'<button class="fbtn" data-f="superseded">superseded</button>'
+        f'<span class="pill" id="dcount">{ndec}</span></div>'
+        f'<div class="declist">{"".join(rows)}<div class="empty" id="dempty" style="display:none">no match</div></div>'
+        f'</div></details>')
+
+
+def _html_timeline(active, now):
+    today = now.date()
+    rows = []
+    for t in active:
+        if t.get("status") in {"Finished", "Absorbed"}:
+            continue
+        owner_note = "❗ Human task" if t.get("owner") == "human" else ""
+        if t.get("due_date"):
+            rows.append((t["due_date"], f"Task {t.get('id')} — {t.get('title', '')}",
+                         t.get("status", "Pending"), owner_note))
+        ext = t.get("external_dependency") or {}
+        if isinstance(ext, dict) and ext.get("expected_date"):
+            note = ext.get("contact", "")
+            rows.append((ext["expected_date"], f"External: {ext.get('name', 'dependency')}",
+                         "Waiting", f"Contact: {note}" if note else ""))
+    if not rows:
+        return ""
+    out = []
+    for date_s, item, status, note in sorted(rows, key=lambda r: (r[0], r[1])):
+        overdue = False
+        try:
+            overdue = datetime.strptime(date_s, "%Y-%m-%d").date() < today
+        except ValueError:
+            pass
+        item_disp = f"⚠️ OVERDUE: {item}" if overdue else item
+        note_html = f'<span class="tln">{_esc(note)}</span>' if note else ""
+        out.append(
+            f'<div class="{"tlr over" if overdue else "tlr"}"><span class="tld">{_esc(date_s)}</span>'
+            f'<span class="tli">{_esc(item_disp)}</span>'
+            f'<span class="bdg {_status_class(status)}">{_esc(status)}</span>{note_html}</div>')
+    return f'<section><h2 class="st">Timeline</h2><div class="tlcard">{"".join(out)}</div></section>'
+
+
+def _html_spec_card(claude_dir, spec):
+    version = spec.get("version")
+    if not version or version == "—":
+        return ""
+    headings = []
+    index = load_json_file(claude_dir / f"{version}.index.json")
+    if index and isinstance(index.get("sections"), list):
+        headings = [str(s.get("heading", "")).lstrip("# ").strip() for s in index["sections"]]
+        headings = [h for h in headings if h]
+    title = spec.get("title") or version
+    if headings:
+        body = (f'<div class="specsum">{len(headings)} sections (linked, not embedded — single-source)</div>'
+                f'<ul class="specsecs">{"".join(f"<li>{_esc(h)}</li>" for h in headings)}</ul>')
+    else:
+        body = '<div class="specsum">Open the spec file to browse its sections.</div>'
+    return (
+        f'<details class="speccard"><summary><b>📄 Specification</b> <span class="pill">{_esc(version)}</span>'
+        f'<span class="decsum">{_esc(title)}</span><span class="open">sections ▾</span></summary>'
+        f'<div class="specin"><a class="speclink" href="{_esc(version)}.md">open {_esc(version)}.md →</a>{body}</div></details>')
+
+
+def _html_notes(user_notes):
+    """Render sidecar user_notes (Quick Links etc.) as read-only HTML — minimal
+    block markdown (headers, bullets, links, bold)."""
+    out, in_list = [], False
+    for raw in str(user_notes).splitlines():
+        line = raw.strip()
+        if not line:
+            if in_list:
+                out.append("</ul>")
+                in_list = False
+            continue
+        if line.startswith(("- ", "* ")):
+            if not in_list:
+                out.append("<ul>")
+                in_list = True
+            out.append(f"<li>{_mdi(line[2:])}</li>")
+        else:
+            if in_list:
+                out.append("</ul>")
+                in_list = False
+            out.append(f"<p>{_mdi(line)}</p>")
+    if in_list:
+        out.append("</ul>")
+    return "".join(out)
+
+
+CSS_HTML = r"""
+*{box-sizing:border-box} html{scroll-behavior:smooth}
+:root{--paper:#f4f1ea;--paper-2:#e6dfd0;--card:#fbf9f4;--ink:#211d17;--soft:#5d564a;--line:#ddd5c5;--line2:#cabfa8;
+ --brand:#0f5f54;--brand2:#27a18c;--brandink:#0a4138;--ok:#2f7d4f;--active:#1565c0;--warn:#9a6212;--bad:#a8331f;--hold:#5a6b86;--mute:#b8ad97;
+ --sh:0 1px 0 #fff inset,0 1px 3px rgba(40,32,16,.07),0 10px 30px rgba(40,32,16,.05);}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:"IBM Plex Sans",system-ui,sans-serif;font-size:14.5px;line-height:1.5}
+.mono,code{font-family:"IBM Plex Mono",ui-monospace,monospace} a{color:var(--brandink)}
+.wrap{max-width:1080px;margin:0 auto;padding:0 22px 90px}
+header.mast{position:sticky;top:0;z-index:20;background:rgba(244,241,234,.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--line2)}
+.mast-in{max-width:1080px;margin:0 auto;padding:11px 22px;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.mast .crumb{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--soft);font-weight:600}
+.mast h1{font-family:"Fraunces",Georgia,serif;font-weight:600;font-size:18px;margin:0}
+.mast .tv{margin-left:auto;font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--soft)}
+h2.st{font-family:"Fraunces",serif;font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--soft);margin:0 0 12px;display:flex;align-items:center;gap:9px}
+h2.st::after{content:"";flex:1;height:1px;background:var(--line2)}
+section{margin:28px 0}
+.pulse{display:grid;grid-template-columns:auto auto 1fr;gap:26px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 26px;box-shadow:var(--sh)}
+.ring .ringn{font-family:"Fraunces",serif;font-weight:600;font-size:38px;fill:var(--ink);text-anchor:middle}
+.ring .rp{font-size:18px;fill:var(--soft)} .ring .ringl{font-size:9px;letter-spacing:.18em;fill:var(--soft);text-anchor:middle;font-family:"IBM Plex Mono",monospace}
+.donwrap{display:flex;align-items:center;gap:16px} .legend{display:flex;flex-direction:column;gap:3px}
+.lg{display:flex;align-items:center;gap:8px;font-size:12.5px} .lg b{margin-left:auto;font-family:"IBM Plex Mono",monospace} .dot{width:10px;height:10px;border-radius:3px} .lgn{color:var(--soft)}
+.pmeta{display:flex;flex-direction:column;gap:10px;justify-self:end;text-align:right} .pmeta .big{font-family:"Fraunces",serif;font-size:30px;font-weight:600;line-height:1}
+.pmeta .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--soft)} .pmeta .row{display:flex;gap:18px;justify-content:flex-end}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(46px,1fr));gap:6px}
+.cell{position:relative;aspect-ratio:1;border-radius:8px;border:1px solid var(--line);background:var(--card);display:flex;align-items:center;justify-content:center;overflow:hidden;transition:transform .1s}
+.cell:hover{transform:translateY(-2px);box-shadow:var(--sh);z-index:2} .cell .cn{font-family:"IBM Plex Mono",monospace;font-size:12px;font-weight:600;z-index:2}
+.cell .cbar{position:absolute;inset:0;display:flex;align-items:flex-end;opacity:.5} .cell .cbar>i{width:100%}
+.cell.ok{border-color:#bcdcc4}.cell.ok .cbar>i{background:var(--ok)}.cell.ok .cn{color:#1d5435}
+.cell.active{border-color:#aecbeb}.cell.active .cbar>i{background:var(--active)}.cell.active .cn{color:#0d3f7a}
+.cell.warn .cbar>i{background:var(--warn)}.cell.warn{border-color:#e6cfa0}
+.cell.bad{border-color:#e3b6ac}.cell.bad .cbar>i{background:var(--bad)}.cell.bad .cn{color:#7a2417}
+.cell.hold .cbar>i{background:var(--hold)} .cell.mute .cbar>i{background:var(--mute)}
+.glegend{display:flex;gap:16px;margin-top:12px;font-size:11.5px;color:var(--soft)} .glegend span b{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px}
+.front{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:16px}
+.af{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 15px;box-shadow:var(--sh)}
+.afh{display:flex;align-items:center;gap:8px;font-size:13px}.affrac{margin-left:auto;font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--soft)}
+.afn{font-size:12.5px;color:var(--soft);margin:6px 0 9px;min-height:2.4em}
+.afbar{height:6px;border-radius:99px;background:var(--paper-2);overflow:hidden}.afbar>i{display:block;height:100%;background:linear-gradient(90deg,var(--brand),var(--brand2))}
+.bdg{font-family:"IBM Plex Mono",monospace;font-size:10.5px;font-weight:600;padding:1px 7px;border-radius:5px;white-space:nowrap}
+.bdg.ok{color:var(--ok);background:#e3efe3}.bdg.active{color:var(--active);background:#e2ecf7}.bdg.warn{color:var(--warn);background:#f6ead0}.bdg.bad{color:var(--bad);background:#f4ddd5}.bdg.hold{color:var(--hold);background:#e4e8f0}.bdg.mute{color:var(--soft);background:#eae5da}
+.two{display:grid;grid-template-columns:1.4fr 1fr;gap:22px}@media(max-width:760px){.two{grid-template-columns:1fr}.pulse{grid-template-columns:1fr;text-align:center}.pmeta{justify-self:center;text-align:center}.pmeta .row{justify-content:center}}
+.att{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:6px 18px 14px;box-shadow:var(--sh)} .att ul{list-style:none;margin:0;padding:0}
+.att li{padding:11px 0;border-bottom:1px solid var(--line);font-size:13px}.att li:last-child{border:0}
+.tid{font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--brandink);margin-right:8px}
+.side{display:flex;flex-direction:column;gap:18px} .mini{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px 18px;box-shadow:var(--sh)}
+.mini h3{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--soft);margin:0 0 10px}
+.notescard p{margin:4px 0}.notescard ul{margin:4px 0;padding-left:20px}.notescard li{margin:3px 0;font-size:13px}
+.rr{display:flex;gap:9px;align-items:baseline;padding:6px 0;border-bottom:1px solid var(--line);font-size:12.5px}.rr:last-child{border:0}
+.rd{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--soft);white-space:nowrap} .rt{color:var(--ink)}
+/* decisions + spec — collapsed cards */
+.decwrap,.speccard{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--sh);overflow:hidden}
+.decwrap>summary,.speccard>summary{cursor:pointer;list-style:none;padding:14px 18px;display:flex;align-items:center;gap:10px}
+.decwrap>summary::-webkit-details-marker,.speccard>summary::-webkit-details-marker{display:none}
+.decwrap>summary:hover,.speccard>summary:hover{background:var(--paper-2)}
+.decsum{color:var(--soft);font-size:12.5px} .decwrap .open,.speccard .open{margin-left:auto;font-size:12px;color:var(--brandink);font-weight:600}
+.decwrap[open] .open::after{content:" (close)"} .pill{font-family:"IBM Plex Mono",monospace;font-size:11px;padding:1px 7px;border-radius:99px;border:1px solid var(--line2);color:var(--soft)}
+.decin{padding:4px 14px 14px;border-top:1px solid var(--line)} .dtools{display:flex;gap:8px;align-items:center;margin:10px 0;flex-wrap:wrap}
+.dtools input{flex:1;min-width:160px;font-size:13px;padding:7px 12px;border:1px solid var(--line2);border-radius:8px;background:var(--card);font-family:inherit}
+.dtools input:focus{outline:2px solid var(--brand)} .fbtn{font-family:"IBM Plex Mono",monospace;font-size:11px;padding:5px 11px;border-radius:99px;border:1px solid var(--line2);background:var(--card);color:var(--soft);cursor:pointer}
+.fbtn.on{background:var(--brand);color:#fff;border-color:var(--brand)} .declist{max-height:460px;overflow:auto}
+.dec{border-bottom:1px solid var(--line)} .dec>summary{cursor:pointer;list-style:none;padding:9px 4px;display:grid;grid-template-columns:74px 1fr auto;gap:10px;align-items:center}
+.dec>summary::-webkit-details-marker{display:none} .dec>summary:hover{background:var(--paper-2)} .did{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:12px;color:var(--brandink)} .dt{font-size:12.5px}
+.dbody{padding:2px 4px 12px 88px;font-size:12.5px;color:var(--soft)} .sel{display:block;background:var(--paper-2);color:var(--ink);padding:8px 11px;border-radius:7px;margin-bottom:6px} .empty{padding:16px;text-align:center;color:var(--soft)}
+.specin{padding:10px 18px 16px;border-top:1px solid var(--line)} .speclink{display:inline-block;margin-bottom:10px;font-weight:600}
+.specsum{font-size:12px;color:var(--soft);margin-bottom:8px} .specsecs{columns:2;font-size:12px;margin:0;padding-left:18px} .specsecs li{margin:2px 0;break-inside:avoid}
+@media(max-width:600px){.specsecs{columns:1}}
+/* flow graph + timeline */
+.flowcard{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--sh);padding:18px;overflow:auto;text-align:center}
+.depgraph{display:block;margin:0 auto;max-width:100%;height:auto}
+.gnode text{font-family:"IBM Plex Sans",sans-serif;font-size:11px;fill:var(--ink)} .gnode rect{stroke-width:1.5}
+.gnode.gncrit rect{stroke-width:3} .gedge{fill:none;stroke:var(--line2);stroke-width:1.5} .gedge.gcrit{stroke:var(--brand);stroke-width:2.5}
+.cap{font-size:12px;color:var(--soft);font-style:italic;margin-top:8px}
+.tlcard{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--sh);padding:6px 18px}
+.tlr{display:flex;gap:12px;align-items:baseline;padding:11px 0;border-bottom:1px solid var(--line);font-size:13px}.tlr:last-child{border:0}
+.tld{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--soft);white-space:nowrap;min-width:84px} .tli{flex:1} .tln{color:var(--soft);font-size:12px}
+.tlr.over .tld{color:var(--bad);text-decoration:line-through} .tlr.over{background:#fbf0ec;margin:0 -18px;padding-left:18px;padding-right:18px}
+footer{margin-top:34px;padding-top:14px;border-top:1px solid var(--line2);color:var(--mute);font-family:"IBM Plex Mono",monospace;font-size:11px}
+"""
+
+JS_HTML = r"""
+function decFilter(){var b=document.querySelector('.fbtn.on');if(!b)return;var q=(document.getElementById('dq').value||'').toLowerCase(),f=b.dataset.f,n=0;
+ document.querySelectorAll('.dec').forEach(function(d){var ok=(f==='all'||d.dataset.status===f)&&(!q||d.dataset.search.includes(q));d.style.display=ok?'':'none';if(ok)n++;});
+ document.getElementById('dcount').textContent=n;document.getElementById('dempty').style.display=n?'none':'';}
+document.addEventListener('click',function(e){if(e.target.classList.contains('fbtn')){document.querySelectorAll('.fbtn').forEach(function(b){b.classList.remove('on');});e.target.classList.add('on');decFilter();}});
+document.addEventListener('keydown',function(e){if(e.key==='/'&&e.target.tagName!=='INPUT'){var dq=document.getElementById('dq');if(dq){e.preventDefault();dq.closest('details').open=true;dq.focus();}}});
+"""
+
+
+def render_full_html(claude_dir: Path, now: datetime):
+    global _GLOBAL_FINISHED
+    tasks_dir = claude_dir / "tasks"
+    active = load_tasks(tasks_dir) if tasks_dir.is_dir() else []
+    archived = load_archived(tasks_dir) if tasks_dir.is_dir() else []
+    decisions = load_decisions(claude_dir / "support" / "decisions")
+    sidecar = load_json_file(claude_dir / "dashboard-state.json") or {}
+    version = load_json_file(claude_dir / "version.json") or {}
+    verification_result = load_json_file(claude_dir / "verification-result.json")
+    drift = load_json_file(claude_dir / "drift-deferrals.json")
+    spec = load_spec(claude_dir)
+    _GLOBAL_FINISHED = {str(t.get("id")) for t in active if t.get("status") == "Finished"} | \
+                       {str(t.get("id")) for t in archived if t.get("status", "Finished") == "Finished"}
+    phases_model = build_phases(active, archived)
+    toggles = sidecar.get("section_toggles", {})
+    status_map = _phase_status_map(phases_model, decisions)
+    title = spec.get("title") or "Project"
+
+    # completion (done/total folds archived-finished in, same basis as render_header_lines)
+    total_done = sum(phase_counts(e)[0] for e in phases_model.values())
+    total_all = sum(phase_counts(e)[1] for e in phases_model.values())
+    frac = (total_done / total_all) if total_all else 0.0
+    n_phases = len(phases_model)
+    done_ph = sum(1 for s in status_map.values() if s == "Complete")
+    active_ph = n_phases - done_ph
+
+    # status distribution (donut + legend); archived-finished folded into Finished
+    status_counts = Counter(t.get("status", "Pending") for t in active)
+    status_counts["Finished"] += sum(1 for t in archived if t.get("status", "Finished") == "Finished")
+    segs = [(s, status_counts.get(s, 0), STATUS_COLOR.get(s, "#b8ad97"))
+            for s in DONUT_STATUS_ORDER if status_counts.get(s, 0)]
+    legend = "".join(
+        f'<div class="lg"><span class="dot" style="background:{STATUS_COLOR.get(s, "#b8ad97")}"></span>'
+        f'<span class="lgn">{s}</span><b>{status_counts.get(s, 0)}</b></div>'
+        for s in DONUT_STATUS_ORDER if status_counts.get(s, 0))
+
+    meta_block = render_meta(active, decisions, spec, version, drift, verification_result, now)
+    debt = sum(1 for t in active if t.get("status") == "Finished"
+               and (t.get("task_verification") or {}).get("result") != "pass")
+    debt += sum(1 for t in active if t.get("status") == "Awaiting Verification")
+    drift_count = len(drift.get("deferrals", drift) if isinstance(drift, (dict, list)) else []) if drift else 0
+    debt_color = "var(--bad)" if debt else "var(--ok)"
+    drift_color = "var(--bad)" if drift_count else "var(--ok)"
+
+    pulse = (
+        f'<section><div class="pulse">{_ring(frac)}'
+        f'<div class="donwrap">{_donut(segs)}<div class="legend">{legend}</div></div>'
+        f'<div class="pmeta"><div class="row">'
+        f'<div><div class="big">{done_ph}<span style="color:var(--soft);font-size:18px">/{n_phases}</span></div>'
+        f'<div class="lbl">phases done</div></div>'
+        f'<div><div class="big">{active_ph}</div><div class="lbl">active now</div></div></div>'
+        f'<div class="row">'
+        f'<div><div class="big" style="color:{debt_color}">{debt}</div><div class="lbl">verif debt</div></div>'
+        f'<div><div class="big" style="color:{drift_color}">{drift_count}</div><div class="lbl">drift</div></div>'
+        f'</div></div></div></section>')
+
+    heatmap = _html_heatmap(phases_model, status_map)
+    front = _html_front(phases_model, status_map)
+    graph = render_svg_graph(active, decisions)
+    timeline = _html_timeline(active, now)
+
+    if toggles.get("action_required", True):
+        needs_you = (
+            "<!-- CLAUDE: fill — Action Required as HTML <li> items inside this <ul>, per"
+            " dashboard-regeneration.md § Action Item Contract (incl. human-gated coverage) +"
+            " § Section Display Rules. Sub-section order: Phase Transitions, Verification Pending,"
+            " Verification Debt, Spec Drift, Audit Findings, Feedback, Decisions, Your Tasks, Reviews."
+            " Omit empty sub-sections. Each <li> is a concrete action (+ completion command), not a"
+            " status report. -->")
+    else:
+        needs_you = '<li style="color:var(--soft)">Action Required section is toggled off.</li>'
+    twocol = (
+        f'<section><div class="two">'
+        f'<div><h2 class="st">Needs you</h2><div class="att"><ul>{needs_you}</ul></div></div>'
+        f'<div class="side"><div class="mini"><h3>Recent — last 7 days</h3>{_html_recent(active, now)}</div></div>'
+        f'</div></section>')
+
+    decisions_block = _html_decisions(decisions) if toggles.get("decisions", True) else ""
+    spec_card = _html_spec_card(claude_dir, spec)
+
+    custom = ""
+    if toggles.get("custom_views", False):
+        instr = sidecar.get("custom_views_instructions", "") or ""
+        custom = (
+            f'<section><h2 class="st">Custom Views</h2>'
+            f'<!-- CUSTOM VIEWS INSTRUCTIONS -->\n{html.escape(instr)}\n<!-- END CUSTOM VIEWS INSTRUCTIONS -->'
+            f'<div class="att"><!-- CLAUDE: fill — render one block per bold-labeled instruction above, as HTML --></div>'
+            f'</section>')
+
+    notes_card = ""
+    user_notes = sidecar.get("user_notes", "")
+    if toggles.get("notes", True) and str(user_notes).strip():
+        notes_card = (f'<section><h2 class="st">Notes</h2>'
+                      f'<div class="mini notescard">{_html_notes(user_notes)}</div></section>')
+
+    indicator = (f'⚠️ {drift_count} drift deferrals, {debt} verification debt'
+                 if (debt or drift_count) else 'spec aligned · 0 drift deferrals, 0 verification debt')
+    footer = (f'<footer>generated {now.strftime("%Y-%m-%dT%H:%M:%SZ")} · {len(active)} tasks · {indicator} · '
+              f'single read-only HTML view · state of record = task JSON</footer>')
+
+    return (
+        '<!doctype html><html lang="en"><head><meta charset="utf-8">'
+        '<meta name="viewport" content="width=device-width,initial-scale=1">'
+        f'<title>{_esc(title)} — Dashboard</title>'
+        '<link rel="preconnect" href="https://fonts.googleapis.com">'
+        '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
+        '<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">'
+        f'\n{meta_block}\n'
+        f'<style>{CSS_HTML}</style>'
+        '<svg width="0" height="0"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">'
+        '<stop offset="0" stop-color="var(--brand)"/><stop offset="1" stop-color="var(--brand2)"/>'
+        '</linearGradient></defs></svg></head>'
+        f'<body><header class="mast"><div class="mast-in"><span class="crumb">Execute</span>'
+        f'<h1>{_esc(title)}</h1>'
+        f'<span class="tv">{len(active)} tasks · {n_phases} phases · read-only view</span></div></header>'
+        f'<div class="wrap">{pulse}'
+        f'<section><h2 class="st">Phase map · {n_phases} phases</h2><div class="grid">{heatmap}</div>'
+        f'<div class="glegend"><span><b style="background:var(--ok)"></b>complete</span>'
+        f'<span><b style="background:var(--active)"></b>active</span>'
+        f'<span><b style="background:var(--warn)"></b>partial</span>'
+        f'<span><b style="background:var(--bad)"></b>blocked</span>'
+        f'<span style="margin-left:auto">fill = % done · hover for detail</span></div>'
+        f'<div class="front">{front}</div></section>'
+        f'{graph}{timeline}{twocol}'
+        f'<section>{decisions_block}</section>'
+        f'<section>{spec_card}</section>'
+        f'{custom}{notes_card}{footer}</div>'
+        f'<script>{JS_HTML}</script></body></html>')
+
+
 # ------------------------------------------------------------------- main
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description="Deterministic dashboard renderer (Family C full port).")
     parser.add_argument("--tasks-section", action="store_true", help="render only the '## 📋 Tasks' section")
     parser.add_argument("--render", action="store_true", help="render the full dashboard markdown")
+    parser.add_argument("--html", action="store_true", help="render the full dashboard as HTML (DEC-024)")
     parser.add_argument("--task-hash", action="store_true", help="print the canonical META task_hash and exit")
     parser.add_argument("--tasks-dir", default=".claude/tasks", help="task JSON directory (for --tasks-section/--task-hash)")
-    parser.add_argument("--claude-dir", default=".claude", help="environment root (for --render)")
+    parser.add_argument("--claude-dir", default=".claude", help="environment root (for --render/--html)")
     parser.add_argument("--now", default=None, help="ISO timestamp for deterministic output (default: current UTC)")
     args = parser.parse_args(argv)
 
-    modes = sum(bool(m) for m in (args.tasks_section, args.render, args.task_hash))
+    modes = sum(bool(m) for m in (args.tasks_section, args.render, args.html, args.task_hash))
     if modes != 1:
         parser.print_usage(sys.stderr)
-        print("error: exactly one of --tasks-section / --render / --task-hash is required", file=sys.stderr)
+        print("error: exactly one of --tasks-section / --render / --html / --task-hash is required", file=sys.stderr)
         return 2
 
     if args.now:
@@ -986,6 +1588,9 @@ def main(argv=None):
     if not claude_dir.is_dir():
         print(f"error: claude dir not found: {claude_dir}", file=sys.stderr)
         return 2
+    if args.html:
+        print(render_full_html(claude_dir, now))
+        return 0
     print(render_full(claude_dir, now), end="")
     return 0
 
