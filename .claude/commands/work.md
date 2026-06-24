@@ -265,7 +265,7 @@ Enumerate every item currently gated on the user and surface it before routing. 
    1. {item} — {concrete question or action} → {file link}
    ...
    ```
-5. **Dashboard cross-check:** every item found must have a 🚨 Action Required row with the question/action inline. Add missing rows via the targeted-edit path (set the `pending_full_regen` sentinel per FB-080) — do not defer to the next full regen.
+5. **Dashboard cross-check:** every item found must have a 🚨 Action Required ("Needs you") item with the question/action inline. If any are missing, regenerate `dashboard.html` (a full regen is cheap; the "Needs you" card is LLM-filled) so the queue is complete.
 
 ### Step 1: Gather Context
 
@@ -294,9 +294,7 @@ Read and analyze:
 
 Verify the dashboard is current before using its data. Compute a SHA-256 hash of all task IDs, statuses, difficulties, and owners, compare against the dashboard's `<!-- DASHBOARD META -->` block. If the hash differs or no metadata exists, regenerate the dashboard from task JSON files before continuing.
 
-Also compare `template_version` in the META block against `template_version` in `.claude/version.json`. If they differ or the META field is absent, the dashboard was generated with older format rules and should be regenerated (see dashboard-regeneration.md § "Format Staleness").
-
-Also read `.claude/dashboard-state.json`'s `pending_full_regen` field. If non-null, a prior-session targeted edit set the sentinel and full regen must run even when `task_hash` matches (see dashboard-regeneration.md § "Targeted Edits"). Full regen clears the field to `null`. A missing field is treated as `null` (back-compat).
+Also compare `template_version` in the META block against `template_version` in `.claude/version.json`. If they differ or the META field is absent, the dashboard was generated with older format rules and should be regenerated (see dashboard-regeneration.md § "Format Staleness"). **Migration (DEC-024):** if a legacy Markdown `.claude/dashboard.md` is present, migrate its `<!-- USER SECTION -->` / `<!-- SECTION TOGGLES -->` / `<!-- CUSTOM VIEWS INSTRUCTIONS -->` content into the sidecar, delete it, and regenerate `dashboard.html`.
 
 **Full procedure:** `.claude/support/reference/drift-reconciliation.md` § "Dashboard Freshness Check"
 
@@ -924,7 +922,7 @@ Read `.claude/support/reference/context-transitions.md` and follow the Path A (U
 - Do NOT increment `verification_attempts` if verify-agent was interrupted
 - Do NOT skip the handoff file — that's the whole point
 - `session_knowledge` captures what would otherwise be lost: user preferences, informal decisions, discovered patterns
-- **Open-question sweep (human-gated coverage):** before writing the handoff, enumerate every question asked of the user this session that went unanswered, plus any newly user-gated items (tasks put On Hold, unblocked `owner: "human"` tasks, unresolved decisions). Each MUST land as a dashboard 🚨 Action Required row with the concrete question inline — the targeted-edit path + `pending_full_regen` sentinel (FB-080) is sufficient. The handoff may point at those rows; it must never be a blocking question's only home. (Counterpart: Step 0g prints this queue at the next session start.)
+- **Open-question sweep (human-gated coverage):** before writing the handoff, enumerate every question asked of the user this session that went unanswered, plus any newly user-gated items (tasks put On Hold, unblocked `owner: "human"` tasks, unresolved decisions). Each MUST land in the dashboard's 🚨 Action Required ("Needs you") card with the concrete question inline — regenerate `dashboard.html` so the card is complete. The handoff may point at those items; it must never be a blocking question's only home. (Counterpart: Step 0g prints this queue at the next session start.)
 
 ### Interaction Assessment + Session Export (Track 2 — Cross-Project Logging)
 
