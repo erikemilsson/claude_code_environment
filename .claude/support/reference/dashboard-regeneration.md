@@ -44,7 +44,7 @@ The **only** source for section toggles is the `section_toggles` object in the `
 
 ### First Regeneration (Replacing Template Example)
 
-Detection: the shipped `dashboard.html` is still the template example if it contains the HTML comment marker `<!-- FORMAT EXAMPLE -->` (near the top of `<body>`). On first regeneration, compute toggle defaults from project state instead of using static defaults:
+Detection: it is the **first regeneration** when no `dashboard-state.json` sidecar exists yet *and* there is no legacy `dashboard.md` to migrate (a derived `dashboard.html` is gitignored, so the template ships no dashboard — a fresh project generates it on first `/work`). On first regeneration, compute toggle defaults from project state instead of using static defaults:
 
 ```
 Action Required  → [x] always (core section)
@@ -195,39 +195,15 @@ The dashboard is read-only HTML; user content lives **only** in `.claude/dashboa
 - **Timeline:** the script renders it when any task has `due_date` or `external_dependency.expected_date`
 - **Dependency graph:** the script renders it as inline SVG when ≥4 incomplete task nodes with edges exist; auto-hidden when degenerate; >15 nodes reduce to critical path + neighbors (see § "Dependency Graph")
 - **Acceptance criteria:** the script renders the live status surface from `verification-result.json` `criteria[]` (DEC-022)
-- On first regeneration (detected by the `<!-- FORMAT EXAMPLE -->` marker in the shipped example), replace it with actual project data and compute toggle defaults per § "First Regeneration"
 - Enforce atomicity: only tasks with JSON files, only decisions with MD files
-- On first regeneration (detected by `> **This is a format example**` line): replace the template example with actual project data and compute toggle defaults per the "First Regeneration" section above
+- On **first regeneration** (no `dashboard-state.json` sidecar yet, and no legacy `dashboard.md` to migrate): compute toggle defaults from project state and seed `user_notes` with Quick Links, per § "First Regeneration"
 - **User review gate for `both` tasks:** When generating "Your Tasks", include `both`-owned tasks that have `user_review_pending: true` — even if their status is "Finished". These tasks passed verification but still need user review. Show them with status `✅ Verified — awaiting your review` and include a `/work complete {id}` prompt. Remove them from "Your Tasks" only after the user runs `/work complete`.
-- **Inline feedback areas:** When generating "Your Tasks", add feedback markers for each `human`/`both`-owned task:
-  ```
-  <!-- FEEDBACK:{id} -->
-  **Task {id} — Feedback:**
-  [Leave feedback here, then run /work complete {id}]
-  <!-- END FEEDBACK:{id} -->
-  ```
-- **Phase Transitions sub-section:** When all tasks in Phase N are "Finished" AND Phase N+1 tasks exist AND no `<!-- PHASE GATE:{N}→{N+1} APPROVED -->` marker exists in the dashboard, render a phase gate with enumerated conditions between markers:
-  ```
-  <!-- PHASE GATE:{N}→{N+1} -->
-  **Phase {N} → Phase {N+1} Transition**
-
-  Conditions:
-  - [x] All Phase {N} tasks finished ({M}/{M})
-  - [x] All verifications passed ({V}/{V})
-  - [ ] Approve transition to Phase {N+1}
-
-  <!-- END PHASE GATE:{N}→{N+1} -->
-  ```
-  **Enumerated condition rules:**
-  - Auto-conditions (task completion, verification status) are computed and rendered as pre-checked `[x]` items — the user cannot uncheck these, they reflect actual state
-  - The final "Approve transition" checkbox is the manual gate — the user must check this
-  - If any auto-condition is NOT met (e.g., a task has verification debt), render it as `[ ]` with detail: `- [ ] All verifications passed (8/10 — 2 tasks have verification debt)`
-  - Custom gate conditions from the spec: if the Phase N spec section contains a `### Gate Conditions` or `### Transition Criteria` sub-section with bullets, each bullet becomes an additional checkbox between auto-conditions and the approval checkbox. If no such sub-section exists, skip custom conditions.
-  - The gate is approved only when ALL checkboxes are checked (both auto and manual)
-- **Verification Pending sub-section:** When all spec tasks are "Finished" with passing per-task verification AND no valid `verification-result.json` exists, render:
-  ```
-  All tasks complete — phase-level verification will run on next `/work`
-  ```
+- **Feedback on a task:** the read-only HTML has no in-file feedback box. When a `human`/`both` task wants feedback, the "Needs you" item names the task and says to give feedback via the CLI at `/work complete {id}`; the orchestrator stores it in the task JSON `user_feedback` field.
+- **Phase Transitions item:** When all tasks in Phase N are "Finished" AND Phase N+1 tasks exist AND the sidecar's `phase_gates["{N}→{N+1}"].status` is not `approved`, the "Needs you" card shows the gate as an HTML item listing the conditions and their met/unmet state, ending with the approval action:
+  - Auto-conditions (all Phase N tasks finished; all per-task verifications passed; any spec `### Gate Conditions` / `### Transition Criteria` bullets) are rendered as read-only ✓/○ status — they reflect actual state, the user does not toggle them.
+  - The transition is approved via CLI (`/work` prompts `[Y] Approve / [N] Hold`); on approval the orchestrator sets `phase_gates` status to `approved` (see `phase-decision-gates.md`).
+  - Show an unmet auto-condition with detail, e.g. "Verifications: 8/10 — 2 tasks have verification debt".
+- **Verification Pending item:** When all spec tasks are "Finished" with passing per-task verification AND no valid `verification-result.json` exists, the "Needs you" card shows: "All tasks complete — phase-level verification will run on next `/work`."
 - **Acceptance Criteria sub-section (Progress section):** When `verification-result.json` exists and has a `criteria` array, render a compact checklist as a sub-section under `## 📊 Progress` (after the phase table, before the critical path one-liner):
   ```
   ### Acceptance Criteria

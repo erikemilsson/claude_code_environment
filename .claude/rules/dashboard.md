@@ -45,7 +45,7 @@ The dashboard auto-adapts to project size:
 
 ## Dashboard State
 
-The dashboard ships as a populated HTML format example (fictional renovation project) carrying a `<!-- FORMAT EXAMPLE -->` comment marker. On first `/work` run after spec decomposition, it is regenerated with actual project data (the marker is absent from generated output, so it is detected and replaced exactly once).
+The dashboard is a derived, gitignored artifact, so the template ships no `dashboard.html` — a fresh project generates it on the first `/work` after spec decomposition. **First regeneration** is detected by the absence of a `dashboard-state.json` sidecar (and no legacy `dashboard.md` to migrate); on it, the orchestrator seeds the Notes Quick Links and computes section-toggle defaults from project state.
 
 User content lives **only** in `dashboard-state.json` (the sidecar): `section_toggles` (which sections render) and `user_notes` (the Notes card). The HTML has no editable markers — the sidecar is the single source of truth.
 

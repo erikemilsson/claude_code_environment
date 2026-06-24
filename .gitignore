@@ -18,6 +18,9 @@ __pycache__/
 # Per-file sync state sidecar (project state, not template content)
 .claude/.sync-state.json
 
+# Dashboard — generated HTML render target (derived artifact, regenerated each /work) — DEC-024
+.claude/dashboard.html
+
 # Dashboard state sidecar (project state, not template content)
 .claude/dashboard-state.json
 
