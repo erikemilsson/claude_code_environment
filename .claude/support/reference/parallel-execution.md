@@ -246,7 +246,7 @@ During parallel execution, strict write ownership prevents file corruption. The 
 | Writer | May write to | Must NOT write to |
 |--------|-------------|-------------------|
 | Each parallel agent | Nothing — agents return structured reports only (harness prohibits subagent writes to `.claude/`, per DEC-004) | Any `.claude/` path |
-| `/work` orchestrator | All task JSONs, parent task JSONs, dashboard.md, verification-result.json, dashboard-state.json, session-log.jsonl, fix-task JSON files | Nothing — orchestrator is the sole writer in this architecture |
+| `/work` orchestrator | All task JSONs, parent task JSONs, dashboard.html, verification-result.json, dashboard-state.json, session-log.jsonl, fix-task JSON files | Nothing — orchestrator is the sole writer in this architecture |
 
 The orchestrator performs all writes: it sets `conflict_note` fields before dispatch, consumes each agent's return report to persist task-JSON state, performs parent auto-completion, and regenerates the dashboard at batch end.
 
@@ -331,7 +331,7 @@ After all agents complete (active_agents AND active_verifiers are empty):
 1. Final parent auto-completion check
 
 2. Single dashboard regeneration:
-   Regenerate dashboard.md per the Dashboard Regeneration Procedure
+   Regenerate dashboard.html per the Dashboard Regeneration Procedure
    - Remove all conflict_note fields from task JSONs (cleanup)
 
 3. Operational checks (Step 5)

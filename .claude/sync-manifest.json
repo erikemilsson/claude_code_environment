@@ -64,7 +64,7 @@
     "ignore": [
       ".claude/rules/project-*.md",
       ".claude/tasks/*.json",
-      ".claude/dashboard.md",
+      ".claude/dashboard.html",
       ".claude/verification-result.json",
       ".claude/version.json",
       ".claude/sync-manifest.json",

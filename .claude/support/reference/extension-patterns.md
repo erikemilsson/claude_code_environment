@@ -172,7 +172,7 @@ Decisions appear in the dashboard:
 
 User-defined inline views rendered directly in the dashboard. Instead of linking to external files, you write instructions describing what content Claude should generate, and it appears right in the dashboard.
 
-**Enabling:** Check `Custom Views` in the **Sections** checklist at the top of `dashboard.md`. When enabled, a `## 👁️ Custom Views` section appears in the dashboard.
+**Enabling:** Set `custom_views: true` under `section_toggles` in `.claude/dashboard-state.json` (or ask Claude to enable it) — the read-only HTML dashboard has no in-file checklist. When enabled, a Custom Views section appears in the dashboard.
 
 **How it works:**
 
@@ -230,6 +230,6 @@ An inline Mermaid diagram in the dashboard's Progress section showing the projec
 ## Related Files
 
 - [decisions.md](decisions.md) — Decision record format and selection mechanism
-- [dashboard.md](../../dashboard.md) — Dashboard template with section toggle checklist and populated example
+- `dashboard.html` — the generated read-only dashboard (from `dashboard-render.py --html` + the `dashboard-state.json` sidecar)
 - [shared-definitions.md](shared-definitions.md) — Vocabulary (Phase, Decision, Inflection Point, Human Task)
 - [workflow.md](workflow.md) — Core workflow documentation

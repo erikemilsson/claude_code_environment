@@ -9,7 +9,7 @@ A structured development environment for Claude Code using the **Spec → Execut
 1. **Ideate:** Brainstorm your project in Claude Desktop (or any tool), save the result to `.claude/vision/`
 2. **Create your spec:** Run `/iterate distill` in Claude Code to extract a buildable spec from your vision document
 3. **Build:** Run `/work` to decompose tasks and start implementation
-4. **Track progress:** Open `.claude/dashboard.md` to see what needs your attention
+4. **Track progress:** Open `.claude/dashboard.html` (double-click — it opens offline in your browser) to see what needs your attention
 
 ## Design Philosophy
 
@@ -39,7 +39,7 @@ Your project uses three instruction sources. Understanding the split is importan
 | `.claude/CLAUDE.md` | Environment instructions (template-owned, do not edit) |
 | `.claude/rules/` | Modular workflow rules (template-owned + project-specific) |
 | `spec_v{N}.md` | Your project specification — the source of truth for what gets built |
-| `dashboard.md` | Your communication channel with Claude — decisions, tasks, progress |
+| `dashboard.html` | Your read-only overview — progress, decisions, what needs you (open by double-click; act via the CLI) |
 | `tasks/` | Task data (JSON files managed by `/work`) |
 | `commands/` | Slash commands (`/work`, `/iterate`, `/status`, etc.) |
 | `agents/` | Specialist agents (implement-agent builds, verify-agent validates, research-agent investigates) |
@@ -58,7 +58,7 @@ Understanding which files are yours to edit vs. which are managed by the templat
 
 **Project-owned** (yours, created during project work):
 - `./CLAUDE.md` (root), `.claude/rules/project-*.md`
-- `.claude/spec_v{N}.md`, `.claude/tasks/`, `.claude/dashboard.md`
+- `.claude/spec_v{N}.md`, `.claude/tasks/`, `.claude/dashboard.html`
 - `.claude/support/decisions/`, `.claude/support/workspace/`
 - `.claude/support/reference/project-*.md` (extracted from root CLAUDE.md)
 - `.claude/vision/*.md`, `.claude/support/feedback/`
@@ -119,11 +119,11 @@ See Claude Code's permission-modes documentation (`https://code.claude.com/docs/
 
 ## How It Works
 
-The dashboard (`.claude/dashboard.md`) is your primary interface during development:
+The dashboard (`.claude/dashboard.html`) is your primary read surface during development — a single, offline, double-click-openable HTML page:
 
 - Claude tracks tasks, produces deliverables, and runs verification autonomously
-- When Claude needs your input, it appears in the dashboard — with links to relevant files, checkboxes to confirm actions, and space for feedback
-- You click through to files when needed, then signal completion back through the dashboard
+- When Claude needs your input, it appears in the dashboard's "Needs you" card — with links to relevant files and the exact command to run
+- The dashboard is read-only; you act via the CLI. Section visibility and your notes live in the `.claude/dashboard-state.json` sidecar (edit it or just ask Claude)
 
 Specialist agents with separated concerns ensure quality:
 - **implement-agent** executes tasks and produces deliverables
@@ -257,7 +257,7 @@ Checkpoints persist across sessions, so you can rewind even after closing and re
 
 | Looking for... | Location |
 |---------------|----------|
-| What to do next | `dashboard.md` |
+| What to do next | `dashboard.html` |
 | Project requirements | `spec_v{N}.md` |
 | Task details | `tasks/task-*.json` |
 | Decision records | `support/decisions/decision-*.md` |

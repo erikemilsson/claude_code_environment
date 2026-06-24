@@ -24,7 +24,7 @@ Communication uses two tiers to keep the user informed without wasteful file I/O
 
 ### Tier 1: Dashboard Regeneration (strategic moments)
 
-Regenerate `dashboard.md` per `.claude/support/reference/dashboard-regeneration.md` only at moments when the user needs it current:
+Regenerate `dashboard.html` per `.claude/support/reference/dashboard-regeneration.md` only at moments when the user needs it current:
 
 | Trigger | Rationale |
 |---------|-----------|
@@ -280,7 +280,7 @@ Enumerate every item currently gated on the user and surface it before routing. 
 
 Read and analyze:
 - `.claude/spec_v{N}.md` - The specification (source of truth)
-- `.claude/dashboard.md` - Task status and progress (read the `<!-- DASHBOARD META -->` block)
+- `.claude/dashboard.html` - Task status and progress (read the `<!-- DASHBOARD META -->` comment in the `<head>`)
 
 **Fast-path optimization:** If dashboard META block shows matching task_count and spec_fingerprint, skip Steps 1a/1b and jump to Step 1c. Always check drift-deferrals.json for stale deferrals even on fast-path.
 
@@ -855,7 +855,7 @@ When all tasks are finished and verification conditions are met:
 Run quick validation after task dispatch to catch issues early:
 
 1. **Task file integrity** — Verify the task JSON that was just modified is valid JSON and parseable
-2. **Dashboard exists** — Confirm `.claude/dashboard.md` exists and has a `<!-- DASHBOARD META -->` block
+2. **Dashboard exists** — Confirm `.claude/dashboard.html` exists and has a `<!-- DASHBOARD META -->` comment in its `<head>`
 3. **Session sentinel** — Write `.claude/tasks/.last-clean-exit.json` with current timestamp and in-progress task list (enables fast-path recovery check on next `/work` run)
 4. **Session boundary dashboard freshness** — When the main work loop has reached a natural stopping point (phase boundary, blocking decision, verification failure needing human escalation, or no more eligible tasks), verify dashboard freshness against actual task state. Compute a hash of all task IDs/statuses/owners and compare against the `<!-- DASHBOARD META -->` block. If stale, regenerate now — the user should never see a stale dashboard as the final state of a work session.
 
