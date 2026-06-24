@@ -235,6 +235,16 @@ class TestSections(HtmlBase):
         self.assertIn("Quick Links", out)
         self.assertIn('href="spec_v1.md"', out)
 
+    def test_acceptance_criteria_status_surface(self):
+        # DEC-022: criteria[] from verification-result.json is the live status surface
+        out = self.render(self.make_env(active=[task(1, "Pending", "1")],
+            verification={"criteria": [
+                {"criterion": "User can log in", "status": "pass", "notes": "ok"},
+                {"criterion": "Session expires", "status": "fail"}]}))
+        self.assertIn("Acceptance criteria", out)
+        self.assertIn("1/2 passed", out)
+        self.assertIn("User can log in", out)
+
     def test_timeline_renders_with_due_dates(self):
         out = self.render(self.make_env(active=[
             task(1, "Pending", "1", due_date="2026-01-01", owner="human"),

@@ -712,6 +712,32 @@ def _html_timeline(active, now):
     return f'<section><h2 class="st">Timeline</h2><div class="tlcard">{"".join(out)}</div></section>'
 
 
+def _html_acceptance(verification_result):
+    """Acceptance-criteria status surface (DEC-022): the live phase-acceptance
+    status from verification-result.json's criteria[] — NOT the spec's authored
+    - [ ] boxes."""
+    if not verification_result:
+        return ""
+    criteria = verification_result.get("criteria")
+    if isinstance(criteria, list) and criteria:
+        rows = []
+        for c in criteria:
+            ok = c.get("status") == "pass"
+            note = str(c.get("notes", "")).strip()
+            note_html = f' <span class="acnote">— {_esc(note[:80])}</span>' if note else ""
+            rows.append(f'<li class="{"acok" if ok else "acno"}">'
+                        f'<span class="acmark">{"✓" if ok else "○"}</span>'
+                        f'{_esc(c.get("criterion", "(unnamed)"))}{note_html}</li>')
+        passed = sum(1 for c in criteria if c.get("status") == "pass")
+        return (f'<section><h2 class="st">Acceptance criteria · {passed}/{len(criteria)} passed</h2>'
+                f'<div class="accard"><ul class="aclist">{"".join(rows)}</ul></div></section>')
+    passed, failed = verification_result.get("criteria_passed"), verification_result.get("criteria_failed")
+    if passed is not None and failed is not None:
+        return (f'<section><h2 class="st">Acceptance criteria</h2>'
+                f'<div class="accard"><b>{passed}/{passed + failed}</b> criteria passed</div></section>')
+    return ""
+
+
 def _html_spec_card(claude_dir, spec):
     version = spec.get("version")
     if not version or version == "—":
@@ -835,6 +861,9 @@ section{margin:28px 0}
 .tlr{display:flex;gap:12px;align-items:baseline;padding:11px 0;border-bottom:1px solid var(--line);font-size:13px}.tlr:last-child{border:0}
 .tld{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--soft);white-space:nowrap;min-width:84px} .tli{flex:1} .tln{color:var(--soft);font-size:12px}
 .tlr.over .tld{color:var(--bad);text-decoration:line-through} .tlr.over{background:#fbf0ec;margin:0 -18px;padding-left:18px;padding-right:18px}
+.accard{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--sh);padding:6px 18px}
+.aclist{list-style:none;margin:0;padding:0} .aclist li{display:flex;gap:10px;align-items:baseline;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px}.aclist li:last-child{border:0}
+.acmark{font-weight:700;width:14px;flex:none} .acok .acmark{color:var(--ok)} .acno .acmark{color:var(--soft)} .acnote{color:var(--soft);font-size:12px}
 footer{margin-top:34px;padding-top:14px;border-top:1px solid var(--line2);color:var(--mute);font-family:"IBM Plex Mono",monospace;font-size:11px}
 """
 
@@ -906,6 +935,7 @@ def render_full_html(claude_dir: Path, now: datetime):
     heatmap = _html_heatmap(phases_model, status_map)
     front = _html_front(phases_model, status_map)
     graph = render_svg_graph(active, decisions)
+    accept = _html_acceptance(verification_result)
     timeline = _html_timeline(active, now)
 
     if toggles.get("action_required", True):
@@ -970,7 +1000,7 @@ def render_full_html(claude_dir: Path, now: datetime):
         f'<span><b style="background:var(--bad)"></b>blocked</span>'
         f'<span style="margin-left:auto">fill = % done · hover for detail</span></div>'
         f'<div class="front">{front}</div></section>'
-        f'{graph}{timeline}{twocol}'
+        f'{accept}{graph}{timeline}{twocol}'
         f'<section>{decisions_block}</section>'
         f'<section>{spec_card}</section>'
         f'{custom}{notes_card}{footer}</div>'
