@@ -253,5 +253,76 @@ class TestSections(HtmlBase):
         self.assertIn("OVERDUE", out)  # 2026-01-01 < NOW
 
 
+class TestLegibilityFixes(HtmlBase):
+    """Regression tests for the 2026-06-24 renderer legibility/consistency pass:
+    task count incl. archived, note-promotion over "(unnamed)", soft truncation."""
+
+    def test_task_count_includes_archived_finished(self):
+        # Header + footer count == ring/phase basis (active non-absorbed +
+        # archived-finished), NOT len(active). Pins the 275-vs-867 contradiction.
+        active = [task(1, "Pending", "1"), task(2, "In Progress", "1")]
+        archived = [task(i, "Finished", "1") for i in range(10, 18)]  # 8 archived-finished
+        out = self.render(self.make_env(active=active, archived=archived))
+        self.assertIn("10 tasks · 1 phases · read-only view", out)  # 2 active + 8 archived
+        self.assertIn("· 10 tasks · spec aligned", out)
+        self.assertNotIn("2 tasks · 1 phases", out)  # the old len(active) behavior
+
+    def test_acceptance_unnamed_criterion_promotes_note(self):
+        # No criterion name → render the note as the description, never "(unnamed)".
+        out = self.render(self.make_env(active=[task(1, "Pending", "1")],
+            verification={"criteria": [
+                {"status": "pass", "notes": "grep returns no body_shape field; migration done"}]}))
+        self.assertNotIn("(unnamed)", out)
+        self.assertIn("grep returns no body_shape field; migration done", out)
+
+    def test_acceptance_long_note_not_hard_cut_at_80(self):
+        # The old code did notes[:80] with no ellipsis; a sub-limit note renders whole.
+        note = ("shoulder_hip_balance (4 options) at line 1254; waist_definition (3) "
+                "at 1294; torso_leg_ratio (3) at 1329 all present and verified")
+        self.assertGreater(len(note), 80)
+        out = self.render(self.make_env(active=[task(1, "Pending", "1")],
+            verification={"criteria": [{"criterion": "C1", "status": "pass", "notes": note}]}))
+        self.assertIn(note, out)
+
+    def test_acceptance_overlong_note_clips_with_title_fallback(self):
+        # A note past the limit clips with an ellipsis AND keeps the full text in title=.
+        note = "alpha " * 60  # ~360 chars, well past the 240 limit
+        out = self.render(self.make_env(active=[task(1, "Pending", "1")],
+            verification={"criteria": [{"criterion": "C1", "status": "pass", "notes": note.strip()}]}))
+        self.assertIn("…", out)
+        self.assertIn(f'title="{note.strip()}"', out)
+
+    def test_graph_nodes_have_title_tooltip_and_arrowheads(self):
+        out = self.render(self.make_env(active=self.chain(5)))
+        self.assertIn('class="depgraph"', out)
+        self.assertIn("marker-end=", out)        # arrowheads applied to edges
+        self.assertIn('<marker id="ah"', out)    # marker defs present
+        self.assertIn("<title>🤖 Task", out)      # node hover carries the full label
+
+    def test_hero_ring_merges_status_segments(self):
+        # One hero ring carries the status-segment colors (former donut) + the %
+        # center text; the separate second-circle wrapper is gone.
+        out = self.render(self.make_env(active=[task(1, "Finished", "1"), task(2, "Pending", "1")]))
+        self.assertIn('class="ring"', out)
+        self.assertIn('stroke="#2f7d4f"', out)   # Finished segment drawn on the ring
+        self.assertIn('class="legend"', out)      # per-status counts beside it
+        self.assertNotIn('class="donwrap"', out)  # old donut wrapper removed
+
+    def test_notes_card_is_collapsible(self):
+        out = self.render(self.make_env(active=[task(1, "Pending", "1")],
+            sidecar={"user_notes": "Quick links: see the spec."}))
+        self.assertIn('class="notesblock"', out)
+        self.assertIn("<summary>Notes", out)
+
+    def test_notes_autoprepends_live_spec_link(self):
+        # Spec quick-link is derived from the current spec version each regen
+        # (never hand-seeded → can't go stale). Fixture spec is spec_v1.md;
+        # the <code>-wrapped link is unique to the Notes qlinks strip.
+        out = self.render(self.make_env(active=[task(1, "Pending", "1")],
+            sidecar={"user_notes": "Add wardrobe items: /wardrobe"}))
+        self.assertIn('class="qlinks"', out)
+        self.assertIn("<code>spec_v1.md</code>", out)
+
+
 if __name__ == "__main__":
     unittest.main()

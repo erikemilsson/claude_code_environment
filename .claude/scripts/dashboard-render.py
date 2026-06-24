@@ -404,6 +404,22 @@ def _esc(value):
     return html.escape(str(value))
 
 
+def _clip(text, limit, word=True):
+    """Clip to `limit` chars with a trailing ellipsis. Returns (display, full):
+    `full` is the untruncated text when clipping occurred (use it for a title=
+    tooltip so nothing is lost), else None. word=True prefers a word boundary
+    unless that would drop too much of the content (then hard-clips)."""
+    text = str(text).strip()
+    if len(text) <= limit:
+        return text, None
+    cut = text[:limit]
+    if word:
+        head = cut.rsplit(" ", 1)[0].rstrip(" ,;:.—-–")
+        if len(head) >= limit * 0.6:
+            cut = head
+    return cut.rstrip(" ,;:.—-–") + "…", text
+
+
 def _mdi(text):
     """Minimal inline markdown → HTML: escape + links + bold + code. The curated
     overview needs almost no markdown (DEC-024 research: 3 regexes suffice)."""
@@ -436,43 +452,35 @@ def _polar(cx, cy, r, f):
     return cx + r * math.cos(a), cy + r * math.sin(a)
 
 
-def _ring(frac, size=150, th=14):
-    cx = cy = size / 2
-    r = (size - th) / 2
-    circ = 2 * math.pi * r
-    return (
-        f'<svg viewBox="0 0 {size} {size}" width="{size}" height="{size}" class="ring">'
-        f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="none" stroke="var(--paper-2)" stroke-width="{th}"/>'
-        f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="none" stroke="url(#g)" stroke-width="{th}" '
-        f'stroke-linecap="round" stroke-dasharray="{circ:.1f}" stroke-dashoffset="{circ * (1 - frac):.1f}" '
-        f'transform="rotate(-90 {cx} {cy})"/>'
-        f'<text x="50%" y="48%" class="ringn">{int(round(frac * 100))}<tspan class="rp">%</tspan></text>'
-        f'<text x="50%" y="63%" class="ringl">COMPLETE</text></svg>'
-    )
-
-
-def _donut(segs, size=128, th=22):
+def _ring(segs, frac, size=150, th=16):
+    """Hero ring: status segments around the track + % complete in the center.
+    Merges the former completion-ring + status-donut into a single circle (the
+    Finished sweep visually corresponds to the % complete; the legend beside it
+    carries the per-status counts)."""
     cx = cy = size / 2
     r = (size - th) / 2
     nonzero = [(lbl, v, col) for lbl, v, col in segs if v > 0]
-    if not nonzero:
-        body = f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="none" stroke="var(--paper-2)" stroke-width="{th}"/>'
-        return f'<svg viewBox="0 0 {size} {size}" width="{size}" height="{size}">{body}</svg>'
-    if len(nonzero) == 1:  # a single full segment can't draw as an arc — use a circle
-        col = nonzero[0][2]
-        body = f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="none" stroke="{col}" stroke-width="{th}"/>'
-        return f'<svg viewBox="0 0 {size} {size}" width="{size}" height="{size}">{body}</svg>'
     tot = sum(v for _, v, _ in nonzero)
-    out, acc = [], 0.0
-    for _, v, col in nonzero:
-        f0, f1 = acc / tot, (acc + v) / tot
-        acc += v
-        x0, y0 = _polar(cx, cy, r, f0)
-        x1, y1 = _polar(cx, cy, r, f1)
-        lg = 1 if f1 - f0 > 0.5 else 0
-        out.append(f'<path d="M {x0:.1f} {y0:.1f} A {r:.1f} {r:.1f} 0 {lg} 1 {x1:.1f} {y1:.1f}" '
-                   f'fill="none" stroke="{col}" stroke-width="{th}"/>')
-    return f'<svg viewBox="0 0 {size} {size}" width="{size}" height="{size}">{"".join(out)}</svg>'
+    parts = [f'<circle cx="{cx}" cy="{cy}" r="{r:.1f}" fill="none" '
+             f'stroke="var(--paper-2)" stroke-width="{th}"/>']
+    if tot and len(nonzero) == 1:  # one status — a full-circle arc can't draw, use a circle
+        parts.append(f'<circle cx="{cx}" cy="{cy}" r="{r:.1f}" fill="none" '
+                     f'stroke="{nonzero[0][2]}" stroke-width="{th}"/>')
+    elif tot:
+        acc = 0.0
+        for _, v, col in nonzero:
+            f0, f1 = acc / tot, (acc + v) / tot
+            acc += v
+            x0, y0 = _polar(cx, cy, r, f0)
+            x1, y1 = _polar(cx, cy, r, f1)
+            lg = 1 if f1 - f0 > 0.5 else 0
+            parts.append(f'<path d="M {x0:.1f} {y0:.1f} A {r:.1f} {r:.1f} 0 {lg} 1 '
+                         f'{x1:.1f} {y1:.1f}" fill="none" stroke="{col}" stroke-width="{th}"/>')
+    parts.append(f'<text x="50%" y="48%" class="ringn">{int(round(frac * 100))}'
+                 f'<tspan class="rp">%</tspan></text>')
+    parts.append(f'<text x="50%" y="63%" class="ringl">COMPLETE</text>')
+    return (f'<svg viewBox="0 0 {size} {size}" width="{size}" height="{size}" '
+            f'class="ring">{"".join(parts)}</svg>')
 
 
 # ---- per-phase status map (mirrors render_phase_table's stateful loop) --------
@@ -563,21 +571,27 @@ def render_svg_graph(active, decisions):
             on_crit = src in crit_set and d in crit_set and _adjacent_in(crit, src, d)
             mx = (x1 + x2) / 2
             edge_svg.append(f'<path class="{"gedge gcrit" if on_crit else "gedge"}" '
-                            f'd="M {x1:.0f} {y1:.0f} C {mx:.0f} {y1:.0f} {mx:.0f} {y2:.0f} {x2:.0f} {y2:.0f}"/>')
+                            f'd="M {x1:.0f} {y1:.0f} C {mx:.0f} {y1:.0f} {mx:.0f} {y2:.0f} {x2:.0f} {y2:.0f}" '
+                            f'marker-end="url(#{"ahc" if on_crit else "ah"})"/>')
 
     node_svg = []
     for n in sorted(nodes, key=numeric_key):
         x, y = pos[n]
         info = nodes[n]
         if info["kind"] == "decision":
-            fill, stroke, label = "#f4ddd5", "#a8331f", f"❗ {info['id']}"
+            fill, stroke = "#f4ddd5", "#a8331f"
+            label = full_label = f"❗ {info['id']}"
         else:
             t = info["task"]
             fill, stroke = OWNER_FILL.get(t.get("owner", "claude"), OWNER_FILL["claude"])
-            label = f"{OWNER_EMOJI.get(t.get('owner', 'claude'), '🤖')} {str(t.get('title', ''))[:22]}"
+            emoji = OWNER_EMOJI.get(t.get("owner", "claude"), "🤖")
+            title_full = str(t.get("title", ""))
+            disp, _full = _clip(title_full, 22, word=False)
+            label, full_label = f"{emoji} {disp}", f"{emoji} {title_full}"
         crit_cls = " gncrit" if n in crit_set else ""
         node_svg.append(
-            f'<g class="gnode{crit_cls}"><rect x="{x}" y="{y}" width="{NW}" height="{NH}" rx="8" '
+            f'<g class="gnode{crit_cls}"><title>{_esc(full_label)}</title>'
+            f'<rect x="{x}" y="{y}" width="{NW}" height="{NH}" rx="8" '
             f'fill="{fill}" stroke="{stroke}"/>'
             f'<text x="{x + NW / 2:.0f}" y="{y + NH / 2 + 4:.0f}" text-anchor="middle">{_esc(label)}</text></g>')
 
@@ -587,6 +601,10 @@ def render_svg_graph(active, decisions):
         f'<section><h2 class="st">Flow · dependency &amp; critical path</h2>'
         f'<div class="flowcard"><svg class="depgraph" viewBox="0 0 {width:.0f} {height:.0f}" '
         f'width="{width:.0f}" height="{height:.0f}" role="img" aria-label="dependency graph">'
+        f'<defs>'
+        f'<marker id="ah" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" refX="6.5" refY="3.2" orient="auto"><path d="M0 0 L7 3.2 L0 6.4 Z" fill="#cabfa8"/></marker>'
+        f'<marker id="ahc" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" refX="7" refY="3.6" orient="auto"><path d="M0 0 L8 3.6 L0 7.2 Z" fill="#0f5f54"/></marker>'
+        f'</defs>'
         f'{"".join(edge_svg)}{"".join(node_svg)}</svg></div><div class="cap">{cap}</div></section>'
     )
 
@@ -639,10 +657,12 @@ def _html_recent(active, now):
         return '<div class="rr"><span class="rt" style="color:var(--soft)">No activity in the last 7 days</span></div>'
     rows = []
     for d, t, _verb in entries[:7]:
+        disp, full = _clip(str(t.get("title", "")), 90)
+        rt_title = f' title="{_esc(full)}"' if full else ""
         rows.append(
             f'<div class="rr"><span class="rd">{d.isoformat()[5:]}</span>'
             f'<span class="tid">T{_esc(t.get("id"))}</span>'
-            f'<span class="rt">{_esc(str(t.get("title", ""))[:64])}</span></div>')
+            f'<span class="rt"{rt_title}>{_esc(disp)}</span></div>')
     return "".join(rows)
 
 
@@ -723,11 +743,22 @@ def _html_acceptance(verification_result):
         rows = []
         for c in criteria:
             ok = c.get("status") == "pass"
+            criterion = str(c.get("criterion", "")).strip()
             note = str(c.get("notes", "")).strip()
-            note_html = f' <span class="acnote">— {_esc(note[:80])}</span>' if note else ""
+            if criterion:
+                disp, full = _clip(note, 240)
+                note_html = (f' <span class="acnote"'
+                             f'{f" title=\"{_esc(full)}\"" if full else ""}>— {_esc(disp)}</span>'
+                             if note else "")
+                body = f'<span class="actext">{_esc(criterion)}{note_html}</span>'
+            else:
+                # Some verify-agents omit a criterion name — the note IS the
+                # description, so promote it rather than rendering "(unnamed)".
+                disp, full = _clip(note or "(no description)", 240)
+                title = f' title="{_esc(full)}"' if full else ""
+                body = f'<span class="actext"{title}>{_esc(disp)}</span>'
             rows.append(f'<li class="{"acok" if ok else "acno"}">'
-                        f'<span class="acmark">{"✓" if ok else "○"}</span>'
-                        f'{_esc(c.get("criterion", "(unnamed)"))}{note_html}</li>')
+                        f'<span class="acmark">{"✓" if ok else "○"}</span>{body}</li>')
         passed = sum(1 for c in criteria if c.get("status") == "pass")
         return (f'<section><h2 class="st">Acceptance criteria · {passed}/{len(criteria)} passed</h2>'
                 f'<div class="accard"><ul class="aclist">{"".join(rows)}</ul></div></section>')
@@ -759,10 +790,18 @@ def _html_spec_card(claude_dir, spec):
         f'<div class="specin"><a class="speclink" href="{_esc(version)}.md">open {_esc(version)}.md →</a>{body}</div></details>')
 
 
-def _html_notes(user_notes):
+def _html_notes(user_notes, spec=None):
     """Render sidecar user_notes (Quick Links etc.) as read-only HTML — minimal
-    block markdown (headers, bullets, links, bold)."""
+    block markdown (headers, bullets, links, bold). A live spec quick-link is
+    auto-prepended from the current spec version so it can never go stale; the
+    seeded user notes must NOT hand-author one (see dashboard-regeneration.md
+    § "Notes first-regeneration seeding")."""
     out, in_list = [], False
+    version = (spec or {}).get("version")
+    if version and version != "—":
+        out.append(f'<p class="qlinks">📄 <strong>Spec:</strong> '
+                   f'<a href="{_esc(version)}.md"><code>{_esc(version)}.md</code></a>'
+                   f'<span class="qlauto">auto-linked · always current</span></p>')
     for raw in str(user_notes).splitlines():
         line = raw.strip()
         if not line:
@@ -832,6 +871,13 @@ section{margin:28px 0}
 .side{display:flex;flex-direction:column;gap:18px} .mini{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px 18px;box-shadow:var(--sh)}
 .mini h3{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--soft);margin:0 0 10px}
 .notescard p{margin:4px 0}.notescard ul{margin:4px 0;padding-left:20px}.notescard li{margin:3px 0;font-size:13px}
+.notescard{max-height:340px;overflow:auto}
+.qlinks{margin:0 0 10px;padding-bottom:9px;border-bottom:1px solid var(--line)} .qlinks code{font-size:12px} .qlauto{color:var(--soft);font-size:11px;margin-left:8px}
+.notesblock>summary{cursor:pointer;list-style:none;display:flex;align-items:center;font-family:"Fraunces",serif;font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--soft);margin:0 0 12px}
+.notesblock>summary::-webkit-details-marker{display:none}
+.notesblock>summary::after{content:"";order:2;flex:1;height:1px;background:var(--line2);margin:0 9px}
+.notesblock .ntoggle{order:3;flex:none;text-transform:none;letter-spacing:0;color:var(--brandink);font-size:12px}
+.notesblock[open] .ntoggle::after{content:"collapse ▴"} .notesblock:not([open]) .ntoggle::after{content:"expand ▾"}
 .rr{display:flex;gap:9px;align-items:baseline;padding:6px 0;border-bottom:1px solid var(--line);font-size:12.5px}.rr:last-child{border:0}
 .rd{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--soft);white-space:nowrap} .rt{color:var(--ink)}
 /* decisions + spec — collapsed cards */
@@ -863,7 +909,8 @@ section{margin:28px 0}
 .tlr.over .tld{color:var(--bad);text-decoration:line-through} .tlr.over{background:#fbf0ec;margin:0 -18px;padding-left:18px;padding-right:18px}
 .accard{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--sh);padding:6px 18px}
 .aclist{list-style:none;margin:0;padding:0} .aclist li{display:flex;gap:10px;align-items:baseline;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px}.aclist li:last-child{border:0}
-.acmark{font-weight:700;width:14px;flex:none} .acok .acmark{color:var(--ok)} .acno .acmark{color:var(--soft)} .acnote{color:var(--soft);font-size:12px}
+.acmark{font-weight:700;width:14px;flex:none} .acok .acmark{color:var(--ok)} .acno .acmark{color:var(--soft)}
+.actext{flex:1;min-width:0} .acnote{color:var(--soft);font-size:12px}
 footer{margin-top:34px;padding-top:14px;border-top:1px solid var(--line2);color:var(--mute);font-family:"IBM Plex Mono",monospace;font-size:11px}
 """
 
@@ -921,8 +968,8 @@ def render_full_html(claude_dir: Path, now: datetime):
     drift_color = "var(--bad)" if drift_count else "var(--ok)"
 
     pulse = (
-        f'<section><div class="pulse">{_ring(frac)}'
-        f'<div class="donwrap">{_donut(segs)}<div class="legend">{legend}</div></div>'
+        f'<section><div class="pulse">{_ring(segs, frac)}'
+        f'<div class="legend">{legend}</div>'
         f'<div class="pmeta"><div class="row">'
         f'<div><div class="big">{done_ph}<span style="color:var(--soft);font-size:18px">/{n_phases}</span></div>'
         f'<div class="lbl">phases done</div></div>'
@@ -969,12 +1016,18 @@ def render_full_html(claude_dir: Path, now: datetime):
     notes_card = ""
     user_notes = sidecar.get("user_notes", "")
     if toggles.get("notes", True) and str(user_notes).strip():
-        notes_card = (f'<section><h2 class="st">Notes</h2>'
-                      f'<div class="mini notescard">{_html_notes(user_notes)}</div></section>')
+        # Collapsible + height-capped so the (often long, append-only) notes stop
+        # dominating the page; open by default so quick-links stay visible.
+        notes_card = (f'<section><details class="notesblock" open>'
+                      f'<summary>Notes<span class="ntoggle"></span></summary>'
+                      f'<div class="mini notescard">{_html_notes(user_notes, spec)}</div></details></section>')
 
     indicator = (f'⚠️ {drift_count} drift deferrals, {debt} verification debt'
                  if (debt or drift_count) else 'spec aligned · 0 drift deferrals, 0 verification debt')
-    footer = (f'<footer>generated {now.strftime("%Y-%m-%dT%H:%M:%SZ")} · {len(active)} tasks · {indicator} · '
+    # task count == the completion-ring / phase-map basis (total_all: active
+    # non-absorbed + archived-finished), NOT len(active) which omits archived
+    # tasks and contradicts the ring/donut/phase totals on archived projects.
+    footer = (f'<footer>generated {now.strftime("%Y-%m-%dT%H:%M:%SZ")} · {total_all} tasks · {indicator} · '
               f'single read-only HTML view · state of record = task JSON</footer>')
 
     return (
@@ -991,7 +1044,7 @@ def render_full_html(claude_dir: Path, now: datetime):
         '</linearGradient></defs></svg></head>'
         f'<body><header class="mast"><div class="mast-in"><span class="crumb">Execute</span>'
         f'<h1>{_esc(title)}</h1>'
-        f'<span class="tv">{len(active)} tasks · {n_phases} phases · read-only view</span></div></header>'
+        f'<span class="tv">{total_all} tasks · {n_phases} phases · read-only view</span></div></header>'
         f'<div class="wrap">{pulse}'
         f'<section><h2 class="st">Phase map · {n_phases} phases</h2><div class="grid">{heatmap}</div>'
         f'<div class="glegend"><span><b style="background:var(--ok)"></b>complete</span>'
