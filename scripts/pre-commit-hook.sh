@@ -14,8 +14,8 @@
 # update these patterns too. project-*.md files are excluded (they're in the
 # manifest's "ignore" category).
 
-# Only run in the template repo (check for system-overview.md at root)
-if [ ! -f "system-overview.md" ]; then
+# Only run in the template repo (check for the template-maintenance/ dir at root)
+if [ ! -d "template-maintenance" ]; then
     exit 0
 fi
 

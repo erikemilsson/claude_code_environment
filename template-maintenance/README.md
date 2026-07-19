@@ -18,4 +18,4 @@ For formal decisions about template direction, use `/research` or write to root 
 
 ## Why this folder exists
 
-The `.claude/` tree is the environment that ships. Root-level artifacts (`decisions/`, `tests/`, `scripts/`, `system-overview.md`, this folder) are template-maintenance — they don't ship because they'd be noise in a new project's workspace. Keeping maintenance content physically separate from ship content makes "can I copy `.claude/` wholesale into a new project?" answerable as "yes."
+The `.claude/` tree is the environment that ships. Root-level artifacts (`decisions/`, `tests/`, `scripts/`, this folder) are template-maintenance — they don't ship because they'd be noise in a new project's workspace. This folder doubles as the **template-repo sentinel**: `/health-check` Parts 5/5d/7 and `scripts/pre-commit-hook.sh` detect the template repo by its presence — don't rename it. Keeping maintenance content physically separate from ship content makes "can I copy `.claude/` wholesale into a new project?" answerable as "yes."

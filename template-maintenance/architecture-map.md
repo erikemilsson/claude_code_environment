@@ -1,10 +1,10 @@
 # Template Architecture Map
 
-**Current as of:** v5.1.0
+**Current as of:** v5.1.1
 
 > The line above is machine-read by `scripts/pre-commit-hook.sh` — keep the exact `**Current as of:** v{X.Y.Z}` format. Bump it whenever this map is reconciled against a new template version.
 
-The topology reference for the template repo: the cross-component wiring the shipped files can't state about themselves. This replaces `system-overview.md` as the maintenance-side overview (that file is stale since 2026-04-17 and retained only as the template-repo sentinel — see § Blast radius).
+The topology reference for the template repo: the cross-component wiring the shipped files can't state about themselves. This replaces the former `system-overview.md` (stale since 2026-04-17; deleted 2026-07-19 in v5.1.1 — historical content via `git show v5.1.0:system-overview.md`).
 
 **The layered truth model** (where each kind of truth lives):
 
@@ -71,7 +71,7 @@ The hidden couplings. Each row is a place where an isolated-looking edit silentl
 
 | If you change… | Also check… |
 |---|---|
-| **`system-overview.md` (root) — rename/delete** | It is the **template-repo sentinel** in 4 sites: `health-check.md` Part 5 (§ "Before running any sync step"), Part 5d, Part 7, and `scripts/pre-commit-hook.sh` (top guard). Removing it un-skips self-sync downstream logic and disables the hook. Migrate the sentinel in all 4 sites first. |
+| **`template-maintenance/` (root dir) — rename/delete** | It is the **template-repo sentinel** in 4 sites: `health-check.md` Part 5 (§ "Repo-type skip"), Part 5d, Part 7, and `scripts/pre-commit-hook.sh` (top guard). Renaming it makes downstream-sync logic run inside the template repo and silently disables the hook. Migrate all 4 sites together. (Migrated from `system-overview.md` in v5.1.1.) |
 | Task JSON fields (`reference/task-schema.md`) | `scripts/validate-tasks.py`, both agents' report envelopes, `reference/work-procedures.md`, dashboard-render.py field reads + its tests |
 | dashboard-render.py output shape | Format is pinned by `scripts/tests/test_dashboard_render*.py` (47 tests); prose contracts in `rules/dashboard.md` + `reference/dashboard-regeneration.md`; `/health-check` validates the HTML shape (doctype, `<!-- DASHBOARD META -->`, no CDN deps) |
 | `settings.json` `permissions.ask` gates | DEC-016/023 prose in `rules/spec-workflow.md § Direct edits`, `.claude/README.md § Auto Mode`, `sync-manifest.json` notes field |

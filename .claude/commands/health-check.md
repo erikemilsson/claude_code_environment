@@ -500,7 +500,7 @@ Use `git check-ignore` (reliable exit-code semantics), not a grep against `.giti
 
 ## Part 5: Template Sync Check
 
-Checks whether the project's `.claude/` workflow files are up to date with the template repository using git-based comparison. Skipped in the template repo (mirror of Parts 5d / 7: `system-overview.md` at project root indicates the template repo, where syncing the template against itself is self-referential and meaningless — `template_repo` points to the same URL as `origin`).
+Checks whether the project's `.claude/` workflow files are up to date with the template repository using git-based comparison. Skipped in the template repo (mirror of Parts 5d / 7: a `template-maintenance/` directory at the project root indicates the template repo, where syncing the template against itself is self-referential and meaningless — `template_repo` points to the same URL as `origin`).
 
 ### Purpose
 
@@ -508,7 +508,7 @@ The upstream template may improve commands, agents, and reference docs. This che
 
 ### Repo-type skip
 
-Before running any sync step: if `system-overview.md` exists at the project root, skip Part 5 entirely and report `ℹ️ Template sync skipped (template repo — self-sync is a no-op)`. The template repo's `version.json::template_repo` points to itself; adding a `template` remote pointing to the same URL as `origin` and diffing against it produces no useful output. The template's own work uses normal git workflow (push to origin); downstream-project sync flow does not apply.
+Before running any sync step: if a `template-maintenance/` directory exists at the project root, skip Part 5 entirely and report `ℹ️ Template sync skipped (template repo — self-sync is a no-op)`. The template repo's `version.json::template_repo` points to itself; adding a `template` remote pointing to the same URL as `origin` and diffing against it produces no useful output. The template's own work uses normal git workflow (push to origin); downstream-project sync flow does not apply.
 
 ### Requirements
 
@@ -717,11 +717,11 @@ Claude Code's runtime concatenates `permissions.allow[]` and `permissions.ask[]`
 
 ## Part 5d: Cross-Project Bridge Configuration (downstream projects only)
 
-Validates the `template_inbox_path` configuration that powers the cross-project feedback bridge. Skipped in the template repo (mirror of Part 7's detection: `system-overview.md` at project root indicates the template repo, where bridging to itself is not meaningful).
+Validates the `template_inbox_path` configuration that powers the cross-project feedback bridge. Skipped in the template repo (mirror of Part 7's detection: a `template-maintenance/` directory at the project root indicates the template repo, where bridging to itself is not meaningful).
 
 ### Process
 
-1. **Repo-type detection:** If `system-overview.md` exists at project root, skip Part 5d entirely.
+1. **Repo-type detection:** If a `template-maintenance/` directory exists at project root, skip Part 5d entirely.
 
 2. **Read configuration:** Read `.claude/version.json` → `template_inbox_path`.
 
@@ -868,7 +868,7 @@ Add new checks to the appropriate heuristic category (H1-H6) with a severity rat
 
 Processes cross-project session exports when `/health-check` runs in the template repo. Skipped in downstream projects.
 
-**Detection:** Check if `system-overview.md` exists at the project root (template repo indicator). If not, skip this part entirely.
+**Detection:** Check if a `template-maintenance/` directory exists at the project root (template repo indicator). If not, skip this part entirely.
 
 ### Process
 
