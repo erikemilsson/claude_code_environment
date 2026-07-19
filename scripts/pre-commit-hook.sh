@@ -1,9 +1,14 @@
 #!/bin/bash
-# Pre-commit hook: warn if sync-category files changed but version.json not bumped
+# Pre-commit hook: two warn-only checks for template ships.
 #
-# This hook checks whether any files in the sync-manifest.json "sync" category
-# are being committed. If so, it warns that version.json should be bumped.
-# The hook does NOT block the commit — it warns and lets the developer decide.
+# 1. Version bump: if any sync-manifest.json "sync" category files are being
+#    committed, warn that version.json should be bumped.
+# 2. Architecture-map freshness: if the commit makes a topology-shaped change
+#    (files added/deleted/renamed on the shipped behavior surface, or edits to
+#    the wiring files sync-manifest.json / settings.json) without staging
+#    template-maintenance/architecture-map.md, remind that the map may be stale.
+#
+# The hook does NOT block commits — it warns and lets the developer decide.
 #
 # NOTE: Patterns here approximate sync-manifest.json. If the manifest changes,
 # update these patterns too. project-*.md files are excluded (they're in the
@@ -88,6 +93,39 @@ if [ ${#SYNC_FILES_CHANGED[@]} -gt 0 ]; then
         echo "  Consider bumping template_version in .claude/version.json"
         echo ""
         echo "  Committing anyway. Run 'git commit --amend' to add the version bump."
+        echo ""
+    fi
+fi
+
+# --- Check 2: architecture-map freshness on topology-shaped changes ---
+# Structural proxy: added/deleted/renamed files on the shipped behavior surface,
+# or any edit to the wiring files. Pure content edits to existing files don't
+# fire this check (wording ships shouldn't nag) — the map's "Current as of"
+# line and the ship checklist cover edge changes inside unchanged files.
+MAP_FILE="template-maintenance/architecture-map.md"
+
+STRUCT_CHANGES=$(git diff --cached --name-only --diff-filter=ADR -- \
+    '.claude/commands' '.claude/agents' '.claude/rules' '.claude/scripts' \
+    '.claude/hooks' '.claude/support/reference')
+WIRING_CHANGES=$(git diff --cached --name-only -- \
+    '.claude/sync-manifest.json' '.claude/settings.json')
+
+if [ -n "$STRUCT_CHANGES$WIRING_CHANGES" ]; then
+    MAP_STAGED=$(git diff --cached --name-only -- "$MAP_FILE")
+    if [ -z "$MAP_STAGED" ]; then
+        echo ""
+        echo "⚠️  Topology-shaped change but $MAP_FILE not staged:"
+        for f in $STRUCT_CHANGES $WIRING_CHANGES; do
+            echo "    $f"
+        done
+        echo ""
+        echo "  If component wiring changed (files, edges, state files, couplings),"
+        echo "  update the map and bump its 'Current as of' line."
+        MAP_VER=$(grep -m1 -Eo 'Current as of:\*\* v[0-9.]+' "$MAP_FILE" 2>/dev/null | grep -Eo '[0-9][0-9.]*')
+        CUR_VER=$(python3 -c "import json; print(json.load(open('.claude/version.json'))['template_version'])" 2>/dev/null)
+        if [ -n "$MAP_VER" ] && [ -n "$CUR_VER" ] && [ "$MAP_VER" != "$CUR_VER" ]; then
+            echo "  Map last reconciled at v$MAP_VER; version.json is at v$CUR_VER."
+        fi
         echo ""
     fi
 fi

@@ -1,5 +1,7 @@
 # System Overview
 
+> **⚠️ RETIRED as a design reference (2026-07-19).** This document is stale — last reconciled 2026-04-17 (~DEC-006 era); the repo is two major versions ahead. Do **not** check template changes against it or follow its Change-Proposal Process. The current maintenance model lives in root `CLAUDE.md § Template Maintenance Workflow` and `template-maintenance/architecture-map.md`. This file is retained only because it is the template-repo **sentinel** checked by `/health-check` Parts 5/5d/7 and `scripts/pre-commit-hook.sh` — do not delete or rename it until that sentinel is migrated (see map § Blast radius).
+
 Single-document reference for the entire environment: lifecycle, features, design intent, and authoritative sources. **This is the template's source of truth** — all template changes should be consistent with the design intent described here.
 
 **Version:** See `.claude/version.json` for the current template version.

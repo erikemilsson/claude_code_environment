@@ -27,7 +27,8 @@ The `.claude/` directory contains the environment that ships to new projects. Th
 
 When making changes to the template, use the `.claude/` command definitions as reference for what you're editing — but don't use the `.claude/` spec/task/dashboard/decision workflow to manage the template's own work (those are template content, not tools).
 
-- **Source of truth:** `system-overview.md` (root) describes the template's design intent
+- **Topology reference:** `template-maintenance/architecture-map.md` — component wiring, state-file ownership, load order, and the blast-radius table ("change X → check Y"). Update it when topology changes (the pre-commit hook reminds on structural changes); bump its `Current as of` line when reconciled. Behavior truth lives in the shipped files themselves; change rationale in root `decisions/` + `ship-log.md`; every version is git-tagged (`v{X.Y.Z}`) for diffs and reverts.
+- **`system-overview.md` (root) is retired as a design reference** — stale since 2026-04-17; do NOT check template changes against it. It is retained only because it is the template-repo **sentinel** in 4 sites (`/health-check` Parts 5/5d/7 + `scripts/pre-commit-hook.sh`); full retirement requires migrating that sentinel first (see map § Blast radius)
 - **Decision records:** `decisions/` (root) — for formal decisions about template changes via `/research`
 - **Feedback (four files; see FB-062 for the convention):**
   - `.claude/support/feedback/feedback.md` (shipped, active) + `archive.md` (shipped, resolved) — `/feedback review` triages.
