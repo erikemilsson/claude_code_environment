@@ -631,21 +631,15 @@ Tags: workflow, new-command-candidate, grill-adjacent, vision-adjacent, capabili
 **Cheap slice (direct edit):** (a) re-check `git status` immediately before parallel agent dispatch, not only at Step 0e session start (06-16 pushback: a concurrent retirement broke the tree mid-batch); (b) handoff preserve-not-consume when the handoff references another session's in-flight task; (c) a one-line "single-committer convention" note for overlapping sessions.
 **Full model** (session registry, lease/lock, cross-session state signal): route through `/research` if recurrence continues after the cheap slice.
 
-## FB-105: Action Required card — script-side auto-render of the mechanical portion
+## FB-105: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
 
-**Status:** captured 2026-07-19 (harvest Tier-2 C); MINOR design + renderer tests
-**Source:** harvest 2026-07-19 — three convergent signals: styler 06-25-1308 (card sat as an EMPTY unfilled placeholder at session start → human-gated coverage invariant silently broken); styler 06-15 (the per-regen fill is a repeated Read+Edit dance); tinder 07-03 (project locally diverged its `dashboard-render.py` to auto-render the card from structured sources — task JSONs, feedback.md, audit_digest)
+**Status:** promoted 2026-07-20 — shipped v5.4.0 (script-owned Action Required + augment slot). Full entry in archive.
 
-**Direction.** The script renders the mechanical portion of "Needs you" deterministically — `owner: human` tasks with satisfied deps, `owner: both` awaiting review, On Hold, unresolved decisions, feedback/audit counts, with the CLI completion command inline — and the LLM *augments* judgment items (paused-session questions, nuanced phrasing) instead of authoring the whole card from a bare placeholder. Fail-safe: a never-filled card still shows the mechanical items, so the coverage invariant can't be silently dropped. Requires: renderer change + tests, `dashboard-regeneration.md` § Action Item Contract update, `rules/dashboard.md` "LLM-filled" wording update. Tinder's local implementation is prior art to consult.
 
-## FB-106: New spec section via /iterate — no decompose trigger; fast-path suppression trap
+## FB-106: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
 
-**Status:** doc half shipped v5.3.0 (2026-07-19) — pause new-section carve-out documented in work.md § Context Transition. Marker mechanism (iterate sets, /work Step 1a consumes) queued with the FB-105 ship.
-**Source:** harvest 2026-07-19; styler 06-24-1232 (two linked notes, same session)
+**Status:** promoted 2026-07-20 — shipped v5.4.0 (pending_decomposition marker; doc half shipped v5.3.0). Full entry in archive.
 
-**Problem.** After `/iterate` lands a new spec section, nothing structural tells the next `/work` to decompose it: the Step 1a fast-path (dashboard META `spec_fingerprint` match) actively SKIPS drift detection and routes to an unrelated pending task. Worse, the pause principle "never leave a stale dashboard" *conflicts* with this: regenerating at pause refreshes META, ENABLES the fast-path, and thereby suppresses the new section's decomposition — the session resolved it by deliberately not regenerating (undocumented carve-out).
-
-**Proposed:** `/iterate` apply sets a lightweight marker (e.g., sidecar field `new_sections: [...]`) that `/work` Step 1a consumes: "new section, 0 tasks reference it → offer decomposition before fast-path routing." Document the pause carve-out explicitly until then.
 
 ## FB-107: Phase gates — distinguish build-blocking from validation (human real-use) gates
 

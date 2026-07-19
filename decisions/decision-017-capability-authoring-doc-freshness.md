@@ -1,7 +1,7 @@
 ---
 id: DEC-017
 title: Capability authoring doc + freshness mechanism (FB-082+083)
-status: approved
+status: implemented
 category: methodology
 created: 2026-05-24
 decided: 2026-05-24
@@ -19,8 +19,9 @@ implementation_anchors:
   - .claude/commands/iterate.md (distill/propose capability-claim cross-check)
   - .claude/commands/work.md (decomposition Pre-Pass cross-ref)
   - .claude/commands/health-check.md (new Part for capability-doc freshness)
-  - .claude/skills/dashboard-style/SKILL.md (em-dash convention)
+  - .claude/skills/dashboard-style/SKILL.md (em-dash convention) — shipped v4.9.0; file later deleted by DEC-020 (skills trial concluded, mirrors retired). Convention lives on in support/reference/dashboard-regeneration.md
   - .claude/version.json (MINOR bump)
+implemented_note: "Shipped v4.9.0 (2026-05-24). status: flipped approved → implemented 2026-07-19 during a maintenance housekeeping pass — the flag had been left at approved by oversight; 8 of 9 anchors verified present, the 9th intentionally removed by DEC-020."
 inflection_point: true
 spec_revised:
 spec_revised_date:

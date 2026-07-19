@@ -2126,3 +2126,21 @@ Tags: template-side, mcp, playwright, result-size, browser-snapshot, browser-eva
 **Problem.** `owner: both` tasks on real personal/gitignored data lack an explicit verification path in the docs. Dispatching verify-agent would pull real personal data into a subagent context; the session instead used user section-by-section sign-off + an orchestrator structural self-check, recorded as `task_verification` with `verified_by: "user + orchestrator"`.
 
 **Proposed:** name this shape explicitly in `work-procedures.md` (State Persistence Protocol / owner:both completion): when the deliverable is real personal or gitignored data, verification = user sign-off (acceptance) + orchestrator structural check (invariants), no subagent; for gitignored data, pass the pre-change "before" state to whoever verifies (no git baseline exists). Both halves recorded in `task_verification`.
+
+## FB-105: Action Required card — script-side auto-render of the mechanical portion
+
+**Status:** promoted
+**Promoted:** 2026-07-20 — shipped v5.4.0: `dashboard-render.py` now renders every mechanically-derivable Action Required row (`_html_needs_you`); the LLM placeholder became an append-only `<!-- CLAUDE: augment -->` slot for judgment items. +6 tests (suite 92/92). Docs: `dashboard-regeneration.md § "Action Required rendering split"`, `rules/dashboard.md`, `work.md` Step 0g.
+**Source:** harvest 2026-07-19 — three convergent signals: styler 06-25-1308 (card sat as an EMPTY unfilled placeholder at session start → human-gated coverage invariant silently broken); styler 06-15 (the per-regen fill is a repeated Read+Edit dance); tinder 07-03 (project locally diverged its `dashboard-render.py` to auto-render the card from structured sources — task JSONs, feedback.md, audit_digest)
+
+**Direction.** The script renders the mechanical portion of "Needs you" deterministically — `owner: human` tasks with satisfied deps, `owner: both` awaiting review, On Hold, unresolved decisions, feedback/audit counts, with the CLI completion command inline — and the LLM *augments* judgment items (paused-session questions, nuanced phrasing) instead of authoring the whole card from a bare placeholder. Fail-safe: a never-filled card still shows the mechanical items, so the coverage invariant can't be silently dropped. Requires: renderer change + tests, `dashboard-regeneration.md` § Action Item Contract update, `rules/dashboard.md` "LLM-filled" wording update. Tinder's local implementation is prior art to consult.
+
+## FB-106: New spec section via /iterate — no decompose trigger; fast-path suppression trap
+
+**Status:** promoted
+**Promoted:** 2026-07-20 — shipped v5.4.0: `pending_decomposition[]` sidecar array written by `/iterate` post-apply, consumed by `/work` Step 1a ahead of the fast path; supersedes the v5.3.0 interim pause carve-out.
+**Source:** harvest 2026-07-19; styler 06-24-1232 (two linked notes, same session)
+
+**Problem.** After `/iterate` lands a new spec section, nothing structural tells the next `/work` to decompose it: the Step 1a fast-path (dashboard META `spec_fingerprint` match) actively SKIPS drift detection and routes to an unrelated pending task. Worse, the pause principle "never leave a stale dashboard" *conflicts* with this: regenerating at pause refreshes META, ENABLES the fast-path, and thereby suppresses the new section's decomposition — the session resolved it by deliberately not regenerating (undocumented carve-out).
+
+**Proposed:** `/iterate` apply sets a lightweight marker (e.g., sidecar field `new_sections: [...]`) that `/work` Step 1a consumes: "new section, 0 tasks reference it → offer decomposition before fast-path routing." Document the pause carve-out explicitly until then.
