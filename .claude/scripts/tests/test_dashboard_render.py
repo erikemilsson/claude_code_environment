@@ -133,6 +133,23 @@ class TestPhaseStatus(unittest.TestCase):
         smap = dr._phase_status_map(phases, [])
         self.assertEqual(smap["1"], "Complete")
 
+    def test_blocked_partial_gate_label(self):
+        # Only 1 of 3 open tasks in phase 2 is decision-gated (prior phase
+        # incomplete): a whole-phase "Blocked (DEC-001)" reads as "nothing here
+        # can start" — the label must carry the split (v5.2.0, tinder 06-27).
+        active = [
+            task(1, "Pending", "1"),
+            task(2, "Pending", "2", decision_dependencies=["DEC-001"]),
+            task(3, "Pending", "2"),
+            task(4, "Pending", "2")]
+        decisions = [{"id": "DEC-001", "title": "Q", "status": "proposed",
+                      "selected": None, "file": "x.md"}]
+        phases = dr.build_phases(active, [])
+        smap = dr._phase_status_map(phases, decisions)
+        self.assertEqual(
+            smap["2"],
+            "Blocked (DEC-001 gates 1 of 3; rest awaiting prior phase)")
+
 
 # --------------------------------------------------- graph topology (shared)
 

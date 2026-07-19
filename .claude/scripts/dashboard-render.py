@@ -253,6 +253,13 @@ def phase_status(key, entry, all_complete_before, decisions):
     blockers = sorted({str(d) for t in open_tasks for d in t.get("decision_dependencies", [])
                        if str(d) not in resolved}, key=numeric_key)
     if blockers:
+        gated = [t for t in open_tasks
+                 if any(str(d) not in resolved for d in t.get("decision_dependencies", []))]
+        if len(gated) < len(open_tasks):
+            # Only some tasks are decision-gated — a whole-phase "Blocked" label
+            # would misread as "nothing here can start"
+            return (f"Blocked ({blockers[0]} gates {len(gated)} of {len(open_tasks)}; "
+                    f"rest awaiting prior phase)")
         return f"Blocked ({blockers[0]})"
     return "Blocked (awaiting prior phase)"
 
@@ -949,14 +956,23 @@ def render_full_html(claude_dir: Path, now: datetime):
     done_ph = sum(1 for s in status_map.values() if s == "Complete")
     active_ph = n_phases - done_ph
 
-    # status distribution (donut + legend); archived-finished folded into Finished
+    # status distribution (donut + legend); archived-finished folded into Finished,
+    # labeled so the count doesn't read as wrong beside the active-task total
     status_counts = Counter(t.get("status", "Pending") for t in active)
-    status_counts["Finished"] += sum(1 for t in archived if t.get("status", "Finished") == "Finished")
+    arch_finished = sum(1 for t in archived if t.get("status", "Finished") == "Finished")
+    status_counts["Finished"] += arch_finished
     segs = [(s, status_counts.get(s, 0), STATUS_COLOR.get(s, "#b8ad97"))
             for s in DONUT_STATUS_ORDER if status_counts.get(s, 0)]
+
+    def _legend_label(s):
+        if s == "Finished" and arch_finished:
+            return (f'Finished <span style="color:var(--soft);font-weight:400">'
+                    f'(incl. {arch_finished} archived)</span>')
+        return s
+
     legend = "".join(
         f'<div class="lg"><span class="dot" style="background:{STATUS_COLOR.get(s, "#b8ad97")}"></span>'
-        f'<span class="lgn">{s}</span><b>{status_counts.get(s, 0)}</b></div>'
+        f'<span class="lgn">{_legend_label(s)}</span><b>{status_counts.get(s, 0)}</b></div>'
         for s in DONUT_STATUS_ORDER if status_counts.get(s, 0))
 
     meta_block = render_meta(active, decisions, spec, version, drift, verification_result, now)

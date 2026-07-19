@@ -684,7 +684,7 @@ The orchestrator owns ALL `.claude/` state transitions — agents cannot write t
    ```
 5. **After re-dispatch returns** `completed` or a fresh `partial_resume_pending`: clear the `partial_completion` field from the task JSON. (For fresh `partial_resume_pending`, the new envelope replaces the old.)
 
-Dispatch implement-agent (Task tool; set `model` per `.claude/CLAUDE.md § Model Requirement`) instructing it to read `.claude/agents/implement-agent.md` and follow Steps 1-6. Agent returns a structured report.
+Dispatch implement-agent (Task tool; set `model` per `.claude/CLAUDE.md § Model Requirement`) instructing it to read `.claude/agents/implement-agent.md` and follow Steps 1-6. Agent returns a structured report. **The dispatch prompt must state the envelope contract explicitly** — include: *"Return ONLY the structured JSON report envelope from `implement-agent.md § Step 6` — raw JSON, no prose summary, no markdown fences."* (Persona-via-prompt alone does not reliably transmit the output contract; a prose return was observed downstream.)
 
 **After agent returns:** apply "After implement-agent returns" from State Persistence Protocol. Then, if `implementation_status == "completed"`, dispatch verify-agent per "If Verifying (Per-Task)" and apply "After verify-agent returns" protocol.
 
@@ -701,7 +701,7 @@ When Step 2c produces a parallel batch of >= 2 tasks, execute them concurrently.
 **Key rules:**
 - **Pre-dispatch confirmation (batch ≥ 3):** Before spawning, present the dispatch plan to the user — task IDs, titles, files affected, verify strategy — and await explicit confirmation. Skip for batches of 2 (low surprise; partial budget). See parallel-execution.md § "Pre-Dispatch Confirmation" for the prompt format and `[D]`/`[S]`/`[1]` behavior.
 - Orchestrator sets all batch tasks to "In Progress" before dispatch (see parallel-execution.md § 2)
-- Each parallel implement-agent reads `implement-agent.md` and follows Steps 1-6; returns a structured report
+- Each parallel implement-agent reads `implement-agent.md` and follows Steps 1-6; returns a structured report (each dispatch prompt states the envelope contract explicitly — same clause as sequential dispatch above)
 - As each implement-agent report arrives, orchestrator applies "After implement-agent returns" protocol AND dispatches that task's verify-agent (see parallel-execution.md § 4)
 - As each verify-agent report arrives, orchestrator applies "After verify-agent returns" protocol
 - After all reports processed: final parent auto-completion, single dashboard regeneration, post-dispatch validation (Step 5)
@@ -724,6 +724,8 @@ Task tool call:
     Spec file: .claude/spec_v{N}.md (section: "{spec_section}")
 
     Verify the implementation independently. Do NOT assume correctness.
+    Return ONLY the structured JSON verification report (verify-agent.md
+    per-task report schema) — raw JSON, no prose summary, no markdown fences.
 ```
 
 **Timeout handling:** If verify-agent exhausts `max_turns` without returning a valid report, treat as verification failure — per State Persistence Protocol, increment `verification_attempts`, set task to "Blocked" with `[VERIFICATION TIMEOUT]` note, report to user.
@@ -820,6 +822,8 @@ Task tool call:
 
     Validate the full implementation against spec acceptance criteria.
     Create fix tasks for any issues found. Do NOT implement fixes yourself.
+    Return ONLY the structured JSON phase-level report (verify-agent.md
+    phase-level schema) — raw JSON, no prose summary, no markdown fences.
 ```
 
 **After phase-level verification completes:** verify-agent returns a structured phase-level report. Apply "After verify-agent returns (phase-level mode)" from State Persistence Protocol.
@@ -914,7 +918,7 @@ When active task count exceeds 100 (checked after dashboard regen), archive fini
 
 ## Context Transition (`/work pause`)
 
-Graceful wind-down that preserves reasoning context before compaction clears the context window. Use when a session is getting long and you want to ensure continuity.
+Graceful wind-down that preserves reasoning context before compaction clears the context window. Use when a session is getting long and you want to ensure continuity. Pause is also a valid **mid-session checkpoint** — pausing, continuing to work, and pausing again in one session is normal use (each pause overwrites the handoff with the newest state); pause does not imply session end.
 
 Read `.claude/support/reference/context-transitions.md` and follow the Path A (User-Initiated) procedure. Key rules:
 

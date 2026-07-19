@@ -407,6 +407,8 @@ Based on user response:
 - **[P] Postpone (or [N]):** No changes applied. The proposal can be revisited on the next `/iterate` run.
 - **Free text:** Treat as modification instructions — revise the declaration and re-present (the previous `[M] Modify` semantics).
 
+**Post-apply spec-index refresh (DEC-021):** after any apply that edited the spec, regenerate the section index so the next section-scoped read isn't stale: `python3 .claude/scripts/fingerprint.py --index .claude/spec_v{N}.md > .claude/spec_v{N}.index.json` (the script prints to stdout — the redirect writes the file). Make any frontmatter edit (`updated:`, version) BEFORE this step: frontmatter changes the file hash, and regenerating first then editing frontmatter leaves the index stale again (observed downstream, regenerated twice).
+
 After applying (or skipping):
 
 ```

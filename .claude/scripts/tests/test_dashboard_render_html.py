@@ -267,6 +267,17 @@ class TestLegibilityFixes(HtmlBase):
         self.assertIn("· 10 tasks · spec aligned", out)
         self.assertNotIn("2 tasks · 1 phases", out)  # the old len(active) behavior
 
+    def test_finished_legend_labels_archived_count(self):
+        # The Finished legend chip folds archived-finished in; unlabeled, the
+        # number reads as wrong beside the active total (v5.2.0, styler 06-25).
+        active = [task(1, "Pending", "1"),
+                  task(2, "Finished", "1", task_verification={"result": "pass"})]
+        archived = [task(i, "Finished", "1") for i in range(10, 18)]
+        out = self.render(self.make_env(active=active, archived=archived))
+        self.assertIn("(incl. 8 archived)", out)
+        out_no_arch = self.render(self.make_env(active=active))
+        self.assertNotIn("archived)</span>", out_no_arch)
+
     def test_acceptance_unnamed_criterion_promotes_note(self):
         # No criterion name → render the note as the description, never "(unnamed)".
         out = self.render(self.make_env(active=[task(1, "Pending", "1")],
