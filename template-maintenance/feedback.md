@@ -650,3 +650,61 @@ Tags: workflow, new-command-candidate, grill-adjacent, vision-adjacent, capabili
 ## FB-102: [CLOSED — moved to `template-maintenance/feedback-archive.md`]
 
 **Status:** closed 2026-06-22 — named-sweep half declined during a `/feedback review` walk-through; thin ad-hoc usage-habit note also declined. Triage Q1 answered by reading the command defs: the named sweeps already fan the *analysis* phase out to subagents and capture inputs to disk; the inline part is deterministic capture of *enumerated* known paths that MUST stay inline (writes to `.claude/`, which subagents can't per DEC-004; Playwright MCP can't fan out). Nothing to "discover" → no pre-pass warranted. FB-101 triage (0 template-side deaths) confirms the fan-out coupling is already satisfied for template work. "Parallel Agents Per Spec Phase" stays a separate horizon item (adjacent FB-067 Wave 2), not folded in. See archive for full entry.
+
+## FB-103: Hard session-limit subagent cutoff — recovery protocol + dispatch budget awareness
+
+**Status:** captured 2026-07-19 (harvest Tier-2 A — strongest cluster)
+**Source:** cross-project harvest 2026-07-19 (`template-maintenance/harvest-2026-07-19-triage.md`); styler exports 06-15, 06-22, 06-24-2026, 07-01 — ≥5 occurrences across 4 sessions
+
+**Problem.** DEC-010's `partial_completion` envelope assumes the implement-agent detects its *own* approaching turn budget and self-reports. A **platform usage/session limit** is a different failure mode: it kills the subagent mid-tool-call with `subagent_tokens: 0`, no structured report of any kind, and partial files on disk. The orchestrator has no signal distinguishing "agent died on limit" from a normal failure. Recovery each time was ad-hoc diagnosis from git/tsc state.
+
+**Proven recovery pattern (styler 07-01, worked twice — T873, T874):** (1) orchestrator runs typecheck + full test suite directly (cheap, no agent risk); (2) if genuinely green, dispatch a FRESH implement-agent whose only job is a formal Step-5 self-review + spec-alignment confirmation — not a rebuild. Fast both times since the mechanical work was already on disk.
+
+**Proposed (direct template edit; pattern proven, no research needed):**
+1. `work-procedures.md` after-return protocols: add a **zero-token-return branch** codifying the recovery pattern above.
+2. `parallel-execution.md` pre-dispatch: budget-awareness check before parallel long-agent batches (both 06-15 agents were cut mid-flight; the pushback note asked for exactly this).
+3. After one limit-hit in a session, **confirm with the user before re-attempting parallel/heavy dispatch** (07-01: the immediate second parallel batch was also cut).
+
+## FB-104: Multi-session concurrency on one repo — no template model
+
+**Status:** captured 2026-07-19 (harvest Tier-2 B); cheap slice direct-editable, full model research-gated
+**Source:** harvest 2026-07-19; styler 06-13-2215, 06-16-0100, 06-25-0905; tinder 06-14-1540, 06-14-1605; flirty-gym 06-17 — 4+ sessions, 3 projects
+
+**Problem.** The template assumes one session per repo. Observed with two concurrent sessions: `.handoff.json` overwrite/consume races (consuming a parallel thread's handoff would lose its context — handled ad-hoc by preserve-not-consume + later merge); git-index races ("modified since read"); a concurrent session's `git add` sweeping this session's tracked edits into its commit (entangled provenance); a verify-agent reporting files "modified" that a parallel session had touched (extra investigation pass); commit-ownership ambiguity for files a parallel session created but never committed.
+
+**Cheap slice (direct edit):** (a) re-check `git status` immediately before parallel agent dispatch, not only at Step 0e session start (06-16 pushback: a concurrent retirement broke the tree mid-batch); (b) handoff preserve-not-consume when the handoff references another session's in-flight task; (c) a one-line "single-committer convention" note for overlapping sessions.
+**Full model** (session registry, lease/lock, cross-session state signal): route through `/research` if recurrence continues after the cheap slice.
+
+## FB-105: Action Required card — script-side auto-render of the mechanical portion
+
+**Status:** captured 2026-07-19 (harvest Tier-2 C); MINOR design + renderer tests
+**Source:** harvest 2026-07-19 — three convergent signals: styler 06-25-1308 (card sat as an EMPTY unfilled placeholder at session start → human-gated coverage invariant silently broken); styler 06-15 (the per-regen fill is a repeated Read+Edit dance); tinder 07-03 (project locally diverged its `dashboard-render.py` to auto-render the card from structured sources — task JSONs, feedback.md, audit_digest)
+
+**Direction.** The script renders the mechanical portion of "Needs you" deterministically — `owner: human` tasks with satisfied deps, `owner: both` awaiting review, On Hold, unresolved decisions, feedback/audit counts, with the CLI completion command inline — and the LLM *augments* judgment items (paused-session questions, nuanced phrasing) instead of authoring the whole card from a bare placeholder. Fail-safe: a never-filled card still shows the mechanical items, so the coverage invariant can't be silently dropped. Requires: renderer change + tests, `dashboard-regeneration.md` § Action Item Contract update, `rules/dashboard.md` "LLM-filled" wording update. Tinder's local implementation is prior art to consult.
+
+## FB-106: New spec section via /iterate — no decompose trigger; fast-path suppression trap
+
+**Status:** captured 2026-07-19 (harvest Tier-2 D)
+**Source:** harvest 2026-07-19; styler 06-24-1232 (two linked notes, same session)
+
+**Problem.** After `/iterate` lands a new spec section, nothing structural tells the next `/work` to decompose it: the Step 1a fast-path (dashboard META `spec_fingerprint` match) actively SKIPS drift detection and routes to an unrelated pending task. Worse, the pause principle "never leave a stale dashboard" *conflicts* with this: regenerating at pause refreshes META, ENABLES the fast-path, and thereby suppresses the new section's decomposition — the session resolved it by deliberately not regenerating (undocumented carve-out).
+
+**Proposed:** `/iterate` apply sets a lightweight marker (e.g., sidecar field `new_sections: [...]`) that `/work` Step 1a consumes: "new section, 0 tasks reference it → offer decomposition before fast-path routing." Document the pause carve-out explicitly until then.
+
+## FB-107: Phase gates — distinguish build-blocking from validation (human real-use) gates
+
+**Status:** captured 2026-07-19 (harvest Tier-2 E); single-project signal — second-signal-gated
+**Source:** harvest 2026-07-19; tinder 06-27-0814
+
+**Problem.** Phase 10's build became phase-gated behind T81 — a Phase-9 *real-use* acceptance task (`owner: human`) that needs live activity and cannot be forced on demand. Gating the next phase's BUILD behind an un-forceable human VALIDATION stalls the build; the only workaround was manually setting `cross_phase: true` on every build task.
+
+**Proposed:** distinguish "build-blocking" from "validation" phase gates (schema or gate-metadata level — needs design), so a human real-use acceptance can remain open while the next phase's build proceeds. Cheap interim: document the `cross_phase` workaround in `phase-decision-gates.md`. Escalate to `/research` on a second project hitting it.
+
+## FB-108: owner:both verification path for personal/gitignored real data — document the no-subagent shape
+
+**Status:** captured 2026-07-19 (harvest Tier-2 F); cheap doc addition
+**Source:** harvest 2026-07-19; tinder 06-25-1955 (worked well, undocumented); corroborating: tinder 06-13-1610 (gitignored-data verification needed the "before" state passed explicitly); styler 06-25-0905 (owner:both + backup + dry-run gating on an 80-item personal-data migration "worked exactly as intended")
+
+**Problem.** `owner: both` tasks on real personal/gitignored data lack an explicit verification path in the docs. Dispatching verify-agent would pull real personal data into a subagent context; the session instead used user section-by-section sign-off + an orchestrator structural self-check, recorded as `task_verification` with `verified_by: "user + orchestrator"`.
+
+**Proposed:** name this shape explicitly in `work-procedures.md` (State Persistence Protocol / owner:both completion): when the deliverable is real personal or gitignored data, verification = user sign-off (acceptance) + orchestrator structural check (invariants), no subagent; for gitignored data, pass the pre-change "before" state to whoever verifies (no git baseline exists). Both halves recorded in `task_verification`.

@@ -2,7 +2,7 @@
 
 First-pass triage of the full `interaction-logs/inbox/` backlog: **38 files** (2026-06-11 → 2026-07-06; the previous harvest ran 2026-06-11). 35 session exports + 3 user-feedback bridges. Projects: styler (~17), tinder-streamliner (~16), flirty-gym (1), OEMMatInsightBI (1 bridge). Note: `styler-…-06-25-1205` / `-1308` are the same session exported twice (identical markers).
 
-**Status: triage only.** Nothing routed yet — FB captures, fix ships, and `processed/` moves are listed at the bottom as confirmation-gated next steps. Marker totals: 19 `verification_gap` (mostly `files_affected` prediction drift), 13 `design_contradiction` + 8 `path_drift` (project-internal, not template signal), 1 `template_gap`.
+**Status: ROUTED 2026-07-19 (user "do all").** Tier 1 shipped as **v5.2.0** (see ship-log); Tier 2 A–F captured as **FB-103 … FB-108** in `template-maintenance/feedback.md`; all 38 files moved to `processed/`; insights written for the three big clusters (limit-cutoff, concurrency, AR auto-render). Marker totals: 19 `verification_gap` (mostly `files_affected` prediction drift), 13 `design_contradiction` + 8 `path_drift` (project-internal, not template signal), 1 `template_gap`.
 
 ---
 
