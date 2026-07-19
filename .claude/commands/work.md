@@ -100,6 +100,11 @@ Check for a context transition handoff from a previous session before anything e
    (Available for routing and implement-agent enrichment. NOT passed to verify-agent.)
 
 6. Delete .handoff.json
+   EXCEPTION — concurrent session (FB-104): if the handoff's active task(s)
+   have CHANGED STATUS since the handoff timestamp (another session is
+   progressing them), do NOT consume-and-delete. Preserve the file, use it
+   read-only for orientation, flag "Handoff appears to belong to a concurrent
+   session — preserved", and reconcile/merge at the next pause.
 
 7. Proceed to Step 0b
 ```
@@ -927,6 +932,7 @@ Read `.claude/support/reference/context-transitions.md` and follow the Path A (U
 - Do NOT skip the handoff file — that's the whole point
 - `session_knowledge` captures what would otherwise be lost: user preferences, informal decisions, discovered patterns
 - **Open-question sweep (human-gated coverage):** before writing the handoff, enumerate every question asked of the user this session that went unanswered, plus any newly user-gated items (tasks put On Hold, unblocked `owner: "human"` tasks, unresolved decisions). Each MUST land in the dashboard's 🚨 Action Required ("Needs you") card with the concrete question inline — regenerate `dashboard.html` so the card is complete. The handoff may point at those items; it must never be a blocking question's only home. (Counterpart: Step 0g prints this queue at the next session start.)
+- **New-section carve-out (FB-106, interim rule):** EXCEPTION to the regen above — if `/iterate` added a new spec section this session and NO tasks reference it yet, do NOT full-regen at pause: a regen refreshes META `spec_fingerprint`, which enables the next session's Step 1a fast-path and silently suppresses the new section's decomposition offer. Leave the dashboard stale, print any blocking items inline instead, and note both (the stale dashboard + the undecomposed section) prominently in the handoff. Interim until a structural marker ships (FB-106 mechanism, queued with FB-105).
 
 ### Interaction Assessment + Session Export (Track 2 — Cross-Project Logging)
 

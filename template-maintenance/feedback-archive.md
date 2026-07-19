@@ -2058,3 +2058,71 @@ Coherence sweeps + template syncs routinely touch 20–38 files but are run larg
 - "Parallel Agents Per Spec Phase" = maximal multi-worktree version → horizon item, out of scope, cross-check FB-067 Wave 2 family before adding surface.
 
 Tags: insights-report, subagent-fan-out, audit-coherence, health-check, template-sync, usage-habit, couples-FB-101, horizon-parallel-phases, single-source-signal, declined-coverage, structural-constraint
+
+## FB-087: Playwright MCP large-DOM token-limit pattern — prefer browser_evaluate over browser_snapshot
+
+**Status:** archived
+**Archived:** 2026-07-19 — cheap action shipped v4.7.3; the only remainder (optional project-side helper) is multi-project-signal-gated and no signal appeared through the 2026-07-19 38-export harvest. Re-capture if it emerges.
+**Captured:** 2026-05-24
+**Shipped:** 2026-05-24 (v4.7.3) — new `## MCP and Result-Size Constraints` section added to `.claude/rules/agents.md` between "## MCP and Parallel Execution" and "## Tool Preferences". Documents that `browser_snapshot` on long-scroll pages (~10K+ char DOM) exceeds per-tool-call token budgets and truncates silently; prefers `browser_evaluate` with targeted DOM queries. Optional project-side helper follow-up deferred unless a multi-project signal emerges.
+**Source:** Bridged from styler 2026-05-21 session (template_version 4.6.3) via `/health-check` Part 7 aggregation.
+
+## Observation
+
+Playwright MCP `browser_wait_for` and `browser_snapshot` return 105K+ character snapshots for large pages (the styler `/style` page is ~36000px tall with many sections), exceeding the result token limit. The model can't process the snapshot — tool result truncates or fails outright.
+
+The workaround styler used: replace `browser_snapshot` with `browser_evaluate` containing targeted DOM queries (`document.querySelector(...).textContent`, etc.). The pattern is reusable for any large-DOM page where the audit/verification only needs specific elements.
+
+## Meta-pattern
+
+The current `agents.md § "MCP and Parallel Execution"` section covers the parallel-execution constraint (single-instance MCPs can't fan out) but doesn't cover the per-call result-size constraint. `browser_snapshot` is the default tool the model reaches for, and on large pages it fails silently from the model's perspective (token limit exceeded → degraded behavior).
+
+## Proposed template surface
+
+One-paragraph addition to `.claude/rules/agents.md § "MCP and Parallel Execution"` (or a sibling sub-section "MCP and Result-Size Constraints"):
+
+> Playwright MCP `browser_snapshot` returns the full accessibility tree of the current page. For pages over ~10K characters of DOM (long-scroll pages, sites with many sections), the result can exceed the model's per-tool-call token budget and truncate silently. For audits/verifications that only need specific elements, prefer `browser_evaluate` with targeted DOM queries (e.g., `document.querySelectorAll('h2').forEach(...)`). Reserve `browser_snapshot` for small pages or when you genuinely need the full tree.
+
+## Triage recommendation
+
+**Cheap action:** one-paragraph addition to `agents.md`. No DEC needed. Catches future "why is my Playwright snapshot empty" debugging cycles across all projects.
+
+**Optional follow-up:** project-side helpers under `.claude/scripts/` that wrap common Playwright-evaluate patterns (e.g., extract-all-headings, count-elements-by-selector) — but these are project-specific and not worth template-shipping unless a multi-project pattern emerges.
+
+## Relationship to existing template content
+
+- `.claude/rules/agents.md § "MCP and Parallel Execution"` covers cross-call state collision; this FB covers per-call result size.
+- DEC-005 / auto-mode covers permission gating, not result-size.
+- No existing template surface addresses this.
+
+## Source trace
+
+- Bridged from `interaction-logs/processed/.session-export-2026-05-21.json` § `claude_assessment.workflow_friction_notes[3]`.
+- Single-session signal. Cheap-action threshold is low — one paragraph addition. Capture now, ship in next template patch.
+
+Tags: template-side, mcp, playwright, result-size, browser-snapshot, browser-evaluate, agents-md-extension, cheap-action-candidate, single-project-signal
+
+## FB-103: Hard session-limit subagent cutoff — recovery protocol + dispatch budget awareness
+
+**Status:** promoted
+**Promoted:** 2026-07-19 — shipped v5.3.0: zero-token-return recovery branch in `work-procedures.md § After implement-agent returns`; budget-awareness + post-limit-hit confirm rule in `parallel-execution.md § Pre-Dispatch Confirmation` pre-flight checks.
+**Source:** cross-project harvest 2026-07-19 (`template-maintenance/harvest-2026-07-19-triage.md`); styler exports 06-15, 06-22, 06-24-2026, 07-01 — ≥5 occurrences across 4 sessions
+
+**Problem.** DEC-010's `partial_completion` envelope assumes the implement-agent detects its *own* approaching turn budget and self-reports. A **platform usage/session limit** is a different failure mode: it kills the subagent mid-tool-call with `subagent_tokens: 0`, no structured report of any kind, and partial files on disk. The orchestrator has no signal distinguishing "agent died on limit" from a normal failure. Recovery each time was ad-hoc diagnosis from git/tsc state.
+
+**Proven recovery pattern (styler 07-01, worked twice — T873, T874):** (1) orchestrator runs typecheck + full test suite directly (cheap, no agent risk); (2) if genuinely green, dispatch a FRESH implement-agent whose only job is a formal Step-5 self-review + spec-alignment confirmation — not a rebuild. Fast both times since the mechanical work was already on disk.
+
+**Proposed (direct template edit; pattern proven, no research needed):**
+1. `work-procedures.md` after-return protocols: add a **zero-token-return branch** codifying the recovery pattern above.
+2. `parallel-execution.md` pre-dispatch: budget-awareness check before parallel long-agent batches (both 06-15 agents were cut mid-flight; the pushback note asked for exactly this).
+3. After one limit-hit in a session, **confirm with the user before re-attempting parallel/heavy dispatch** (07-01: the immediate second parallel batch was also cut).
+
+## FB-108: owner:both verification path for personal/gitignored real data — document the no-subagent shape
+
+**Status:** promoted
+**Promoted:** 2026-07-19 — shipped v5.3.0: personal/gitignored-data verification shape added to `work-procedures.md` owner:both completion (user sign-off + orchestrator structural check, `verified_by: "user + orchestrator"`, pass-the-before-state rule).
+**Source:** harvest 2026-07-19; tinder 06-25-1955 (worked well, undocumented); corroborating: tinder 06-13-1610 (gitignored-data verification needed the "before" state passed explicitly); styler 06-25-0905 (owner:both + backup + dry-run gating on an 80-item personal-data migration "worked exactly as intended")
+
+**Problem.** `owner: both` tasks on real personal/gitignored data lack an explicit verification path in the docs. Dispatching verify-agent would pull real personal data into a subagent context; the session instead used user section-by-section sign-off + an orchestrator structural self-check, recorded as `task_verification` with `verified_by: "user + orchestrator"`.
+
+**Proposed:** name this shape explicitly in `work-procedures.md` (State Persistence Protocol / owner:both completion): when the deliverable is real personal or gitignored data, verification = user sign-off (acceptance) + orchestrator structural check (invariants), no subagent; for gitignored data, pass the pre-change "before" state to whoever verifies (no git baseline exists). Both halves recorded in `task_verification`.

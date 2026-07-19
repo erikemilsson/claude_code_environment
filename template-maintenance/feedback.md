@@ -25,6 +25,8 @@ A bigger-hammer version of FB-032. The spec-auditor would diff each proposed cha
 
 **Trial-gate:** Do not pursue until FB-032's structural output contract is trialed across several real `/iterate` sessions under Opus 4.7. If FB-032 materially reduces silent-decision friction, FB-033 is unnecessary. If FB-032 proves insufficient — silent decisions still slip through, or the output contract is bypassed — FB-033 becomes the structural backstop.
 
+**Watch note (2026-07-19, harvest):** adjacent signal in the styler 06-24 export — an `/iterate` Step-4 declaration missed that an approved change contradicted two EXISTING acceptance-criteria lines; the contradictions were caught and reconciled at APPLY time as "entailed coherence", outside the approved declaration (the session proposed a declaration-time "acceptance-criteria entailment scan"). Not the silent-*decisions* pattern this item gates on, but the same declaration-completeness family — a second instance would strengthen the escalation case.
+
 **Questions to resolve if FB-032 proves insufficient (likely via a decision record):**
 - Should the spec-auditor be a subagent (`.claude/agents/`) or a Skill (`.claude/skills/`)? Depends on FB-020's findings on subagent-vs-skill context-window separation.
 - Where does the PreToolUse hook live — template-owned `.claude/settings.json` (DEC-005 currently restricts that file to `permissions.allow` only), user-owned `settings.local.json`, or a documented example in `setup-checklist.md`?
@@ -519,47 +521,10 @@ Tags: template-side, feature-retirement, grep-coverage, proposal-time-check, ext
 
 **Status:** promoted 2026-05-24 via v4.8.0 (5-FB cheap-action bundle). Drift detection sub-check at `verify-agent.md § Step T2b step 4b` (existing `verification_gap` kind; pass-with-warning); orchestrator auto-update of `files_affected` at `commands/work.md § "After verify-agent returns" step 8`. Pre-pass parallel surface (FB-058 6th heuristic) deferred. Research at `.claude/support/workspace/fb-086-research.md`. See archive for full entry.
 
-## FB-087: Playwright MCP large-DOM token-limit pattern — prefer browser_evaluate over browser_snapshot
+## FB-087: [ARCHIVED — moved to `template-maintenance/feedback-archive.md`]
 
-**Status:** cheap-action-shipped
-**Captured:** 2026-05-24
-**Shipped:** 2026-05-24 (v4.7.3) — new `## MCP and Result-Size Constraints` section added to `.claude/rules/agents.md` between "## MCP and Parallel Execution" and "## Tool Preferences". Documents that `browser_snapshot` on long-scroll pages (~10K+ char DOM) exceeds per-tool-call token budgets and truncates silently; prefers `browser_evaluate` with targeted DOM queries. Optional project-side helper follow-up deferred unless a multi-project signal emerges.
-**Source:** Bridged from styler 2026-05-21 session (template_version 4.6.3) via `/health-check` Part 7 aggregation.
+**Status:** archived 2026-07-19 — cheap action shipped v4.7.3; optional helper remainder signal-gated with no signal (38-export harvest checked). Re-capture on a multi-project large-DOM signal. Full entry in archive.
 
-## Observation
-
-Playwright MCP `browser_wait_for` and `browser_snapshot` return 105K+ character snapshots for large pages (the styler `/style` page is ~36000px tall with many sections), exceeding the result token limit. The model can't process the snapshot — tool result truncates or fails outright.
-
-The workaround styler used: replace `browser_snapshot` with `browser_evaluate` containing targeted DOM queries (`document.querySelector(...).textContent`, etc.). The pattern is reusable for any large-DOM page where the audit/verification only needs specific elements.
-
-## Meta-pattern
-
-The current `agents.md § "MCP and Parallel Execution"` section covers the parallel-execution constraint (single-instance MCPs can't fan out) but doesn't cover the per-call result-size constraint. `browser_snapshot` is the default tool the model reaches for, and on large pages it fails silently from the model's perspective (token limit exceeded → degraded behavior).
-
-## Proposed template surface
-
-One-paragraph addition to `.claude/rules/agents.md § "MCP and Parallel Execution"` (or a sibling sub-section "MCP and Result-Size Constraints"):
-
-> Playwright MCP `browser_snapshot` returns the full accessibility tree of the current page. For pages over ~10K characters of DOM (long-scroll pages, sites with many sections), the result can exceed the model's per-tool-call token budget and truncate silently. For audits/verifications that only need specific elements, prefer `browser_evaluate` with targeted DOM queries (e.g., `document.querySelectorAll('h2').forEach(...)`). Reserve `browser_snapshot` for small pages or when you genuinely need the full tree.
-
-## Triage recommendation
-
-**Cheap action:** one-paragraph addition to `agents.md`. No DEC needed. Catches future "why is my Playwright snapshot empty" debugging cycles across all projects.
-
-**Optional follow-up:** project-side helpers under `.claude/scripts/` that wrap common Playwright-evaluate patterns (e.g., extract-all-headings, count-elements-by-selector) — but these are project-specific and not worth template-shipping unless a multi-project pattern emerges.
-
-## Relationship to existing template content
-
-- `.claude/rules/agents.md § "MCP and Parallel Execution"` covers cross-call state collision; this FB covers per-call result size.
-- DEC-005 / auto-mode covers permission gating, not result-size.
-- No existing template surface addresses this.
-
-## Source trace
-
-- Bridged from `interaction-logs/processed/.session-export-2026-05-21.json` § `claude_assessment.workflow_friction_notes[3]`.
-- Single-session signal. Cheap-action threshold is low — one paragraph addition. Capture now, ship in next template patch.
-
-Tags: template-side, mcp, playwright, result-size, browser-snapshot, browser-evaluate, agents-md-extension, cheap-action-candidate, single-project-signal
 
 ## FB-088: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
 
@@ -651,23 +616,14 @@ Tags: workflow, new-command-candidate, grill-adjacent, vision-adjacent, capabili
 
 **Status:** closed 2026-06-22 — named-sweep half declined during a `/feedback review` walk-through; thin ad-hoc usage-habit note also declined. Triage Q1 answered by reading the command defs: the named sweeps already fan the *analysis* phase out to subagents and capture inputs to disk; the inline part is deterministic capture of *enumerated* known paths that MUST stay inline (writes to `.claude/`, which subagents can't per DEC-004; Playwright MCP can't fan out). Nothing to "discover" → no pre-pass warranted. FB-101 triage (0 template-side deaths) confirms the fan-out coupling is already satisfied for template work. "Parallel Agents Per Spec Phase" stays a separate horizon item (adjacent FB-067 Wave 2), not folded in. See archive for full entry.
 
-## FB-103: Hard session-limit subagent cutoff — recovery protocol + dispatch budget awareness
+## FB-103: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
 
-**Status:** captured 2026-07-19 (harvest Tier-2 A — strongest cluster)
-**Source:** cross-project harvest 2026-07-19 (`template-maintenance/harvest-2026-07-19-triage.md`); styler exports 06-15, 06-22, 06-24-2026, 07-01 — ≥5 occurrences across 4 sessions
+**Status:** promoted 2026-07-19 — shipped v5.3.0 (recovery branch + pre-flight budget checks). Full entry in archive.
 
-**Problem.** DEC-010's `partial_completion` envelope assumes the implement-agent detects its *own* approaching turn budget and self-reports. A **platform usage/session limit** is a different failure mode: it kills the subagent mid-tool-call with `subagent_tokens: 0`, no structured report of any kind, and partial files on disk. The orchestrator has no signal distinguishing "agent died on limit" from a normal failure. Recovery each time was ad-hoc diagnosis from git/tsc state.
-
-**Proven recovery pattern (styler 07-01, worked twice — T873, T874):** (1) orchestrator runs typecheck + full test suite directly (cheap, no agent risk); (2) if genuinely green, dispatch a FRESH implement-agent whose only job is a formal Step-5 self-review + spec-alignment confirmation — not a rebuild. Fast both times since the mechanical work was already on disk.
-
-**Proposed (direct template edit; pattern proven, no research needed):**
-1. `work-procedures.md` after-return protocols: add a **zero-token-return branch** codifying the recovery pattern above.
-2. `parallel-execution.md` pre-dispatch: budget-awareness check before parallel long-agent batches (both 06-15 agents were cut mid-flight; the pushback note asked for exactly this).
-3. After one limit-hit in a session, **confirm with the user before re-attempting parallel/heavy dispatch** (07-01: the immediate second parallel batch was also cut).
 
 ## FB-104: Multi-session concurrency on one repo — no template model
 
-**Status:** captured 2026-07-19 (harvest Tier-2 B); cheap slice direct-editable, full model research-gated
+**Status:** cheap slice shipped v5.3.0 (2026-07-19) — pre-dispatch `git status` re-check (parallel-execution.md), handoff preserve-not-consume exception (work.md Step 0a), Concurrent Sessions conventions section (rules/session-management.md). Full concurrency model remains research-gated on recurrence.
 **Source:** harvest 2026-07-19; styler 06-13-2215, 06-16-0100, 06-25-0905; tinder 06-14-1540, 06-14-1605; flirty-gym 06-17 — 4+ sessions, 3 projects
 
 **Problem.** The template assumes one session per repo. Observed with two concurrent sessions: `.handoff.json` overwrite/consume races (consuming a parallel thread's handoff would lose its context — handled ad-hoc by preserve-not-consume + later merge); git-index races ("modified since read"); a concurrent session's `git add` sweeping this session's tracked edits into its commit (entangled provenance); a verify-agent reporting files "modified" that a parallel session had touched (extra investigation pass); commit-ownership ambiguity for files a parallel session created but never committed.
@@ -684,7 +640,7 @@ Tags: workflow, new-command-candidate, grill-adjacent, vision-adjacent, capabili
 
 ## FB-106: New spec section via /iterate — no decompose trigger; fast-path suppression trap
 
-**Status:** captured 2026-07-19 (harvest Tier-2 D)
+**Status:** doc half shipped v5.3.0 (2026-07-19) — pause new-section carve-out documented in work.md § Context Transition. Marker mechanism (iterate sets, /work Step 1a consumes) queued with the FB-105 ship.
 **Source:** harvest 2026-07-19; styler 06-24-1232 (two linked notes, same session)
 
 **Problem.** After `/iterate` lands a new spec section, nothing structural tells the next `/work` to decompose it: the Step 1a fast-path (dashboard META `spec_fingerprint` match) actively SKIPS drift detection and routes to an unrelated pending task. Worse, the pause principle "never leave a stale dashboard" *conflicts* with this: regenerating at pause refreshes META, ENABLES the fast-path, and thereby suppresses the new section's decomposition — the session resolved it by deliberately not regenerating (undocumented carve-out).
@@ -700,11 +656,7 @@ Tags: workflow, new-command-candidate, grill-adjacent, vision-adjacent, capabili
 
 **Proposed:** distinguish "build-blocking" from "validation" phase gates (schema or gate-metadata level — needs design), so a human real-use acceptance can remain open while the next phase's build proceeds. Cheap interim: document the `cross_phase` workaround in `phase-decision-gates.md`. Escalate to `/research` on a second project hitting it.
 
-## FB-108: owner:both verification path for personal/gitignored real data — document the no-subagent shape
+## FB-108: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
 
-**Status:** captured 2026-07-19 (harvest Tier-2 F); cheap doc addition
-**Source:** harvest 2026-07-19; tinder 06-25-1955 (worked well, undocumented); corroborating: tinder 06-13-1610 (gitignored-data verification needed the "before" state passed explicitly); styler 06-25-0905 (owner:both + backup + dry-run gating on an 80-item personal-data migration "worked exactly as intended")
+**Status:** promoted 2026-07-19 — shipped v5.3.0 (owner:both personal-data verification shape in work-procedures.md). Full entry in archive.
 
-**Problem.** `owner: both` tasks on real personal/gitignored data lack an explicit verification path in the docs. Dispatching verify-agent would pull real personal data into a subagent context; the session instead used user section-by-section sign-off + an orchestrator structural self-check, recorded as `task_verification` with `verified_by: "user + orchestrator"`.
-
-**Proposed:** name this shape explicitly in `work-procedures.md` (State Persistence Protocol / owner:both completion): when the deliverable is real personal or gitignored data, verification = user sign-off (acceptance) + orchestrator structural check (invariants), no subagent; for gitignored data, pass the pre-change "before" state to whoever verifies (no git baseline exists). Both halves recorded in `task_verification`.
