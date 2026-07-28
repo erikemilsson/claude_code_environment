@@ -20,7 +20,7 @@ The dashboard is regenerated whole by the script (`dashboard-render.py --html`) 
 
 A full regen is cheap (a single script call), so any Tier-1 trigger runs a full regen.
 
-**Script-first (DEC-024):** full regens render the entire HTML — structural sections + inline-SVG visualizations — via `python3 .claude/scripts/dashboard-render.py --html`. The orchestrator writes the output, then augments the "Needs you" card with judgment items (only when there are any) and fills Custom Views content when that section is on. See `dashboard-regeneration.md § "Script-First Rendering — HTML target"` for the division of labor and the canonical `task_hash` mode.
+**Script-first (DEC-024):** full regens render the entire HTML — structural sections + inline-SVG visualizations — via `python3 .claude/scripts/dashboard-render.py --html > .claude/dashboard.html` (the script writes to **stdout**; the redirect lands the on-disk file — omitting it silently leaves `dashboard.html` stale with no error). The orchestrator then augments the "Needs you" card with judgment items (only when there are any) and fills Custom Views content when that section is on. See `dashboard-regeneration.md § "Script-First Rendering — HTML target"` for the division of labor and the canonical `task_hash` mode.
 
 ## Sections
 
