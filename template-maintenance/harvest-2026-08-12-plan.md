@@ -1,8 +1,17 @@
 # Harvest plan — 2026-08-12 inbox (56 exports)
 
-**Status:** not started
+**Status:** clusters 1, 2, 5 DONE this session (2026-08-12); clusters 3 and 4+6 remain.
 **Created:** 2026-08-12 (template-repo `/health-check` + 4-agent impact assessment)
 **Supersedes nothing.** Sibling precedent: `harvest-2026-07-19-triage.md` (38 exports).
+
+### Session 1 result (2026-08-12)
+
+- **Cluster 1 → FB-113** (unqualified `ready`). Insight: `interaction-logs/insights/2026-08-12_implement-agent_files-affected-derivation.md` — extends the 2026-06-11 predecessor (trigger met). 9 incidents.
+- **Cluster 2 → FB-114** (unqualified `ready`). Insight: `interaction-logs/insights/2026-08-12_agents_negative-findings-positive-control-defeated.md`. 9 core incidents (the 07-31 dotfile held two markers, so 9 not 8) + 2 same-class + 1 success. Sub-issue 2 (Grep absent from subagents) flagged upstream-gated.
+- **Cluster 5 → FB-115** (ready, single-project caveat). Insight: `interaction-logs/insights/2026-08-12_verify-agent_closure-sweep-lexical-vs-structural.md`. 5 incidents; incident 5 (task-062) cross-references FB-114 Adjacent B.
+- **FB-076 NOT touched** (correction belongs with cluster 3, per plan).
+- **Moved to `processed/` (5 files, copy→cmp→rm verified):** 07-27-0830, 07-28-0257, 08-01-0336, 08-01-1345, 08-05-2354. Only files whose dates are fully harvested (no overlap with unfinished cluster 3/4+6 dates) were moved. Files on shared dates (07-23, 07-30, 07-31, 08-10, 08-11) remain in `inbox/` for the next session — they contain finished-cluster evidence but also sit on dates claimed by clusters 3/4+6.
+- **Remaining for next session:** cluster 3 (verify-agent runtime_validation → insight doc + **sibling FB** extending FB-076, per the correction section; do NOT unlock mitigations 2/3) and cluster 4+6 merged (task/AC authoring → one insight doc + one FB with single-project caveat). Next free FB ID: **FB-116**.
 
 This plan exists because the cluster analysis below cost a full `/health-check` run plus four
 parallel assessment agents, and it lived only in a conversation. Everything needed to execute
