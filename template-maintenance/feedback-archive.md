@@ -2144,3 +2144,27 @@ Tags: template-side, mcp, playwright, result-size, browser-snapshot, browser-eva
 **Problem.** After `/iterate` lands a new spec section, nothing structural tells the next `/work` to decompose it: the Step 1a fast-path (dashboard META `spec_fingerprint` match) actively SKIPS drift detection and routes to an unrelated pending task. Worse, the pause principle "never leave a stale dashboard" *conflicts* with this: regenerating at pause refreshes META, ENABLES the fast-path, and thereby suppresses the new section's decomposition — the session resolved it by deliberately not regenerating (undocumented carve-out).
 
 **Proposed:** `/iterate` apply sets a lightweight marker (e.g., sidecar field `new_sections: [...]`) that `/work` Step 1a consumes: "new section, 0 tasks reference it → offer decomposition before fast-path routing." Document the pause carve-out explicitly until then.
+
+## FB-110: `/health-check` Part 2b applies downstream-project bloat thresholds to the template's own CLAUDE.md
+
+**Status:** promoted
+**Promoted:** 2026-08-12 — shipped v5.4.4: `#### Repo-type carve-out (template repo)` sub-section added to `commands/health-check.md` Part 2b. When a `template-maintenance/` directory exists at the project root, the Bloat Thresholds + Condensation Guidance + What Belongs Where checks are skipped (advisory `ℹ️` report); Missing File Detection + reference validation still run. Mirrors the Parts 5/5d/7 sentinel.
+**Source:** template-repo `/health-check` 2026-08-12; prior instance ship-log 2026-06-11.
+
+**Problem.** Part 2b's thresholds (100/200 total lines, 15/25 per section) are written for *a downstream project's* root `./CLAUDE.md` — the check's own text says *"contains project-specific instructions and is user-owned"* and its "What Belongs Where" table talks about tech stack, build commands, and naming conventions. The template repo's root `CLAUDE.md` is a different genre: template-maintenance context carrying live cross-session state. Running the check here reliably produces a false positive (2026-08-12: 104 lines, `## Active Follow-ups` at 33) that has to be re-litigated and declined each run — `ship-log.md`'s 2026-06-11 maintenance entry already records the same finding being flagged-and-declined: *"root CLAUDE.md 109 lines = 9 over soft limit, reported not queued — maintenance context file, recently dieted."*
+
+**Why not just condense.** Active Follow-ups exists precisely because root `CLAUDE.md` auto-loads every session while `template-maintenance/*` does not. Extracting open-item state there is indirection, not condensation, and reproduces the failure mode the section prevents.
+
+**Proposed.** Skip (or downgrade to advisory) Part 2b when a `template-maintenance/` directory exists at the project root — the same repo-type sentinel Parts 5, 5d and 7 already use. One-line applicability change; no behavior change for downstream projects.
+
+## FB-111: `/health-check` Part 3 cannot see root `decisions/` — template decision records are unauditable
+
+**Status:** promoted
+**Promoted:** 2026-08-12 — shipped v5.4.4: `### Repo-type branch (template repo)` sub-section added to `commands/health-check.md` Part 3 + a branch on the Step 1 scan line. When a `template-maintenance/` directory exists at the project root, scan `decisions/decision-*.md` (root) instead of the shipped `.claude/support/decisions/` path. Mirrors the Parts 5/5d/7 sentinel.
+**Source:** template-repo `/health-check` 2026-08-12 — 5 records with dead `implementation_anchors` surfaced only via a hand-adapted pass.
+
+**Problem.** Part 3's Step 1 scan reads `all .claude/support/decisions/decision-*.md files`. In the template repo that directory is the empty shipped placeholder — the real template decision records live in root `decisions/` (21 of them). Unlike Parts 5/5d/7, Part 3 has no template-repo carve-out, so **as shipped it validates nothing here**: schema, staleness, anchor integrity and cross-references all silently pass on an empty set. The 2026-08-12 run found 5 records carrying anchors to files deleted in v5.1.1 and by DEC-020 — but only because the scan path was adapted by hand, not because the command found them.
+
+**Proposed.** Add a repo-type branch to Part 3 Step 1: when `template-maintenance/` exists at the root, scan `decisions/decision-*.md` instead of (or in addition to) the shipped path. Mirrors the existing Parts 5/5d/7 sentinel pattern.
+
+**Adjacent finding (separate, not blocking).** Anchor *shape* is inconsistent across the corpus — four styles in use, and only DEC-021/022/023 (3 of 21) follow the `- file:` / `description:` mapping that `.claude/support/reference/decisions.md` itself prescribes. Worth its own normalization pass; deliberately not bundled here. **Now tracked as FB-112 (c).**

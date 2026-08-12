@@ -666,29 +666,13 @@ Tags: workflow, new-command-candidate, grill-adjacent, vision-adjacent, capabili
 
 **Proposed.** Extract the inbox copy-with-rename into a small deterministic helper under `.claude/scripts/` (parallel to `persist-friction.py`), invoked from `/work pause` step 6 and `/work` Step 0f. A script cannot forget to rename. Clears the scripts-candidates ROI bar on frequency — it fires on every pause, in every downstream project with `template_inbox_path` configured. Consumer-side hardening of `/health-check` Part 7's inbox scan (dotfile-inclusive enumeration) is a separate, complementary fix and does not remove the need for this one.
 
-## FB-110: `/health-check` Part 2b applies downstream-project bloat thresholds to the template's own CLAUDE.md
+## FB-110: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
 
-**Status:** ready — cheap carve-out
-**Captured:** 2026-08-12 (health-check Part 2b false positive)
-**Source:** template-repo `/health-check` 2026-08-12; prior instance ship-log 2026-06-11.
+**Status:** promoted 2026-08-12 — shipped v5.4.4: `#### Repo-type carve-out (template repo)` added to `commands/health-check.md` Part 2b; bloat thresholds skipped (advisory `ℹ️`) when the `template-maintenance/` sentinel is present. Mirrors Parts 5/5d/7. See archive for full text.
 
-**Problem.** Part 2b's thresholds (100/200 total lines, 15/25 per section) are written for *a downstream project's* root `./CLAUDE.md` — the check's own text says *"contains project-specific instructions and is user-owned"* and its "What Belongs Where" table talks about tech stack, build commands, and naming conventions. The template repo's root `CLAUDE.md` is a different genre: template-maintenance context carrying live cross-session state. Running the check here reliably produces a false positive (2026-08-12: 104 lines, `## Active Follow-ups` at 33) that has to be re-litigated and declined each run — `ship-log.md`'s 2026-06-11 maintenance entry already records the same finding being flagged-and-declined: *"root CLAUDE.md 109 lines = 9 over soft limit, reported not queued — maintenance context file, recently dieted."*
+## FB-111: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
 
-**Why not just condense.** Active Follow-ups exists precisely because root `CLAUDE.md` auto-loads every session while `template-maintenance/*` does not. Extracting open-item state there is indirection, not condensation, and reproduces the failure mode the section prevents.
-
-**Proposed.** Skip (or downgrade to advisory) Part 2b when a `template-maintenance/` directory exists at the project root — the same repo-type sentinel Parts 5, 5d and 7 already use. One-line applicability change; no behavior change for downstream projects.
-
-## FB-111: `/health-check` Part 3 cannot see root `decisions/` — template decision records are unauditable
-
-**Status:** ready — cheap carve-out
-**Captured:** 2026-08-12
-**Source:** template-repo `/health-check` 2026-08-12 — 5 records with dead `implementation_anchors` surfaced only via a hand-adapted pass.
-
-**Problem.** Part 3's Step 1 scan (`.claude/commands/health-check.md:1032`) reads `all .claude/support/decisions/decision-*.md files`. In the template repo that directory is the empty shipped placeholder — the real template decision records live in root `decisions/` (21 of them). Unlike Parts 5/5d/7, Part 3 has no template-repo carve-out, so **as shipped it validates nothing here**: schema, staleness, anchor integrity and cross-references all silently pass on an empty set. The 2026-08-12 run found 5 records carrying anchors to files deleted in v5.1.1 and by DEC-020 — but only because the scan path was adapted by hand, not because the command found them.
-
-**Proposed.** Add a repo-type branch to Part 3 Step 1: when `template-maintenance/` exists at the root, scan `decisions/decision-*.md` instead of (or in addition to) the shipped path. Mirrors the existing Parts 5/5d/7 sentinel pattern.
-
-**Adjacent finding (separate, not blocking).** Anchor *shape* is inconsistent across the corpus — four styles in use, and only DEC-021/022/023 (3 of 21) follow the `- file:` / `description:` mapping that `.claude/support/reference/decisions.md` itself prescribes. Worth its own normalization pass; deliberately not bundled here. **Now tracked as FB-112 (c).**
+**Status:** promoted 2026-08-12 — shipped v5.4.4: `### Repo-type branch (template repo)` added to `commands/health-check.md` Part 3 + a branch on the Step 1 scan line; scans root `decisions/decision-*.md` when the `template-maintenance/` sentinel is present (the shipped `.claude/support/decisions/` is the empty placeholder here). Mirrors Parts 5/5d/7. See archive for full text.
 
 ## FB-112: Doc-hygiene trio — stale topology map, dead toggle in the sidecar schema, inconsistent anchor shapes
 

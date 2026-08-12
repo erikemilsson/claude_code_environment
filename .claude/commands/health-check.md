@@ -263,6 +263,10 @@ If `./CLAUDE.md` does not exist at the project root:
 2. Queue a fix item: create `./CLAUDE.md` from the template at `.claude/support/reference/root-claude-md-template.md` (risk `—`; new file, nothing overwritten)
 3. If included in the triage response, copy the template to `./CLAUDE.md`; if excluded, note as informational and continue
 
+#### Repo-type carve-out (template repo)
+
+If a `template-maintenance/` directory exists at the project root, **skip the Bloat Thresholds, Condensation Guidance, and What Belongs Where checks below** and report `ℹ️ Part 2b bloat thresholds skipped (template repo — root CLAUDE.md is template-maintenance context, not a downstream project file)`. The thresholds (100/200 total lines, 15/25 per section) are calibrated for a *downstream project's* root `./CLAUDE.md` — project-specific instructions like tech stack, build commands, and naming conventions. The template repo's root `CLAUDE.md` is a different genre: template-maintenance context carrying live cross-session state (`## Active Follow-ups`, `## File Boundary`) that auto-loads every session by design. The `## Active Follow-ups` section exists precisely because root `CLAUDE.md` auto-loads while `template-maintenance/*` does not — extracting that state into `template-maintenance/` is indirection, not condensation, and reproduces the failure mode the section prevents. Running the thresholds here false-positives every run (2026-08-12: 104 lines, `## Active Follow-ups` at 33; prior 2026-06-11: 109 lines, flagged-and-declined as "maintenance context file, recently dieted"). Missing File Detection and reference validation (check 5) still run — they are genre-independent. Mirrors the Parts 5/5d/7 `template-maintenance/` sentinel; no behavior change for downstream projects (no sentinel → thresholds run as before).
+
 #### Bloat Thresholds
 
 | Metric | Warning (soft limit) | Error (hard limit) |
@@ -351,6 +355,10 @@ Validates that `.claude/support/reference/claude-code-authoring.md` has been ver
 ## Part 3: Decision System Validation
 
 Validates the decision documentation system for schema compliance and consistency.
+
+### Repo-type branch (template repo)
+
+Part 3's scan reads `.claude/support/decisions/decision-*.md` — the shipped decision-records directory. In the template repo that directory is the empty shipped placeholder; the real template decision records live in root `decisions/` (21 of them). When a `template-maintenance/` directory exists at the project root, scan `decisions/decision-*.md` (root) **instead of** the shipped path — otherwise schema, staleness, anchor-integrity, and cross-reference checks (1–6 below) all silently validate an empty set and every check vacuously passes. Mirrors the Parts 5/5d/7 `template-maintenance/` sentinel. No behavior change for downstream projects (no sentinel → the shipped path is scanned as before; downstream decision records do live at `.claude/support/decisions/`).
 
 ### Validation Checks
 
@@ -1040,6 +1048,9 @@ READ .claude/CLAUDE.md
 READ ./CLAUDE.md (root, if exists)
 SCAN .claude/rules/ for rule files
 READ all .claude/support/decisions/decision-*.md files
+  (template repo: if template-maintenance/ exists at root, READ decisions/decision-*.md
+   instead — .claude/support/decisions/ is the empty shipped placeholder here; the real
+   template decision records live in root decisions/. See Part 3 § Repo-type branch.)
 READ .claude/version.json (template version info)
 READ .claude/sync-manifest.json (file categories)
 SCAN .claude/support/previous_specifications/ for archived specs
