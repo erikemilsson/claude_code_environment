@@ -688,5 +688,17 @@ Tags: workflow, new-command-candidate, grill-adjacent, vision-adjacent, capabili
 
 **Proposed.** Add a repo-type branch to Part 3 Step 1: when `template-maintenance/` exists at the root, scan `decisions/decision-*.md` instead of (or in addition to) the shipped path. Mirrors the existing Parts 5/5d/7 sentinel pattern.
 
-**Adjacent finding (separate, not blocking).** Anchor *shape* is inconsistent across the corpus — four styles in use, and only DEC-021/022/023 (3 of 21) follow the `- file:` / `description:` mapping that `.claude/support/reference/decisions.md` itself prescribes. Worth its own normalization pass; deliberately not bundled here.
+**Adjacent finding (separate, not blocking).** Anchor *shape* is inconsistent across the corpus — four styles in use, and only DEC-021/022/023 (3 of 21) follow the `- file:` / `description:` mapping that `.claude/support/reference/decisions.md` itself prescribes. Worth its own normalization pass; deliberately not bundled here. **Now tracked as FB-112 (c).**
+
+## FB-112: Doc-hygiene trio — stale topology map, dead toggle in the sidecar schema, inconsistent anchor shapes
+
+**Status:** ready — three small independent sub-items, bundled per the FB-006 precedent
+**Captured:** 2026-08-12 (health-check + impact-assessment side findings)
+**Source:** template-repo `/health-check` 2026-08-12. None of these blocks anything; all three are drift between a doc and the thing it describes.
+
+**(a) `template-maintenance/architecture-map.md` is four versions stale.** Its machine-read `**Current as of:** v5.1.1` line predates v5.2.0 → v5.4.3. v5.4.0 in particular added script→state derivation edges (FB-105's `_html_needs_you()` reads sidecar `phase_gates`, `drift-deferrals.json`, `audit_digest`, and parses `feedback.md`) that the dependency-edges table may not reflect. Reconcile the map against HEAD and bump the line. Note the map's own discipline: *"Update it when topology changes."*
+
+**(b) `support/reference/dashboard-regeneration.md:96–103` documents a dead toggle.** The canonical `section_toggles` schema block still lists `tasks: true` as if it gates a section. Post-DEC-024 there is no standalone Tasks section (replaced by the phase heatmap / front-cards / dependency graph), and `dashboard-render.py` reads only four toggle keys — `action_required` (:1145), `decisions` (:1156), `custom_views` (:1160), `notes` (:1170). Unknown keys are silently ignored via `dict.get(key, default)`, so this is doc-only drift with no runtime effect — but it misleads anyone authoring a sidecar by hand. Verify the full key list against the script and correct the schema block.
+
+**(c) `implementation_anchors` shape is inconsistent across the decision corpus.** Four styles in use across 21 records: bare path + trailing `#` YAML comment (the comment is parser-stripped, so the description survives only as raw text); bare path with no annotation; bare string with prose embedded in the value; and the `- file:` / `description:` mapping. **Only DEC-021/022/023 — 3 of 21 — use the shape `.claude/support/reference/decisions.md` actually prescribes.** No automated consumer parses the field (grepped `.claude/scripts/*.py`, `scripts/pre-commit-hook.sh`, `audit-coherence.md` — zero hits), so nothing is broken today; the cost is that a strict-YAML reader flags valid entries and the corpus can't be machine-audited. **Hazard when normalizing:** a plain scalar in a YAML block sequence cannot contain colon-space — that exact mistake invalidated four records' frontmatter mid-edit on 2026-08-12 and had to be walked back. Either quote the scalars or avoid `: ` entirely. Do this as its own pass; it was deliberately kept out of the v5.4.3 anchor-annotation ship to avoid multiplying that diff.
 
