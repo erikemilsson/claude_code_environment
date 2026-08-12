@@ -244,7 +244,11 @@ Recover from a prior session's interrupted `/work pause` that left `.claude/supp
    ```
 6. Compute timestamp `YYYY-MM-DD-HHMM` (minute-granular per FB-079).
 7. Write the recovered export to `.claude/support/workspace/.session-export-{timestamp}-recovered.json`.
-8. If `template_inbox_path` is configured, copy the export there (parallel to Session Export step 6).
+8. If `template_inbox_path` is configured, copy the export to the inbox via the deterministic helper (FB-109) — pass `--suffix recovered` so the inbox copy carries the `-recovered` marker:
+   ```bash
+   python3 .claude/scripts/persist-session-export.py --source .claude/support/workspace/.session-export-{timestamp}-recovered.json --suffix recovered
+   ```
+   Never `cp` the dot-prefixed working filename to the inbox verbatim (see `context-transitions.md § "Session Export"` step 6).
 9. Delete `.interaction-assessment.json` AND `.session-log.jsonl`.
 10. Surface inline: `Step 0f: Recovered stale Track 2 capture from interrupted pause → .session-export-{timestamp}-recovered.json` (Inform — not an error.)
 11. Proceed to Step 1.
@@ -945,4 +949,4 @@ Read `.claude/support/reference/context-transitions.md` and follow the Path A (U
 
 ### Interaction Assessment + Session Export (Track 2 — Cross-Project Logging)
 
-After the handoff file is written, complete the pause: generate the interaction assessment (`.interaction-assessment.json`), compile the session export (`.session-export-YYYY-MM-DD-HHMM.json`; copy to `template_inbox_path` when configured), then clean up the working files. **Procedure + schemas: `context-transitions.md § "Pause Follow-Through (Track 2 — Cross-Project Logging)"`** — the same file the pause procedure above already directs you to read; do not improvise the export shape from memory. Interrupted-pause recovery is Step 0f's job (FB-089); if the PreCompact hook fires instead of `/work pause`, it compiles a markers-only export on its own.
+After the handoff file is written, complete the pause: generate the interaction assessment (`.interaction-assessment.json`), compile the session export (`.session-export-YYYY-MM-DD-HHMM.json`; copy to `template_inbox_path` when configured), then clean up the working files. **Procedure + schemas: `context-transitions.md § "Pause Follow-Through (Track 2 — Cross-Project Logging)"`** — the same file the pause procedure above already directs you to read; do not improvise the export shape from memory. **The inbox copy (Session Export step 6) is mechanized (FB-109): invoke `python3 .claude/scripts/persist-session-export.py --source <export-path>` — never `cp` the dot-prefixed working filename to the inbox verbatim; the script enforces the never-dot-prefixed rename structurally.** Interrupted-pause recovery is Step 0f's job (FB-089); if the PreCompact hook fires instead of `/work pause`, it compiles a markers-only export on its own.

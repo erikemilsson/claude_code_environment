@@ -655,17 +655,9 @@ Tags: workflow, new-command-candidate, grill-adjacent, vision-adjacent, capabili
 
 **Status:** promoted 2026-07-19 — shipped v5.3.0 (owner:both personal-data verification shape in work-procedures.md). Full entry in archive.
 
-## FB-109: Session-export inbox rename is prose-executed and still failing months after its patch
+## FB-109: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
 
-**Status:** ready — mechanization candidate (Family F)
-**Captured:** 2026-08-12 (health-check Part 7 assessment)
-**Source:** template-repo `/health-check` 2026-08-12 — 7 of 55 inbox exports were dot-prefixed and invisible to a plain `*.json` glob.
-
-**Problem.** `.claude/support/reference/context-transitions.md:411` (Session Export step 6) carries a bold rule: copy the export to the template inbox as `{project-slug}-session-export-YYYY-MM-DD-HHMM.json` and *"NEVER copy the dot-prefixed working filename verbatim"* — added in v4.21.2 (2026-06-11) after 19 exports silently accumulated unseen. **The rule is still being violated.** Of the 7 dot-prefixed files found on 2026-08-12, four carry `template_version` 5.1.0 and 5.4.0 — i.e. produced weeks to months *after* the rule shipped — and one came via the Step 0f recovery path the rule names explicitly.
-
-**Why it keeps failing.** The rule is prose executed by an LLM at three call sites (`work.md` pause step 6, `work.md` Step 0f recovery, PreCompact copies) under end-of-session context pressure. Contrast `.claude/hooks/pre-compact-handoff.sh:239`, which builds the filename in actual Python (`f"{os.path.basename(project_dir)}-{timestamp}.json"`) and has never produced a dot-prefixed inbox file. This is the "documented but not executed" pattern named in `template-maintenance/scripts-candidates.md § Family F` (precedent: FB-017, FB-045/DEC-011, FB-038); the documented remedy is mechanization, not a stronger warning — a second warning-sentence pass has already been tried once and failed.
-
-**Proposed.** Extract the inbox copy-with-rename into a small deterministic helper under `.claude/scripts/` (parallel to `persist-friction.py`), invoked from `/work pause` step 6 and `/work` Step 0f. A script cannot forget to rename. Clears the scripts-candidates ROI bar on frequency — it fires on every pause, in every downstream project with `template_inbox_path` configured. Consumer-side hardening of `/health-check` Part 7's inbox scan (dotfile-inclusive enumeration) is a separate, complementary fix and does not remove the need for this one.
+**Status:** promoted 2026-08-12 — shipped v5.5.0: new `.claude/scripts/persist-session-export.py` (+ 19 tests, 111/111 suite green) mechanizes the inbox copy-with-rename, invoked from `/work pause` Session Export step 6 + `/work` Step 0f step 8 (`--suffix recovered`). Never-dot-prefixed destination enforced structurally; the one shipped script that writes a file (external `template_inbox_path`, never `.claude/`). Wired in `context-transitions.md § "Session Export"` step 6 + `work.md`; `scripts-candidates.md § Family F` F2 records the ship (F1 stays parked). See archive for full entry.
 
 ## FB-110: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
 

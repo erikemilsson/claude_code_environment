@@ -408,7 +408,11 @@ After writing both the handoff file and interaction assessment, compile the sess
 ```
 
 5. Write to `.claude/support/workspace/.session-export-YYYY-MM-DD-HHMM.json` (minute-granularity timestamp; same-day pauses do not collide per FB-079)
-6. If `template_inbox_path` is configured in `.claude/version.json`, copy the export there as `{project-slug}-session-export-YYYY-MM-DD-HHMM.json` — derive `{project-slug}` from `source_project` (kebab-case short form). NEVER copy the dot-prefixed working filename verbatim: dot-files are invisible to plain `ls` in the template inbox (19 exports silently accumulated unseen before this was caught, 2026-06-11). The same rename rule applies to every inbox copy — Step 0f recovery exports and PreCompact markers-only exports included.
+6. If `template_inbox_path` is configured in `.claude/version.json`, copy the export to the inbox by invoking the deterministic helper (FB-109):
+   ```bash
+   python3 .claude/scripts/persist-session-export.py --source .claude/support/workspace/.session-export-YYYY-MM-DD-HHMM.json
+   ```
+   The script reads `template_inbox_path` from `.claude/version.json`, derives `{project-slug}` from the export's `source_project` field (kebab-case), and writes the inbox copy as `{project-slug}-session-export-YYYY-MM-DD-HHMM.json`. **Always use the script — never `cp` the dot-prefixed working filename to the inbox verbatim.** Dot-files are invisible to plain `ls` in the template inbox (19 exports silently accumulated unseen before this was caught, 2026-06-11), and the rename rule was still being violated months after its v4.21.2 prose patch because prose under end-of-session context pressure is unreliable — 4 of 7 dot-prefixed exports found on 2026-08-12 postdate the rule. A script cannot forget to rename; `cp` can. The script enforces the never-dot-prefixed invariant structurally. The same rename rule applies to every inbox copy — Step 0f recovery exports (pass `--suffix recovered`) and PreCompact markers-only exports included.
 7. Clean up: delete `.session-log.jsonl` and `.interaction-assessment.json` (data is now in the export)
 
 **Interrupted-pause recovery (FB-089):** if `/work pause` is interrupted between writing `.interaction-assessment.json` and step 7 cleanup (usage limit, Ctrl+C, harness crash), the stale file persists into the next session. The next `/work` invocation's Step 0f compiles a recovered export from the orphaned files (Track 1 + Track 2), copies to inbox if configured, then deletes both stale files. See work.md § "Step 0f: Track 2 Stale-File Recovery".
