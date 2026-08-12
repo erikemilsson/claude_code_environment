@@ -1,6 +1,6 @@
 # Harvest plan — 2026-08-12 inbox (56 exports)
 
-**Status:** clusters 1, 2, 5 DONE this session (2026-08-12); clusters 3 and 4+6 remain.
+**Status:** COMPLETE (2026-08-12). All 5 clusters harvested across two sessions; inbox emptied to `processed/`. No exports remain unharvested.
 **Created:** 2026-08-12 (template-repo `/health-check` + 4-agent impact assessment)
 **Supersedes nothing.** Sibling precedent: `harvest-2026-07-19-triage.md` (38 exports).
 
@@ -12,6 +12,15 @@
 - **FB-076 NOT touched** (correction belongs with cluster 3, per plan).
 - **Moved to `processed/` (5 files, copy→cmp→rm verified):** 07-27-0830, 07-28-0257, 08-01-0336, 08-01-1345, 08-05-2354. Only files whose dates are fully harvested (no overlap with unfinished cluster 3/4+6 dates) were moved. Files on shared dates (07-23, 07-30, 07-31, 08-10, 08-11) remain in `inbox/` for the next session — they contain finished-cluster evidence but also sit on dates claimed by clusters 3/4+6.
 - **Remaining for next session:** cluster 3 (verify-agent runtime_validation → insight doc + **sibling FB** extending FB-076, per the correction section; do NOT unlock mitigations 2/3) and cluster 4+6 merged (task/AC authoring → one insight doc + one FB with single-project caveat). Next free FB ID: **FB-116**.
+
+### Session 2 result (2026-08-12)
+
+- **Cluster 3 → FB-116** (ready, sibling extending FB-076 — NOT a duplicate). Insight: `interaction-logs/insights/2026-08-12_verify-agent_runtime-validation-local-ceiling.md`. 6 core incidents + 3 same-family across 4 artifact classes (Fabric PySpark notebooks, TMDL semantic models, GitHub Actions workflows, live Delta reads/writers). **FB-076 amended** (one-line note: third mode observed in 2nd project, satisfies condition (b), cross-refs FB-116) — **mitigations 2 + 3 NOT unlocked** (mitigation 2 inapplicable to a stack with no client/server bundle boundary; mitigation 3 only a partial spirit-match). The under-claim half (07-23 task-027: source-reading wrongly assumed the ceiling for executable pure functions) is the nuance — the gap is that nothing forces an *honest* determination of the local ceiling, so agents both over- and under-claim it.
+- **Cluster 4+6 merged → FB-117** (ready, single-project / single-timeframe caveat). Insight: `interaction-logs/insights/2026-08-12_task-ac-authoring-internal-consistency.md`. 9 unique incidents (sub-pattern A: AC vs `owner` mismatch ×2; sub-pattern B: phase-level fix-task authoring quality ×7, incl. the circular re-verification trigger `3909f351`→`a475793a`). Shared task-063 anchor → one doc + one FB, not a split. Dedup-checked vs FB-100 / FB-107 / DEC-022 / FB-115.
+- **Note on the plan's "4 new FB items" count:** the per-cluster sections and Session 1's result block are authoritative — 5 FBs total (FB-113…FB-117), not 4. The "4" line undercounted (the merged 4+6 still produces one FB).
+- **Moved to `processed/` (51 files, copy→cmp→rm verified, zero mismatches):** all remaining inbox exports. With all 5 clusters done, every date is fully harvested, so the Session 1 date-sharing restraint no longer withheld anything. Inbox now empty (0 files); `processed/` at 165 (114 + 51).
+- **No exports remain unharvested.** The 80 markers without `template_area` are project-level drift (per "What NOT to do") and are deliberately not harvest material; their containing exports move to `processed/` alongside the rest once the template-relevant markers on the same exports are captured.
+- **Harvest COMPLETE.**
 
 This plan exists because the cluster analysis below cost a full `/health-check` run plus four
 parallel assessment agents, and it lived only in a conversation. Everything needed to execute
