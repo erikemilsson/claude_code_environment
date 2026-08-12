@@ -13,7 +13,7 @@ related:
 implementation_anchors:
   - .claude/commands/health-check.md                # Part 6 UX Evaluation (6 starter checks + Nielsen severity framework)
   - .claude/support/reference/workflow.md           # documents UX evaluation step
-  - system-overview.md                              # /health-check description + feature catalog
+  - system-overview.md (/health-check description + feature catalog) — deleted 2026-07-19 (v5.1.1); no single successor file. Superseded by the layered truth model — shipped files = behavior truth; decisions/ + ship-log.md + git tags = change truth; template-maintenance/architecture-map.md = topology truth. The /health-check half is already covered by the .claude/commands/health-check.md anchor above. Historical content via `git show v5.1.0:system-overview.md`
 inflection_point: false
 spec_revised:
 spec_revised_date:

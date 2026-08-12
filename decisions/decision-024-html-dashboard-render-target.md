@@ -46,9 +46,9 @@ Mark your selection by checking one box:
 
 **The problem.** As a *read* surface, Markdown breaks down at scale — styler: 640 lines / 28,232 px tall; a 141-row "table hell" decisions section; 53 repeated phase headers — and the user uses the dashboard purely for overview, then acts via the CLI.
 
-**What was explored (2026-06-23/24).** A multi-iteration prototype (`.claude/support/workspace/dashboard-html-exploration/`) built and visually tested an HTML alternative against the 11 real downstream projects, with an independent adversarial evaluation and a `/shakedown` of the design. The user validated the direction ("I wouldn't even need the Markdown once I have this").
+**What was explored (2026-06-23/24).** A multi-iteration prototype (`decisions/.archive/dashboard-html-exploration/` — graduated 2026-08-12 from `.claude/support/workspace/`, which is gitignored scratch) built and visually tested an HTML alternative against the 11 real downstream projects, with an independent adversarial evaluation and a `/shakedown` of the design. The user validated the direction ("I wouldn't even need the Markdown once I have this").
 
-**Why a decision record.** Template architectural change with real cost-of-reversal: rewrites the render pipeline (`dashboard-render.py`), `rules/dashboard.md`, `support/reference/dashboard-regeneration.md`, and migrates 11 downstream projects. The *direction* is settled; this DEC scopes the **how**. Full evidence: `.claude/support/workspace/dashboard-html-exploration/{RESEARCH-BRIEF,FINDINGS}.md`; research archive `decisions/.archive/decision-024-research-2026-06-24.md`; auto-memory `project_dashboard_html_redesign`.
+**Why a decision record.** Template architectural change with real cost-of-reversal: rewrites the render pipeline (`dashboard-render.py`), `rules/dashboard.md`, `support/reference/dashboard-regeneration.md`, and migrates 11 downstream projects. The *direction* is settled; this DEC scopes the **how**. Full evidence: `decisions/.archive/dashboard-html-exploration/{RESEARCH-BRIEF,FINDINGS}.md`; research archive `decisions/.archive/decision-024-research-2026-06-24.md`; auto-memory `project_dashboard_html_redesign`.
 
 ## What is settled (NOT under research — user-validated via prototype)
 

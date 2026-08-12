@@ -16,7 +16,7 @@ implementation_anchors:
   - .claude/agents/verify-agent.md                     # structured-report contract (no .claude/ writes)
   - .claude/commands/work.md                           # orchestrator owns state writes (verify dispatch + JSON persistence)
   - .claude/support/reference/parallel-execution.md    # orchestrator-owned writes in parallel batches
-  - system-overview.md                                 # state ownership documented as /work coordinator responsibility
+  - system-overview.md (state ownership documented as /work coordinator responsibility) — deleted 2026-07-19 (v5.1.1); superseded by this record's own .claude/rules/agents.md § State Ownership anchor above, which already carries the same content. Historical content via `git show v5.1.0:system-overview.md`
 inflection_point: true
 spec_revised:
 spec_revised_date:

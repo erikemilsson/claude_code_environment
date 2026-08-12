@@ -4,7 +4,7 @@ Detailed findings behind `decisions/decision-024-html-dashboard-render-target.md
 
 ## Methodology
 
-- Read the exploration substrate: `RESEARCH-BRIEF.md`, `FINDINGS.md` (incl. the independent adversarial eval + the user-redirect update), `shakedown-dashboard-console-2026-06-23.md`, and the prototype `viz.py` — all in `.claude/support/workspace/dashboard-html-exploration/`.
+- Read the exploration substrate: `RESEARCH-BRIEF.md`, `FINDINGS.md` (incl. the independent adversarial eval + the user-redirect update), `shakedown-dashboard-console-2026-06-23.md`, and the prototype `viz.py` — all in `decisions/.archive/dashboard-html-exploration/`.
 - Read the files the change touches: `.claude/scripts/dashboard-render.py` (full) + `test_dashboard_render.py`, `.claude/rules/dashboard.md`, `.claude/support/reference/dashboard-regeneration.md`, `.claude/support/reference/drift-reconciliation.md`, consumer read-sites (`commands/work.md`, `commands/status.md`, `agents/{implement,verify}-agent.md`), and `.claude/settings.json` / `.gitignore` / `version.json`.
 - Web research (current-facts questions): `file://` fetch/CORS behavior, ES-module vs classic-script loading under `file://`, stdlib markdown rendering, pure-Python DAG→SVG layout, single-file HTML size ceilings, marked.js size/license.
 

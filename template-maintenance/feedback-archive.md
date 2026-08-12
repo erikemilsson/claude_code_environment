@@ -1750,7 +1750,7 @@ User framing (2026-05-20): *"from a UX perspective it is one more command to rem
 
 ### What was done (research-first track ran to completion)
 
-1. **Boundary survey** — `.claude/support/workspace/router-survey.md` (2026-05-20). Surveyed five candidate umbrellas; net recommendation "prototype interpretive routing on `/iterate` only; keep `/work` + `/research` explicit; `/audit-*` menu-dispatched; defer help-me-think."
+1. **Boundary survey** — `template-maintenance/router-survey.md` (2026-05-20). Surveyed five candidate umbrellas; net recommendation "prototype interpretive routing on `/iterate` only; keep `/work` + `/research` explicit; `/audit-*` menu-dispatched; defer help-me-think."
 2. **`/research` → DEC-018** — `decisions/decision-018-command-routing-interpretive-vs-explicit.md` + research archive `decisions/.archive/decision-018-research-2026-05-24.md`. Research-agent validated the survey + recommended Option A (prototype-gated) with four refinements; explicitly flagged value as the weak point (high confidence on safety, moderate on value).
 3. **Value deep-dive** — empirical probe of CCE's 26 cross-project session exports: **zero** recorded instances of the recall-the-token friction Option A removes; `/iterate` used heavily but almost always *bare*; named sub-mode tokens (`distill`, `hygiene`) barely appear. Value front-loaded/transient + diffuse/unmeasurable; costs permanent/concrete. → **Option B selected.**
 

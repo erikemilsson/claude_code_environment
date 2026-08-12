@@ -18,7 +18,7 @@ implementation_anchors:
   - .claude/commands/breakdown.md                        # subtask inheritance of cross_phase flag
   - .claude/support/reference/decomposition.md           # heuristic guidance for suggesting the flag
   - .claude/support/reference/dashboard-regeneration.md  # cross-phase annotation in dashboard rendering
-  - system-overview.md                                   # cross_phase documented in field catalog
+  - system-overview.md (cross_phase documented in field catalog) — deleted 2026-07-19 (v5.1.1); superseded by this record's own .claude/support/reference/task-schema.md anchor above, which already carries the field definition. Historical content via `git show v5.1.0:system-overview.md`
 inflection_point: true
 spec_revised:
 spec_revised_date:

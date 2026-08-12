@@ -35,7 +35,7 @@ FB-072 (captured 2026-05-20, during the FB-068 `/grill` ship review) asks whethe
 
 > *"From a UX perspective it is one more command to remember. I think we should look into making `/iterate` a router that routes to other commands depending on what is being asked. … I guess the larger question is how effective routing is at all, and perhaps that is something to do research on."*
 
-A boundary survey (deliverable 1) was completed at `.claude/support/workspace/router-survey.md` (2026-05-20). It assessed five candidate umbrellas and reached a net recommendation: **prototype interpretive routing on `/iterate` only; keep `/work` and `/research` explicit; keep `/audit-*` menu-dispatched; defer the help-me-think umbrella.** Per FB-072's 2026-05-24 triage, this decision routes through `/research` so the research-agent **validates or extends** the survey's recommendation and produces this DEC-shaped output, rather than walking the survey's three decision points inline.
+A boundary survey (deliverable 1) was completed at `template-maintenance/router-survey.md` (2026-05-20). It assessed five candidate umbrellas and reached a net recommendation: **prototype interpretive routing on `/iterate` only; keep `/work` and `/research` explicit; keep `/audit-*` menu-dispatched; defer the help-me-think umbrella.** Per FB-072's 2026-05-24 triage, this decision routes through `/research` so the research-agent **validates or extends** the survey's recommendation and produces this DEC-shaped output, rather than walking the survey's three decision points inline.
 
 **The core question this DEC resolves:** which command-dispatch pattern should CCE adopt — and if interpretive routing, scoped to which command(s) and under what trial gate before full commitment?
 
@@ -89,7 +89,7 @@ Refined during research into four load-bearing properties (all fold into this on
 - **Adds an LLM classification pass** (~500 tokens) and a near-term file-extraction obligation (~one sub-mode away from the 50 KB trigger).
 - **Value is unproven for this exact pattern** — external evidence is directional (Slack bots, generic LLM routers, agentic-UX principles), not a controlled study of interpretive routing on a spec-amendment command. Hence prototype-gated.
 
-**Research Notes:** Primary inputs — `.claude/support/workspace/router-survey.md` § 1 + § "Cross-umbrella concerns"; full analysis + external evidence in `decisions/.archive/decision-018-research-2026-05-24.md` (§ 2 byte math, § 3.3–3.4 announce/recovery validation, § 4.4 agentic-UX framework, § 5.1–5.4 refinements). Confidence: **moderate** — high on the safety analysis (codebase-grounded + externally corroborated), moderate on the value analysis (discoverability benefit smaller than the original framing).
+**Research Notes:** Primary inputs — `template-maintenance/router-survey.md` § 1 + § "Cross-umbrella concerns"; full analysis + external evidence in `decisions/.archive/decision-018-research-2026-05-24.md` (§ 2 byte math, § 3.3–3.4 announce/recovery validation, § 4.4 agentic-UX framework, § 5.1–5.4 refinements). Confidence: **moderate** — high on the safety analysis (codebase-grounded + externally corroborated), moderate on the value analysis (discoverability benefit smaller than the original framing).
 
 ### Option B: Status quo — explicit-arg dispatch everywhere
 
@@ -198,7 +198,7 @@ None. Option B is the current state — no code change, no `template_version` bu
 **Affected Areas:**
 - None changed. `.claude/commands/iterate.md` keeps explicit-arg dispatch (`distill` / `hygiene` / no-arg review + embedded propose); `/grill` stays standalone; FB-071 gating, DEC-016, and propose-approve-apply are untouched.
 
-**FB-072 disposition:** closed (decided against the interpretive-router proposal). The boundary survey (`.claude/support/workspace/router-survey.md`) and research archive (`decisions/.archive/decision-018-research-2026-05-24.md`) are preserved as the durable record. The `/walkthrough` / `/preflight` sibling idea folded into FB-072 during triage was not part of this decision and can be re-captured as its own FB if it resurfaces with signal.
+**FB-072 disposition:** closed (decided against the interpretive-router proposal). The boundary survey (`template-maintenance/router-survey.md`) and research archive (`decisions/.archive/decision-018-research-2026-05-24.md`) are preserved as the durable record. The `/walkthrough` / `/preflight` sibling idea folded into FB-072 during triage was not part of this decision and can be re-captured as its own FB if it resurfaces with signal.
 
 **Re-open condition:** if Wave 2 (`/tdd`, `/prototype`, …) materially grows the command surface and "interpretive routing as a pattern" resurfaces as a live question, open a fresh DEC — DEC-018's option framing + the survey + the research archive are the starting point.
 

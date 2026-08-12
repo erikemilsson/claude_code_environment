@@ -11,9 +11,9 @@ related:
   decisions: [DEC-004, DEC-020]
   feedback: [FB-020]
 implementation_anchors:
-  - .claude/skills/spec-checklist/SKILL.md           # first Skill from Option B recommendation
-  - .claude/skills/decomposition-heuristics/SKILL.md # second Skill
-  - .claude/skills/dashboard-style/SKILL.md          # third Skill
+  - .claude/skills/spec-checklist/SKILL.md (first Skill from Option B recommendation) — retired by DEC-020 (2026-05-27, Option A — trial concluded, mirrors retired). Content lives on in .claude/support/reference/spec-checklist.md (drift was whitespace-only at retirement)
+  - .claude/skills/decomposition-heuristics/SKILL.md (second Skill) — retired by DEC-020 (2026-05-27, Option A). Content merged into .claude/support/reference/decomposition.md (the 52-line drift, including the Test-Protocol Runtime Constraints section, was migrated in before deletion)
+  - .claude/skills/dashboard-style/SKILL.md (third Skill) — retired by DEC-020 (2026-05-27, Option A). Content lives on in .claude/support/reference/dashboard-regeneration.md (drift was whitespace-only at retirement)
 inflection_point: false
 spec_revised:
 spec_revised_date:

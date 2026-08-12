@@ -4,7 +4,7 @@
 **Researched:** 2026-05-24
 **Researcher:** research-agent (Opus 4.7)
 **Source feedback:** FB-072 (captured 2026-05-20, triaged 2026-05-24)
-**Primary input:** `.claude/support/workspace/router-survey.md` (FB-072 deliverable 1, 2026-05-20)
+**Primary input:** `template-maintenance/router-survey.md` (FB-072 deliverable 1, 2026-05-20)
 
 ---
 

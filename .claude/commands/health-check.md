@@ -872,8 +872,18 @@ Processes cross-project session exports when `/health-check` runs in the templat
 
 ### Process
 
-1. **Check inbox:** Read `interaction-logs/inbox/` for `.json` files
-2. **If empty:** Report "No pending interaction logs" and continue
+1. **Check inbox:** Enumerate **every** file in `interaction-logs/inbox/`, **including dot-prefixed (hidden) names**, then filter that full listing to `.json`. Use one of these two verified commands:
+
+   ```bash
+   find interaction-logs/inbox -maxdepth 1 -type f -name '*.json'   # preferred
+   ls -a interaction-logs/inbox/                                     # then filter to .json
+   ```
+
+   **Do NOT** enumerate with a bare `*.json` shell glob, plain `ls`, or the Glob tool with pattern `*.json` — all three silently exclude leading-dot filenames, and an empty result is indistinguishable from "none pending" (the `rules/agents.md § "Negative Findings Require a Positive Control"` hazard, applied to file enumeration). Exports reach the inbox dot-prefixed whenever a producer copies the workspace working file without renaming it — see `support/reference/context-transitions.md § "Session Export"` step 6, whose rename rule this step is the backstop for.
+
+   **This has failed twice.** 19 exports accumulated unseen before 2026-06-11; four more (dated 2026-06-11 through 2026-07-02) were still in the inbox after the 2026-07-19 harvest reported it cleared, and surfaced only on 2026-08-12. Verify your enumeration is dotfile-inclusive before reporting a count.
+
+2. **If empty:** Report "No pending interaction logs" and continue — but only after confirming the enumeration in step 1 was dotfile-inclusive.
 3. **For each export file:**
    a. Validate format (`export_version` required)
    b. **Dispatch by `kind` field:**

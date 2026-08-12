@@ -1,0 +1,123 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Community Center Renovation — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- DASHBOARD META task_count=12 task_hash=sha256:a3f8c91d2e7b4056… spec=spec_v1 -->
+<style>
+*{box-sizing:border-box} html{scroll-behavior:smooth}
+:root{--paper:#f4f1ea;--paper-2:#e6dfd0;--card:#fbf9f4;--ink:#211d17;--soft:#5d564a;--line:#ddd5c5;--line2:#cabfa8;
+ --brand:#0f5f54;--brand2:#27a18c;--brandink:#0a4138;--ok:#2f7d4f;--active:#1565c0;--warn:#9a6212;--bad:#a8331f;--hold:#5a6b86;--mute:#b8ad97;
+ --sh:0 1px 0 #fff inset,0 1px 3px rgba(40,32,16,.07),0 10px 30px rgba(40,32,16,.05);}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:"IBM Plex Sans",system-ui,sans-serif;font-size:14.5px;line-height:1.5}
+.mono,code{font-family:"IBM Plex Mono",ui-monospace,monospace} a{color:var(--brandink)}
+.wrap{max-width:1080px;margin:0 auto;padding:0 22px 90px}
+header.mast{position:sticky;top:0;z-index:20;background:rgba(244,241,234,.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--line2)}
+.mast-in{max-width:1080px;margin:0 auto;padding:11px 22px;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.mast .crumb{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--soft);font-weight:600}
+.mast h1{font-family:"Fraunces",Georgia,serif;font-weight:600;font-size:18px;margin:0}
+.mast .tv{margin-left:auto;font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--soft)}
+h2.st{font-family:"Fraunces",serif;font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--soft);margin:0 0 12px;display:flex;align-items:center;gap:9px}
+h2.st::after{content:"";flex:1;height:1px;background:var(--line2)}
+section{margin:28px 0}
+.pulse{display:grid;grid-template-columns:auto auto 1fr;gap:26px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 26px;box-shadow:var(--sh)}
+.ring .ringn{font-family:"Fraunces",serif;font-weight:600;font-size:38px;fill:var(--ink);text-anchor:middle}
+.ring .rp{font-size:18px;fill:var(--soft)} .ring .ringl{font-size:9px;letter-spacing:.18em;fill:var(--soft);text-anchor:middle;font-family:"IBM Plex Mono",monospace}
+.donwrap{display:flex;align-items:center;gap:16px} .legend{display:flex;flex-direction:column;gap:3px}
+.lg{display:flex;align-items:center;gap:8px;font-size:12.5px} .lg b{margin-left:auto;font-family:"IBM Plex Mono",monospace} .dot{width:10px;height:10px;border-radius:3px} .lgn{color:var(--soft)}
+.pmeta{display:flex;flex-direction:column;gap:10px;justify-self:end;text-align:right} .pmeta .big{font-family:"Fraunces",serif;font-size:30px;font-weight:600;line-height:1}
+.pmeta .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--soft)} .pmeta .row{display:flex;gap:18px;justify-content:flex-end}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(46px,1fr));gap:6px}
+.cell{position:relative;aspect-ratio:1;border-radius:8px;border:1px solid var(--line);background:var(--card);display:flex;align-items:center;justify-content:center;overflow:hidden;transition:transform .1s}
+.cell:hover{transform:translateY(-2px);box-shadow:var(--sh);z-index:2} .cell .cn{font-family:"IBM Plex Mono",monospace;font-size:12px;font-weight:600;z-index:2}
+.cell .cbar{position:absolute;inset:0;display:flex;align-items:flex-end;opacity:.5} .cell .cbar>i{width:100%}
+.cell.ok{border-color:#bcdcc4}.cell.ok .cbar>i{background:var(--ok)}.cell.ok .cn{color:#1d5435}
+.cell.active{border-color:#aecbeb}.cell.active .cbar>i{background:var(--active)}.cell.active .cn{color:#0d3f7a}
+.cell.warn .cbar>i{background:var(--warn)}.cell.warn{border-color:#e6cfa0}
+.cell.bad{border-color:#e3b6ac}.cell.bad .cbar>i{background:var(--bad)}.cell.bad .cn{color:#7a2417}
+.cell.hold .cbar>i{background:var(--hold)} .cell.mute .cbar>i{background:var(--mute)}
+.glegend{display:flex;gap:16px;margin-top:12px;font-size:11.5px;color:var(--soft)} .glegend span b{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px}
+.front{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:16px}
+.af{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 15px;box-shadow:var(--sh)}
+.afh{display:flex;align-items:center;gap:8px;font-size:13px}.affrac{margin-left:auto;font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--soft)}
+.afn{font-size:12.5px;color:var(--soft);margin:6px 0 9px;min-height:2.4em}
+.afbar{height:6px;border-radius:99px;background:var(--paper-2);overflow:hidden}.afbar>i{display:block;height:100%;background:linear-gradient(90deg,var(--brand),var(--brand2))}
+.bdg{font-family:"IBM Plex Mono",monospace;font-size:10.5px;font-weight:600;padding:1px 7px;border-radius:5px;white-space:nowrap}
+.bdg.ok{color:var(--ok);background:#e3efe3}.bdg.active{color:var(--active);background:#e2ecf7}.bdg.warn{color:var(--warn);background:#f6ead0}.bdg.bad{color:var(--bad);background:#f4ddd5}.bdg.hold{color:var(--hold);background:#e4e8f0}.bdg.mute{color:var(--soft);background:#eae5da}
+.two{display:grid;grid-template-columns:1.4fr 1fr;gap:22px}@media(max-width:760px){.two{grid-template-columns:1fr}.pulse{grid-template-columns:1fr;text-align:center}.pmeta{justify-self:center;text-align:center}.pmeta .row{justify-content:center}}
+.att{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:6px 18px 14px;box-shadow:var(--sh)} .att ul{list-style:none;margin:0;padding:0}
+.att li{padding:11px 0;border-bottom:1px solid var(--line);font-size:13px}.att li:last-child{border:0}
+.tid{font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--brandink);margin-right:8px}
+.side{display:flex;flex-direction:column;gap:18px} .mini{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px 18px;box-shadow:var(--sh)}
+.mini h3{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--soft);margin:0 0 10px}
+.rr{display:flex;gap:9px;align-items:baseline;padding:6px 0;border-bottom:1px solid var(--line);font-size:12.5px}.rr:last-child{border:0}
+.rd{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--soft);white-space:nowrap} .rt{color:var(--ink)}
+/* decisions collapsed */
+.decwrap{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--sh);overflow:hidden}
+.decwrap>summary{cursor:pointer;list-style:none;padding:14px 18px;display:flex;align-items:center;gap:10px}
+.decwrap>summary::-webkit-details-marker{display:none} .decwrap>summary:hover{background:var(--paper-2)}
+.decsum{color:var(--soft);font-size:12.5px} .decwrap .open{margin-left:auto;font-size:12px;color:var(--brandink);font-weight:600}
+.decwrap[open] .open::after{content:" (close)"} .pill{font-family:"IBM Plex Mono",monospace;font-size:11px;padding:1px 7px;border-radius:99px;border:1px solid var(--line2);color:var(--soft)}
+.decin{padding:4px 14px 14px;border-top:1px solid var(--line)} .dtools{display:flex;gap:8px;align-items:center;margin:10px 0;flex-wrap:wrap}
+.dtools input{flex:1;min-width:160px;font-size:13px;padding:7px 12px;border:1px solid var(--line2);border-radius:8px;background:var(--card);font-family:inherit}
+.dtools input:focus{outline:2px solid var(--brand)} .fbtn{font-family:"IBM Plex Mono",monospace;font-size:11px;padding:5px 11px;border-radius:99px;border:1px solid var(--line2);background:var(--card);color:var(--soft);cursor:pointer}
+.fbtn.on{background:var(--brand);color:#fff;border-color:var(--brand)} .declist{max-height:460px;overflow:auto}
+.dec{border-bottom:1px solid var(--line)} .dec>summary{cursor:pointer;list-style:none;padding:9px 4px;display:grid;grid-template-columns:64px 1fr auto;gap:10px;align-items:center}
+.dec>summary::-webkit-details-marker{display:none} .dec>summary:hover{background:var(--paper-2)} .did{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:12px;color:var(--brandink)} .dt{font-size:12.5px}
+.dbody{padding:2px 4px 12px 78px;font-size:12.5px;color:var(--soft)} .sel{display:block;background:var(--paper-2);color:var(--ink);padding:8px 11px;border-radius:7px;margin-bottom:6px} .empty{padding:16px;text-align:center;color:var(--soft)}
+/* flow + timeline */
+.flowcard{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--sh);padding:18px;overflow:auto;text-align:center}
+.cap{font-size:12px;color:var(--soft);font-style:italic;margin-top:8px} .mermaid{margin:0}
+.tlcard{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--sh);padding:6px 18px}
+.tlr{display:flex;gap:12px;align-items:baseline;padding:11px 0;border-bottom:1px solid var(--line);font-size:13px}.tlr:last-child{border:0}
+.tld{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--soft);white-space:nowrap;min-width:84px} .tli{flex:1} .tln{color:var(--soft);font-size:12px}
+.tlr.over .tld{color:var(--bad);text-decoration:line-through} .tlr.over{background:#fbf0ec;margin:0 -18px;padding-left:18px;padding-right:18px}
+footer{margin-top:34px;padding-top:14px;border-top:1px solid var(--line2);color:var(--mute);font-family:"IBM Plex Mono",monospace;font-size:11px}
+</style>
+<svg width="0" height="0"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--brand)"/><stop offset="1" stop-color="var(--brand2)"/></linearGradient></defs></svg></head>
+<body><header class="mast"><div class="mast-in"><span class="crumb">Execute</span><h1>Community Center Renovation</h1>
+<span class="tv">12 tasks · 3 phases · read-only view</span></div></header><div class="wrap">
+<section><div class="pulse"><svg viewBox="0 0 150 150" width="150" height="150" class="ring"><circle cx="75.0" cy="75.0" r="68.0" fill="none" stroke="var(--paper-2)" stroke-width="14"/><circle cx="75.0" cy="75.0" r="68.0" fill="none" stroke="url(#g)" stroke-width="14" stroke-linecap="round" stroke-dasharray="427.3" stroke-dashoffset="213.6" transform="rotate(-90 75.0 75.0)"/><text x="50%" y="48%" class="ringn">50<tspan class="rp">%</tspan></text><text x="50%" y="63%" class="ringl">COMPLETE</text></svg>
+<div class="donwrap"><svg viewBox="0 0 128 128" width="128" height="128"></svg><div class="legend"></div></div>
+<div class="pmeta"><div class="row"><div><div class="big">1<span style="color:var(--soft);font-size:18px">/3</span></div><div class="lbl">phases done</div></div>
+<div><div class="big">2</div><div class="lbl">active now</div></div></div>
+<div class="row"><div><div class="big" style="color:var(--ok)">1</div><div class="lbl">verif debt</div></div>
+<div><div class="big" style="color:var(--ok)">0</div><div class="lbl">drift</div></div></div></div></div></section>
+<section><h2 class="st">Phase map · 3 phases</h2><div class="grid"><div class="cell ok" title="Phase 1 — Planning · 4/4 · Complete"><span class="cn">1</span><span class="cbar"><i style="height:100%"></i></span></div><div class="cell active" title="Phase 2 — Construction · 2/5 · Active"><span class="cn">2</span><span class="cbar"><i style="height:40%"></i></span></div><div class="cell bad" title="Phase 3 — Finishing · 0/3 · Blocked (DEC-002)"><span class="cn">3</span><span class="cbar"><i style="height:0%"></i></span></div></div>
+<div class="glegend"><span><b style="background:var(--ok)"></b>complete</span><span><b style="background:var(--active)"></b>active</span>
+<span><b style="background:var(--warn)"></b>partial</span><span><b style="background:var(--bad)"></b>blocked</span><span style="margin-left:auto">fill = % done · hover for detail</span></div>
+<div class="front"><div class="af"><div class="afh"><b>Phase 2</b> <span class="bdg active">Active</span><span class="affrac">2/5</span></div><div class="afn">Construction</div><div class="afbar"><i style="width:40%"></i></div></div><div class="af"><div class="afh"><b>Phase 3</b> <span class="bdg bad">Blocked (DEC-002)</span><span class="affrac">0/3</span></div><div class="afn">Finishing</div><div class="afbar"><i style="width:0%"></i></div></div></div></section>
+<section><h2 class="st">Flow · dependency &amp; critical path</h2><div class="flowcard"><pre class="mermaid">graph LR
+    P1[&quot;✅ Phase 1 — Planning (4/4)&quot;]
+    P1 --&gt; T6[&quot;🤖 Order materials&quot;]
+    P1 --&gt; T8[&quot;❗ Building permit&quot;]
+    P1 --&gt; T9[&quot;🤖 Rough plumbing&quot;]
+    DEC002{&quot;❓ Flooring decision&quot;}
+    T9 --&gt; T10[&quot;❗ Electrical inspection&quot;]
+    DEC002 --&gt; T10
+    DEC002 --&gt; T11[&quot;🤖 Install flooring&quot;]
+    T10 --&gt; GATE{{&quot;❗ Phase 2 Review&quot;}}
+    T11 --&gt; GATE
+    GATE --&gt; T12[&quot;👥 Final walkthrough&quot;]
+
+    classDef done fill:#c8e6c9,stroke:#2e7d32
+    classDef active fill:#bbdefb,stroke:#1565c0
+    classDef human fill:#fff9c4,stroke:#f57f17
+    classDef blocked fill:#f5f5f5,stroke:#9e9e9e
+    class P1 done
+    class T9 active
+    class T8,T10,GATE human
+    class T6,T11,T12 blocked</pre></div><div class="cap">Rendered with mermaid.js + themed — the same graph that renders flaky / not-at-all in a Markdown viewer. Owners: ❗ you · 🤖 Claude · 👥 both.</div></section>
+<section><h2 class="st">Timeline</h2><div class="tlcard"><div class="tlr over"><span class="tld">2026-01-28</span><span class="tli">Task 6 — Order materials</span><span class="bdg mute">Awaiting Verification</span><span class=tln>Vendor: Acme Surfaces</span></div><div class="tlr "><span class="tld">2026-02-05</span><span class="tli">Task 9 — Rough plumbing</span><span class="bdg mute">In Progress</span></div><div class="tlr "><span class="tld">2026-02-10</span><span class="tli">Task 10 — Electrical inspection</span><span class="bdg mute">Pending</span><span class=tln>❗ Human task</span></div><div class="tlr "><span class="tld">2026-02-15</span><span class="tli">External: Flooring delivery</span><span class="bdg mute">Waiting</span><span class=tln>Contact: Bob at FloorCo</span></div></div></section>
+<section><div class="two"><div><h2 class="st">Needs you</h2><div class="att"><ul></ul></div></div>
+<div class="side"><div class="mini"><h3>Recent — last finished</h3></div></div></div></section>
+<section><details class="decwrap"><summary><b>📋 Decisions</b> <span class="pill">2</span><span class="decsum">2 decided · 0 superseded</span><span class="open">browse ▾</span></summary><div class="decin"><div class="dtools"><input id="dq" placeholder="search 2 decisions… ( / )" oninput="decFilter()"><button class="fbtn on" data-f="all">all</button><button class="fbtn" data-f="decided">decided</button><button class="fbtn" data-f="superseded">superseded</button><span class="pill" id="dcount">2</span></div><div class="declist"><details class="dec" data-status="decided" data-search="dec-001 contractor selection buildright construction"><summary><span class="did">DEC-001</span><span class="dt">Contractor selection</span><span class="bdg mute">Decided</span></summary><div class="dbody"><span class="sel">BuildRight Construction</span><a href="support/decisions/decision-001-contractor.md" target="_blank">open record →</a></div></details><details class="dec" data-status="decided" data-search="dec-002 main hall flooring pending"><summary><span class="did">DEC-002</span><span class="dt">Main hall flooring</span><span class="bdg mute">Pending</span></summary><div class="dbody"><span class="sel">Pending</span><a href="support/decisions/decision-002-flooring.md" target="_blank">open record →</a></div></details><div class="empty" id="dempty" style="display:none">no match</div></div></div></details></section>
+<footer>generated 2026-01-28T14:30:00Z · single read-only HTML view · state of record = task JSON</footer></div>
+<script>
+function decFilter(){const q=(document.getElementById('dq').value||'').toLowerCase();
+ const f=document.querySelector('.fbtn.on').dataset.f;let n=0;
+ document.querySelectorAll('.dec').forEach(d=>{const ok=(f==='all'||d.dataset.status===f)&&(!q||d.dataset.search.includes(q));d.style.display=ok?'':'none';if(ok)n++;});
+ document.getElementById('dcount').textContent=n;document.getElementById('dempty').style.display=n?'none':'';}
+document.addEventListener('click',e=>{if(e.target.classList.contains('fbtn')){document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('on'));e.target.classList.add('on');decFilter();}});
+document.addEventListener('keydown',e=>{if(e.key==='/'&&e.target.tagName!=='INPUT'){e.preventDefault();const dq=document.getElementById('dq');if(dq){dq.closest('details').open=true;dq.focus();}}});
+</script><script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+mermaid.initialize({startOnLoad:true,theme:"base",themeVariables:{fontFamily:"IBM Plex Sans",primaryColor:"#fbf9f4",primaryBorderColor:"#cabfa8",primaryTextColor:"#211d17",lineColor:"#9a8f78",fontSize:"14px"}});</script></body></html>

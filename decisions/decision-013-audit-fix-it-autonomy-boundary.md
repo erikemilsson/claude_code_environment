@@ -13,7 +13,7 @@ related:
 implementation_anchors:
   - .claude/support/reference/audit-fix-workflow.md
   - .claude/support/reference/dashboard-regeneration.md
-  - .claude/skills/dashboard-style/SKILL.md
+  - .claude/skills/dashboard-style/SKILL.md — mirror of .claude/support/reference/dashboard-regeneration.md (this record's anchor above); retired by DEC-020 (2026-05-27, Option A). The dashboard-regeneration.md anchor above is the surviving source
   - .claude/commands/audit-coherence.md
   - .claude/commands/audit-ui.md
   - template-maintenance/audit-command-family-proposal.md
