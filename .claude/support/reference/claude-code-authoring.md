@@ -55,7 +55,9 @@ This means:
 - On the next user prompt, the session model (whatever was active before the skill) resumes
 - **A multi-turn chat skill cannot rely on `model:` for cross-turn model continuity** — the override does not persist across turns
 
-Same scope applies to `effort:` frontmatter.
+Two further `model:` details from the docs: a value excluded by the organization's `availableModels` allowlist is ignored (the session keeps its current model), and under `context: fork` the field sets the **forked subagent's** model instead of overriding the turn.
+
+`effort:` applies *"when this skill is active"* and overrides the session effort level. The docs do **not** say whether that ends with the turn the way `model:` does, so don't design a multi-turn skill around `effort:` continuity either.
 
 **Implications for spec authoring:**
 - Don't write spec text describing runtime model-switching as a feature of a multi-turn skill (this premise survived flirty-gym's spec authoring + task decomposition and only failed at implementation — see FB-083)
@@ -65,30 +67,38 @@ Same scope applies to `effort:` frontmatter.
 
 Prevents the model from autonomously invoking the skill via the `Skill` tool. User-typed slash invocation continues to work; the model can still suggest the skill in conversation. The gate only blocks the model's autonomous decision to fire.
 
+Two further effects: the skill also cannot be **preloaded into subagents** (via an agent definition's `skills` field), and, as of Claude Code v2.1.196, it **does not run when a scheduled task fires with the skill as its prompt**. For this template, that means the gated commands below can't be the prompt of a `/schedule` or `/loop` routine.
+
 **Template-shipped gated commands** (FB-071): `/breakdown`, `/research`, `/iterate`, `/work`, `/feedback`. Selection criteria + sub-mode coupling trade-offs in `rules/agents.md § "Command Invocation Gates"`.
 
 ### `context: fork` + `agent:` pattern
 
-A skill can declare `context: fork` to execute in a forked context (separate from the parent conversation's context). Combined with `agent: <name>`, the forked context runs under that agent's persona. The forked context inherits the SKILL.md body + the agent's system prompt — but NOT the parent's full conversation history.
+A skill can declare `context: fork` to run as a new subagent of the type named by `agent:` (built-in `Explore` / `Plan` / `general-purpose`, or any custom agent from `.claude/agents/`; **defaults to `general-purpose`** when omitted). The subagent gets the agent type's system prompt, the SKILL.md content as its task, and **CLAUDE.md per that agent's startup context** — except the built-in `Explore` and `Plan`, which skip CLAUDE.md and git status (so `agent: Explore` sees only SKILL.md + its own system prompt). It does **NOT** see the parent's conversation history.
 
-**Authoring guidance:** if a skill's instructions must reference parent-conversation state, do NOT use `context: fork`. Forked skills are best for self-contained workflows where the SKILL.md body fully specifies the work.
+**Runs in the background by default** (since Claude Code v2.1.218): you keep working, and the result arrives in the conversation when it completes. Set `background: false` to block the invoking turn until it finishes, which older harnesses always did.
+
+**Authoring guidance:** if a skill's instructions must reference parent-conversation state, do NOT use `context: fork`. Forked skills are best for self-contained workflows where the SKILL.md body fully specifies the work. If a later step in the same turn needs the fork's result, set `background: false`.
 
 ### `allowed-tools` and `permissions.allow` interaction
 
-A skill's `allowed-tools` frontmatter declares which tools it expects to use. This pre-approves those tools for the skill's invocation (subject to project-level `permissions.allow` settings). Skills should declare only the tools they actually need — over-declaration grants unnecessary access; under-declaration triggers permission prompts mid-execution.
+A skill's `allowed-tools` frontmatter **pre-approves** the listed tools so Claude can use them without prompting. The grant lasts **only for the turn that invokes the skill**: it clears when the user sends the next message, even though the skill content stays in context (see "Skill content lifecycle" below). Re-invoking the skill re-applies it for that turn. Workspace trust doesn't gate it.
+
+It is a pre-approval, **not a restriction**: every tool stays callable, and permission settings still govern unlisted tools. Use the separate `disallowed-tools` field to remove tools while the skill is active. Declare only the tools the skill actually needs. Over-declaring grants unnecessary access; under-declaring triggers permission prompts mid-execution. Multi-turn skills get prompts on later turns regardless.
 
 ### Skill listing budget: dynamic total (~1% of context) + 1,536-char per-entry cap
 
 Two distinct limits govern the skill listing (the metadata the model sees to decide what to invoke) — don't conflate them:
 
 - **Total listing budget — dynamic, not fixed.** It scales at **~1% of the model's context window**. All skill *names* are always included; when the budget overflows, the *descriptions* of the least-invoked skills are dropped first, so the skills you actually use keep their full text. Raise it with the `skillListingBudgetFraction` setting (e.g. `0.02` = 2%) or the `SLASH_COMMAND_TOOL_CHAR_BUDGET` env var (fixed char count); set low-priority entries to `"name-only"` in `skillOverrides` to reclaim budget.
-- **Per-entry cap — 1,536 chars.** Each skill's combined `description` + `when_to_use` is capped at **1,536 characters regardless of the total budget** (configurable via `maxSkillDescriptionChars`). Put the key use case first; keep `when_to_use` to usage criteria, not a feature catalog.
+- **Per-entry cap — 1,536 chars.** Each skill's combined `description` + `when_to_use` is capped at **1,536 characters regardless of the total budget** (configurable via the `skillListingMaxDescChars` setting — renamed; an older `maxSkillDescriptionChars` key does nothing). Put the key use case first; keep `when_to_use` to usage criteria, not a feature catalog.
 
-**Observability:** `/doctor` reports whether the listing budget is overflowing and which skills are affected; the `/skills` menu shows per-skill visibility state.
+**Observability:** `/doctor` estimates the listing's context cost and names its biggest contributors; `/skill-doctor` finds unused skills worth turning off; the Skills row in `/context` reports the post-budget listing size (what the model actually receives); overflow also writes a warning to the `--debug` log.
 
-### Auto-compaction re-attachment budget: 25K tokens
+### Auto-compaction re-attachment: first 5K tokens per skill, 25K combined
 
-When auto-compaction fires during a skill invocation, the harness re-attaches the skill's content into the compacted context with a budget of ~25,000 tokens. Skills with bodies larger than this risk partial re-attachment after compaction. Keep SKILL.md bodies focused; offload large reference content to separate files under the skill's directory (referenced from SKILL.md but loaded only when needed).
+When auto-compaction summarizes the conversation, Claude Code re-attaches the **most recent invocation of each skill** after the summary, keeping only the **first 5,000 tokens** of each. All re-attached skills share a **combined 25,000-token budget**, filled starting from the most recently invoked skill, so after many invocations in one session, older skills can be **dropped entirely**.
+
+**Authoring guidance:** put everything that must survive compaction in the first ~5K tokens of the SKILL.md body. Offload large reference content to separate files under the skill's directory (referenced from SKILL.md, loaded only when needed).
 
 ### Skill content lifecycle: one-message-and-stays-for-session
 
@@ -96,7 +106,9 @@ The rendered SKILL.md content enters the conversation as one message and remains
 
 1. **Written guidance must be standing instructions, not one-time steps.** If the SKILL.md says "first do X, then do Y", the message persists — when the same skill is invoked again later in the session, the same "first do X" instruction is still in context. Authors should write skill bodies as *patterns* that apply to every invocation, not as *procedures* that fire once.
 
-2. **Token cost accumulates per skill, not per invocation.** Each skill loaded into the conversation costs its full SKILL.md body in tokens — once, at first load. Subsequent invocations cost nothing additional. Optimize for first-load cost.
+2. **Re-invocation is cheap only when the rendered content is identical.** Re-invoking a skill whose rendered content matches the copy already in context adds just a short "already loaded" note. If the rendered content *differs* (different arguments, or a dynamic-context `` !`command` `` produced new output), the **full content is appended again**. Keep argument-varying and dynamic-context skill bodies small; for static skills, optimize for first-load cost.
+
+Only the *instructions* persist, not the permissions: the `allowed-tools` grant clears after the invoking turn (see "`allowed-tools` and `permissions.allow` interaction" above).
 
 ---
 
@@ -108,13 +120,17 @@ Load-bearing constraints for spec and task authors. Full rules in `rules/agents.
 
 Subagents are sandboxed from writing to `.claude/` paths. This is a hard Claude Code harness constraint, not a template convention. Spec authors must NOT specify subagent workflows that include writing task JSON, dashboard, decision records, friction.jsonl, or any other `.claude/` state. Subagents return structured reports; the orchestrator performs the writes.
 
-### No nested `Task` tool calls
+### Nested dispatch: platform-supported, template-avoided
 
-Subagents cannot spawn other subagents via the `Task` tool. Spec authors must NOT specify nested-dispatch workflows. If multi-level dispatch is needed, the orchestrator (`/work` or a top-level slash command) handles it.
+**Platform fact (docs-verified 2026-09-25):** a subagent *can* spawn subagents of its own, by default up to **three layers** below the main conversation, configurable with `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH`. At the depth limit, Claude Code withholds the `Agent` tool (a fork keeps it in its tool list, but calling it errors). Older harnesses did not allow nesting at all.
 
-### No `permissions.allow` inheritance from parent
+**Template convention: don't rely on it.** The orchestrator (`/work` or a top-level slash command) still performs all dispatch. Two reasons: portability to downstream projects on older harnesses, and the state-ownership model (only the orchestrator writes `.claude/`, so results must come back to it anyway). Spec authors should not specify nested-dispatch workflows unless a project deliberately pins a harness that supports them. `rules/agents.md` still states the older "cannot spawn nested `Task` calls" wording; reconciling it is tracked as a maintenance FB.
 
-Subagents do not inherit the parent conversation's `permissions.allow` rules. Each subagent dispatch operates under the template-shipped `permissions.allow` set only. Spec authors must NOT assume tools approved in the parent are auto-available in subagents.
+### Permission rules and modes in subagents
+
+**Harness-observed (not documented either way):** subagents do not inherit the parent conversation's session-approved `permissions.allow` rules; each dispatch operates under the settings-file allow set. Spec authors must NOT assume tools approved ad hoc in the parent are available in subagents.
+
+**Documented, permission *mode*:** when the main conversation is in `bypassPermissions`, `acceptEdits`, or **auto mode**, the subagent runs in that same mode and its `permissionMode` frontmatter is ignored. Under auto mode, the classifier evaluates the subagent's tool calls with the main conversation's block and allow rules. In `default`, `dontAsk`, or `plan` mode, the subagent's own `permissionMode` applies.
 
 ### Explore / Plan agents skip CLAUDE.md + git status
 
@@ -122,7 +138,7 @@ Built-in `Explore` and `Plan` subagent types do NOT auto-read CLAUDE.md or run g
 
 ### Forked-skill context inheritance
 
-Skills declared with `context: fork` inherit SKILL.md body + agent system prompt only. They do NOT inherit the parent's conversation history. Spec authors must NOT design forked-skill workflows that depend on parent-conversation state.
+Skills declared with `context: fork` get the SKILL.md content, the agent type's system prompt, and CLAUDE.md per that agent's startup context (`Explore` / `Plan` skip CLAUDE.md). They do NOT inherit the parent's conversation history, and by default they return their result in the **background**, not within the invoking turn. Spec authors must NOT design forked-skill workflows that depend on parent-conversation state. Full detail: "`context: fork` + `agent:` pattern" above.
 
 ---
 
@@ -130,7 +146,7 @@ Skills declared with `context: fork` inherit SKILL.md body + agent system prompt
 
 ### `Agent` tool `model` parameter granularity
 
-The subagent model surface (per-invocation `model` parameter + agent-definition `model:` frontmatter) accepts: the aliases `sonnet | opus | haiku | fable`; a **full model ID** (e.g., `claude-opus-4-8` — same values as the `--model` flag); or `inherit` (the default — use the main conversation's model). Per-invocation resolution order: `CLAUDE_CODE_SUBAGENT_MODEL` env var → per-invocation `model` parameter → agent definition's `model:` frontmatter → main conversation's model. (Verified against the sub-agents docs page 2026-06-11. The template's dispatch value `"opus[1m]"` — alias + `[1m]` context modifier — is harness-observed working but not enumerated in the docs' value list.)
+The subagent model surface (per-invocation `model` parameter + agent-definition `model:` frontmatter) accepts: the aliases `sonnet | opus | haiku | fable`; a **full model ID** (e.g., `claude-opus-5-5` — same values as the `--model` flag); or `inherit` (use the main conversation's model). Resolution order: **per-invocation `model` parameter → agent definition's `model:` frontmatter (`inherit` = main model) → `CLAUDE_CODE_SUBAGENT_MODEL` env var → main conversation's model.** The env var is a *default*, not an override. **Exception:** with `CLAUDE_CODE_SUBAGENT_MODEL_FORCE=1` (Claude Code v2.1.257+), every subagent runs on `CLAUDE_CODE_SUBAGENT_MODEL` (or on the main model if only the force flag is set). Definition `model:` fields are then ignored, and **Claude can't pass a per-invocation `model`**, so the template's `"opus[1m]"` dispatch value is silently overridden in such an environment. (Verified against the sub-agents docs page 2026-09-25; the order changed since the 2026-06-11 check, which had the env var first. The template's dispatch value `"opus[1m]"` — alias + `[1m]` context modifier — is harness-observed working but not enumerated in the docs' value list.)
 
 Effort: there is no per-invocation effort parameter, but agent definitions take an `effort:` frontmatter field (`low | medium | high | xhigh | max`; available levels depend on the model) that overrides the session effort while that subagent is active. Ad-hoc dispatches without a custom agent definition inherit session-level effort — prompt-engineering ("ultrathink") remains the lever there.
 
@@ -153,4 +169,4 @@ Per `rules/agents.md § "Dispatch Convention"`: the three dispatch sites (`comma
 
 ---
 
-<!-- Last verified against Claude Code docs: https://code.claude.com/docs @ 2026-06-11; against template_version: 4.21.3 -->
+<!-- Last verified against Claude Code docs: https://code.claude.com/docs @ 2026-09-25; against template_version: 5.5.0 -->
