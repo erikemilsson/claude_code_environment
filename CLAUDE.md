@@ -47,6 +47,8 @@ Template-maintenance work staged for later sessions. Read these first if resumin
 
 **DEC-023 (vision hub + spec-shaping, v4.28.0–v4.31.0) and DEC-024 (HTML dashboard, v5.0.0–v5.1.0) — COMPLETE, no open follow-ups.** Records `implemented` in `decisions/`; per-ship detail in ship-log. *Caveat on DEC-024's record + research archive:* they mislabel the broken-mermaid bug as "FB-007" — wrong (real FB-007 = spec-edit guardrail, DEC-016/v4.0.0); no FB tracked mermaid.
 
+**Open (DEC-025 recheck gate, dated):** per-task verification for difficulty 1–2 stays as-is (Option D). Re-open at ≥50 difficulty 1–2 verify dispatches with `verification_history[].cost` on Opus 5.5, or on **2026-12-31**, whichever is first. Flip to batched-hybrid (Option B) only if all three hold: d1–2 >~10% of verify tokens, d1–2 median cost ≥70% of d3–6 median, d1–2 catch rate ≤2%; otherwise close as status quo. Re-evaluate Option E (split `verify-agent.md` per-task/phase-level) with the same data.
+
 **Open (DEC-021 companion, optional/unscheduled):** wire `drift-reconciliation.md` to consume the `### `-level section hashes `fingerprint.py --sections` emits (DEC-021 shipped the emitter in v4.24.0; nothing consumes that granularity yet). If edit-ergonomics/git-diff-noise ever dominates read-working-set, DEC-021 Option 1 (shard) is the documented escalation.
 
 **Active feedback items** (`template-maintenance/feedback.md` — triage manually; do NOT run `/feedback review` against this path, that command targets the shipped `.claude/support/feedback/` queue):
