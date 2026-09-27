@@ -572,7 +572,7 @@ If fetch fails (offline, invalid URL) → report as informational, skip remainin
 
 #### 2. Compare Sync Files
 
-Determine the template's default branch via `git remote show template` (typically `main`). Read `.claude/.sync-state.json` (see "Sync State Sidecar" above) if present; absence triggers fallback (every diff classifies as "Modified upstream"). For each file matching `sync` category patterns in `sync-manifest.json`, use `git diff` to compare the local version against `template/{default_branch}:.claude/...`.
+Determine the template's default branch via `git remote show template` (typically `main`). Read `.claude/.sync-state.json` (see "Sync State Sidecar" above) if present; absence triggers fallback (every diff classifies as "Modified upstream"). **Which manifest:** take the `sync` patterns from the **upstream** manifest (`git show template/{branch}:.claude/sync-manifest.json`) unioned with any extra `sync` patterns in the local one. The local manifest is in the `ignore` category and never updates, so reading it alone silently skips every file the template added since the project was set up. For each file matching those `sync` patterns, use `git diff` to compare the local version against `template/{default_branch}:.claude/...`.
 
 Per-file status:
 - **Up to date** — no diff
@@ -619,6 +619,7 @@ Read the upstream `template_version` from `template/{default_branch}:.claude/ver
 For accepted changes:
 - Check out the accepted files from `template/{default_branch}` into the working tree
 - Update `template_version` in local `.claude/version.json` to match the upstream version
+- Update the local `.claude/sync-manifest.json` `sync` list to the union used in Step 2, so it stops lagging
 - **Update the sync-state sidecar** — for each file the user accepted, compute the new local SHA-256 (post-checkout) and write/update its entry in `.claude/.sync-state.json` under `files["<path>"].synced_hash`. Refresh top-level `last_full_sync_version` (to the upstream version just synced) and `last_full_sync_date` (current date, ISO 8601). If the sidecar doesn't exist yet, create it with `schema_version: "1.0"`. Files the user skipped retain their prior sidecar entries (or remain absent if never synced).
 - Report what was changed
 
