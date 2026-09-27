@@ -708,7 +708,7 @@ Dispatch implement-agent (Task tool; set `model` per `.claude/CLAUDE.md § Model
 
 **Inline implementation (small tasks):** for a task you can finish in a handful of tool calls, you may implement it yourself instead of dispatching implement-agent, following the inline contract in `.claude/rules/agents.md § "Dispatch Invariants vs Efficiency Defaults"` (`[INLINE]` notes, existing checks, before/after behaviour for behaviour-changing edits). Verify-agent dispatch is **not** optional for inline work — set Awaiting Verification and continue with "If Verifying (Per-Task)".
 
-**Context to provide:** Current task, relevant spec sections, constraints/notes, and an explicit instruction that the agent must not attempt writes to `.claude/` — return the structured report only.
+**Context to provide:** Current task, relevant spec sections, constraints/notes, and an explicit instruction that the agent must not attempt writes to `.claude/` — return the structured report only. If the task's notes contain a scope note newer than its `files_affected`, pass the scope note as the authority and say so. Present `files_affected` as the expected scope, not a write limit: the agent searches for what the change invalidates and may edit other files it requires, reporting them (FB-113; `implement-agent.md` Step 2).
 
 **Inline status update (tier 2):** announce `Starting task {id}: "{title}"` when dispatching and a pass/fail summary after verify-agent completes. Dashboard regen deferred to next strategic moment (session boundary, parallel batch end, or async routing to dashboard).
 

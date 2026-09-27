@@ -681,7 +681,7 @@ Tags: workflow, new-command-candidate, grill-adjacent, vision-adjacent, capabili
 
 ## FB-113: `files_affected` derivation under-counts in a new domain — cross-artifact doc↔notebook parity + dispatch-brief re-sync
 
-**Status:** ready
+**Status:** cheap action shipped v5.7.0 (2026-09-27) — general "search for what the change invalidates" rule at decomposition + implement-agent Step 2; scope note as dispatch authority. Measure at 2026-12-31: verify-agent `files_affected` mismatch rate vs 13% baseline (16–29%/month Jul–Sep). Still open: `package.json` parallelism sub-issue; domain-specific heuristics only if the rate doesn't drop.
 **Captured:** 2026-08-12 (harvest cluster 1; extends 2026-06-11 predecessor)
 **Source:** 9 unique incidents across OEMMatInsightBI exports 2026-07-23 → 2026-08-11 (template_version 5.1.0–5.4.0). Full evidence + insight doc: `interaction-logs/insights/2026-08-12_implement-agent_files-affected-derivation.md`.
 

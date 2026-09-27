@@ -59,7 +59,9 @@ Use a fuzzy-match (e.g., `Glob` for the basename) to suggest the closest existin
 
 ### Leg 2: Ripple Inference
 
-For each task, run targeted greps to surface ripple-affected files the declared `files_affected` may miss. Seven detection heuristics:
+**Start from what the change invalidates, not what it edits** (FB-113). For each task, name the thing it changes (a field, column, type, function signature, threshold, file path, documented behaviour), then search for every file that reads, restates, or tests it: code, tests and fixtures, schema docs, SQL/DAX/notebooks, architecture docs, config. Search with Grep; don't infer the list from the task text. What the search finds are candidates for `files_affected`.
+
+The heuristics below are recurring shapes of that search, worked out from downstream friction. They're examples, not the boundary:
 
 | Pattern in task description | Grep target | Add to candidates |
 |----------------------------|-------------|-------------------|
@@ -90,7 +92,7 @@ Like Leg 1, do not auto-add — present and ask. Both legs are advisory: they re
 
 ### Limits
 
-The heuristics are deliberately narrow — they catch the dominant friction patterns (verified across styler Phase 20: 12+ tasks, ~40% with files_affected under-counts) without trying to be exhaustive. Function-name drift, deep import-graph ripples, and runtime-only dependencies remain implementer-side discovery work; that's acceptable given the alternative (full static analysis at decomposition time) is much more expensive.
+The heuristics are deliberately narrow — they catch the dominant friction patterns (verified across styler Phase 20: 12+ tasks, ~40% with files_affected under-counts) without trying to be exhaustive. Function-name drift, deep import-graph ripples, and runtime-only dependencies remain implementer-side discovery work (implement-agent Step 2 searches for them before editing); that's acceptable given the alternative (full static analysis at decomposition time) is much more expensive.
 
 ---
 

@@ -267,6 +267,7 @@ Use Claude Code's `Task` tool to spawn one agent per task. **Always set `model: 
 - The task JSON to execute
 - Instructions to read `.claude/agents/implement-agent.md`
 - Instructions to follow Steps 1-6 (understand, implement, run existing checks, return structured report)
+- **Sibling files (FB-113):** the `files_affected` of every other task in the batch, with the instruction: "Don't edit these files; they belong to parallel tasks. If your change requires one, report it in `issues_discovered` with `suggested_action: 'stop and report'`." Files outside the whole batch's declared scope may be edited and reported, per implement-agent Step 2
 - **Wind-down instruction:** "TURN BUDGET: You have 40 turns. If you reach turn 35 without completing, stop implementation and return your report with `implementation_status: 'partial'` and detailed notes. Do NOT attempt writes to `.claude/` — subagents cannot write there; orchestrator handles all persistence from your report."
 - **Explicit instruction:** "Return a structured implementation report per `.claude/agents/implement-agent.md` § Step 6. Do NOT write to task JSON, do NOT spawn verify-agent, do NOT regenerate dashboard — orchestrator owns all state persistence."
 

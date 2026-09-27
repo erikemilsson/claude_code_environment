@@ -91,7 +91,7 @@ If any check fails, do not proceed to Step 2.
 Before starting:
 - Read task description fully
 - Read `.claude/spec_v{N}.md` **section-scoped** (specs can exceed 200K tokens): if `.claude/spec_v{N}.index.json` exists, resolve the task's `spec_section` heading to its `line_start`/`line_end` and `Read` only that range (`offset`/`limit`); else `Grep` the heading then scoped-`Read`. See `rules/spec-workflow.md § "Section-scoped spec reading"`.
-- Check what files will be affected
+- Before editing, search for what your change invalidates: every file that reads, restates, or tests the thing you're changing (a name, column, type, signature, path, or documented behaviour), inside or outside `files_affected`. Use Grep. `files_affected` is the expected scope, not a limit: when the change requires editing another file, edit it, list it in `files_modified`, and name the addition in `notes`. **Exception, parallel batches:** if the dispatch lists files owned by other tasks in the batch, don't edit those; report the need in `issues_discovered` (`suggested_action: "stop and report"`) instead
 - Understand the "done" criteria from spec acceptance criteria
 
 ### Step 3: Set In Progress
