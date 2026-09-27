@@ -828,6 +828,8 @@ Tags: task-schema, acceptance-criteria, decomposition, breakdown, phase-level-fi
 ## FB-118: Needs-you card doesn't surface everything blocked on the user — four derivation gaps + augment rows wiped on every regen
 
 **Status:** ready (single-project caveat for part (a) — oemmatinsightbi only; part (b) is two-project)
+
+**Downstream fix exists (2026-09-27 sync):** LTP and OEMMatInsightBI both carry a local patch to `.claude/scripts/dashboard-render.py` that makes the both-owned review row reachable (scans all non-absorbed tasks, not `open_tasks`); OEMMatInsightBI also drops the `T` prefix on task-ID chips. Both kept local during the v5.7.4 sync. Promote the fix upstream (with a test) rather than re-deriving it; diff with `git -C ../OEMMatInsightBI diff` against template `v5.4.0:.claude/scripts/dashboard-render.py`.
 **Captured:** 2026-09-25 (harvest clusters 6 + 7, merged per maintainer triage)
 **Source:** 10 exports: (a) oemmatinsightbi 08-13, 08-18, 08-19, 08-21, 09-19 (template 5.4.0); (b) oemmatinsightbi 08-19, 08-20, 09-19 + styler 09-24 ×2 (template 5.0.0). Triage: `template-maintenance/harvest-2026-09-25-triage.md`. Insights: `interaction-logs/insights/2026-09-25_dashboard_needs-you-derivation-gaps.md`, `…_dashboard_augment-slot-persistence.md`.
 
