@@ -89,7 +89,7 @@ After 16A, `/work` detects Task 5 "In Progress" with `[VERIFICATION FAIL]` notes
 
 1. implement-agent reads `[VERIFICATION FAIL]` notes → understands what to fix
 2. Implements missing `raw_game_designers` upsert
-3. Self-review confirms all 4 tables now have upserts
+3. Existing checks (if any) pass; notes name what was run
 4. Sets "Awaiting Verification" again
 5. Hands off to verify-agent
 6. verify-agent re-verifies:

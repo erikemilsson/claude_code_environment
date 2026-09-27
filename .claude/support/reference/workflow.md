@@ -69,7 +69,7 @@ To create or revise the spec, run `/iterate`. Claude will guide you through iter
 - Decompose spec into tasks (handled by /work if no tasks exist)
 - Work through tasks in dependency order
 - Create deliverables and files
-- Self-review changes
+- Run existing checks
 - Per-task verification after each task completion
 - Document completion notes
 - Flag discovered issues
@@ -183,7 +183,7 @@ By separating concerns:
 
 **The build workflow:**
 1. `/work` orchestrator sets the next pending task to "In Progress" and dispatches implement-agent
-2. implement-agent: build, self-review, return structured report
+2. implement-agent: build, run existing checks, return structured report
 3. Orchestrator writes task status "Awaiting Verification" from the report and dispatches verify-agent as a separate Task agent (fresh context, see DEC-004)
 4. verify-agent (separate context): verify files, spec alignment, quality, integration boundaries, return structured verification report
 5. Orchestrator writes `task_verification` from the report. If pass: status → "Finished", regenerate dashboard, back to step 1 for next task
@@ -284,7 +284,7 @@ Returns: what was completed, files modified, status updates, recommendations, is
 - List of completed tasks with per-task verification results
 - Files modified
 - Any discovered issues
-- Self-review notes and verification notes
+- Implementation notes and verification notes
 
 **What /work does:**
 - Present checkpoint to human

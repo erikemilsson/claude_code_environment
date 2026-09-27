@@ -137,7 +137,7 @@ verification_debt = count of tasks where:
 ```
 
 **Workflow bypass detection (warnings):**
-- Finished tasks with empty `notes` (possible skipped self-review)
+- Finished tasks with empty `notes` (no implementation report persisted — possible bypass of implement-agent)
 - Tasks that appear to have jumped from `"Pending"` to `"Finished"` without passing through `"In Progress"` and `"Awaiting Verification"`
 
 **Completion gate checks (ERRORS):**

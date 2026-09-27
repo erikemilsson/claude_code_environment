@@ -266,7 +266,7 @@ The orchestrator performs all writes: it sets `conflict_note` fields before disp
 Use Claude Code's `Task` tool to spawn one agent per task. **Always set `model: "opus[1m]"` and `max_turns: 40`** so agents run on the Opus tier (1M context) with a bounded turn limit (canonical dispatch value + pin relationship: `.claude/CLAUDE.md § Model Requirement`). Each agent receives:
 - The task JSON to execute
 - Instructions to read `.claude/agents/implement-agent.md`
-- Instructions to follow Steps 1-6 (understand, implement, self-review, return structured report)
+- Instructions to follow Steps 1-6 (understand, implement, run existing checks, return structured report)
 - **Wind-down instruction:** "TURN BUDGET: You have 40 turns. If you reach turn 35 without completing, stop implementation and return your report with `implementation_status: 'partial'` and detailed notes. Do NOT attempt writes to `.claude/` — subagents cannot write there; orchestrator handles all persistence from your report."
 - **Explicit instruction:** "Return a structured implementation report per `.claude/agents/implement-agent.md` § Step 6. Do NOT write to task JSON, do NOT spawn verify-agent, do NOT regenerate dashboard — orchestrator owns all state persistence."
 

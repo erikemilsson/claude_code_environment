@@ -1,10 +1,10 @@
 {
-  "template_version": "5.5.1",
-  "template_release_date": "2026-09-25",
+  "template_version": "5.5.2",
+  "template_release_date": "2026-09-27",
   "template_repo": "https://github.com/erikemilsson/claude_code_environment",
   "project_version": "0.1.0",
   "project_initialized": "",
   "template_inbox_path": "",
   "structured_artifact_path": "",
-  "notes": "template_repo: upstream template URL (used by /health-check sync). Update if you forked. template_inbox_path: optional path to template repo's interaction-logs/inbox/ for cross-project feedback (used by /feedback template: bridge and PreCompact session export). structured_artifact_path: optional path to the project's structured artifact (registry, schema, or config file) — used by /iterate hygiene for spec-vs-state drift detection."
+  "notes": "template_repo: upstream template URL (used by /health-check sync). Update if you forked. template_inbox_path: optional path to template repo's interaction-logs/inbox/ for cross-project feedback (used by /feedback template: bridge and PreCompact session export). structured_artifact_path: optional path to the project's structured artifact (registry, schema, or config file) \u2014 used by /iterate hygiene for spec-vs-state drift detection."
 }

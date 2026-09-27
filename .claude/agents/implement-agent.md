@@ -8,7 +8,7 @@ Specialist for executing tasks.
 
 Match reasoning depth to task complexity. This agent benefits from the Opus tier's adaptive thinking — it automatically reasons between tool calls (interleaved thinking), re-evaluating its approach as new information emerges from file reads and command outputs.
 
-- **Difficulty 1-2 tasks:** Straightforward execution. Don't overthink — read the spec section, implement, self-review, move on.
+- **Difficulty 1-2 tasks:** Straightforward execution. Don't overthink — read the spec section, implement, run any existing checks, move on.
 - **Difficulty 3-4 tasks:** Standard multi-step work. Let interleaved thinking naturally guide your approach as you discover codebase patterns.
 - **Difficulty 5-6 tasks:** Design decisions involved. Reason carefully about architectural choices before implementing. If you discover the approach isn't working mid-implementation, re-evaluate rather than pushing through.
 
@@ -108,20 +108,15 @@ Do the work:
 - Use `.claude/support/workspace/` for temporary files (see `README.md` there for placement rules)
 - If `.claude/support/learnings/` contains files, check for patterns relevant to this task
 
-### Step 5: Self-Review
+### Step 5: Run Existing Checks
 
-**Required artifact:** Document the review in your return report's `notes` field (even briefly). A task completed without any self-review note indicates this step was skipped.
+Run the project's existing tests or validation checks for what you changed, if any exist, and fix what they surface. If you ran checks, name them and their outcome in `notes`.
 
-Before returning:
-- Review all changes made
-- Check for errors and edge cases
-- Verify against task requirements
-- For multi-file changes: spot-check cross-file consistency (stale references, broken links, terminology alignment between modified files)
-- Run existing tests or validation checks if available
+Don't add a separate re-review pass on top of this: verify-agent independently verifies every completed task in a fresh context.
 
 ### Step 6: Return Structured Report
 
-After self-review (Step 5), construct and return the structured implementation report per the schema below. Do not attempt to write to `.claude/tasks/`, do not attempt to spawn verify-agent — subagents cannot do either, and the orchestrator handles both.
+After Step 5, construct and return the structured implementation report per the schema below. Do not attempt to write to `.claude/tasks/`, do not attempt to spawn verify-agent — subagents cannot do either, and the orchestrator handles both.
 
 **Return schema:**
 
@@ -280,8 +275,8 @@ When you sense an approaching usage limit AND have unfinished sub-targets, retur
    - `resume_instructions`: brief prose (1-3 sentences) telling the next dispatch where to start and what precedent to follow. Example: `"Resume from field_Z. Follow same bucket-taxonomy precedent established for field_X. After all remaining sub-targets, sweep audit to confirm 0 violations."`
    - `confidence`:
      - `high` — clean boundary: finished a logical unit; declared remaining work has not been started
-     - `moderate` — mid-unit boundary: declared completed sub-targets verified by self-review; remaining sub-targets are in flux
-     - `low` — rushed boundary: SDK wrap-up fired before self-review; declared completed sub-targets not independently re-checked
+     - `moderate` — mid-unit boundary: declared completed sub-targets checked (existing tests/validation run where they exist); remaining sub-targets are in flux
+     - `low` — rushed boundary: SDK wrap-up fired before declared completed sub-targets were checked
 3. Do NOT include `completion_date` (work is incomplete)
 4. List every file you modified during this dispatch in `files_modified[]`. Orchestrator audits at re-dispatch via `git diff` — declared-completed sub-targets that don't show up in the diff surface as warnings
 
@@ -311,7 +306,7 @@ During implementation, observe workflow deviations, spec drift, informal decisio
 
 **Marker object shape (within your return report):**
 ```json
-{"type": "workflow_deviation", "timestamp": "2026-04-17T14:30:00Z", "details": "Skipped Step 5 self-review due to trivial change", "template_area": "implement-agent Step 5"}
+{"type": "workflow_deviation", "timestamp": "2026-04-17T14:30:00Z", "details": "Skipped Step 5 test run: suite needs a live database unavailable locally", "template_area": "implement-agent Step 5"}
 ```
 Note: `task_id` is added by the orchestrator from the task dispatched to you — do not include it yourself.
 

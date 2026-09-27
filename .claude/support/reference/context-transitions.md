@@ -201,7 +201,7 @@ The graceful, preferred path. Claude has full conversation context and can wind 
 1. Stop accepting new work after the pause signal
 2. Reach the nearest clean boundary in the current agent step:
    - If mid-Step 4 (implementation): finish the current logical unit if close, otherwise stop
-   - If at Step 5 (self-review): complete the review and return the structured report with `implementation_status: "partial"`
+   - If at Step 5 (running checks): let a running check finish, skip the rest (name the skipped checks in notes), and return the structured report with `implementation_status: "partial"`
    - If at Step 6 (return report): complete the report — orchestrator writes state from it
    - If verify-agent is running: let it reach its own turn budget wind-down, or return an empty report with `result: null`
 3. Update task JSON with `[PARTIAL]` notes (prefix existing notes or write new):

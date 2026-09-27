@@ -303,7 +303,8 @@ Append-only log of every verification attempt (pass and fail). Provides a full r
         "scope_validation": "pass"
       },
       "issues": [],
-      "notes": "All 4 tables implemented correctly"
+      "notes": "All 4 tables implemented correctly",
+      "cost": {"total_tokens": 48210, "tool_uses": 17, "duration_ms": 94000}
     }
   ]
 }
@@ -319,6 +320,7 @@ Append-only log of every verification attempt (pass and fail). Provides a full r
 | `checks` | Object | Per-check pass/fail (same keys as `task_verification.checks`) |
 | `issues` | Array | Issues found during this attempt |
 | `notes` | String | Brief summary of this attempt's findings |
+| `cost` | Object | Optional. The verify-agent dispatch's usage as reported by the harness: `total_tokens` (reported as `subagent_tokens` or `total_tokens`), `tool_uses`, `duration_ms`. Omitted when the harness doesn't report it (and on entries written before v5.5.2). Measures what per-task verification costs, by difficulty |
 
 #### Behavior Rules
 
