@@ -22,7 +22,7 @@ After any agent (implement-agent or verify-agent) returns a structured report, t
 
    - Pending-buffer write is append-only: open in append mode, write `{...}\n`, close. No read-modify-write cycle.
    - Session-log write also appends. If file doesn't exist, create it.
-   - The next `/work` invocation (or PreCompact hook) will reconcile the two files via the catchup procedure in work.md § "Step 0d: Friction-Marker Catchup".
+   - The next `/work` invocation (or PreCompact hook) will reconcile the two files via the catchup procedure in `work-recovery.md § "Friction-Marker Catchup"` (triggered by work.md Step 0d).
    - If `report.friction_markers` is empty, this step is a no-op — skip all writes.
 
    **Friction register projection (audit-eligible kinds):** For each marker whose `type` is one of `vocab_drift`, `path_drift`, `design_contradiction`, `terminology_mismatch`, or `spec_implementation_gap`, ALSO append to `.claude/support/friction.jsonl` (the audit register — see `.claude/support/reference/friction-register.md`). The register entry has additional structure beyond the session-log raw marker:
@@ -48,7 +48,7 @@ After any agent (implement-agent or verify-agent) returns a structured report, t
 
 1. **Read task's current `verification_attempts`** (default 0), compute `new_attempts = current + 1`
 2. **Build `verification_history` entry** from report's `checks`, `issues`, `notes`, with `{"attempt": new_attempts, "result": report.result, "timestamp": report.timestamp}`. Add `"cost": {"total_tokens": N, "tool_uses": N, "duration_ms": N}` copied from the usage the harness reports for this verify-agent dispatch (the token count may arrive as `subagent_tokens` or `total_tokens` — store it as `total_tokens`); omit `cost` (or any sub-key) the harness didn't report — never estimate it. Append to task's `verification_history[]` array (create array if absent).
-3. **Write `task_verification`** field to task JSON using report's `result`, `timestamp`, `checks`, `notes`, `issues` — plus `evidence[]` when the Empirical Evidence Gate ran (see work.md § "If Verifying (Per-Task)")
+3. **Write `task_verification`** field to task JSON using report's `result`, `timestamp`, `checks`, `notes`, `issues` — plus `evidence[]` when the Empirical Evidence Gate ran (see `work-web-evidence.md § "Empirical Evidence Gate"`)
 4. **Status transition** based on `result`:
    - `pass`: set `status: "Finished"`, `updated_date: today`. If `report.user_review_pending == true`, also write `user_review_pending: true`, `test_protocol: report.test_protocol`, `interaction_hint: report.interaction_hint`
    - `fail` AND `new_attempts < 3`: set `status: "In Progress"`, `updated_date: today`. Clear `completion_date`. Prepend `[VERIFICATION FAIL #{new_attempts}]` to notes with the fail summary

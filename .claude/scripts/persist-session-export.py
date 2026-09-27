@@ -3,8 +3,8 @@
 
 Mechanizes the inbox copy-with-rename in
 `.claude/support/reference/context-transitions.md § "Session Export"` step 6
-and the parallel copy in `.claude/commands/work.md § "Step 0f: Track 2
-Stale-File Recovery"` step 8. Any change to that recipe MUST be mirrored here,
+and the parallel copy in `.claude/support/reference/work-recovery.md
+§ "Stale Track 2 Recovery"` step 8 (triggered by work.md Step 0f). Any change to that recipe MUST be mirrored here,
 and vice versa — see `.claude/scripts/README.md § "Dual-location risk"`.
 
 Why this script exists (FB-109): the rename rule at context-transitions.md:411

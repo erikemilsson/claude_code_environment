@@ -43,7 +43,7 @@ During Task 40 verification, verify-agent (via bash grep) finds zero references 
 
 ## Trace 34B: Web-UI pass requires evidence; failing assertion flips to fail
 
-- **Path:** `/work` § If Verifying (Per-Task) → Empirical Evidence Gate
+- **Path:** `/work` § If Verifying (Per-Task) → Empirical Evidence Gate (`work-web-evidence.md`)
 
 ### Scenario
 
@@ -75,7 +75,7 @@ Task 40's verify-agent returns `result: "pass"`, `runtime_validation: "partial"`
 
 ## Trace 34C: Phase-level pass on a UI phase gets a route smoke
 
-- **Path:** `/work` § If Verifying (Phase-Level) → Phase UI smoke
+- **Path:** `/work` § If Verifying (Phase-Level) → Phase UI smoke (`work-web-evidence.md`)
 
 ### Scenario
 

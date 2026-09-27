@@ -339,7 +339,7 @@ Out-of-spec tasks (`out_of_spec: true`) require explicit user approval before ex
 - [ ] **Task {id}: {title}** — Review and approve out-of-spec task → [task-{id}.json](../tasks/task-{id}.json)
 ```
 
-**User actions:** When `/work` detects pending out-of-spec tasks, it presents them with these options (see work.md Step 3 § "Out-of-spec task handling"):
+**User actions:** When `/work` detects pending out-of-spec tasks, it presents them with these options (see `work-user-flows.md § "Out-of-Spec Task Approval"`):
 - `[A]` Accept → Sets `out_of_spec_approved: true`, task becomes eligible for execution
 - `[R]` Reject → Sets `out_of_spec_rejected: true`, prompts for optional `rejection_reason`, archives task to `.claude/tasks/archive/`
 - `[D]` Defer → Task remains in pending state, continues to appear in Reviews on next regeneration

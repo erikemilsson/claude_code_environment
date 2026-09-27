@@ -897,3 +897,19 @@ Tags: patch-bundle, scripts, python-version, verify-timeout, usage-limit, pendin
 **Related `[V]`-pass observation.** DEC-020's 2026-05-27 research already recorded the "first 5,000 tokens each" re-attachment detail as live (`decision-020…md:122`), but `claude-code-authoring.md` kept the misleading "~25K per skill" framing until this pass. A research finding marked "confirmed-consistent" can still carry a refinement that nobody applies back to the doc. Worth one line in the `[V]` flow: when a research archive notes a refinement, apply it to the doc body.
 
 Tags: agents, subagents, nested-dispatch, DEC-004, capability-doc, rules-agents-md, reconciliation
+
+## FB-122: Deterministic `/work` routing script (`work-state.py`) — Tier C of the work.md condensation
+
+**Status:** new (research-gated)
+**Captured:** 2026-09-27 (Opus 5.5 review #6, work.md condensation, v5.7.3)
+**Source:** maintainer session 2026-09-27; v5.7.3 ship-log entry.
+
+**Idea.** Much of `/work`'s startup and routing is deterministic over task JSON + a few state files: Step 3's routing algorithm, Step 1d's non-actionable fast path, Step 1a's dashboard freshness hash, Step 0e's uncommitted-work check, and the Step 0d/0f trigger conditions. A `work-state.py` (stdlib, read-only, per `.claude/scripts/README.md` contract) could return `{next_action, task_id, reason, surfaced_items[]}` as JSON, the way `dashboard-render.py` replaced hand-written dashboards (DEC-024). The orchestrator would run it and act on the result, keeping only judgment steps in prose.
+
+**Why.** Shrinks the remaining 49K hot path further, and makes routing reproducible (no LLM re-derivation of a 10-branch algorithm each loop iteration). Fits the FB-011 scripts family.
+
+**Open questions.** Which steps are purely mechanical vs judgment-bearing (Step 2b decision checkbox detection is mechanical; ambiguity surfacing is not). Dual-location risk while prose and script coexist (`.claude/scripts/README.md § "Dual-location risk"`). Test coverage for the routing matrix.
+
+**Gate.** `/research` before building; no incident evidence of mis-routing yet, so the case is maintainability and context size, not a defect.
+
+Tags: work, scripts, routing, FB-011-family, context-size

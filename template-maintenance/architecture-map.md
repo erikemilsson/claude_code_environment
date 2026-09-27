@@ -28,7 +28,7 @@ Traced from actual citations (2026-07-19). "—" = self-contained.
 
 | Consumer | Reference docs cited | Scripts invoked |
 |---|---|---|
-| `work.md` | claude-code-authoring, context-transitions, dashboard-regeneration, decomposition, drift-reconciliation, known-issues, parallel-execution, phase-decision-gates, session-recovery, work-procedures, workflow | fingerprint.py (+ dashboard-render.py, persist-friction.py via dashboard-regeneration/friction procedures) |
+| `work.md` | claude-code-authoring, context-transitions, dashboard-regeneration, decomposition, drift-reconciliation, known-issues, parallel-execution, phase-decision-gates, session-recovery, work-procedures, work-recovery (on trigger), work-user-flows (on trigger), work-web-evidence (on trigger), workflow | fingerprint.py (+ dashboard-render.py, persist-friction.py via dashboard-regeneration/friction procedures) |
 | `health-check.md` | claude-code-authoring, dashboard-regeneration, decisions, mcp-patterns, paths, root-claude-md-template, shared-definitions, task-schema, workflow | dashboard-render.py, validate-tasks.py |
 | `iterate.md` | claude-code-authoring, decisions, desktop-project-prompt, drift-reconciliation, merge-queue, spec-checklist | — |
 | `audit-coherence.md` | audit-family-core, audit-fix-workflow | — |

@@ -20,26 +20,7 @@ For workflow concepts (phases, agent synergy, checkpoints), see `.claude/support
 
 ## User Communication Strategy
 
-Communication uses two tiers to keep the user informed without wasteful file I/O:
-
-### Tier 1: Dashboard Regeneration (strategic moments)
-
-Regenerate `dashboard.html` per `.claude/support/reference/dashboard-regeneration.md` only at moments when the user needs it current:
-
-| Trigger | Rationale |
-|---------|-----------|
-| After decomposition | User needs to see the full task list |
-| After parallel batch completes | Many changes at once, single regen |
-| At session boundaries (before presenting final results) | User will check the dashboard |
-| At project completion | Final state matters |
-| When routing async work to dashboard (phase gates, decision reviews) | User will go read the dashboard |
-| `/work complete` (user-initiated) | User explicitly interacting with task state |
-| After decision resolution | May unblock tasks, dashboard needs to reflect new state |
-| Step 1a freshness check | Catch-up on entry |
-
-### Tier 2: Inline CLI Communication (routine status changes)
-
-Brief, contextual messages in the CLI conversation — no file I/O, no full regen:
+**Tier 1 — full dashboard regeneration** at the strategic moments listed in `rules/dashboard.md § "Regeneration Strategy"` (decomposition, parallel batch end, session boundaries, `/work complete`, phase gates, decision resolution, Step 1a mismatch). **Tier 2 — inline CLI messages** for routine changes, no file I/O:
 
 | Event | Inline message |
 |-------|---------------|
@@ -49,9 +30,7 @@ Brief, contextual messages in the CLI conversation — no file I/O, no full rege
 | Human task becomes unblocked | `Note: Task {id} ("{title}") is now available for you — {brief description}` |
 | Auto-continuation step | `Moving to task {id}: "{title}"` |
 
-### Proactive Surfacing
-
-When implementation work unblocks a human-owned or both-owned task, mention it inline during auto-continuation. Don't wait for the user to discover it on the dashboard — surface it conversationally.
+When implementation work unblocks a human- or both-owned task, say so inline during auto-continuation rather than leaving it for the dashboard.
 
 ---
 
@@ -165,29 +144,9 @@ When Step 0a found no handoff and Step 0b found no recovery issues (clean start)
 
 **First-run fallback:** If no dashboard META block exists (first `/work` invocation), skip the summary — Step 1 will handle first-run detection.
 
-**Relationship to Step 1c:** Step 0c provides session context (temporal: "what happened recently"). Step 1c provides spec state ("Spec: v1 (active) — aligned with tasks"). They are complementary, not overlapping.
-
-Note: This reads task files and dashboard META before Step 1, but Step 1 reads the same data. The summary re-uses data that would be loaded regardless — it's surfaced earlier for user orientation.
-
 #### Step 0d: Friction-Marker Catchup
 
-Reconcile any friction markers persisted to the transient pending buffer in a prior session that never reached the canonical log (DEC-011 Option ABp). Runs once per `/work` invocation, before any agent dispatch.
-
-**Procedure:**
-
-1. If `.claude/support/workspace/.pending-markers.jsonl` does not exist, this step is a no-op — proceed to Step 1.
-2. Read both files (create `.session-log.jsonl` empty if missing):
-   - `.pending-markers.jsonl` — append-only buffer dual-written at agent-return time
-   - `.session-log.jsonl` — canonical log
-3. Build a dedup set from `.session-log.jsonl` entries using the composite key: `(task_id, timestamp, type, sha256(details))`. For entries missing any of these fields, fall back to `sha256(full_json_line)`.
-4. Iterate `.pending-markers.jsonl` entries. For each entry NOT already in the dedup set, append to `.session-log.jsonl`.
-5. Count appended entries. If count > 0, surface inline: `Step 0d: Caught up {N} friction markers from prior session.` (Inform — not an error.)
-6. After successful merge, truncate `.pending-markers.jsonl` (write empty file) — the canonical log now holds the entries.
-7. If the merge fails (read error, write error), do NOT truncate. Surface inline: `Step 0d: Catchup failed ({error}). Pending buffer preserved for retry.`
-
-**Why this exists:** The "After implement-agent returns" protocol Step 2 dual-writes markers to both the pending buffer and the canonical log immediately upon agent return. The pending buffer's purpose is purely the sub-second window where the orchestrator could be terminated between agent return and writes completing. Step 0d guarantees that any markers in the pending buffer that didn't make it to the canonical log are reconciled before the next agent dispatch.
-
-**Composability with PreCompact hook:** `.claude/hooks/pre-compact-handoff.sh` runs the same catchup before its Track 1 export compile. The two entry points (here + PreCompact) cover both "normal /work resume" and "compaction-triggered wind-down" paths.
+If `.claude/support/workspace/.pending-markers.jsonl` exists and is non-empty, read `.claude/support/reference/work-recovery.md § "Friction-Marker Catchup"` and follow it before any agent dispatch (reconciles markers a prior session buffered but never wrote to the canonical log, DEC-011). Otherwise skip.
 
 #### Step 0e: Uncommitted-Work Check (FB-088)
 
@@ -209,57 +168,11 @@ Detect silent drift between "tasks marked Finished" and "code committed". Runs o
    - Post-handoff form (when Step 0a just deleted a handoff): `Step 0e: {N} tasks Finished since last commit (prior session paused without committing). Consider committing before resuming work.`
 8. Always proceed to Step 0f (never block).
 
-**Why this exists:** Long-running multi-session projects accumulate uncommitted state when sessions don't bind to git boundaries. `/work pause` writes a handoff file but does not commit; `/work complete` may complete tasks but does not enforce a commit boundary. Over many sessions, the gap between "tasks marked Finished" and "code committed" grows silently — observed in styler 2026-05-20 (~14-task uncommitted backlog discovered mid-commit).
+Rely on git's own gitignore handling for `.claude/` — don't add a blanket `.claude/` filter (projects that track `.claude/` files should see them counted; FB-099).
 
-**Why threshold N≥3:** smallest count that meaningfully exceeds "single in-flight feature about to be committed." Empirical tuning is cheap (single integer constant).
+#### Step 0f: Track 2 Stale-File Recovery
 
-**Why gitignore-scoped (not blanket) `.claude/` filter (FB-099):** whether `.claude/` is state-not-source is decided by whether the project tracks it — exactly what `.gitignore` already encodes. Projects that gitignore `.claude/**` (a deliberate fork convention) never surface `.claude/` paths here: `git diff HEAD` lists only tracked files and `--exclude-standard` honors `.gitignore`, so gitignored state (spec, tasks, dashboard) is already excluded with no manual filter. Projects that *track* `.claude/` (committed vision docs, command edits, or task JSON under version control) should see those uncommitted source changes counted — an earlier blanket `.claude/` exclusion silently hid git-tracked `.claude/vision/*.md` edits. So: rely on git's native gitignore semantics and do not blanket-filter `.claude/`. Build artifacts (`node_modules`, `dist/`, etc.) live in `.gitignore` and are already excluded. Future configurability deferred until cross-project friction surfaces. (A complementary informational surfacing of *untracked source-of-truth* lives in `/health-check` Part 4 check 5.)
-
-#### Step 0f: Track 2 Stale-File Recovery (FB-089)
-
-Recover from a prior session's interrupted `/work pause` that left `.claude/support/workspace/.interaction-assessment.json` on disk. Without recovery, next session's Write tool fails on that path because the file exists but hasn't been Read.
-
-**Procedure:**
-
-1. If `.claude/support/workspace/.interaction-assessment.json` does not exist, this step is a no-op — proceed to Step 1.
-2. Read the file. If invalid JSON, surface inline `Step 0f: Stale Track 2 capture malformed — discarded.`, delete, proceed to Step 1.
-3. Read `.claude/support/workspace/.session-log.jsonl` if present (Track 1 markers also orphaned from same interrupted pause).
-4. Read `.claude/version.json` for `template_version` + `template_inbox_path`.
-5. Compile a recovered export matching `/work pause § Session Export` shape:
-   ```json
-   {
-     "export_version": 1,
-     "source_project": "[project name]",
-     "template_version": "[from version.json]",
-     "session_date": "[YYYY-MM-DD from current date]",
-     "automated_markers": [/* from .session-log.jsonl if present, else [] */],
-     "session_metrics": {
-       "tasks_completed": [computed from current task files],
-       "verification_pass_rate": [computed],
-       "recovery_events": 0
-     },
-     "claude_assessment": [/* parsed Track 2 JSON */],
-     "export_quality": "recovered"
-   }
-   ```
-6. Compute timestamp `YYYY-MM-DD-HHMM` (minute-granular per FB-079).
-7. Write the recovered export to `.claude/support/workspace/.session-export-{timestamp}-recovered.json`.
-8. If `template_inbox_path` is configured, copy the export to the inbox via the deterministic helper (FB-109) — pass `--suffix recovered` so the inbox copy carries the `-recovered` marker:
-   ```bash
-   python3 .claude/scripts/persist-session-export.py --source .claude/support/workspace/.session-export-{timestamp}-recovered.json --suffix recovered
-   ```
-   Never `cp` the dot-prefixed working filename to the inbox verbatim (see `context-transitions.md § "Session Export"` step 6).
-9. Delete `.interaction-assessment.json` AND `.session-log.jsonl`.
-10. Surface inline: `Step 0f: Recovered stale Track 2 capture from interrupted pause → .session-export-{timestamp}-recovered.json` (Inform — not an error.)
-11. Proceed to Step 1.
-
-**Why this exists:** `/work pause § Session Export step 7` cleans up `.interaction-assessment.json` after compiling the export. If pause is interrupted between the write (Interaction Assessment sub-section) and step 7 cleanup — usage limit, user `Ctrl+C`, harness crash — the file persists. Observed in echothread 2026-05-17.
-
-**Why `export_quality: "recovered"` is a new enum value:** distinguishes recovered exports (`session_metrics` computed at recovery time, not at original pause time — lossy property) from canonical exports. Coexists with `"full"` (canonical `/work pause`) and `"markers_only"` (PreCompact hook fallback).
-
-**No PreCompact hook coordination needed:** the hook never reads `.interaction-assessment.json` (it writes `claude_assessment: None` and produces markers-only exports). Step 0f and the hook operate on disjoint Track 2 territory — no double-ingestion risk.
-
-**`.session-log.jsonl` standalone case:** if Track 2 is absent but Track 1 markers exist, Step 0f does NOT trigger recovery — Step 0d's catchup already handles the pending-buffer half, and the PreCompact hook is the canonical disposal mechanism for orphan logs.
+If `.claude/support/workspace/.interaction-assessment.json` exists (a prior `/work pause` was interrupted), read `.claude/support/reference/work-recovery.md § "Stale Track 2 Recovery"` and follow it before continuing: it compiles a recovered session export and removes the stale file, which would otherwise make the next Write to that path fail. Otherwise skip.
 
 #### Step 0g: Waiting-on-You Queue (always runs)
 
@@ -371,51 +284,20 @@ IF remaining_tasks is NOT empty
    → FAST EXIT
 ```
 
-**`owner: "both"` and the fast path (FB-100):** a both-owned task is Claude-actionable while Claude's half is unstarted — it becomes non-actionable only once Claude's contribution is delivered and the task is waiting on the user, signalled by `user_review_pending == true` (set when verify-agent passes Claude's half, per the State Persistence Protocol). A both-owned task gated on a *physical-world prerequisite before Claude can act* should carry `status: "Blocked"` (e.g., a dependency on a human-owned setup task) or `"On Hold"` so it is caught by those clauses — do not leave it `Pending`, or the fast path will treat the project as having actionable work when it does not.
+A both-owned task counts as non-actionable only once Claude's half is delivered (`user_review_pending == true`); one waiting on a physical-world prerequisite should be `Blocked` or `On Hold`, not `Pending` (FB-100).
 
 **Before presenting fast-exit output:** Verify dashboard freshness (same check as Step 5 item 4). If stale, regenerate first — the user may check the dashboard after seeing this message.
 
-**Fast-exit output by category:**
-
-All human-owned:
+**Fast-exit output:**
 ```
-No Claude-actionable work — {N} remaining tasks are human-owned.
+No Claude-actionable work — {N} remaining tasks{: X human-owned, Y blocked, Z on hold}.
 
-Your next actions:
-- Task {id}: "{title}" — {brief description}
-- Task {id}: "{title}" — {brief description}
-
-Run `/work complete {id}` when done with a task.
+{For each category present, a heading and one line per task:}
+Your next actions:            - Task {id}: "{title}" — {brief description}
+Blockers:                     - Task {id}: "{title}" — {blocker from notes}
+On hold:                      - Task {id}: "{title}" — {reason from notes}
 ```
-
-All Blocked:
-```
-No Claude-actionable work — {N} remaining tasks are blocked.
-
-Blockers:
-- Task {id}: "{title}" — {blocker from notes}
-- Task {id}: "{title}" — {blocker from notes}
-
-Resolve the blockers above, then run `/work` to continue.
-```
-If any blocked task has `decision_dependencies`, suggest `/research {DEC-ID}`.
-
-All On Hold:
-```
-No Claude-actionable work — {N} remaining tasks are on hold.
-
-On hold:
-- Task {id}: "{title}" — {reason from notes}
-
-Resume a task by setting its status to "Pending", then run `/work`.
-```
-
-Mixed non-actionable:
-```
-No Claude-actionable work — {N} remaining tasks: {X} human-owned, {Y} blocked, {Z} on hold.
-
-{list by category, same format as above}
-```
+If a blocked task has `decision_dependencies`, suggest `/research {DEC-ID}`.
 
 After output, append 1-2 contextual command suggestions (see Contextual Command Suggestions below), then proceed to Step 5 (post-dispatch validation) — skip Steps 2, 2b, 2c, 3, and 4.
 
@@ -523,25 +405,15 @@ After phase and decision checks, assess whether multiple tasks can be dispatched
 2. Route to the "If Executing" section in Step 4
 3. Continue to Step 5 (validation)
 
-**If no request provided** (auto-detect mode):
+**If no request provided** (auto-detect mode), stop early for these states first:
 
-| Condition | Action |
-|-----------|--------|
-| No spec exists, no tasks | Stop — direct user to create a vision document in `.claude/vision/` and run `/iterate distill` |
-| No spec exists, tasks exist | **Stop and warn** — tasks without a spec cannot be verified. Options: `[S]` Create spec, `[M]` Mark all out-of-spec, `[X]` Stop. |
-| Spec incomplete | Stop — prompt user to complete spec |
-| Spec complete, no tasks | **Decompose** — read and follow `decomposition.md` |
-| Phase transition pending approval | **Stop** — direct user to approve phase gate in dashboard *(enforced by Step 2b)* |
-| Any spec task in "Awaiting Verification" | **Verify (per-task)** — see Step 4 |
-| Spec tasks pending, parallel batch >= 2 | **Execute (Parallel)** — see Step 4 |
-| Spec tasks pending, no parallel batch | **Execute** — see Step 4 |
-| All spec tasks "Finished" with passing verification, no valid phase verification result | **Verify (phase-level)** — see Step 4 |
-| Phase-level verification `"fail"` (fix tasks exist) | **Execute** — fix tasks need implementation |
-| All spec tasks finished, valid phase verification result | **Complete** — see Step 4 |
+- No spec, no tasks → direct the user to create a vision in `.claude/vision/` and run `/iterate distill`
+- No spec, tasks exist → **stop and warn** (tasks without a spec can't be verified): `[S]` Create spec | `[M]` Mark all out-of-spec | `[X]` Stop
+- Spec incomplete → prompt the user to complete it
+- Spec complete, no tasks → **Decompose** (Step 4)
+- Phase transition pending approval → stop; approve the gate (enforced by Step 2b)
 
-**Priority order matters.** Per-task verification takes priority over executing the next task.
-
-**CRITICAL: Verification enforcement.** Before routing to phase-level verification or completion, EVERY "Finished" spec task must have `task_verification.result == "pass"`. Never skip this check. This is structurally enforced — `/work`, `/health-check`, and the task schema all check this invariant. There is no way to bypass verification by marking tasks Finished directly.
+Otherwise route with the algorithm below. Per-task verification always outranks starting the next task, and no Finished task without a passing `task_verification` may reach phase-level verification or completion.
 
 **Explicit routing algorithm:**
 ```
@@ -580,29 +452,11 @@ After phase and decision checks, assess whether multiple tasks can be dispatched
 
 **Auto-continuation within phases:** After a task finishes (passes per-task verification), `/work` loops back to Step 3 to determine the next action — no user prompt, no pause. Each iteration starts with an inline announcement: `Moving to task {id}: "{title}"`. Before dispatching the next task, check if any human-owned or both-owned tasks just became unblocked — if so, mention them inline: `Note: Task {id} ("{title}") is now available for you — {brief description}`. This continues automatically until a natural stopping point: phase boundary (gate approval needed), blocking decision, verification failure requiring human escalation, or all remaining tasks non-actionable (human-owned, blocked, or on hold — see Step 1d). The value of front-loaded decomposition and structured verification is that work flows autonomously between these stops.
 
-**Autonomous batch heartbeat (FB-081):** maintain an in-memory `autonomous_batch_position` counter, incremented by 1 on each sequential auto-continuation loop iteration. The counter resets to 0 on: (a) any natural stopping point (phase boundary, blocking decision, verification failure, all-tasks-non-actionable), (b) any user message arriving during the loop, (c) `/work` exit. Parallel-batch dispatches do NOT increment the counter (the user already approved at parallel pre-dispatch confirmation); only sequential auto-continuations increment.
-
-When `autonomous_batch_position >= 3`, replace the standard `Moving to task {id}: "{title}"` line with a heartbeat line:
-
-```
-[Auto-batch: task {position} of {batch_total} — {task_id}: "{title}"]
-```
-
-Where `batch_total` is the count of pending sequential tasks projected to dispatch in the current batch (computed from the routing-eligible task list at counter-start). Below `position >= 3`, use the standard `Moving to task` line. The counter is invocation-scoped — a new `/work` after `/work complete` starts fresh at 0.
-
-This is a Tier 2 inline message; do NOT write heartbeats to dashboard Recent Activity (heartbeats are progress signals, not state transitions — flooding Recent Activity would violate its 7-entry cap and chronological-pointer-not-narrative rule).
-
-See `.claude/rules/agents.md § "Behavioral Rules" — "Acknowledge mid-batch user messages"` for the complementary reactive rule that handles user pings during long autonomous batches.
+**Autonomous batch heartbeat (FB-081):** keep an in-memory `autonomous_batch_position`, +1 per sequential auto-continuation (parallel dispatches don't count); reset to 0 at any natural stopping point, any user message, or `/work` exit. At `>= 3`, replace the `Moving to task` line with `[Auto-batch: task {position} of {batch_total} — {task_id}: "{title}"]` (`batch_total` = sequential tasks projected for this batch). Heartbeats are inline only, never dashboard entries. For user messages mid-batch see `rules/agents.md § "Behavioral Rules"`.
 
 **Important — spec tasks vs out-of-spec tasks:** Phase routing is based on spec tasks only (excluding `out_of_spec: true`). Out-of-spec tasks are excluded from **phase detection** (determining whether a phase is complete, triggering phase-level verification, or reaching project completion) to prevent a verify → execute → verify infinite loop. However, out-of-spec tasks still run the **full implement → verify cycle** — they are not exempt from per-task verification. The structural invariant applies universally: no task (spec or out-of-spec) can reach "Finished" without `task_verification.result == "pass"`.
 
-**Out-of-spec task handling:** After phase routing completes (or at phase boundaries), check for pending out-of-spec tasks: `[A]` Accept (sets `out_of_spec_approved: true`), `[R]` Reject, `[D]` Defer, `[AA]` Accept all. Never auto-execute out-of-spec tasks. Accepted out-of-spec tasks are routed to implement-agent → verify-agent like any other task.
-
-**Reject behavior (`[R]`):**
-1. Prompt for optional rejection reason
-2. Set `out_of_spec_rejected: true` and `rejection_reason` (if provided) on task JSON
-3. Move task file to `.claude/tasks/archive/`
-4. Task preserved for audit trail but excluded from active processing and dashboard
+**Out-of-spec tasks:** after phase routing (or at phase boundaries), if out-of-spec tasks are pending approval, read `.claude/support/reference/work-user-flows.md § "Out-of-Spec Task Approval"` and follow it. Never auto-execute them.
 
 ### Contextual Command Suggestions
 
@@ -630,26 +484,7 @@ Rules:
 
 ### Interaction Mode Selection
 
-When a task involves human action (owner `"human"` or `"both"`, or `user_review_pending`), Claude should select the interaction channel that minimizes friction. This is a judgment call, not a rigid rule.
-
-| Factor | Dashboard-mediated | CLI-direct |
-|--------|-------------------|------------|
-| Timing | User will do it later (async) | User should do it now (synchronous) |
-| Duration | Extended (reading docs, thinking through decisions) | Quick (run a command, confirm output, yes/no) |
-| Terminal needed? | No | Yes — commands to run, output to check |
-| Multiple items | Batch of unrelated items | Single focused task |
-| Interaction type | Passive review (read, think, decide) | Active testing (run, observe, respond) |
-
-**Scenario examples:**
-- Test a CLI/TUI → `cli_direct` (run commands, observe output)
-- Test a web UI → `cli_direct` (Playwright screenshots, visual confirmation)
-- Review a long document → `dashboard` (user needs reading time)
-- Make a design decision → `dashboard` (user weighs options)
-- Configure API keys → `cli_direct` (Claude guides step by step)
-- Phase gate approval → `dashboard` (user reviews overall progress)
-- Quick confirmation → `cli_direct` (2-second yes/no)
-
-The `interaction_hint` is set by verify-agent during Step T4b/T7. `/work` respects the hint but users can always override by using `/work complete {id}` from the dashboard flow.
+When a task needs the user (owner `human`/`both`, or `user_review_pending`), choose the channel: dashboard for async, extended, or passive review; CLI-direct for quick, synchronous, hands-on testing. Criteria and the guided-testing flows: `.claude/support/reference/work-user-flows.md`.
 
 ### Step 4: Execute Action
 
@@ -682,25 +517,7 @@ The orchestrator owns ALL `.claude/` state transitions — agents cannot write t
 
 **Before dispatch:** orchestrator sets task JSON to `{"status": "In Progress", "updated_date": today}`.
 
-**Resume-pending check (per DEC-010):** if the selected task JSON has a `partial_completion` field from a previous dispatch:
-
-1. Read the envelope's `completed_subtargets`, `remaining_subtargets`, `resume_instructions`, `confidence`
-2. Run a git-diff audit on the task's declared `files_affected`:
-   - `git diff --name-only` (combined with `--cached` if needed)
-   - If files in `files_affected` show no diff since the partial dispatch, surface inline: `⚠ Task {id} resume: declared-completed sub-targets show no file changes since partial. Audit may have rolled back. Continue? [Y/N]`
-   - If files outside `files_affected` show diffs, surface inline: `⚠ Task {id} resume: {N} files modified since partial — review before resuming.`
-3. When `confidence: low`, surface: `⚠ Task {id} resume: previous dispatch flagged low confidence in partial state. Spot-check before continuing.`
-4. Inject the envelope content into the dispatch prompt for the re-dispatched implement-agent:
-   ```
-   RESUME-PENDING TASK. Previously completed sub-targets: {completed_subtargets}.
-   Remaining sub-targets: {remaining_subtargets}.
-   Resume instructions from previous dispatch: {resume_instructions}.
-   Confidence in prior state: {confidence}.
-   Before continuing, spot-check that the declared completed sub-targets are
-   actually present in the deliverable. If any are missing, treat them as
-   remaining_subtargets instead.
-   ```
-5. **After re-dispatch returns** `completed` or a fresh `partial_resume_pending`: clear the `partial_completion` field from the task JSON. (For fresh `partial_resume_pending`, the new envelope replaces the old.)
+**Resume-pending check (DEC-010):** if the task JSON has a `partial_completion` field, read `.claude/support/reference/work-recovery.md § "Resume-Pending Dispatch"` and follow it (git-diff audit, envelope injection, clearing the field afterwards) as part of this dispatch.
 
 Dispatch implement-agent (Task tool; set `model` per `.claude/CLAUDE.md § Model Requirement`) instructing it to read `.claude/agents/implement-agent.md` and follow Steps 1-6. Agent returns a structured report. **The dispatch prompt must state the envelope contract explicitly** — include: *"Return ONLY the structured JSON report envelope from `implement-agent.md § Step 6` — raw JSON, no prose summary, no markdown fences."* (Persona-via-prompt alone does not reliably transmit the output contract; a prose return was observed downstream.)
 
@@ -750,74 +567,14 @@ Task tool call:
 
 **Timeout handling:** If verify-agent exhausts `max_turns` without returning a valid report, treat as verification failure — per State Persistence Protocol, increment `verification_attempts`, set task to "Blocked" with `[VERIFICATION TIMEOUT]` note, report to user.
 
-**Empirical Evidence Gate (before persisting a pass):** when `report.result == "pass"` AND the task's output is a web-UI route/component in a project with a web framework (same applies-when detection as `/audit-ui`) AND `checks.runtime_validation` is `"partial"` — or `"pass"` reached without browser measurement — run the evidence step at orchestrator level BEFORE applying the persistence protocol:
-
-1. Ensure Playwright MCP tools are loaded (ToolSearch if absent) and a dev server is available (starting one for verification is sanctioned; respect-prior-kills applies).
-2. Execute `report.empirical_assertions[]` (named by verify-agent per `verify-agent.md § Step T4b` item 5; if absent, default to HTTP status + console-error scan per affected route). Use `browser_evaluate` targeted queries — never full-tree snapshots on long pages.
-3. **Client-bundle check (FB-076 mitigation 1):** if the task touched client-marked files (`'use client'` or framework equivalent) and root `./CLAUDE.md` declares a build command (§ Verification Hooks), run the production build; record as a `build`-type evidence entry.
-4. Record each outcome into `task_verification.evidence[]` (schema: `task-schema.md § "Evidence Sub-field"`).
-5. Any failing assertion → treat the verification as `fail`: route through the normal fail path with the failing evidence appended to `issues[]`. All passing → proceed to the persistence protocol with `evidence[]` included.
-
-Non-web tasks, projects without a web framework, and `runtime_validation: "not_applicable"` tasks skip this gate entirely — zero change for non-software domains.
+**Empirical Evidence Gate:** if `report.result == "pass"` and the task's output is a web-UI route/component in a web-framework project, and `checks.runtime_validation` is `"partial"` (or `"pass"` without browser measurement), read `.claude/support/reference/work-web-evidence.md § "Empirical Evidence Gate"` and run it **before** persisting the pass. Non-web tasks skip it.
 
 **After per-task verification completes:** verify-agent returns a structured per-task report. Run the Empirical Evidence Gate above when it applies, then apply "After verify-agent returns (per-task mode)" from State Persistence Protocol.
 
 **Auto-continuation:** after the orchestrator persists verification state:
-- **Pass**: announce inline `Task {id} verified`. If `report.user_review_pending == true`, check `interaction_hint` for routing (see below). Before looping, check if any human-owned or both-owned tasks just became unblocked by this completion — if so, surface them inline: `Note: Task {id} ("{title}") is now available for you — {brief description}`. Then loop back to Step 3 (auto-continuation). Dashboard regen deferred to next strategic moment.
+- **Pass**: announce inline `Task {id} verified`. If `report.user_review_pending == true`, route per `work-user-flows.md § "After a Per-Task Pass with user_review_pending"`. Before looping, check if any human-owned or both-owned tasks just became unblocked by this completion — if so, surface them inline: `Note: Task {id} ("{title}") is now available for you — {brief description}`. Then loop back to Step 3 (auto-continuation). Dashboard regen deferred to next strategic moment.
 - **Fail (retry)**: announce inline `Task {id} verification failed: {summary} — routing back to implement-agent`. Task was set back to "In Progress" by the protocol. Route to implement-agent to fix, then re-verify. No dashboard regen needed (Claude is fixing it immediately).
 - **Fail (escalated)**: announce inline `Task {id} verification escalated after 3 attempts`. Stop auto-continuation; report to user.
-
-**Interaction mode routing (after per-task verification pass):**
-
-When a task passes verification and has `user_review_pending: true` (set for `owner: "both"` tasks AND any task with a `test_protocol`), check for an `interaction_hint` field:
-
-| `interaction_hint` | Routing |
-|--------------------|---------|
-| `"cli_direct"` | Present the task for guided testing or confirmation directly in the CLI conversation (see Guided Testing Flow below). Do NOT wait for the user to discover it in the dashboard. |
-| `"dashboard"` or absent | Existing flow — task appears in dashboard "Your Tasks" / "Action Required". User reviews asynchronously. |
-
-**Guided Testing Flow (CLI-direct with test_protocol):**
-
-When a task has `interaction_hint: "cli_direct"` AND a `test_protocol`, present the testing flow immediately:
-
-```
-Task {id}: "{title}" — guided testing ({estimated_time})
-
-{automated_results}
-
-Step 1/{N}: {instruction}
-  Expected: {expected}
-  [R] Run command  [S] Skip  [P] Pass  [F] Fail
-  (Available options depend on step type — "command" shows [R], others show [P]/[F])
-
-Step 2/{N}: {instruction}
-  Expected: {expected}
-  [P] Pass  [S] Skip  [F] Fail
-
-Guided testing complete: {passed}/{total} passed
-```
-
-**Step type handling:**
-- `"command"` steps: Offer `[R]` Run — execute the command via Bash and show output. Then ask `[P]` Pass / `[F]` Fail based on the output.
-- `"interactive"` steps: Show instruction and expected result. User tests manually, then signals `[P]` Pass / `[F]` Fail.
-- `"visual"` steps: If a screenshot is available (e.g., from Playwright), show it. Otherwise, show instruction. User confirms `[P]` Pass / `[F]` Fail.
-
-**After guided testing:**
-- All steps passed or skipped → clear `user_review_pending`, continue auto-continuation
-- Any step failed → record failure in task's `user_feedback` field, set task back to "In Progress" for fixes, route to implement-agent
-- User can also provide freeform feedback at the end of the guided testing flow
-
-**CLI-direct without test_protocol:**
-
-When a task has `interaction_hint: "cli_direct"` but NO `test_protocol` (e.g., a quick confirmation), present the task inline:
-
-```
-Task {id}: "{title}" — ready for your review
-
-{task description / notes summary}
-
-[C] Complete  [F] Needs fixes (provide feedback)
-```
 
 #### If Verifying (Phase-Level)
 
@@ -848,7 +605,7 @@ Task tool call:
 
 **After phase-level verification completes:** verify-agent returns a structured phase-level report. Apply "After verify-agent returns (phase-level mode)" from State Persistence Protocol.
 
-**Phase UI smoke (orchestrator-level, web projects only):** before acting on a phase-level `pass`, if any task in the phase touched web-UI routes/components (same applies-when detection as `/audit-ui`), run one lite pass over the affected routes: navigate each, assert HTTP status, scan console errors, and re-check that the phase's accumulated `task_verification.evidence[]` assertions still hold (`browser_evaluate` targeted queries; load Playwright tools via ToolSearch if absent). Failures create fix tasks exactly like phase-level verification failures — loop to Execute. For depth beyond the smoke (visual quality, IA, affordances), suggest `/audit-ui`; this gate is the in-loop minimum, not a replacement. Non-web projects skip.
+**Phase UI smoke:** before acting on a phase-level `pass`, if any task in the phase touched web-UI routes/components, read `.claude/support/reference/work-web-evidence.md § "Phase UI Smoke"` and run it; failures create fix tasks. Non-web projects skip.
 
 | Result | Action |
 |--------|--------|
@@ -895,30 +652,7 @@ For full maintenance validation (schema checks, decision integrity, template syn
 
 ## Output
 
-Reports:
-- Current phase and what was done
-- Any spec misalignments surfaced
-- Next steps or blockers
-
-## Examples
-
-```
-# Auto-detect and continue work
-/work
-
-# Work on specific task
-/work 5
-
-# Handle ad-hoc request (gets spec-checked)
-/work "Add rate limiting to the API"
-
-# Complete the current in-progress task
-/work complete
-
-# Complete a specific task
-/work complete 5
-
-```
+Report the current phase and what was done, any spec misalignments surfaced, and next steps or blockers.
 
 ---
 
