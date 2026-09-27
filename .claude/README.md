@@ -240,12 +240,12 @@ Checkpoints persist across sessions, so you can rewind even after closing and re
 
 ## Known Constraints
 
-**Output token cap:** Claude Code subscription (Max/Team) caps output at 32K tokens per response. Thinking and tool call arguments share this budget. The environment handles this internally — agents split large artifacts across multiple responses — but if you see truncated files (incomplete dashboard, partial JSON), this is likely why.
+**Output token cap:** each response has an output cap that thinking, text, and tool-call arguments share. The cap depends on the model (the API maximum for Opus 5.5 is 128K; Claude Code falls back to 32K for model IDs it doesn't recognize, such as gateway names). Agents write large artifacts in their own response to stay clear of it. If you see a truncated file (partial JSON, a cut-off document), this is the likely cause.
 
-- Set `MAX_THINKING_TOKENS=8000` (or similar) if output truncation is frequent — this reserves more of the 32K budget for actual output
-- Large projects (50+ tasks) may see dashboard truncation during regeneration; the environment falls back to a two-pass write
+- Raise the cap with `CLAUDE_CODE_MAX_OUTPUT_TOKENS` if truncation recurs (a higher value shrinks the context left before auto-compaction)
+- The dashboard isn't affected: `dashboard-render.py` writes it through a shell redirect, not a model response
 
-**Effort defaults:** Max/Team subscriptions default to medium reasoning effort. The environment uses "ultrathink" for phase-level verification where deep reasoning matters most. If you want elevated reasoning more broadly, you can say "ultrathink" in your prompt.
+**Effort defaults:** Opus 5.5 defaults to `medium` effort on every plan, which matches or beats Opus 5 at `high` on coding and knowledge work, so the environment doesn't raise it. The one exception is phase-level verification, whose dispatch includes "ultrathink" (a per-turn request for deeper reasoning; it doesn't change the effort level). To change effort for a whole session, use `/effort`.
 
 **Harness reminders about built-in task tools:** The Claude Code runtime emits a reminder along the lines of *"Consider TaskCreate / TaskUpdate"* on most tool returns. This environment uses its own task system (`.claude/tasks/task-*.json`) and never the built-in tools (see `.claude/CLAUDE.md § Critical Invariants`). The reminder is harness-emitted (not template-emitted) and currently cannot be suppressed per-project. Agents ignore it automatically; the noise is benign but visible. Upstream Anthropic mechanism for opt-out is pending.
 

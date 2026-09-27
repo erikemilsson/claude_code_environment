@@ -153,7 +153,7 @@ Until then, keep all three call sites uniform on `subagent_type: "general-purpos
 
 All agents run on the model pinned in `.claude/CLAUDE.md § Model Requirement` — the canonical source for both the design pin and the `Task` dispatch value.
 
-**Effort defaults:** Max/Team subscriptions default to medium reasoning effort. Use "ultrathink" in prompts when deeper reasoning is needed (phase-level verification, complex design decisions).
+**Effort defaults:** Opus 5.5 defaults to `medium` effort on every plan, which matches or beats Opus 5 at `high` on coding and knowledge work. Don't add "ultrathink" or "think carefully" instructions by default. The standing exception is phase-level verification, whose dispatch includes "ultrathink" (it requests deeper reasoning for that turn; the effort level sent to the API is unchanged). To lower thinking, lower effort rather than instructing it in the prompt. Per-agent effort is possible via `effort:` frontmatter in a named agent definition, which the `general-purpose` Dispatch Convention doesn't use yet.
 
 ## Friction Register
 

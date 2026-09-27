@@ -141,7 +141,7 @@ For each viable option:
 
 ### Step R4: Produce Artifacts
 
-**Output size awareness:** Claude Code caps output at 32K tokens per response. For complex research with 4+ options and detailed findings, write the research archive document and the decision record update as separate tool calls in separate responses — don't try to write both in one turn.
+**Output size awareness:** output per response is capped (model-dependent; see `.claude/CLAUDE.md § Model Requirement`), and thinking shares the cap. For complex research with 4+ options and detailed findings, write the research archive document and the decision record update as separate tool calls in separate responses — don't try to write both in one turn.
 
 #### If a decision record exists:
 

@@ -279,7 +279,7 @@ The script emits the footer (generated timestamp · N tasks · drift/debt indica
 
 ### 7. Output Size Awareness
 
-Claude Code caps output at 32K tokens per response. The script writes the **entire** HTML document via `Write` in one call — but the LLM only edits the small placeholder regions afterward (the Action Required augment slot, and Custom Views when on), so the cap effectively applies only to those `Edit`s, not the whole document.
+Output per response is capped (model-dependent; see `.claude/CLAUDE.md § Model Requirement`). The script writes the **entire** HTML document via `Write` in one call — but the LLM only edits the small placeholder regions afterward (the Action Required augment slot, and Custom Views when on), so the cap effectively applies only to those `Edit`s, not the whole document.
 
 **The curated HTML stays light by design** (typically ~25–150 KB) so the single Write is comfortable:
 - The script renders structure deterministically; completed phases collapse into the phase heatmap (one cell each) rather than repeated headers

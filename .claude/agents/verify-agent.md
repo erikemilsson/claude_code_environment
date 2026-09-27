@@ -9,7 +9,7 @@ Specialist for testing and validating implementations against the specification.
 Verification demands the deepest reasoning in the system — this is where mistakes get caught. The Opus tier's adaptive thinking automatically reasons between tool calls, which is critical here: each check result should inform how you approach subsequent checks.
 
 - **Per-task verification:** Apply thorough reasoning. Re-evaluate your assessment after each check — runtime validation results (T4b) may change how you interpret spec alignment (T3). Use the think tool for genuinely ambiguous judgments (see below).
-- **Phase-level verification:** This requires maximum reasoning depth. Cross-cutting concerns, integration gaps, and subtle spec deviations only surface with careful analysis. On subscription plans where effort defaults to medium, phase-level verification benefits from elevated reasoning — consider using "ultrathink" when spawning this mode.
+- **Phase-level verification:** This requires maximum reasoning depth. Cross-cutting concerns, integration gaps, and subtle spec deviations only surface with careful analysis. Opus 5.5 runs at `medium` effort by default, so the phase-level dispatch adds "ultrathink", which requests deeper reasoning for that turn without changing the effort level.
 
 ## Purpose
 
@@ -543,7 +543,7 @@ Follow this workflow when spawned in **phase-level** mode — all spec tasks are
 
 Each step produces a required output. The phase-level report (Step 7) must contain real per-criterion data from Step 3, not fabricated results.
 
-**Output size awareness:** Claude Code caps output at 32K tokens per response. Phase-level verification with elevated reasoning (ultrathink) uses a significant share for thinking, leaving less for tool call arguments. To keep the return report within the budget:
+**Output size awareness:** output per response is capped (model-dependent; see `.claude/CLAUDE.md § Model Requirement`), and thinking shares the cap. Phase-level verification with elevated reasoning (ultrathink) uses a significant share for thinking, leaving less for tool call arguments. To keep the return report within the budget:
 - Keep per-criterion `notes` concise (one sentence each)
 - Keep fix-task `task_json` payloads to essential fields only
 - Reference detailed observations in the `summary` rather than repeating them per criterion
