@@ -736,7 +736,7 @@ Tags: agents, negative-findings, positive-control, grep, zsh-glob, gitignored-sk
 
 ## FB-115: Closure sweeps verify the phrasings you changed, not the claim's full surface — lexical vs structural
 
-**Status:** ready (single-project caveat — 5 incidents, OEMMatInsightBI, 2026-08-05 → 2026-08-10)
+**Status:** cheap action shipped v5.7.1 (2026-09-27) — verify-agent T2c item 4 (search by what the claim is about, task-ID status cross-reference, ungated mirrors, re-dated anchors) + `/iterate` Step 5 dated-anchor line. Single-project caveat stands. Not done: the drift-reconciliation fingerprint-blindness note (incident 2); add it if a second project shows the same shape.
 **Captured:** 2026-08-12 (harvest cluster 5)
 **Source:** 5 unique incidents across OEMMatInsightBI exports 2026-08-05 and 2026-08-10. Full evidence + insight doc: `interaction-logs/insights/2026-08-12_verify-agent_closure-sweep-lexical-vs-structural.md`.
 
@@ -882,7 +882,7 @@ Tags: patch-bundle, scripts, python-version, verify-timeout, usage-limit, pendin
 
 ## FB-121: Nested subagent dispatch is now platform-supported — reconcile `rules/agents.md` + DEC-004's "no nested Task" fact, and decide whether any flow should use it
 
-**Status:** ready (maintenance reconciliation; design question is optional)
+**Status:** shipped v5.7.1 (2026-09-27) — `rules/agents.md` both mentions now say platform-supported but template-avoided; DEC-004 annotated; `/health-check` `[V]` flow greps for restatements after an accepted change. Optional design question (use nesting deliberately) stays research-gated.
 **Captured:** 2026-09-25 (`/health-check` Part 2d `[V]` pass on `claude-code-authoring.md`)
 **Source:** docs `code.claude.com/docs/en/sub-agents.md` (fetched raw 2026-09-25): *"By default, a subagent can spawn subagents of its own, up to three layers below the main conversation. At the depth limit, Claude Code withholds the `Agent` tool from every subagent except a fork…"*; limit set by `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH`.
 

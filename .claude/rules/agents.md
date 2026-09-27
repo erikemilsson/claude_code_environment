@@ -30,7 +30,7 @@ The same applies when carrying a task record's description of external or live s
 
 All `.claude/` state transitions (task JSON writes, dashboard regeneration, verification-result.json, session-log.jsonl) are owned by the `/work` orchestrator. Subagents (implement-agent, verify-agent, research-agent) return structured reports; they do not write to `.claude/` paths. This is a hard constraint of the Claude Code harness (subagents are sandboxed from `.claude/` writes per Anthropic issue #38806) and is not expected to change. See DEC-004 for the full rationale.
 
-**Capability grounding:** the subagent boundaries above (no `.claude/` writes, no nested `Task` calls, no `permissions.allow` inheritance, Explore/Plan agents skip CLAUDE.md + git status) are documented in `.claude/support/reference/claude-code-authoring.md § "Subagent Boundaries"` as load-bearing constraints for spec/skill/agent authors who would otherwise design workflows that violate them. The reference doc is the canonical home for "facts about Claude Code that authors trip over" (DEC-017).
+**Capability grounding:** the subagent boundaries above (no `.claude/` writes, no `permissions.allow` inheritance, Explore/Plan agents skip CLAUDE.md + git status; nested dispatch is platform-supported but not used by the template) are documented in `.claude/support/reference/claude-code-authoring.md § "Subagent Boundaries"` as load-bearing constraints for spec/skill/agent authors who would otherwise design workflows that violate them. The reference doc is the canonical home for "facts about Claude Code that authors trip over" (DEC-017).
 
 ## Root Cause Over Symptom
 
@@ -127,7 +127,7 @@ All agents use dedicated tools (Read, Glob, Grep, Edit, Write) for file operatio
 
 Per-agent files reference this canonical mapping rather than restating it; bash-usage specifics, editing strategy, and large-file strategy live in each agent's own `## Tool Preferences` section.
 
-Subagents cannot write to `.claude/` paths, cannot spawn nested `Task` tool calls, and do not inherit parent `permissions.allow` rules. When an agent's documented workflow describes a state transition, it means "include in return report"; the orchestrator performs the actual write.
+Subagents cannot write to `.claude/` paths and do not inherit parent `permissions.allow` rules. Nested dispatch (a subagent starting its own subagents) is platform-supported on current harnesses, up to three levels by default, but the template doesn't rely on it: the orchestrator performs all dispatch, for portability to older harnesses and because nested results would still have to flow back through the orchestrator for state writes. When an agent's documented workflow describes a state transition, it means "include in return report"; the orchestrator performs the actual write.
 
 **Scripts under `.claude/scripts/`** are deterministic helpers that ship with the template and are intended to be invoked by the orchestrator via the Bash tool. They have their own invocation contract (see `.claude/scripts/README.md`): stdlib only, read-only by default, structured stdout, clear exit codes. Subagents should not invoke them — the scripts return computed values for the orchestrator to write to `.claude/` state, which subagents cannot do. When a script is present, it is an advisory alternative to the matching prose procedure; when absent, the prose procedure still works.
 

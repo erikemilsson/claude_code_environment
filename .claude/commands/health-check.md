@@ -343,7 +343,7 @@ Validates that `.claude/support/reference/claude-code-authoring.md` has been ver
    - WebFetch the docs URL from the footer
    - Diff the fetched content against the current doc body section by section
    - Present each diff as `[A] Accept change | [R] Reject (keep current) | [S] Skip section`
-   - On any accept, update the doc body for that section
+   - On any accept, update the doc body for that section, then Grep the other `.claude/` files for the old claim and list any restatements for the same fix (facts get restated outside the capability doc: `rules/agents.md` kept "no nested `Task` calls" after the doc was corrected, FB-121)
    - After all sections processed, update the footer date to today + `template_version` from `.claude/version.json`
 8. If the row is excluded: leave doc unchanged, leave footer unchanged (the warning resurfaces next run).
 9. If the user replies `{id}: defer`: write a sentinel in `.claude/dashboard-state.json` (`capability_doc_defer_until: YYYY-MM-DD`, 30 days from today) to suppress the Part 2d warning until that date. Next `/health-check` after the defer-until date will surface the warning again.

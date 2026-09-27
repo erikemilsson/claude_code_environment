@@ -142,7 +142,7 @@ Definitively, in the current harness (April 2026):
 - **Read** anywhere within cwd or `additionalDirectories`: yes
 - **Write to project files within cwd**: yes (subject to permission mode)
 - **Write to `.claude/tasks/`**: NO — `.claude/` is protected by a layer above the rule system; `Edit(.claude/**)` allow rules and `bypassPermissions` mode do not override it (Anthropic issue #38806)
-- **Use the `Task` tool to spawn nested subagents**: NO — not exposed even when listed in frontmatter `tools:` (#19077)
+- **Use the `Task` tool to spawn nested subagents**: NO — not exposed even when listed in frontmatter `tools:` (#19077). *Superseded 2026-09-27 (FB-121): current harnesses support nested dispatch up to three levels below the main conversation by default (`CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH`; sub-agents docs, checked 2026-09-25). The template still dispatches only from the orchestrator; see `.claude/rules/agents.md § Tool Preferences`.*
 - **Inherit parent's `permissions.allow` rules**: NO (#22665, #18950, #27661, #37730)
 - **Inherit parent's hooks / CLAUDE.md / memory**: NO (#27661)
 

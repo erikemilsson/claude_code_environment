@@ -194,16 +194,18 @@ Detect files modified during implementation that were NOT listed in `files_affec
 
 Check that the modified files are consistent with each other and with unmodified files that reference them. This catches a common class of errors where editing one document breaks references, terminology, or formatting in related documents.
 
-1. For each file in `files_affected`, use `Grep` to find other files that reference it (by filename, anchors, or shared key terms from the task's domain)
+1. For each file the task modified (`files_affected` plus anything else the implementation touched), use `Grep` to find other files that reference it (by filename, anchors, or shared key terms from the task's domain)
 2. Read any referencing files found and check for:
    - Stale references (links, filenames, section headings that no longer match)
    - Schema or format mismatches (e.g., a JSON field renamed in one file but not in files that consume it)
    - Terminology drift (e.g., a concept renamed in the task deliverable but still using the old name in related files)
-3. Scope this check to the task's blast radius — `files_affected` plus direct references — not a full project scan (that's Tier 2's job)
+3. Scope this check to the task's blast radius — the modified files plus direct references — not a full project scan (that's Tier 2's job)
+4. **When the task corrects or closes a claim** (a status, a count, a deferral, a relationship stated in prose), check that the claim is now true everywhere, not just that the edited phrasings are gone (FB-115). Stale restatements use different words, so search by what the claim is *about* — task IDs, entity or column names, the figure — not by the old wording. For task-status claims, cross-reference each task ID mentioned in the affected documents against that task's actual status. Include places no approval gate covers (READMEs, architecture docs), not only the spec. If the task moved a dated anchor ("measured YYYY-MM-DD"), every figure under it must have been re-measured: moving the date re-certifies them all.
 
 **Fail conditions:**
 - Stale references that would cause broken links or incorrect cross-references
 - Schema mismatches between files that are supposed to align
+- A corrected or closed claim still stated, in any wording, elsewhere in the blast radius
 
 **Pass conditions:**
 - No referencing files found (common for isolated deliverables) — set to `"pass"`

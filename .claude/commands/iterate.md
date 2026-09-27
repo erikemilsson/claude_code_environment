@@ -407,6 +407,8 @@ Based on user response:
 - **[P] Postpone (or [N]):** No changes applied. The proposal can be revisited on the next `/iterate` run.
 - **Free text:** Treat as modification instructions — revise the declaration and re-present (the previous `[M] Modify` semantics).
 
+**Dated anchors (FB-115):** if a change moves a "measured / as of YYYY-MM-DD" anchor, re-measure every figure that anchor governs before applying, or keep the old date. Moving the date alone re-certifies figures nobody checked.
+
 **Post-apply spec-index refresh (DEC-021):** after any apply that edited the spec, regenerate the section index so the next section-scoped read isn't stale: `python3 .claude/scripts/fingerprint.py --index .claude/spec_v{N}.md > .claude/spec_v{N}.index.json` (the script prints to stdout — the redirect writes the file). Make any frontmatter edit (`updated:`, version) BEFORE this step: frontmatter changes the file hash, and regenerating first then editing frontmatter leaves the index stale again (observed downstream, regenerated twice).
 
 **Post-apply new-section marker (FB-106):** if the apply added one or more NEW `## ` sections, append their headings to `pending_decomposition[]` in `.claude/dashboard-state.json` (create the array if absent; de-duplicate). `/work` Step 1a consumes it and offers decomposition *before* the fast-path can skip drift detection. Without this marker, a dashboard regen refreshes the META `spec_fingerprint`, the next `/work` takes the fast path, and the new section is silently never decomposed. Only genuinely new sections go in the array — edits to existing sections are covered by normal drift detection.
