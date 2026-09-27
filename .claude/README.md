@@ -238,6 +238,9 @@ From the rewind menu, you can restore:
 
 Checkpoints persist across sessions, so you can rewind even after closing and reopening. This is the complementary recovery mechanism to `/work pause` and handoff files: use handoff for planned wind-downs, checkpoints for recovering from an agent misstep or a wrong turn.
 
+**Independent review with a second session.** Within a single session, implement-agent and verify-agent already provide the writer/reviewer separation. For higher-rigor review — security audit, architectural review, independent quality pass — you can run two separate `claude` instances: Session A implements; Session B (fresh context, no implementation memory) reviews the finished code. This is optional and external to the template; the existing implement-agent / verify-agent split is sufficient for most work.
+
+
 ## Known Constraints
 
 **Output token cap:** each response has an output cap that thinking, text, and tool-call arguments share. The cap depends on the model (the API maximum for Opus 5.5 is 128K; Claude Code falls back to 32K for model IDs it doesn't recognize, such as gateway names). Agents write large artifacts in their own response to stay clear of it. If you see a truncated file (partial JSON, a cut-off document), this is the likely cause.

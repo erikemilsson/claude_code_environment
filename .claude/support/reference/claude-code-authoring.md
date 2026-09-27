@@ -69,7 +69,16 @@ Prevents the model from autonomously invoking the skill via the `Skill` tool. Us
 
 Two further effects: the skill also cannot be **preloaded into subagents** (via an agent definition's `skills` field), and, as of Claude Code v2.1.196, it **does not run when a scheduled task fires with the skill as its prompt**. For this template, that means the gated commands below can't be the prompt of a `/schedule` or `/loop` routine.
 
-**Template-shipped gated commands** (FB-071): `/breakdown`, `/research`, `/iterate`, `/work`, `/feedback`. Selection criteria + sub-mode coupling trade-offs in `rules/agents.md § "Command Invocation Gates"`.
+**Template-shipped gated commands** (FB-071, plus FB-070's `/zoom-out`): `/breakdown`, `/research`, `/iterate`, `/work`, `/feedback`, `/zoom-out`. Selection criteria and trade-offs (moved here from `rules/agents.md` 2026-09-27 to keep the auto-loaded rules lean):
+
+**Selection criteria:**
+- **Gate**: substantive writes, irreversible state transitions, ledger changes, expensive/long-running flows where autonomous fire is a foot-gun.
+- **Leave open**: read-only audits (`/status`, `/health-check`, `/review`, `/audit-coherence` / `/audit-ui` non-triage modes) and conversational entry points where the model legitimately benefits from being able to ambient-invoke.
+
+**Sub-mode coupling.** `disable-model-invocation` is per-file. Multi-mode commands (`/iterate`, `/work`, `/feedback`) gate as a whole — the model can no longer ambient-invoke their read-only sub-modes (`/work` no-args, `/iterate` no-args, `/feedback [text]` capture, `/feedback list`) either. Acceptable because user-typed slash invocation continues to work for all sub-modes, and the model can still surface suggestions in conversation. Future refactor option: split multi-mode files (e.g., `work-complete.md` separate from `work.md`) if the coupling produces observed friction.
+
+**Defense-in-depth.** Upstream of DEC-005 (permission-layer auto mode) and DEC-016 (spec/decision/vision Edit/Write ask). DEC-005 catches tool calls the model shouldn't make; DEC-016 catches writes to protected paths; this gate prevents the model's *decision* to fire the command in the first place. All three layers compound.
+
 
 ### `context: fork` + `agent:` pattern
 
@@ -155,6 +164,10 @@ Effort: there is no per-invocation effort parameter, but agent definitions take 
 ### `subagent_type: "general-purpose"` portability convention
 
 Per `rules/agents.md § "Dispatch Convention"`: the three dispatch sites (`commands/work.md` per-task verify, phase-level verify; `commands/research.md` research-agent) use `subagent_type: "general-purpose"` and direct the agent persona via prompt content. This is portable across all current Claude Code harness versions. Future migration to named subagent types is gated on `.claude/agents/*.md` auto-discovery stability.
+
+**Why not named subagent_types?** Claude Code can auto-discover `.claude/agents/*.md` and expose each definition file as a named subagent_type (`implement-agent`, `verify-agent`, etc.), which would align dispatch shape with definition shape. As of 2026-05-13, the runtime availability of named-from-disk subagent types is not uniform across Claude Code harness versions — relying on auto-discovery risks dispatch failures in harnesses where it's absent. The persona-via-prompt-content pattern is portable across all current harness versions.
+
+**Future migration:** When Claude Code's `.claude/agents/*.md` auto-discovery is stable across all supported harness versions, switch the three dispatch sites to named types. Validation gate: smoke-test by dispatching a single task with `subagent_type: "verify-agent"` and confirming the agent returns a per-task verification report (vs an error). Once validated, sweep all three sites and remove this rationale.
 
 **Spec authors:** do not write tasks that reference named subagent types directly. Reference the orchestrator's dispatch behavior or the agent's prompt body instead.
 
