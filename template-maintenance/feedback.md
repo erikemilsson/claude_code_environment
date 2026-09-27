@@ -849,7 +849,7 @@ Tags: dashboard, needs-you, action-required, human-gated-coverage-invariant, use
 
 ## FB-119: The orchestrator is the one unverified actor — inline implementation and orchestrator-authored state annotations bypass self-review and verify-agent
 
-**Status:** ready
+**Status:** shipped v5.6.0 (2026-09-27) — (a)–(c) as adapted; see ship-log. Archive after one downstream `/work` cycle confirms no friction. Escalate to `/research` only if inline bypass or unmeasured state claims recur.
 **Captured:** 2026-09-25 (harvest cluster 8)
 **Source:** 6 exports, two projects: oemmatinsightbi 08-12, 08-19, 08-21 ×2; styler 09-20, 09-21. Triage: `template-maintenance/harvest-2026-09-25-triage.md`. Insight: `interaction-logs/insights/2026-09-25_work_orchestrator-unverified-actor.md`.
 

@@ -13,6 +13,19 @@ Three specialist agents with distinct roles:
 
 verify-agent always runs as a separate Task agent, dispatched by the `/work` orchestrator — never inline in the implementation conversation. This applies to both sequential and parallel execution modes. "Fresh eyes" is preserved because the verifier evaluates in its own context with no implementation memory; the fact that the orchestrator (not the verify-agent itself) writes the verification result to the task JSON does not affect verification independence. See DEC-004.
 
+## Dispatch Invariants vs Efficiency Defaults (FB-119)
+
+The orchestrator's own work gets the same independent check as a subagent's. Two kinds of dispatch rule, and they are not interchangeable:
+
+- **Invariant — verify-agent dispatch.** Every task reaches Finished only through a separate verify-agent, **whoever implemented it**, orchestrator included. The orchestrator never verifies its own work, writes a "rollup" pass, or skips verification because a change was small. If the harness can't dispatch a subagent (the Agent tool is unavailable or restricted), the task stays in Awaiting Verification and goes on the Needs-you card; it does not become Finished.
+- **Efficiency default — implement-agent dispatch.** For a task you can finish in a handful of tool calls (typically difficulty ≤ 2, touching one or two files), the orchestrator may implement inline instead of dispatching implement-agent. Inline work follows the same contract implement-agent would: set In Progress first; run the project's existing checks; for a behaviour-changing edit, record what the behaviour was before and after (e.g. the outputs the change affects), because a regression can't be seen from the diff alone; write `notes` prefixed `[INLINE]`, naming files touched and checks run; record any friction markers you'd expect implement-agent to emit; then set Awaiting Verification and dispatch verify-agent. Anything larger goes to implement-agent.
+
+## Orchestrator-Authored State Claims (FB-119)
+
+When the orchestrator writes a claim *about* state into `.claude/` — "the build did not change since verification", a hash, a count, a timestamp, a supersession annotation in `verification-result.json` — the claim must come from a measurement made in the same step, and it names the measurement: the command and its range (e.g. `git log <verified_at>..HEAD -- <paths>`: 0 commits). A claim you can't back with a measurement is written as unverified, or not written.
+
+The same applies when carrying a task record's description of external or live state (a deployed model, a live table, an API's behaviour) into a new task or fix task: re-measure it, or mark it as quoted-unverified. Recorded descriptions of live state go stale; the record is not evidence that the state is still true.
+
 ## State Ownership
 
 All `.claude/` state transitions (task JSON writes, dashboard regeneration, verification-result.json, session-log.jsonl) are owned by the `/work` orchestrator. Subagents (implement-agent, verify-agent, research-agent) return structured reports; they do not write to `.claude/` paths. This is a hard constraint of the Claude Code harness (subagents are sandboxed from `.claude/` writes per Anthropic issue #38806) and is not expected to change. See DEC-004 for the full rationale.

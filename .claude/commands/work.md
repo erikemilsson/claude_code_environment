@@ -706,6 +706,8 @@ Dispatch implement-agent (Task tool; set `model` per `.claude/CLAUDE.md § Model
 
 **After agent returns:** apply "After implement-agent returns" from State Persistence Protocol. Then, if `implementation_status == "completed"`, dispatch verify-agent per "If Verifying (Per-Task)" and apply "After verify-agent returns" protocol.
 
+**Inline implementation (small tasks):** for a task you can finish in a handful of tool calls, you may implement it yourself instead of dispatching implement-agent, following the inline contract in `.claude/rules/agents.md § "Dispatch Invariants vs Efficiency Defaults"` (`[INLINE]` notes, existing checks, before/after behaviour for behaviour-changing edits). Verify-agent dispatch is **not** optional for inline work — set Awaiting Verification and continue with "If Verifying (Per-Task)".
+
 **Context to provide:** Current task, relevant spec sections, constraints/notes, and an explicit instruction that the agent must not attempt writes to `.claude/` — return the structured report only.
 
 **Inline status update (tier 2):** announce `Starting task {id}: "{title}"` when dispatching and a pass/fail summary after verify-agent completes. Dashboard regen deferred to next strategic moment (session boundary, parallel batch end, or async routing to dashboard).
@@ -726,7 +728,7 @@ When Step 2c produces a parallel batch of >= 2 tasks, execute them concurrently.
 
 #### If Verifying (Per-Task)
 
-**You must spawn verify-agent as a separate agent. Do not verify inline.**
+**You must spawn verify-agent as a separate agent. Do not verify inline.** This holds for tasks you implemented inline too, and if you cannot dispatch a subagent, the task stays in Awaiting Verification (`rules/agents.md § "Dispatch Invariants vs Efficiency Defaults"`).
 
 ```
 Task tool call:

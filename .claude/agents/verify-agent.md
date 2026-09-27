@@ -637,6 +637,8 @@ For each major/critical issue found, construct a fix-task entry in the `fix_task
 
 In both cases, set `"source": "verify-agent"` and `"status": "Pending"` in the `task_json` payload.
 
+**Live state in fix-task descriptions:** when a fix task's description rests on external or live state (a deployed model, a live table, an API's behaviour), re-measure it before writing it in. Don't copy it from an earlier task record. If you can't re-measure it, say so in the description ("per task-NNN, not re-measured"). See `rules/agents.md § "Orchestrator-Authored State Claims"`.
+
 ### Step 7: Include Verification Result in Report
 
 Do NOT write `.claude/verification-result.json`. Include the full verification result payload in your return report. The orchestrator writes the JSON file.
