@@ -88,14 +88,14 @@ The bug surfaced while implement-agent worked T-50. `/diagnose` engages with the
 
 ### Expected
 
-- The browser loop runs in the main conversation (orchestrator level) — NOT delegated to implement-agent or verify-agent via Task dispatch
+- The browser loop runs in the main conversation (orchestrator level) — NOT delegated to implement-agent or verify-agent via `Agent` dispatch
 - If Playwright tools are absent from the loaded toolset, they are loaded via ToolSearch before the loop starts
 - Dev server: already running here; if it had been user-killed earlier in the session, the recipe does not restart it without renewed approval (respect-prior-kills)
 - Phase 5: with no test harness present (Base state), the loop is ephemeral — final measured values land in the task's verification notes; no orphan test files created. (Variant: with a harness present, the recipe OFFERS to persist the passing contract as a regression test — does not silently write one.)
 
 ### Pass criteria
 
-- [ ] No Task-dispatched subagent drives the browser
+- [ ] No `Agent`-dispatched subagent drives the browser
 - [ ] ToolSearch load step happens when Playwright tools are missing
 - [ ] Respect-prior-kills honored on the dev server
 - [ ] No harness → ephemeral loop + measured values recorded in task notes

@@ -4,7 +4,7 @@ Verify that `/work` correctly handles agent failures — both implement-agent an
 
 ## Context
 
-Agents run as separate Task invocations with `max_turns` limits. When an agent crashes, times out, or exits without producing expected artifacts, `/work` must leave the project in a recoverable state. The user should never need to manually inspect task JSON to figure out what went wrong.
+Agents run as separate `Agent` invocations with turn budgets stated in their dispatch prompts. When an agent crashes, times out, or exits without producing expected artifacts, `/work` must leave the project in a recoverable state. The user should never need to manually inspect task JSON to figure out what went wrong.
 
 ## State
 
@@ -22,11 +22,11 @@ Agents run as separate Task invocations with `max_turns` limits. When an agent c
 
 ### Scenario
 
-Tasks 1 and 3 dispatched in parallel (no file conflicts, no dependencies between them). Task 1's agent reaches the turn limit while still implementing — verification was never reached. Files have been partially modified. Task 3's agent completes successfully. Timeout is relevant for parallel agents (spawned with turn limits) and verify-agents; sequential mode runs inline without a turn limit.
+Tasks 1 and 3 dispatched in parallel (no file conflicts, no dependencies between them). Task 1's agent runs past its turn budget and ends without a report while still implementing — verification was never reached. Files have been partially modified. Task 3's agent completes successfully. Timeout is relevant for parallel agents and verify-agents, whose prompts state a turn budget; sequential mode dispatches implement-agent without one (small tasks may run inline, per `rules/agents.md § "Dispatch Invariants vs Efficiency Defaults"`).
 
 ### Expected
 
-1. Polling loop detects Task 1's agent exited without completion signal
+1. Collection loop receives Task 1's notification: the agent ended without a report
 2. Task 1 status set to "Blocked"
 3. Task 1 notes updated: `[AGENT TIMEOUT]`
 4. Task 3 completes normally — its results are processed independently
@@ -56,12 +56,12 @@ Tasks 1 and 3 dispatched in parallel (no file conflicts, no dependencies between
 
 ### Scenario
 
-implement-agent completed successfully for Task 1. verify-agent was spawned but exhausted its turn limit without writing `verification-result.json`.
+implement-agent completed successfully for Task 1. verify-agent was spawned and returned prose instead of the report schema; asked once for the report, it again returned no valid report.
 
 ### Expected
 
-1. `/work` detects missing verification result after agent exits
-2. Task 1 treated as verification failure
+1. `/work` detects the missing report and asks verify-agent once for it, without incrementing `verification_attempts`
+2. The second invalid return is treated as verification failure
 3. Task 1 status set to "Blocked"
 4. Note added: `[VERIFICATION TIMEOUT]`
 5. `verification_attempts` incremented
@@ -69,6 +69,7 @@ implement-agent completed successfully for Task 1. verify-agent was spawned but 
 
 ### Pass criteria
 
+- [ ] First invalid return re-requested once, not counted as an attempt
 - [ ] Missing verification result treated as failure, not success
 - [ ] `verification_attempts` counter incremented
 - [ ] Task status set to "Blocked" with `[VERIFICATION TIMEOUT]` note
@@ -79,6 +80,7 @@ implement-agent completed successfully for Task 1. verify-agent was spawned but 
 
 - Task marked "Finished" because implement-agent completed (verification skipped)
 - `verification_attempts` not incremented (retry limit never triggers)
+- First invalid return treated as a timeout (burns an attempt on a formatting slip)
 - No distinction between verification failure and verification timeout in notes
 
 ---
@@ -89,11 +91,11 @@ implement-agent completed successfully for Task 1. verify-agent was spawned but 
 
 ### Scenario
 
-Tasks 1, 3, and a new Task 4 dispatched in parallel. Task 1's agent crashes (exits without completing). Tasks 3 and 4 complete successfully.
+Tasks 1, 3, and a new Task 4 dispatched in parallel. Task 1's agent fails (ends without a report; no usage limit, API or harness error). Tasks 3 and 4 complete successfully.
 
 ### Expected
 
-1. Polling loop detects Task 1's agent exited without completion signal
+1. Collection loop receives Task 1's failure notification: the agent ended without a report
 2. Task 1 set to "Blocked" with `[AGENT TIMEOUT]` note
 3. Tasks 3 and 4 proceed normally — their results are processed
 4. After batch completes: dashboard regenerated showing mixed results
@@ -113,7 +115,7 @@ Tasks 1, 3, and a new Task 4 dispatched in parallel. Task 1's agent crashes (exi
 - Entire batch aborted because one agent failed
 - Failed task's status is ambiguous (still "In Progress")
 - Successfully completed tasks' results lost or ignored
-- Failed task silently re-dispatched in the same polling cycle
+- Failed task silently re-dispatched within the same collection loop
 
 ---
 
@@ -147,3 +149,34 @@ implement-agent for Task 1 created 2 of 3 required files, then hit a blocking is
 - Blocker only recorded in task notes, not surfaced in dashboard
 - `/work` re-dispatches Task 1 while still Blocked
 - Agent exits without documenting what went wrong
+
+---
+
+## Trace 19E: Verify-agent killed by a usage limit (sequential)
+
+- **Path:** /work verify-agent timeout handling — infrastructure-termination exclusion (FB-120)
+
+### Scenario
+
+implement-agent completed successfully for Task 1 (`verification_attempts: 0`). verify-agent was spawned, and a platform usage limit killed it after 4 tool calls: a zero-token return (or an HTTP 429 error) with no report. Contrast with 19B, where the verifier twice returned no valid report.
+
+### Expected
+
+1. `/work` classifies the return as an infrastructure termination, not a timeout
+2. `verification_attempts` stays 0; no `task_verification` written
+3. Task 1 stays "Awaiting Verification", with no `[VERIFICATION TIMEOUT]` note
+4. User told verification was interrupted; the FB-103 post-limit dispatch rule applies
+5. A fresh verify-agent runs once the limit clears (Step 3 routes Awaiting Verification first)
+
+### Pass criteria
+
+- [ ] `verification_attempts` not incremented
+- [ ] Task status stays "Awaiting Verification" (not "Blocked")
+- [ ] No `[VERIFICATION TIMEOUT]` note and no partial `task_verification`
+- [ ] Interruption surfaced to the user
+
+### Fail indicators
+
+- Treated as a timeout: attempts incremented, task Blocked with `[VERIFICATION TIMEOUT]` (burns one of three attempts on an outage)
+- Parallel or heavy re-dispatch in the same session without explicit user confirmation
+- FB-103's implement-agent recovery steps applied (e.g. a fresh implement-agent dispatched to re-confirm the work)

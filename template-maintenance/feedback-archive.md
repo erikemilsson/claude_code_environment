@@ -2182,3 +2182,55 @@ Tags: template-side, mcp, playwright, result-size, browser-snapshot, browser-eva
 **Why it keeps failing.** The rule is prose executed by an LLM at three call sites (`work.md` pause step 6, `work.md` Step 0f recovery, PreCompact copies) under end-of-session context pressure. Contrast `.claude/hooks/pre-compact-handoff.sh:239`, which builds the filename in actual Python (`f"{os.path.basename(project_dir)}-{timestamp}.json"`) and has never produced a dot-prefixed inbox file. This is the "documented but not executed" pattern named in `template-maintenance/scripts-candidates.md § Family F` (precedent: FB-017, FB-045/DEC-011, FB-038); the documented remedy is mechanization, not a stronger warning — a second warning-sentence pass has already been tried once and failed.
 
 **Proposed.** Extract the inbox copy-with-rename into a small deterministic helper under `.claude/scripts/` (parallel to `persist-friction.py`), invoked from `/work pause` step 6 and `/work` Step 0f. A script cannot forget to rename. Clears the scripts-candidates ROI bar on frequency — it fires on every pause, in every downstream project with `template_inbox_path` configured. Consumer-side hardening of `/health-check` Part 7's inbox scan (dotfile-inclusive enumeration) is a separate, complementary fix and does not remove the need for this one.
+
+## FB-120: Verified small defects from the 2026-09-25 harvest — patch bundle (Python floor, timeout-vs-interrupted, pending-markers cleanup)
+
+**Status:** promoted
+**Promoted:** 2026-10-02 — shipped v5.7.5: (a) `dashboard-render.py` compiles on 3.10 (one f-string hoisted, output byte-identical), every `.claude/scripts/*.py` exits 2 with a clear message below 3.10, new `tests/test_python_floor.py`; (b) the verify timeout clause (`work.md`, `work-procedures.md`, `parallel-execution.md`) excludes infrastructure terminations, which are FB-103 interruptions; (c) Session Export folds `.pending-markers.jsonl` entries into the export, clears the buffer, and deletes the workspace working copy only after `"copied": true` (mirrored in `work-recovery.md` Step 0f).
+**Captured:** 2026-09-25 (harvest clusters 9 + 10, bundled per FB-006 precedent)
+**Source:** oemmatinsightbi 08-12, 08-18, 08-21 (template 5.4.0). Triage: `template-maintenance/harvest-2026-09-25-triage.md`.
+
+**(a) `dashboard-render.py` needs Python 3.12, but the contract says 3.10+.** `.claude/scripts/README.md:21` says "Python 3.10+ assumed". `dashboard-render.py` puts a backslash inside an f-string expression, which is only legal from 3.12 (PEP 701). Verified: `py_compile` fails on 3.10.20 ("f-string expression part cannot include a backslash") and on macOS 3.9.6; every other `.claude/scripts/*.py` compiles on 3.10. Template settings allow a bare `python3 .claude/scripts/*.py`, and a stale shell snapshot resolves that to 3.9.6. The SyntaxError reads like a corrupt file, not a version problem (08-18, 08-21). **Fix:** hoist the backslash expressions out of the f-strings so the script meets the documented floor; add a `sys.version_info` guard with a clear message at the top of each script; optionally, add a test that compiles every script under the floor version.
+
+**(b) The timeout clause conflicts with the interrupted-verifier rule.** `work.md:749` (mirrored in `work-procedures.md:56`) says: "If verify-agent exhausts `max_turns` without returning a valid report, treat as verification failure — increment `verification_attempts`, set Blocked". `work.md:944` says: "Do NOT increment `verification_attempts` if verify-agent was interrupted". A platform usage-limit kill after 4 tool calls matches the literal timeout clause and would burn one of three attempts on an outage (08-12). **Fix:** make the 749 clause explicitly exclude the FB-103 zero-token / infrastructure-termination case and point at the interrupted rule.
+
+**(c) `.pending-markers.jsonl` is not truncated at export.** `context-transitions.md:416` (Session Export step 7) deletes `.session-log.jsonl` and `.interaction-assessment.json` but not `.pending-markers.jsonl`. At the next session, Step 0d sees no session log, builds an empty dedup set, and re-imports every already-exported marker; the following pause exports them again (08-21). **Fix:** truncate `.pending-markers.jsonl` in step 7 (and in `work.md` Step 0f's recovery path if it mirrors step 7).
+
+Tags: patch-bundle, scripts, python-version, verify-timeout, usage-limit, pending-markers, session-export, verified-defect
+
+## FB-123: Dispatch settings don't fit the current Agent tool — `opus[1m]`, `max_turns`, `Task` naming, polling
+
+**Status:** promoted
+**Promoted:** 2026-10-02 — shipped v5.7.5: every dispatch site sets `model: "opus"` and states its turn budget in the prompt; `Task`-tool references renamed to `Agent` across `.claude/` and the scenarios; `.claude/CLAUDE.md § Model Requirement`'s escape hatch now pins via `CLAUDE_CODE_SUBAGENT_MODEL` + `CLAUDE_CODE_SUBAGENT_MODEL_FORCE=1` (`settings.json` `env` template-wide, `settings.local.json` per project); `claude-code-authoring.md § "Agent tool model parameter granularity"` re-verified against the docs (2026-10-02, targeted pass); `parallel-execution.md § 4` waits for completion notifications instead of polling or reading agent output files.
+**Captured:** 2026-10-01 (inbox preview; verified against the session's own Agent tool schema)
+**Source:** styler 2026-10-01-1237 and PortfolioWebsite 2026-10-01-1809 (both 5.7.4): `opus[1m]` not accepted, every dispatch fell back to `opus`; no `max_turns` parameter.
+
+**Problem.** The canonical dispatch value `model: "opus[1m]"` (7 files) and `max_turns: N` fields (12 lines) didn't fit the current `Agent` tool: its `model` parameter is an enum (`sonnet|opus|haiku|fable`) and it has no turn-limit parameter (docs: turn limits exist only as `maxTurns` in agent-definition frontmatter; the tool was renamed from `Task` in Claude Code v2.1.63). `claude-code-authoring.md` said full model IDs work per invocation, so the regression escape hatch (pin dispatches to a full ID) couldn't work. `parallel-execution.md § 4` told the orchestrator to set `run_in_background`, poll with `TaskOutput`, or read an agent's output file — that file is the agent's full transcript and floods context.
+
+**Not done (FB-127 (c)):** the sequential implement-agent dispatch states no turn budget.
+
+Tags: dispatch, agent-tool, model-value, max-turns, parallel-execution, capability-doc, verified-defect
+
+## FB-124: `/research` contradicts DEC-004 — the research-agent was told to write `.claude/` files it can't write
+
+**Status:** promoted
+**Promoted:** 2026-10-02 — shipped v5.7.5: the research-agent returns its archive body and anchored decision-record edits in its report, and `research.md` Step 4 persists them (DEC-016's ask prompt is expected there; edits never check a box or rewrite `## Your Notes & Constraints`; an anchor that doesn't match exactly once is shown to the user, not applied). `/work` Step 2b `[R]` creates a missing record first (Step 1's topic branch, under the ID the task references); `/research DEC-NNN` for a missing record offers to create it instead of erroring; R4 relabels the `## Select an Option` placeholders with the real option names; `workflow.md`'s other writer claims now match DEC-004.
+**Captured:** 2026-10-01 (inbox preview; verified in source)
+**Source:** PortfolioWebsite 2026-08-30 and 2026-09-11-0757.
+
+**Problem.** `research.md:30,92` and `research-agent.md` R4 + Turn Budget Protocol told the subagent to write the decision record and research archive under `.claude/support/decisions/`, and Step 4 then read "the updated record" — but subagents can't write `.claude/` (DEC-004) and nothing told the orchestrator to persist anything. Invisible in the template repo, where `/research` writes root `decisions/`. The same exports showed `/work` Step 2b's `[R]` path assuming the record existed, and `/research DEC-NNN` erroring on a missing record although `/work` suggests that command for blocked tasks.
+
+Tags: research, research-agent, DEC-004, state-ownership, decision-records, verified-defect
+
+## FB-125: `/health-check` still validated the pre-DEC-024 Markdown dashboard
+
+**Status:** promoted
+**Promoted:** 2026-10-02 — shipped v5.7.5: Part 1 check 4 validates `dashboard.html` presence, its META block and a lingering legacy `dashboard.md`; 4b validates `section_toggles` against the four keys the renderer reads; the completion gate is judged from task data; Part 3 check 2 is "Dashboard Derivation" (decision frontmatter readable by the renderer, META decision counts match the files); the Decisions-table auto-fix rows are replaced; Part 6 check 6 (per-phase task lists) is removed; Part 8 names CLI commands instead of dashboard ticks. Also: Part 3 check 6's auto-fix is report-only (it could add a dependency on a decision the task itself produces), and `partially_superseded` is a valid status.
+**Captured:** 2026-10-01 (inbox preview; verified in source)
+**Source:** PortfolioWebsite 2026-10-01-1243 (5.7.4).
+
+**Problem.** `health-check.md:85` required Markdown sections (`# Dashboard`, `## 📋 Tasks`, …) and `:385`/`:427` a dashboard Decisions table; neither exists in the generated HTML (DEC-024), so the checks couldn't run as written.
+
+**Not done:** Part 3 check 6's origin-vs-dependent distinction (FB-127 (d)); Part 6 check 4a's severity for FYI and script-owned rows (FB-118).
+
+Tags: health-check, dashboard, DEC-024, decisions, verified-defect

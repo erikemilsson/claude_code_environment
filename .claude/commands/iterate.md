@@ -309,7 +309,7 @@ For each implicit decision found:
      [D] Document only — create decision record (you'll research later)
      [S] Skip (not a real decision)
    ```
-   If `[C]`: Create the decision record (see `support/reference/decisions.md` for the template), then delegate to the research workflow (see `.claude/commands/research.md` Steps 2-4). The research-agent will populate the comparison matrix and option details.
+   If `[C]`: Create the decision record (see `support/reference/decisions.md` for the template), then delegate to the research workflow (see `.claude/commands/research.md` Steps 2-4). The research workflow populates the comparison matrix and option details.
    If `[D]`: Create the decision record only. Decisions need to be trackable so `/work` can gate dependent tasks.
 
 ### Step 3: Ask Questions (max 4)

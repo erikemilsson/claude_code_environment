@@ -21,7 +21,7 @@ python3 .claude/scripts/dashboard-render.py --html --claude-dir .claude [--now <
 | **Script** (deterministic) | the entire HTML document: `<head>` + META comment block (incl. the canonical `task_hash`), masthead, Pulse (ring + donut + count chips), Phase heatmap + active-front cards, the inline-SVG **dependency graph** (auto-hidden when degenerate), Timeline, Recent activity, 📋 Decisions (collapsed, link-out + search), 📄 Specification (link-out card), Notes card (from sidecar `user_notes`), footer |
 | **LLM** (synthesis) | **Augmenting** the **Needs you** card (🚨 Action Required) and Custom Views *rendered* content. Since v5.4.0 (FB-105) the script renders every *mechanically-derivable* Action Required row itself — see § "Action Required rendering split" — and emits a trailing `<!-- CLAUDE: augment … -->` slot for judgment items only. Custom Views still uses a `<!-- CLAUDE: fill … -->` placeholder. **Append HTML `<li>` rows into the augment slot; never restate script-owned rows** |
 
-**Flow:** the sidecar (`dashboard-state.json`) is the **sole source** of user content — `section_toggles` (which sections render) and `user_notes` (the Notes card). There are no editable markers in the HTML (the user does not hand-edit it). So: write/merge the sidecar first (Step 2), run the script, `Write` its stdout to `.claude/dashboard.html`, then — **only if there are judgment items to add** — `Edit` them into the `<!-- CLAUDE: augment … -->` slot (and fill the Custom Views `<!-- CLAUDE: fill … -->` placeholder when that section is on). The script is read-only (per `scripts/README.md` invocation contract); the orchestrator performs all writes.
+**Flow:** the sidecar (`dashboard-state.json`) is the **sole source** of user content — `section_toggles` (which toggleable sections render) and `user_notes` (the Notes card). There are no editable markers in the HTML (the user does not hand-edit it). So: write/merge the sidecar first (Step 2), run the script, `Write` its stdout to `.claude/dashboard.html`, then — **only if there are judgment items to add** — `Edit` them into the `<!-- CLAUDE: augment … -->` slot (and fill the Custom Views `<!-- CLAUDE: fill … -->` placeholder when that section is on). The script is read-only (per `scripts/README.md` invocation contract); the orchestrator performs all writes.
 
 ### Action Required rendering split (FB-105, v5.4.0)
 
@@ -41,26 +41,23 @@ python3 .claude/scripts/dashboard-render.py --html --claude-dir .claude [--now <
 
 ## Section Toggle Configuration
 
-The **only** source for section toggles is the `section_toggles` object in the `dashboard-state.json` sidecar (booleans keyed by lowercase section name). The dashboard is read-only HTML — there is **no** in-file toggle checklist (the old `<!-- SECTION TOGGLES -->` marker pair is gone). To change which sections render, edit the sidecar or ask Claude; the script reads `section_toggles` and emits only the enabled sections.
+The **only** source for section toggles is the `section_toggles` object in the `dashboard-state.json` sidecar. The script reads exactly four boolean keys — `action_required`, `decisions`, `notes`, `custom_views` (`dashboard-render.py` `render_full_html`) — and silently ignores any other. Every other section (Pulse, Phase map, Acceptance criteria, Flow, Timeline, Recent, Specification) renders from data and can't be toggled. The dashboard is read-only HTML — there is **no** in-file toggle checklist (the old `<!-- SECTION TOGGLES -->` marker pair is gone). To change a toggle, edit the sidecar or ask Claude.
 
 **Reading logic:**
 1. Read `section_toggles` from `dashboard-state.json` (the script does this directly)
-2. `true` → render the section; `false` → omit it
-3. Notes: rendered when `notes` is true AND sidecar `user_notes` is non-empty (read-only card)
-4. Defaults when a key is absent: Action Required / Progress / Tasks-derived sections / Decisions / Notes default on; Custom Views defaults off
-5. Spec frontmatter `dashboard_sections` may still override per-section if a project sets it
+2. `true` → render the section; `false` → omit it. Exception: `action_required: false` keeps the "Needs you" card but replaces its rows with a toggled-off line
+3. Notes: rendered when `notes` is true AND sidecar `user_notes` is non-empty (read-only card); Decisions likewise needs at least one decision record
+4. Defaults when a key is absent: `action_required`, `decisions`, `notes` on; `custom_views` off
 
 ### First Regeneration (Replacing Template Example)
 
-Detection: it is the **first regeneration** when no `dashboard-state.json` sidecar exists yet *and* there is no legacy `dashboard.md` to migrate (a derived `dashboard.html` is gitignored, so the template ships no dashboard — a fresh project generates it on first `/work`). On first regeneration, compute toggle defaults from project state instead of using static defaults:
+Detection: it is the **first regeneration** when no `dashboard-state.json` sidecar exists yet *and* there is no legacy `dashboard.md` to migrate (a derived `dashboard.html` is gitignored, so the template ships no dashboard — a fresh project generates it on first `/work`). On first regeneration, seed these static toggle defaults:
 
 ```
-Action Required  → [x] always (core section)
-Progress         → [x] always (core section)
-Tasks            → [x] always (core section)
-Decisions        → [x] if any decision-*.md files exist, [ ] otherwise
-Notes            → [x] always (preserve mode)
-Custom Views     → [ ] always (user opts in when they want custom views)
+action_required  → true always
+decisions        → true always (the renderer omits the card while there are no records)
+notes            → true always (preserve mode)
+custom_views     → false always (user opts in when they want custom views)
 ```
 
 ### On Phase Transitions
@@ -71,16 +68,14 @@ When `/work` detects a phase transition (all Phase N tasks "Finished", Phase N+1
 
 ### During Regeneration (All Subsequent)
 
-- Read `section_toggles` from the sidecar; render only sections set `true`
+- Read `section_toggles` from the sidecar; render the four toggleable sections set `true`, everything else from data
 - Notes is rendered (read-only, from sidecar `user_notes`) whenever `notes` is true and notes are non-empty
 - The user changes toggles by editing `dashboard-state.json` or asking Claude — there is no in-file checkbox to preserve
 
 | Toggle value | Behavior |
 |------|----------|
-| `true` | Render the section from source data on every regeneration (default for core sections) |
+| `true` | Render the section from source data on every regeneration (default for all but `custom_views`) |
 | `false` | Omit the section entirely |
-
-Projects that need a `maintain`-style override can set spec frontmatter `dashboard_sections`, which takes precedence over the sidecar for that section.
 
 ---
 
@@ -95,8 +90,6 @@ User-authored content lives in `.claude/dashboard-state.json` as the **single so
   "user_notes": "",
   "section_toggles": {
     "action_required": true,
-    "progress": true,
-    "tasks": true,
     "decisions": true,
     "notes": true,
     "custom_views": false
@@ -118,7 +111,7 @@ User-authored content lives in `.claude/dashboard-state.json` as the **single so
 | Field | Type | Content |
 |-------|------|---------|
 | `user_notes` | String | The Notes card content (Quick Links etc.). Rendered read-only as minimal HTML (headers, bullets, links, bold) |
-| `section_toggles` | Object | Boolean per section name (lowercase, underscored) — the sole toggle source |
+| `section_toggles` | Object | The sole toggle source — exactly four boolean keys: `action_required`, `decisions`, `notes` (default `true`), `custom_views` (default `false`). The script ignores any other key (§ "Section Toggle Configuration") |
 | `phase_gates` | Object | Keyed by transition (e.g., `"1→2"`). Value: `{ "status": "active"\|"approved" }`. Read-only HTML does not render an in-file gate checkbox; the script surfaces phase-gate readiness in the "Needs you" card (a transition whose gate is not `approved`) and the user approves via CLI (`/work`). Retained as state for that surfacing |
 | `pending_decomposition` | Array | `## ` headings of spec sections added by `/iterate` that no task references yet (FB-106). Written by `/iterate`'s post-apply step; consumed by `/work` Step 1a **ahead of the fast path**, which would otherwise skip drift detection and leave the section silently undecomposed. Entries are removed once referencing tasks exist or the user drops them |
 | `inline_feedback` | Object | Keyed by task ID. Optional feedback text the user gave on a `human`/`both` task. No in-file feedback box exists in read-only HTML; the user gives feedback via CLI at `/work complete`. Retained for back-compat |
@@ -127,7 +120,7 @@ User-authored content lives in `.claude/dashboard-state.json` as the **single so
 | `updated` | String | ISO 8601 timestamp of last write |
 
 **Lifecycle:**
-- **MUST** exist before the script runs — the script reads `section_toggles` and `user_notes` from it. If missing, create it with defaults (all core sections on, custom_views off) before regenerating.
+- **MUST** exist before the script runs — the script reads `section_toggles` and `user_notes` from it. If missing, create it with defaults (`custom_views` off, the other toggles on) before regenerating.
 - Updated by the orchestrator whenever the user changes notes/toggles (via CLI request) — the script only reads it
 - Never deleted by any command
 - On migration from a Markdown `dashboard.md`, extract its `<!-- USER SECTION -->` / `<!-- SECTION TOGGLES -->` / `<!-- CUSTOM VIEWS INSTRUCTIONS -->` marker content into the sidecar once, then delete `dashboard.md` (the markers do not exist in the HTML target)
@@ -190,7 +183,7 @@ The dashboard META block includes a `template_version` field (copied from `.clau
 
 The dashboard is read-only HTML; user content lives **only** in `.claude/dashboard-state.json`. There are no in-HTML markers to extract — the script reads the sidecar directly at render time.
 
-- **2a.** Read `.claude/dashboard-state.json`. If missing, create it with defaults (all core sections on, `custom_views` off, empty `user_notes`).
+- **2a.** Read `.claude/dashboard-state.json`. If missing, create it with defaults (`custom_views` off, the other toggles on, empty `user_notes`).
 - **2b.** Apply any user change the orchestrator was asked to make this turn (toggle a section, edit notes, record a Custom-Views instruction, update `audit_digest`/`phase_gates` status). The user requests these via CLI; the orchestrator writes them to the sidecar.
 - **2c.** **One-time migration:** if a legacy Markdown `.claude/dashboard.md` is present, extract its `<!-- USER SECTION -->` (→ `user_notes`), `<!-- SECTION TOGGLES -->` (→ `section_toggles`), and `<!-- CUSTOM VIEWS INSTRUCTIONS -->` (→ `custom_views_instructions`) content into the sidecar, then delete `dashboard.md`.
 - **2d.** No separate injection step — the script pulls `section_toggles` and `user_notes` from the sidecar when it renders.
@@ -200,12 +193,12 @@ The dashboard is read-only HTML; user content lives **only** in `.claude/dashboa
 **Script-first (DEC-024):** run `dashboard-render.py --html --claude-dir .claude [--now <ISO>]` and `Write` its stdout to `.claude/dashboard.html` (see § "Script-First Rendering — HTML target"). The script renders the entire HTML document — all structural sections (including every mechanical Action Required row, per § "Action Required rendering split"), the inline-SVG visualizations, and the `<!-- DASHBOARD META -->` block in `<head>`. Then append any judgment items to the `<!-- CLAUDE: augment … -->` slot and fill the Custom Views `<!-- CLAUDE: fill … -->` placeholder when that section is on **with HTML**. The bullets below are the data/semantic specification — the script's contract for its sections and the LLM's instructions for the augment/placeholder regions.
 
 - The script emits the document structure deterministically; the LLM edits **only** the augment/placeholder regions — appending `<li>` rows before the `<!-- CLAUDE: augment … -->` comment (judgment items only; leave the comment in place) and replacing the Custom Views `<!-- CLAUDE: fill … -->` comment with rendered blocks
-- Section visibility comes from sidecar `section_toggles`; the Notes card comes from sidecar `user_notes` — both read by the script
+- The four toggleable sections follow sidecar `section_toggles`; the Notes card comes from sidecar `user_notes` — both read by the script
 - **Timeline:** the script renders it when any task has `due_date` or `external_dependency.expected_date`
 - **Dependency graph:** the script renders it as inline SVG when ≥4 incomplete task nodes with edges exist; auto-hidden when degenerate; >15 nodes reduce to critical path + neighbors (see § "Dependency Graph")
 - **Acceptance criteria:** the script renders the live status surface from `verification-result.json` `criteria[]` (DEC-022)
 - Enforce atomicity: only tasks with JSON files, only decisions with MD files
-- On **first regeneration** (no `dashboard-state.json` sidecar yet, and no legacy `dashboard.md` to migrate): compute toggle defaults from project state and seed `user_notes` with Quick Links, per § "First Regeneration"
+- On **first regeneration** (no `dashboard-state.json` sidecar yet, and no legacy `dashboard.md` to migrate): seed the static toggle defaults, and `user_notes` with Quick Links, per § "First Regeneration"
 - **User review gate for `both` tasks:** When generating "Your Tasks", include `both`-owned tasks that have `user_review_pending: true` — even if their status is "Finished". These tasks passed verification but still need user review. Show them with status `✅ Verified — awaiting your review` and include a `/work complete {id}` prompt. Remove them from "Your Tasks" only after the user runs `/work complete`.
 - **Feedback on a task:** the read-only HTML has no in-file feedback box. When a `human`/`both` task wants feedback, the "Needs you" item names the task and says to give feedback via the CLI at `/work complete {id}`; the orchestrator stores it in the task JSON `user_feedback` field.
 - **Phase Transitions item:** When all tasks in Phase N are "Finished" AND Phase N+1 tasks exist AND the sidecar's `phase_gates["{N}→{N+1}"].status` is not `approved`, the "Needs you" card shows the gate as an HTML item listing the conditions and their met/unmet state, ending with the approval action:
@@ -267,7 +260,7 @@ The script reads user content from `.claude/dashboard-state.json` directly when 
 
 - **User notes** → the read-only Notes card (script renders `user_notes` as minimal HTML: headers, bullets, links, bold). On first regeneration, seed `user_notes` with project Quick Links per the "Notes first-regeneration seeding" rule and write the seed to the sidecar.
 - **Custom Views instructions** → emitted into the Custom Views section (between `<!-- CUSTOM VIEWS INSTRUCTIONS -->` comments) when `custom_views` is on; the LLM fills the rendered content in the adjacent `<!-- CLAUDE: fill -->` region.
-- **Section toggles** → `section_toggles` decides which sections the script emits.
+- **Section toggles** → `section_toggles` decides which of the four toggleable sections the script emits.
 
 User-gated items that used to be in-file interactions (phase-gate approval, inline feedback on a task, audit promote/dismiss) are **not** rendered as editable controls in the read-only HTML. They surface in the "Needs you" card as actions with the CLI command to run — script-rendered from the sidecar (`phase_gates`, `audit_digest`) and task JSON (`user_feedback`) since v5.4.0. See § "Action Required rendering split" + § "Action Item Contract".
 
@@ -388,14 +381,14 @@ The user selects an option when prompted, and `/work` updates the task according
     - C-NN → T{id} ({status}) — "{what}"
     ```
   - **Empty state** (no `pending` items but `latest_audit` is non-empty): `*No pending audit findings. Last audit: {date}. Run /health-check to refresh.*`
-  - **Section toggle defaults:** `[x]` if any audit command in `.claude/commands/audit-*.md` is applicable to the project (per its `applies_when`); `[ ]` otherwise.
+  - **No toggle of its own:** it renders inside the "Needs you" card (so `action_required` governs it) once an audit has run.
 - Phase Transitions: only render when a phase boundary has been reached (all Phase N tasks Finished, Phase N+1 exists) AND no APPROVED marker exists for that transition
 - Verification Pending: only render when all spec tasks are Finished with passing per-task verification but no valid verification-result.json
 - Spec Drift: only render when drift-deferrals.json has active entries
 - Feedback: only render when `feedback.md` has entries with status `new`, `refined`, or `ready` — render as: `- 📝 **{N} feedback items** awaiting attention ({X} new, {Y} refined, {Z} ready) → /feedback review`
 - Reviews sub-section format: `- [ ] **Item title** — what to do → [link to file](path)`
 - Reviews appear for: out_of_spec tasks without approval, draft/proposed decisions
-- Timeline sub-section in Progress: only render when tasks have `due_date` or `external_dependency.expected_date` (part of Progress, not an independent toggle)
+- Timeline sub-section in Progress: only render when tasks have `due_date` or `external_dependency.expected_date` (not toggleable)
 - **Recent Activity sub-section in Progress** (auto-renders when ≥3 tasks transitioned status in the last 7 days):
   - **Strict cap: max 7 entries, each ≤1 line.**
   - **Cap enforcement is non-discretionary (FB-090):** the script trims Recent activity to the 7-entry cap on every full regen (dropping the oldest first) — it is deterministic, not a judgment call.

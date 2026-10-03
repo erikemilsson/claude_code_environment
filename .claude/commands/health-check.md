@@ -73,28 +73,25 @@ When breaking down tasks, IDs must not collide:
 - Check for ID uniqueness across all task files
 - Verify no orphaned task files exist
 
-#### 4. Dashboard Consistency
+#### 4. Dashboard Presence and META
 
-**Row matching:**
-- Every task JSON has a corresponding row in dashboard
-- Every row in dashboard has a corresponding task JSON
-- Status, title, and difficulty match between JSON and dashboard
-- Summary count is accurate
+The dashboard is derived and gitignored (DEC-024): `dashboard-render.py --html` renders it whole from task JSON, decision records and the sidecar, so there are no rows or sections to reconcile.
 
-**Structure validation:**
-- Required sections exist: `# Dashboard`, `## 🚨 Action Required`, `## 📊 Progress`, `## 📋 Tasks`, `## 📋 Decisions`, `## 💡 Notes`
-- Sections in correct order
-- Sections with unchecked toggles in the section toggle checklist are allowed to be missing
-- Optional section (`## 👁️ Custom Views`) may appear between Decisions and Notes when toggled on
+- **Presence:** with no `task-*.json` yet, `.claude/dashboard.html` may be absent (the first `/work` after decomposition generates it). Tasks exist but no file (e.g. a fresh clone): ⚠️.
+- **META parses:** the `<!-- DASHBOARD META` … `-->` comment holds one `key: value` per line, with the same keys as the META of a fresh `dashboard-render.py --html` run (currently the 13 in `dashboard-regeneration.md § "4. Compute and Add Metadata Block"`). Missing or extra keys (e.g. `session_*`): ⚠️. If regenerating doesn't clear a mismatch, that list is stale. Check 10 compares the values; Part 6 check 1 covers placement in `<head>` and the offline invariant.
+- **Legacy `.claude/dashboard.md`:** present → the pre-DEC-024 dashboard was never migrated: ⚠️. Regenerating migrates it first (`dashboard-regeneration.md` Step 2c), as `/work` Step 1a does.
 
-If dashboard content or structure is inconsistent, the fix is always: regenerate.
+For any of these, the fix is always: regenerate.
 
 #### 4b. Dashboard State Sidecar
 
 - `.claude/dashboard-state.json` should exist if dashboard.html exists
 - If missing: WARNING — "Dashboard state sidecar missing. Next dashboard regeneration will create it."
 - If present: validate JSON structure (required keys: user_notes, section_toggles, phase_gates, inline_feedback, custom_views_instructions, updated)
-- The sidecar is the **single source** for user content (DEC-024) — the read-only HTML has no in-file markers to cross-reference. Validate the sidecar's own consistency only (e.g., `section_toggles` keys are known section names; `phase_gates` statuses are `active`/`approved`)
+- The sidecar is the **single source** for user content (DEC-024) — the read-only HTML has no in-file markers to cross-reference. Validate the sidecar's own consistency only (e.g., `phase_gates` statuses are `active`/`approved`)
+- `section_toggles` keys are among the four the renderer reads: `action_required`, `decisions`, `notes`, `custom_views`. It silently ignores any other key (e.g. `progress`, `tasks` from older first-regeneration defaults): ℹ️
+- `decisions: false` while decision records exist (likely the pre-v5.7.5 first-regen default): ℹ️ — the Decisions card stays hidden until the user sets it `true`
+- These two are report-only, with no fix row: the toggles are the user's to change
 
 #### 5. Status Rules
 
@@ -141,15 +138,15 @@ verification_debt = count of tasks where:
 - Tasks that appear to have jumped from `"Pending"` to `"Finished"` without passing through `"In Progress"` and `"Awaiting Verification"`
 
 **Completion gate checks (ERRORS):**
-- If dashboard shows "Project Complete" or "100%" completion:
+- If every non-Absorbed task is Finished (the dashboard's completion ring at 100%):
   - `.claude/verification-result.json` MUST exist with `result` of "pass"
   - ALL finished tasks MUST have passing `task_verification`
   - If either condition fails: ERROR — "Project marked complete without verification"
-- Check for status mismatch: spec says "active" but dashboard shows "Complete" (or vice versa)
+- Check for status mismatch: spec says "active" but every non-Absorbed task is Finished (or vice versa)
 
 **Note:** Workflow bypass warnings are informational. Some tasks may legitimately have brief notes. The intent is to surface patterns, not block individual tasks.
 
-**Acceptance-status authority (DEC-022):** `.claude/verification-result.json`'s `criteria[]` (rendered as the dashboard's `### Acceptance Criteria`) is the authoritative surface for "phase acceptance criteria met." If a project also renders acceptance criteria as inline `- [ ]` boxes in the spec, those are authored input, not live status — do not treat unticked spec boxes as a completion failure. `/audit-coherence`'s `acceptance-reconciliation` lens surfaces box-vs-`criteria[]` divergence advisorily.
+**Acceptance-status authority (DEC-022):** `.claude/verification-result.json`'s `criteria[]` (rendered as the dashboard's Acceptance-criteria section) is the authoritative surface for "phase acceptance criteria met." If a project also renders acceptance criteria as inline `- [ ]` boxes in the spec, those are authored input, not live status — do not treat unticked spec boxes as a completion failure. `/audit-coherence`'s `acceptance-reconciliation` lens surfaces box-vs-`criteria[]` divergence advisorily.
 
 **Script alternative:** `.claude/scripts/validate-tasks.py .claude/tasks` runs schema + verification-debt checks deterministically and prints a combined report. `--json` flag emits structured output for downstream consumption.
 
@@ -198,7 +195,7 @@ Per the Fix Queue Protocol: each detected issue queues one fix item; "Ask user: 
 
 | Issue | Auto-Fix |
 |-------|----------|
-| Dashboard inconsistent or structurally invalid | Regenerate dashboard.html |
+| Dashboard missing (tasks exist), META malformed, or legacy `dashboard.md` present | Regenerate dashboard.html (migrates `dashboard.md` first) |
 | Dashboard stale (hash mismatch, format staleness, or missing metadata) | Regenerate dashboard.html with fresh metadata |
 | Parent missing subtask in array | Add subtask ID to parent's subtasks array |
 | Subtask missing parent_task field | Add parent_task field |
@@ -216,7 +213,7 @@ Per the Fix Queue Protocol: each detected issue queues one fix item; "Ask user: 
 | Missing snapshot file | Informational only — drift detection degrades gracefully |
 | Malformed decision dependency format | Ask user: correct or remove the entry |
 | Stale workspace files (> 30 days) | List files, ask user: graduate to final location, or delete |
-| Dashboard state sidecar missing | Create with defaults (all core sections on, custom_views off, empty notes) |
+| Dashboard state sidecar missing | Create with defaults (custom_views off, other toggles on, empty notes) |
 | Stale "Awaiting Verification" (> 1 hour) | Auto-recovered by `/work` Step 0 on next run. If running standalone: trigger verify-agent immediately for task |
 
 ### Non-Fixable Issues (Manual Required)
@@ -369,7 +366,7 @@ Each `decision-*.md` file must have valid frontmatter:
 **Required fields:**
 - `id` - Format: `DEC-NNN` (e.g., DEC-001, DEC-042). Must match `\d+` pattern after `DEC-`. The numeric portion must match the filename: `decision-{NNN}-*.md` → frontmatter `id: DEC-{NNN}`. Mismatch is an ERROR.
 - `title` - Non-empty string
-- `status` - One of: `draft`, `proposed`, `approved`, `implemented`, `superseded`
+- `status` - One of: `draft`, `proposed`, `approved`, `implemented`, `superseded`, `partially_superseded`
 - `category` - One of: `architecture`, `technology`, `process`, `scope`, `methodology`, `vendor`, `ux`, `design`, `ui-ia`, `ui-content` (UI-side categories added per FB-074 — see `.claude/support/reference/decisions.md § Categories` for definitions)
 - `created` - Valid date in YYYY-MM-DD format
 
@@ -380,11 +377,13 @@ Each `decision-*.md` file must have valid frontmatter:
 - `spec_revised` - Boolean, set after `/iterate` processes an inflection point
 - `spec_revised_date` - Date when spec was revised
 
-#### 2. Dashboard Consistency
+#### 2. Dashboard Derivation
 
-- Every decision file has a corresponding entry in the dashboard's Decisions table
-- Every dashboard entry has a corresponding `decision-{NNN}-*.md` file
-- Status in file frontmatter matches status in dashboard table
+There is no decisions table to keep in sync: `dashboard-render.py` derives the Decisions card, the "Needs you" Decisions rows and the META decision counts from `.claude/support/decisions/decision-*.md` on every regen. Its frontmatter reader is line-based and stricter than YAML:
+- `---` opens the file (no BOM or leading blank line), and `id`, `title`, `status` are each one plain `key: value` line (no folded or multi-line value, no trailing `# comment`). Otherwise the renderer falls back to the filename for `id`/`title` and to `draft` for `status` (an unresolved row; dependent tasks show as blocked), or reads a garbled status the META counts miss.
+- When `dashboard.html` exists, its META `decision_count`, `decisions_approved` (`approved` + `implemented`), `decisions_superseded` and `decisions_partially_superseded` match counts from the files. A mismatch means a decision changed since the last regen; Part 1 check 10's `task_hash` covers tasks only.
+
+Template repo: skip this check — the renderer reads only `.claude/support/decisions/`.
 
 #### 3. Staleness Detection
 
@@ -393,9 +392,9 @@ Each `decision-*.md` file must have valid frontmatter:
 
 #### 4. Completeness (for approved/implemented)
 
-Decisions with status `approved` or `implemented` must have:
-- Non-empty Decision section (selected option and rationale)
-- At least one option in the comparison table
+Decisions with status `approved` or `implemented` must have (headings per the template in `.claude/support/reference/decisions.md`):
+- Non-empty `## Decision` section (selected option and rationale; `/work` Step 2b fills it from the box ticked under `## Select an Option`)
+- At least one option in the `## Options Comparison` table
 
 #### 5. Implementation Anchor Validation
 
@@ -410,7 +409,7 @@ Reports mismatches between decision `related.tasks` and task `decision_dependenc
 
 **Decision → Task direction:**
 - For each decision, check if referenced tasks have the decision ID in their `decision_dependencies`
-- Report mismatches grouped by task status (Finished = most concerning, Pending = auto-fixable)
+- Report mismatches grouped by task status (Finished = most concerning). Report only: `related.tasks` doesn't say whether a task depends on the decision or produced it, so adding the dependency could block a task on its own output
 
 **Task → Decision direction:**
 - For each task with `decision_dependencies`, verify each referenced `DEC-NNN` has a corresponding `decision-{NNN}-*.md` file
@@ -424,15 +423,13 @@ Per the Fix Queue Protocol: each detected issue queues one fix item; "Ask user: 
 
 | Issue | Auto-Fix |
 |-------|----------|
-| File missing from dashboard | Add entry to dashboard's Decisions table |
-| Dashboard entry missing file | Remove orphan entry from dashboard |
-| Status mismatch | Ask user which is correct, update the other |
+| META decision counts differ from the files | Regenerate dashboard.html |
+| Frontmatter line the renderer can't read | Rewrite it as one plain `key: value` line (comment on its own line, BOM/leading blank line removed), then regenerate dashboard.html |
 | Stale draft (> 30 days) | Ask user: delete, or set reminder |
 | Stale proposed (> 14 days) | Ask user: approve, reject, or extend |
 | Implemented without anchors | Ask user: add anchors, or revert to approved |
 | Anchor file not found | Report for manual review |
-| Cross-reference mismatch (Pending task) | Add decision ID to task's `decision_dependencies` |
-| Cross-reference mismatch (other status) | Report for manual review |
+| Cross-reference mismatch | Report for manual review (never auto-add: the task may be the decision's origin, not a dependent) |
 | ID/filename mismatch | Ask user: rename file or update frontmatter ID |
 | Task references non-existent decision | Ask user: remove dependency or create the decision record |
 
@@ -623,7 +620,7 @@ For accepted changes:
 - **Update the sync-state sidecar** — for each file the user accepted, compute the new local SHA-256 (post-checkout) and write/update its entry in `.claude/.sync-state.json` under `files["<path>"].synced_hash`. Refresh top-level `last_full_sync_version` (to the upstream version just synced) and `last_full_sync_date` (current date, ISO 8601). If the sidecar doesn't exist yet, create it with `schema_version: "1.0"`. Files the user skipped retain their prior sidecar entries (or remain absent if never synced).
 - Report what was changed
 
-**Post-sync dashboard re-check:** If any included sync row touches a dashboard-rule file (`dashboard-regeneration.md`, `rules/dashboard.md`, or `shared-definitions.md`), the dashboard was generated with older format rules — regenerate it as part of applying that row (no extra prompt; the row's one-line description notes "includes dashboard regen", so the user sees the consequence before responding). This catches the ordering issue where Part 1 ran dashboard checks before Part 5 synced the new rules, and dedupes with any Part 1 regen row — the dashboard regenerates at most once per run, last. Regeneration follows `.claude/support/reference/dashboard-regeneration.md` (which is now the updated version).
+**Post-sync dashboard re-check:** If any included sync row touches the renderer or a dashboard-rule file (`scripts/dashboard-render.py`, `dashboard-regeneration.md`, `rules/dashboard.md`, or `shared-definitions.md`), the dashboard was generated with older format rules — regenerate it as part of applying that row (no extra prompt; the row's one-line description notes "includes dashboard regen", so the user sees the consequence before responding). This catches the ordering issue where Part 1 ran dashboard checks before Part 5 synced the new rules, and dedupes with any Part 1 regen row — the dashboard regenerates at most once per run, last. Regeneration follows `.claude/support/reference/dashboard-regeneration.md` (which is now the updated version).
 
 ### Key Rules
 
@@ -853,15 +850,6 @@ Measure the byte size of `dashboard.html`. Curated + spec-linked-out, it should 
 | 200–500 KB | Warn: "dashboard.html is {N} KB — check that the spec/decisions are linked out, not embedded." | 2 |
 | >500 KB | Warn: "dashboard.html is {N} KB — spec/decision text was likely embedded. Verify link-out and regenerate." | 2 |
 
-#### 6. Phase Collapsing Compliance (H2 — Information Density)
-
-Check completed phases (all tasks Finished with passing verification) — they should be collapsed to a single summary line, not list individual tasks.
-
-| Condition | Result | Severity |
-|-----------|--------|----------|
-| All completed phases collapsed | Pass | — |
-| Completed phase lists >3 individual tasks | Warn per phase: "Phase {N} is complete but lists {X} individual tasks. Should be collapsed to summary line." | 2 |
-
 ### Extending the Check Catalog
 
 New checks should be added when:
@@ -1019,7 +1007,7 @@ To act on findings:
   (Stages 6-7 will add [Fix it] inline + bundled-apply batch UX — see audit family proposal)
 ```
 
-Stage 6 has shipped — `bundle-eligible` digest items surface automatically on the dashboard's `🔍 Audit Findings` section with the inline `[Fix it]` token; other kinds render with an italicized kind annotation. Promote/Dismiss invocation patterns are documented in `dashboard-regeneration.md` § "Audit Findings sub-section" (tick + bulk CLI for promote; natural-language for dismiss). The inline summary + manual review of `findings.md` + `/audit-{name} promote {ts}` remains a complementary surface for context beyond what the dashboard digest shows.
+Stage 6 has shipped — pending digest items surface automatically as Audit Findings rows on the dashboard's "Needs you" card (id + description; the read-only HTML has no `[Fix it]` token or checkbox). Act on them via the CLI: `/audit-{name} triage` (per-finding fix/promote/dismiss), `/audit-{name} fix {ts} {id}`, `/audit-{name} promote {ts} {id},{id}`, or a natural-language dismiss. The inline summary + manual review of `findings.md` + `/audit-{name} promote {ts}` remains a complementary surface for context beyond what the dashboard digest shows.
 
 ### Skip Conditions
 
@@ -1067,7 +1055,7 @@ FETCH template remote and diff sync files (skip if offline)
 - Part 3: Decision system validation (checks 1-6)
 - Part 4: Archive validation (checks 1-4)
 - Part 5: Template sync + collision + settings checks
-- Part 6: UX evaluation (checks 1-6)
+- Part 6: UX evaluation (checks 1-5)
 - Part 7: Interaction log processing (template repo only)
 - Part 8: Audit dispatch (interactive — present applicable audits, dispatch user selection)
 
@@ -1102,7 +1090,7 @@ Proposed fixes (7):
 | # | Part | File | Proposed fix | Risk |
 |---|------|------|--------------|------|
 | 1 | 1  | .claude/dashboard.html          | Regenerate (stale hash + format)          | — |
-| 2 | 3  | decision-004-*.md               | Add missing dashboard Decisions entry      | — |
+| 2 | 3  | decision-004-*.md               | Move trailing comment off the `status:` line | — |
 | 3 | 5  | .claude/commands/work.md        | Apply template version (+15 -8)            | ⚠ overwrites local |
 | 4 | 5  | .claude/rules/dashboard.md      | Apply template version (+4 -1; includes dashboard regen) | ⚠ overwrites local (hash-verified: no local edits) |
 | 5 | 2d | claude-code-authoring.md        | Run [V] verify-against-docs pass ("5: defer" suppresses 30d) | — |

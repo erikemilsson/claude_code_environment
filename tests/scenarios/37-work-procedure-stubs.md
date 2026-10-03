@@ -64,7 +64,7 @@ v4.18.0 split work.md (Plan 2 P3): the orchestrator file had ~20 ship-log patche
 
 ### Expected
 
-- After the handoff write: `.interaction-assessment.json` written (correct schema), session export compiled (`export_quality: "full"`, minute-granularity filename per FB-079), copied to the configured inbox, then `.session-log.jsonl` + `.interaction-assessment.json` deleted
+- After the handoff write: `.interaction-assessment.json` written (correct schema), session export compiled (`export_quality: "full"`, minute-granularity filename per FB-079), copied to the configured inbox, then `.session-log.jsonl`, `.interaction-assessment.json` and `.pending-markers.jsonl` deleted (pending entries the log lacked were folded into the export first); the workspace working copy is deleted only when the inbox copy reported `"copied": true` (FB-120)
 - The export shape comes from the procedure file, not memory
 
 ### Pass criteria
@@ -72,6 +72,7 @@ v4.18.0 split work.md (Plan 2 P3): the orchestrator file had ~20 ship-log patche
 - [ ] All three artifacts in sequence; cleanup last
 - [ ] Export filename carries HHMM (no same-day collision)
 - [ ] Inbox copy happens exactly when `template_inbox_path` is set
+- [ ] Working copy deleted after `"copied": true`; kept when no inbox is configured or the copy failed
 
 ### Fail indicators
 

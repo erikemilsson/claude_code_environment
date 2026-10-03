@@ -60,6 +60,11 @@ from collections import Counter
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+if sys.version_info < (3, 10):  # Python floor (FB-120); see README § Invocation contract
+    print(f"error: {Path(__file__).name} needs Python 3.10+; this is Python "
+          f"{'.'.join(map(str, sys.version_info[:3]))} ({sys.executable})", file=sys.stderr)
+    sys.exit(2)
+
 OWNER_EMOJI = {"human": "❗", "claude": "🤖", "both": "👥"}
 UNRESOLVED_DECISION = {"draft", "proposed"}
 
@@ -754,8 +759,8 @@ def _html_acceptance(verification_result):
             note = str(c.get("notes", "")).strip()
             if criterion:
                 disp, full = _clip(note, 240)
-                note_html = (f' <span class="acnote"'
-                             f'{f" title=\"{_esc(full)}\"" if full else ""}>— {_esc(disp)}</span>'
+                title = f' title="{_esc(full)}"' if full else ""
+                note_html = (f' <span class="acnote"{title}>— {_esc(disp)}</span>'
                              if note else "")
                 body = f'<span class="actext">{_esc(criterion)}{note_html}</span>'
             else:

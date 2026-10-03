@@ -107,14 +107,14 @@ Every item in Action Required is fully actionable from the dashboard:
 - Unchecked sections excluded entirely from regeneration (no heading, no content)
 - Checked sections generated from source data
 - Section checklist preserved across regenerations (user's checkbox state is authoritative)
-- On first generation, toggle defaults computed from project state (e.g., Decisions checked only if decisions exist)
+- On first generation, static toggle defaults are seeded (Decisions on even with no records)
 
 ### Pass criteria
 
 - [ ] Sections checklist exists at the top of dashboard.md
 - [ ] Unchecking a section removes it entirely from regenerated output
 - [ ] Regeneration preserves the user's checkbox state
-- [ ] First generation computes sensible defaults from project content
+- [ ] First generation seeds the static defaults
 
 ### Fail indicators
 

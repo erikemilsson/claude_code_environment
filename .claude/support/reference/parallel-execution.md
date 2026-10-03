@@ -2,7 +2,7 @@
 
 Procedures for assessing parallelism eligibility, detecting file conflicts, building conflict-free batches, and dispatching/collecting parallel agents. These run inline during `/work` Steps 2c and 4.
 
-**Scope:** this doc covers *intra-session* parallelism — multiple `Task` agents coordinated by one `/work` orchestrator within a single conversation. For *inter-session* parallelism (many independent `claude` processes for batch workloads), see `.claude/support/reference/automation.md`.
+**Scope:** this doc covers *intra-session* parallelism — multiple `Agent` subagents coordinated by one `/work` orchestrator within a single conversation. For *inter-session* parallelism (many independent `claude` processes for batch workloads), see `.claude/support/reference/automation.md`.
 
 ---
 
@@ -258,32 +258,31 @@ The orchestrator performs all writes: it sets `conflict_note` fields before disp
 **Key invariants:**
 - **Single writer:** The orchestrator is the only writer for all `.claude/` state (task JSON, dashboard, verification-result.json, session-log.jsonl). Agents return structured reports; all persistence is mediated.
 - **`.claude/`-path tasks never batch:** a task whose `files_affected` includes `.claude/` paths is orchestrator-authored inline (DEC-004) and cannot join an agent-dispatch batch; split mixed tasks at decomposition (`decomposition.md § Procedure` step 8, `.claude/`-boundary split).
-- **Sequential result processing:** When multiple agents complete in the same poll cycle, the orchestrator processes them one at a time (the `For each completed agent` loop is sequential). This naturally serializes task-JSON writes, parent auto-completion, and friction-marker appends — no race conditions possible since there's only one writer.
+- **Sequential result processing:** When several completion notifications arrive together, the orchestrator processes them one at a time (the `For each completed agent` loop is sequential). This naturally serializes task-JSON writes, parent auto-completion, and friction-marker appends — no race conditions possible since there's only one writer.
 - **Verify-agent dispatch per implement-agent:** After each implement-agent report is processed, the orchestrator dispatches that task's verify-agent. Verify-agents can run concurrent with subsequent implement-agents, preserving pipeline throughput.
 
 ### 3. Spawn Parallel Agents
 
-Use Claude Code's `Task` tool to spawn one agent per task. **Always set `model: "opus[1m]"` and `max_turns: 40`** so agents run on the Opus tier (1M context) with a bounded turn limit (canonical dispatch value + pin relationship: `.claude/CLAUDE.md § Model Requirement`). Each agent receives:
+Use Claude Code's `Agent` tool to spawn one agent per task. **Always set `model: "opus"` and state a turn budget of about 40 tool calls in the prompt** so agents run on the Opus tier (1M context) and know when to wind down — the budget is advisory, not enforced (canonical dispatch value + pin relationship: `.claude/CLAUDE.md § Model Requirement`). Each agent receives:
 - The task JSON to execute
 - Instructions to read `.claude/agents/implement-agent.md`
 - Instructions to follow Steps 1-6 (understand, implement, run existing checks, return structured report)
 - **Sibling files (FB-113):** the `files_affected` of every other task in the batch, with the instruction: "Don't edit these files; they belong to parallel tasks. If your change requires one, report it in `issues_discovered` with `suggested_action: 'stop and report'`." Files outside the whole batch's declared scope may be edited and reported, per implement-agent Step 2
-- **Wind-down instruction:** "TURN BUDGET: You have 40 turns. If you reach turn 35 without completing, stop implementation and return your report with `implementation_status: 'partial'` and detailed notes. Do NOT attempt writes to `.claude/` — subagents cannot write there; orchestrator handles all persistence from your report."
+- **Wind-down instruction:** "Turn budget: about 40 tool calls. If you get close, stop and return your report with what you have, marked partial — by tool call 35 if not complete, with `implementation_status: 'partial'` and detailed notes. Do NOT attempt writes to `.claude/` — subagents cannot write there; orchestrator handles all persistence from your report."
 - **Explicit instruction:** "Return a structured implementation report per `.claude/agents/implement-agent.md` § Step 6. Do NOT write to task JSON, do NOT spawn verify-agent, do NOT regenerate dashboard — orchestrator owns all state persistence."
 
-All agents run concurrently via parallel `Task` tool calls with `model: "opus[1m]"`.
+All agents run concurrently via parallel `Agent` tool calls with `model: "opus"`.
 
 ### 4. Collect Results with Incremental Re-Dispatch
 
-Use `run_in_background: true` for each agent's `Task` call, then poll for completion:
+`Agent` calls run in the background, and the harness notifies you as each agent finishes (completed or failed), with its report. Don't poll, and never read an agent's output file — it's the full transcript and floods your context. With `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1`, `Agent` calls block and return their reports directly; process them the same way. If an agent seems stalled, tell the user; stopping it counts as an interruption. Handle each notification as it arrives:
 
 ```
 active_agents = {task_id: {agent_id, spawned_at} for each spawned implement-agent}
 active_verifiers = {task_id: {agent_id, spawned_at} for each spawned verify-agent}
-AGENT_TIMEOUT_POLLS = 60  # max poll iterations before declaring an agent timed out
 
 WHILE active_agents or active_verifiers is non-empty:
-  Check each agent for completion (read output file or use TaskOutput with block: false)
+  Wait for the next completion notification (end your turn if nothing else is pending; it resumes you)
 
   For each completed implement-agent:
     1. Read implement-agent's return report (structured schema per implement-agent.md § Step 6)
@@ -292,7 +291,7 @@ WHILE active_agents or active_verifiers is non-empty:
        - Dual-write friction_markers to .pending-markers.jsonl AND .session-log.jsonl
          immediately upon agent return (per DEC-011 Option ABp — do NOT defer or batch)
     3. If implementation_status == "completed":
-       Dispatch verify-agent for this task (Task tool, model: "opus[1m]", max_turns: 30)
+       Dispatch verify-agent for this task (Agent tool, model: "opus", turn budget of about 30 tool calls in the prompt)
        Add to active_verifiers. Verify-agent dispatch is individual — one per completed
        implement-agent, runs concurrent with remaining implement-agents.
     4. Remove implement-agent from active_agents
@@ -313,19 +312,23 @@ WHILE active_agents or active_verifiers is non-empty:
        - Transition status (Finished / In Progress retry / Blocked escalate)
        - Dual-write friction_markers (per DEC-011 Option ABp — see work.md § State Persistence Protocol step 2)
        - Check parent auto-completion
-    3. Remove verify-agent from active_verifiers
+       - No valid report → ask once for it (no increment; it stays in active_verifiers); a
+         second invalid return → protocol step 5. Infrastructure termination (usage limit /
+         HTTP 429 / zero-token return / API or harness error) or a stop the user asked for is
+         an interruption (FB-120): no increment, task stays "Awaiting Verification"
+    3. Remove verify-agent from active_verifiers (unless it was re-asked above)
 
-  For each agent (implement or verify) that has exceeded AGENT_TIMEOUT_POLLS iterations:
-    1. Log: "Agent for task {id} timed out after {N} poll iterations"
-    2. Apply protocol:
-       - Implement-agent timeout: if task still "In Progress", set to "Blocked" with
-         "[AGENT TIMEOUT] Parallel agent did not complete within polling limit"
-       - Verify-agent timeout: increment verification_attempts, set status to "Blocked",
-         add "[VERIFICATION TIMEOUT]" note
+  For each agent whose notification reports a failure (no report returned):
+    1. Infrastructure termination (usage limit / HTTP 429 / zero-token return / API or harness error) or a stop the user asked for is an interruption, not a timeout:
+       - Implement-agent: follow work-procedures.md "Zero-token return — platform limit cutoff (FB-103)"
+       - Verify-agent: no increment, task stays "Awaiting Verification" (FB-120); apply that
+         bullet's post-limit dispatch rule before re-dispatching
+    2. Any other failure:
+       - Implement-agent: if task still "In Progress", set to "Blocked" with
+         "[AGENT TIMEOUT] Parallel agent ended without a report"
+       - Verify-agent: no valid report → protocol step 5 (ask once, then "[VERIFICATION TIMEOUT]")
     3. Remove from active_agents / active_verifiers
-    4. Report to user: "Task {id} timed out — may need manual investigation or retry"
-
-  Brief pause before next poll iteration (avoid busy-waiting)
+    4. Report to user: "Task {id}: agent ended without a report — may need investigation or retry"
 ```
 
 This enables **incremental re-dispatch**: when Task A completes and releases its files, Task C (which was held back due to conflict with A) can start immediately — even while Tasks B and D are still running.

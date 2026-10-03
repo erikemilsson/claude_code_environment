@@ -279,7 +279,7 @@ See `feedback-archive.md` for full entry.
 
 ## FB-075: TaskCreate/TaskUpdate harness reminder fires in projects that explicitly forbid built-in task tools
 
-**Status:** cheap-action-shipped + deferred (structural fix upstream-gated)
+**Status:** cheap-action-shipped + deferred (structural fix upstream-gated). **Re-assess (2026-10-02):** the v5.7.5 doc check reports that Claude Code enables TaskCreate/TaskUpdate/TaskList by default only through Opus 4.7, and none of them is in an Opus 5.5 session's tool list (verified 2026-10-01). If the reminder no longer fires on Opus 5.5, close this and trim `.claude/README.md § Known Constraints`.
 **Captured:** 2026-05-20
 **Cheap action shipped:** 2026-05-20 — Added "Harness reminders about built-in task tools" paragraph to `.claude/README.md § Known Constraints`. Documents the noise as harness-emitted (not template-emitted) and benign in projects using `.claude/tasks/*.json`. Shipped in template_version 4.6.1 (alongside FB-076 deferral).
 **Defer condition (structural fix):** structural opt-out requires Anthropic-side mechanism (CLAUDE.md sentinel, settings hook, or per-project flag). Re-assess when (a) upstream offers such a mechanism, OR (b) friction scales materially (token tax across 100+ sessions becomes meaningful).
@@ -669,7 +669,7 @@ Tags: workflow, new-command-candidate, grill-adjacent, vision-adjacent, capabili
 
 ## FB-112: Doc-hygiene trio — stale topology map, dead toggle in the sidecar schema, inconsistent anchor shapes
 
-**Status:** ready — three small independent sub-items, bundled per the FB-006 precedent
+**Status:** (b) shipped v5.7.5 (2026-10-02); (a), (c) and (d) open — small independent sub-items, bundled per the FB-006 precedent
 **Captured:** 2026-08-12 (health-check + impact-assessment side findings)
 **Source:** template-repo `/health-check` 2026-08-12. None of these blocks anything; all three are drift between a doc and the thing it describes.
 
@@ -678,6 +678,8 @@ Tags: workflow, new-command-candidate, grill-adjacent, vision-adjacent, capabili
 **(b) `support/reference/dashboard-regeneration.md:96–103` documents a dead toggle.** The canonical `section_toggles` schema block still lists `tasks: true` as if it gates a section. Post-DEC-024 there is no standalone Tasks section (replaced by the phase heatmap / front-cards / dependency graph), and `dashboard-render.py` reads only four toggle keys — `action_required` (:1145), `decisions` (:1156), `custom_views` (:1160), `notes` (:1170). Unknown keys are silently ignored via `dict.get(key, default)`, so this is doc-only drift with no runtime effect — but it misleads anyone authoring a sidecar by hand. Verify the full key list against the script and correct the schema block.
 
 **(c) `implementation_anchors` shape is inconsistent across the decision corpus.** Four styles in use across 21 records: bare path + trailing `#` YAML comment (the comment is parser-stripped, so the description survives only as raw text); bare path with no annotation; bare string with prose embedded in the value; and the `- file:` / `description:` mapping. **Only DEC-021/022/023 — 3 of 21 — use the shape `.claude/support/reference/decisions.md` actually prescribes.** No automated consumer parses the field (grepped `.claude/scripts/*.py`, `scripts/pre-commit-hook.sh`, `audit-coherence.md` — zero hits), so nothing is broken today; the cost is that a strict-YAML reader flags valid entries and the corpus can't be machine-audited. **Hazard when normalizing:** a plain scalar in a YAML block sequence cannot contain colon-space — that exact mistake invalidated four records' frontmatter mid-edit on 2026-08-12 and had to be walked back. Either quote the scalars or avoid `: ` entirely. Do this as its own pass; it was deliberately kept out of the v5.4.3 anchor-annotation ship to avoid multiplying that diff.
+
+**(d) Template decision records fail `/health-check` Part 3 check 4** (added 2026-10-02). With the template-repo branch scanning root `decisions/`, 8 of 22 records lack `## Decision` and DEC-003 lacks `## Options Comparison` (verified by grep; the 14 records that have `## Decision` are the control). Normalize alongside (c).
 
 ## FB-113: `files_affected` derivation under-counts in a new domain — cross-artifact doc↔notebook parity + dispatch-brief re-sync
 
@@ -732,7 +734,9 @@ Tags: implement-agent, decomposition, files_affected, cross-artifact-parity, dis
 
 **Harvest 2026-09-25 evidence (+4 — `template-maintenance/harvest-2026-09-25-triage.md` cluster 2).** (1) **Tool provisioning, again:** `Grep` was unavailable to both subagents in oemmatinsightbi 09-19 (task-080), so every search fell back to `/usr/bin/grep` with a same-command positive control. The rule's Tool Preferences table and the harness still disagree for subagents. (2) **New fourth axis: ripgrep honours `.gitignore`.** The rule names ripgrep as the reliable probe, but in projects that gitignore `.claude/` state or user data, repo-root `rg` absence probes silently skip those files. The rule should name `rg -uu` or explicit paths (styler 09-21). This is the ripgrep twin of the shell-function-`grep` mechanism above. (3) **Findings vs sweeps:** the rule governs persisted *findings* but not the *absence sweeps* that close them. In task-070 (08-12) two mis-anchored sweep probes returned empty against lines that were present: `'^\s*pytest '` from the implementer, and a leading-backtick exclusion from the verifier. Both were caught only because a control ran on the sweep itself. (4) **Fail-before-trust**, proposed as an explicit rule: before a new guard is trusted, show it failing on the exact regression it exists to catch (styler 09-21; that session's fixes were credible for that reason). This is a sibling of this item's point (a), that the control must *return a hit*.
 
-Tags: agents, negative-findings, positive-control, grep, zsh-glob, gitignored-skip, verify-agent, mutation-testing, result-set, upstream-gated-candidate, single-project-signal
+**2026-10-01 inbox preview (+6 sessions, PortfolioWebsite: a third project; formal harvest pending).** Sub-issue 2 is no longer "maybe harness-side": the current harness (observed in auto mode) provides no `Grep` or `Glob` tool at all, neither loaded nor deferred (ToolSearch `select:Grep,Glob` → no match, template-repo session 2026-10-01), and its system prompt directs search through Bash `grep`/`find`. That contradicts `rules/agents.md:104` (Tool Preferences forbids `grep`/`find` via Bash) and `:112` (route (a) names `Grep`); `implement-agent.md` and `verify-agent.md` prescribe `Grep` 7×. PortfolioWebsite subagents hit it in 6 sessions (08-26 → 10-01, the last on 5.7.4), five agents in one session (09-11). Ship direction: make the rule tool-agnostic, with route (b) (the positive control) as the default and the bash fallback contract from (b) above. The same corpus adds evidence for "a control must be shown to fail" (09-08 ×2, 09-15, 09-19): controls that pass vacuously, and a derivation script whose regex couldn't match multi-line template literals (the rule covers greps, not hand-written extractors). Planned for v5.8.0.
+
+Tags: agents, negative-findings, positive-control, grep, zsh-glob, gitignored-skip, verify-agent, mutation-testing, result-set, harness-tool-availability, three-project-signal
 
 ## FB-115: Closure sweeps verify the phrasings you changed, not the claim's full surface — lexical vs structural
 
@@ -847,11 +851,13 @@ Tags: task-schema, acceptance-criteria, decomposition, breakdown, phase-level-fi
 
 **Likely blast radius:** `.claude/scripts/dashboard-render.py` + tests; `support/reference/dashboard-regeneration.md` (sidecar schema, augment protocol); `rules/dashboard.md` (invariant wording); `commands/health-check.md` Part 1 check 4b (sidecar required keys). Extends FB-105 (v5.4.0).
 
-Tags: dashboard, needs-you, action-required, human-gated-coverage-invariant, user_review_pending, task_hash, augment-slot, sidecar, verified-defect, extends-FB-105
+**2026-10-01 evidence (styler on 5.7.4, three sessions; formal harvest pending).** Still biting after the 5.7.4 sync: styler 09-28 (both-owned and Blocked rows added by hand), 10-01-1237 (a `template_gap` marker naming `:992`/`:1051`), 10-01-1440 (rows re-inserted after ~6 regens in one session). Now three projects (oemmatinsightbi, LTP's local fix, styler). Promote **LTP's** patch, not OEMMatInsightBI's: LTP's also keeps the "ready for phase verification" gate from firing while a both-owned review is open (`review_pending_finished`), where OEMMatInsightBI's only moves the row. Leave out LTP's `T` id-prefix tweak (project-cosmetic). Re-verified 2026-10-01: `:992`/`:1051` unchanged and `canonical_task_hash` (`:357`) still omits `user_review_pending`. Planned for v5.8.0 with the sidecar `augment_rows[]`. **Also for that ship:** `/health-check` Part 6 check 4a rates FYI augment rows, and script-owned rows with no link or command (Audit Findings rows, the "Nothing blocked on you" line), as severity-3 errors (found by the v5.7.5 health-check review).
+
+Tags: dashboard, needs-you, action-required, human-gated-coverage-invariant, user_review_pending, task_hash, augment-slot, sidecar, verified-defect, extends-FB-105, three-project-signal
 
 ## FB-119: The orchestrator is the one unverified actor — inline implementation and orchestrator-authored state annotations bypass self-review and verify-agent
 
-**Status:** shipped v5.6.0 (2026-09-27) — (a)–(c) as adapted; see ship-log. Archive after one downstream `/work` cycle confirms no friction. Escalate to `/research` only if inline bypass or unmeasured state claims recur.
+**Status:** shipped v5.6.0 (2026-09-27) — (a)–(c) as adapted; see ship-log. **Not archivable (2026-10-01):** the first 5.7.4 cycles show friction in the inline contract (see the 2026-10-01 evidence below); amend it. Escalate to `/research` only if inline bypass or unmeasured state claims recur.
 **Captured:** 2026-09-25 (harvest cluster 8)
 **Source:** 6 exports, two projects: oemmatinsightbi 08-12, 08-19, 08-21 ×2; styler 09-20, 09-21. Triage: `template-maintenance/harvest-2026-09-25-triage.md`. Insight: `interaction-logs/insights/2026-09-25_work_orchestrator-unverified-actor.md`.
 
@@ -866,21 +872,13 @@ Tags: dashboard, needs-you, action-required, human-gated-coverage-invariant, use
 
 **Likely blast radius:** `rules/agents.md` (Separated Concerns / Context Separation); `commands/work.md` (inline-implementation path; supersession-annotation protocol); `support/reference/work-procedures.md`.
 
+**2026-10-01 evidence (5.7.4: styler 09-28, 10-01-1237, 10-01-1440; PortfolioWebsite 10-01-1809).** The invariant held: every inline task still got a separate verify-agent, and it caught both inline defects. Styler T894 failed spec_alignment because its fixtures were hand-written from type docs in the wrong id shape; T899 failed consistency_check because the stale-reference search used the retired literal rather than the claim's subject. The efficiency-default contract (`rules/agents.md § Dispatch Invariants vs Efficiency Defaults`) has three gaps: (1) it doesn't point inline work at the "search for what the change invalidates" / by-subject sweep that implement-agent Step 2 and verify-agent T2c item 4 carry; (2) it doesn't say that a task whose deliverable is a `.claude/` path is inline at any difficulty, since subagents can't write there (styler T898 at difficulty 5; PortfolioWebsite task 172, 08-26); (3) it doesn't say which rule wins against FB-103's post-limit no-re-dispatch rule (PortfolioWebsite implemented a difficulty-3, five-file task inline after a zero-token implement-agent return). Smaller: producer-consumer fixtures should come from the producer's own tests or emit path (T894).
+
 Tags: work, orchestrator, inline-implementation, verification-result, state-annotations, self-review, agent-dispatch-invariants, two-project-signal
 
-## FB-120: Verified small defects from the 2026-09-25 harvest — patch bundle (Python floor, timeout-vs-interrupted, pending-markers cleanup)
+## FB-120: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
 
-**Status:** ready — all three verified against current source 2026-09-25; patch-level
-**Captured:** 2026-09-25 (harvest clusters 9 + 10, bundled per FB-006 precedent)
-**Source:** oemmatinsightbi 08-12, 08-18, 08-21 (template 5.4.0). Triage: `template-maintenance/harvest-2026-09-25-triage.md`.
-
-**(a) `dashboard-render.py` needs Python 3.12, but the contract says 3.10+.** `.claude/scripts/README.md:21` says "Python 3.10+ assumed". `dashboard-render.py` puts a backslash inside an f-string expression, which is only legal from 3.12 (PEP 701). Verified: `py_compile` fails on 3.10.20 ("f-string expression part cannot include a backslash") and on macOS 3.9.6; every other `.claude/scripts/*.py` compiles on 3.10. Template settings allow a bare `python3 .claude/scripts/*.py`, and a stale shell snapshot resolves that to 3.9.6. The SyntaxError reads like a corrupt file, not a version problem (08-18, 08-21). **Fix:** hoist the backslash expressions out of the f-strings so the script meets the documented floor; add a `sys.version_info` guard with a clear message at the top of each script; optionally, add a test that compiles every script under the floor version.
-
-**(b) The timeout clause conflicts with the interrupted-verifier rule.** `work.md:749` (mirrored in `work-procedures.md:56`) says: "If verify-agent exhausts `max_turns` without returning a valid report, treat as verification failure — increment `verification_attempts`, set Blocked". `work.md:944` says: "Do NOT increment `verification_attempts` if verify-agent was interrupted". A platform usage-limit kill after 4 tool calls matches the literal timeout clause and would burn one of three attempts on an outage (08-12). **Fix:** make the 749 clause explicitly exclude the FB-103 zero-token / infrastructure-termination case and point at the interrupted rule.
-
-**(c) `.pending-markers.jsonl` is not truncated at export.** `context-transitions.md:416` (Session Export step 7) deletes `.session-log.jsonl` and `.interaction-assessment.json` but not `.pending-markers.jsonl`. At the next session, Step 0d sees no session log, builds an empty dedup set, and re-imports every already-exported marker; the following pause exports them again (08-21). **Fix:** truncate `.pending-markers.jsonl` in step 7 (and in `work.md` Step 0f's recovery path if it mirrors step 7).
-
-Tags: patch-bundle, scripts, python-version, verify-timeout, usage-limit, pending-markers, session-export, verified-defect
+**Status:** promoted 2026-10-02 — shipped v5.7.5 (Python 3.10 floor + guards + floor test; verify timeout excludes infrastructure terminations; export clears the pending-marker buffer and the working copy). See archive for full entry.
 
 ## FB-121: Nested subagent dispatch is now platform-supported — reconcile `rules/agents.md` + DEC-004's "no nested Task" fact, and decide whether any flow should use it
 
@@ -915,3 +913,43 @@ Tags: agents, subagents, nested-dispatch, DEC-004, capability-doc, rules-agents-
 **Gate.** `/research` before building; no incident evidence of mis-routing yet, so the case is maintainability and context size, not a defect.
 
 Tags: work, scripts, routing, FB-011-family, context-size
+
+## FB-123: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
+
+**Status:** promoted 2026-10-02 — shipped v5.7.5 (dispatch surface: `Agent` tool, `model: "opus"`, prompt-stated turn budgets, notification-driven parallel collection). See archive for full entry.
+
+## FB-124: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
+
+**Status:** promoted 2026-10-02 — shipped v5.7.5 (`/research`: the research-agent returns its artifacts and `research.md` Step 4 persists them, per DEC-004). See archive for full entry.
+
+## FB-125: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
+
+**Status:** promoted 2026-10-02 — shipped v5.7.5 (`/health-check` checks match the generated HTML dashboard, DEC-024). See archive for full entry.
+
+## FB-126: Retired template files persist downstream — `/health-check` Part 5 never drops a pattern or a file the template retired
+
+**Status:** downstream cleanup done 2026-10-03 (user go-ahead): the three Skill directories deleted in styler, flirty-gym and difficult-conversation-simplifier (every file matched a shipped template version byte for byte; flirty-gym's 7 project skills kept), the stale `sync` pattern dropped from flirty-gym's and difficult-conversation-simplifier's manifests, orphan `.sync-state.json` entries removed. Left uncommitted in each repo. **Still open: the template-side Part 5 fix.**
+**Captured:** 2026-10-02 (inbox preview; verified on disk)
+**Source:** PortfolioWebsite 2026-10-01-1243 (5.7.4), plus a direct check of the synced projects.
+
+**Problem.** DEC-020 retired the three template Skills in v4.12.0, but `dashboard-style` (its description still says to regenerate `.claude/dashboard.md` with Mermaid, pre-DEC-024), `decomposition-heuristics` and `spec-checklist` are still on disk in styler, flirty-gym and difficult-conversation-simplifier, all on 5.7.4. Their descriptions load into the skill listing every session. Two mechanisms: (1) since v5.7.4, Part 5 Step 2 unions the upstream manifest's `sync` patterns with local extras and Step 4 writes the union back (`health-check.md:622`), so a pattern the template dropped stays forever (flirty-gym and difficult-conversation-simplifier still list `.claude/skills/*/SKILL.md`); (2) nothing removes template-owned files the template deleted (styler's manifest no longer lists skills, but its copies remain). PortfolioWebsite found its own copies by hand on 10-01 and removed them.
+
+**Fix sketch.** Part 5: flag local-only sync patterns the upstream manifest no longer lists (offer to drop them), and list local files that match a template-owned pattern but no longer exist upstream (offer removal; never touch project-owned files such as flirty-gym's own skills). Downstream: delete the three retired skill directories in the three projects (keep flirty-gym's project skills) and drop the stale manifest pattern.
+
+**Reported in the same export, not yet verified (for the harvest):** an uncommitted sync is invisible — Part 5 diffs the working tree, so a dirty tree reads as up to date, and `/work` Step 0e needs 3+ finished tasks to fire. Candidate: Part 5 Step 4 ends with a commit offer.
+
+Tags: health-check, part-5, sync, sync-manifest, retired-files, skills, downstream, verified-defect
+
+## FB-127: v5.7.5 residuals — small follow-ups found while shipping (bundled per the FB-006 precedent)
+
+**Status:** ready — independent small items; none blocks anything
+**Captured:** 2026-10-02 (v5.7.5 implementation and review)
+
+(a) **Pre-DEC-024 Markdown-dashboard text still in shipped docs:** `dashboard-regeneration.md § Section Display Rules / Per-Section Format` (Tasks and phase tables, `[Fix it]`, ticking); audit wording that implies ticking the dashboard (`audit-coherence.md:27,145`, the `audit-family-core.md` triage intro, `audit-ui.md`'s `promote {ts}` "ticked" mode). The `[Fix it]` path itself works through the CLI (`fix`, `triage` → `F`), so this is wording, not mechanism, and the audit telemetry gate can still accrue. Also `### Acceptance Criteria` in `rules/spec-workflow.md` and `audit-coherence.md:386,411`; `breakdown.md:52`; `health-check.md`'s escalation to FB-011 Family C (shipped v4.22.0, superseded by DEC-024); `dashboard-regeneration.md:52,417` "(Replacing Template Example)"; scenario 06 Trace D still models the pre-DEC-024 in-file checklist (`:102-109`, `:114-116`, `:123-124`).
+(b) **Export residue outside the prose path:** `.claude/hooks/pre-compact-handoff.sh:232-239` copies its export to the inbox itself (bypassing `persist-session-export.py`) and never deletes its working copy; `persist-session-export.py` exits 1 with a traceback when the copy fails (its contract says 2); a project with a stale `.pending-markers.jsonl` gets one more duplicate export after upgrading.
+(c) **The sequential implement-agent dispatch states no turn budget** (`work.md` Step 3), so implement-agent's "75% of your turn budget" wind-down has nothing to measure outside parallel mode.
+(d) **Part 3 check 6** can't tell a decision's origin task from its dependents (`related.tasks`); v5.7.5 made its auto-fix report-only. Fix: an origin field, or skip the task a decision was made in.
+(e) `support/reference/decisions.md` doesn't document `partially_superseded`, which the renderer, META and `/audit-coherence` use (`/health-check` accepts it since v5.7.5).
+(f) Reported, not checked: `tests/scenarios/19-agent-crash-recovery.md:25` ("sequential mode runs inline") is out of date.
+
+Tags: residuals, dashboard, DEC-024, audit-wording, session-export, hooks, dispatch, health-check, decisions

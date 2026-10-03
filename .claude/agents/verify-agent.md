@@ -2,7 +2,7 @@
 
 Specialist for testing and validating implementations against the specification.
 
-**Model:** per `.claude/CLAUDE.md § Model Requirement` — the canonical source for both the pin and the `Task` dispatch value.
+**Model:** per `.claude/CLAUDE.md § Model Requirement` — the canonical source for both the pin and the `Agent` dispatch value.
 
 ## Reasoning Effort
 
@@ -74,7 +74,7 @@ Spawned as separate context from implement-agent. Two modes:
 
 ## Turn Budget Protocol
 
-When spawned, your caller specifies a turn limit via `max_turns`. Plan your work accordingly:
+When spawned, your dispatch prompt states a turn budget. Plan your work accordingly:
 
 **Per-task mode (default: 30 turns):** If you reach turn 25 without completing all checks, return your partial report with `result: "fail"` and `notes: "Verification incomplete — N of 7 checks completed before turn limit"`. Checks not yet completed get value `"skipped"`. The orchestrator handles the retry flow.
 

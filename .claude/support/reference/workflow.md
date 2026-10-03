@@ -166,7 +166,7 @@ This project uses three specialist agents:
 
 | Agent | Role | Focus |
 |-------|------|-------|
-| **implement-agent** | Builder | Executes tasks, produces deliverables, marks tasks finished |
+| **implement-agent** | Builder | Executes tasks, produces deliverables, reports back to `/work` |
 | **verify-agent** | Validator | Tests against spec, finds issues, ensures quality |
 | **research-agent** | Investigator | Gathers evidence for decisions, populates comparison matrices |
 
@@ -179,12 +179,12 @@ By separating concerns:
 - Issues caught by verify-agent become new tasks for implement-agent
 - Evidence gathered by research-agent feeds into decision records for human selection
 
-**Architectural separation:** verify-agent and research-agent always run as **separate `Task` agents** (spawned via the Task tool), never inline in the implementation context. This ensures genuine independence — the verifier has no memory of implementation decisions, only the artifacts (task JSON, spec section, and files); the researcher has no implementation or compliance bias, only the decision record and project context. This applies to both sequential and parallel execution modes.
+**Architectural separation:** verify-agent and research-agent always run as **separate subagents** (spawned via the `Agent` tool), never inline in the implementation context. This ensures genuine independence — the verifier has no memory of implementation decisions, only the artifacts (task JSON, spec section, and files); the researcher has no implementation or compliance bias, only the decision record and project context. This applies to both sequential and parallel execution modes.
 
 **The build workflow:**
 1. `/work` orchestrator sets the next pending task to "In Progress" and dispatches implement-agent
 2. implement-agent: build, run existing checks, return structured report
-3. Orchestrator writes task status "Awaiting Verification" from the report and dispatches verify-agent as a separate Task agent (fresh context, see DEC-004)
+3. Orchestrator writes task status "Awaiting Verification" from the report and dispatches verify-agent as a separate subagent (fresh context, see DEC-004)
 4. verify-agent (separate context): verify files, spec alignment, quality, integration boundaries, return structured verification report
 5. Orchestrator writes `task_verification` from the report. If pass: status → "Finished", regenerate dashboard, back to step 1 for next task
 6. If verification fails: orchestrator sets status → "In Progress", back to step 1 (implement-agent fixes)
@@ -196,8 +196,8 @@ By separating concerns:
 1. `/work` encounters an unresolved decision blocking a task (or `/research` is invoked directly)
 2. research-agent is spawned with decision record and project context
 3. research-agent: gathers options, evaluates against criteria, checks compatibility with existing decisions
-4. research-agent: populates decision record comparison matrix and option details, writes research archive
-5. research-agent: updates decision status to `proposed` (ready for user selection)
+4. research-agent: returns the research archive and decision-record edits (comparison matrix, option details, `status: proposed`) in its report
+5. Orchestrator (`/research` Step 4) writes the archive and applies the edits; decision status → `proposed` (ready for user selection)
 6. User selects option via checkbox → `/work` auto-updates status to `approved` → dependent tasks unblock
 
 **The review workflow** (via `/review`):
@@ -292,7 +292,7 @@ Returns: what was completed, files modified, status updates, recommendations, is
 
 ### Verify → Complete
 
-**Trigger:** Verify agent reports verification passed and writes a valid result to `.claude/verification-result.json`
+**Trigger:** Verify agent reports verification passed and `/work` writes a valid result to `.claude/verification-result.json`
 
 **Handoff includes:**
 - Test results
@@ -585,7 +585,7 @@ Two files control template behavior:
 .claude/
 ├── CLAUDE.md                  # Instructions for Claude Code
 ├── dashboard.html             # Project Dashboard (auto-generated HTML, gitignored)
-├── verification-result.json   # Latest verification outcome (written by verify-agent)
+├── verification-result.json   # Latest verification outcome (written by /work from verify-agent's report)
 ├── spec_v{N}.md               # Project specification (source of truth)
 ├── vision/                    # Vision documents from ideation
 │   └── {project}-vision.md   # Design philosophy, future roadmap

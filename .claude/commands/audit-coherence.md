@@ -102,7 +102,7 @@ Capture should complete within 30s. If any input source is missing or fails to p
 
 ### Phase 2 — Lenses (7 parallel sub-agents)
 
-Spawn N sub-agents in a **single Task tool message** so they run concurrently. Each:
+Spawn N sub-agents in a **single Agent tool message** so they run concurrently. Each:
 - Runs as `general-purpose` agent (per `.claude/rules/agents.md` § "Dispatch Convention" — persona-via-prompt-content)
 - Receives the audit dir path + ONLY its single lens prompt
 - Never sees other lenses' output

@@ -320,7 +320,7 @@ When verify-agent receives a wind-down signal:
 3. **Leave task status as "Awaiting Verification"** — session recovery Case 1 will handle re-spawn
 4. **Return control** to `/work` coordinator for handoff file creation
 
-This differs from the Turn Budget Protocol, which writes partial results on turn exhaustion. Wind-down is intentional and clean; turn exhaustion is a resource limit.
+This differs from the Turn Budget Protocol, which returns partial results on turn exhaustion (the orchestrator writes them). Wind-down is intentional and clean; turn exhaustion is a resource limit.
 
 ### Coordinator Wind-Down (Parallel Mode)
 
@@ -345,7 +345,7 @@ Should never happen (lifecycle is write-read-delete). If a handoff file already 
 Flag: "Handoff from {date} — project state may have changed significantly since then. Using for reference only." Don't use for routing decisions; rely on task file state.
 
 ### Wind-down during phase-level verification
-Turn Budget Protocol already handles writing partial `verification-result.json`. Handoff should note that phase-level verification was in progress and is incomplete.
+Turn Budget Protocol already returns a partial result, which the orchestrator writes to `verification-result.json`. Handoff should note that phase-level verification was in progress and is incomplete.
 
 ### Empty session (no work done)
 If `/work pause` is triggered but no work was in flight, write a minimal handoff with only `position` and empty `active_work`. Or skip the handoff entirely — if nothing is in flight, session recovery handles everything.
@@ -385,7 +385,7 @@ After writing the handoff file but before ending the session, generate an intera
 
 After writing both the handoff file and interaction assessment, compile the session export:
 
-1. Read `.claude/support/workspace/.session-log.jsonl` (Track 1 friction markers, if any exist)
+1. Read `.claude/support/workspace/.session-log.jsonl` (Track 1 friction markers, if any exist), plus each `.pending-markers.jsonl` entry it lacks (deduped on Step 0d's key, `work-recovery.md § "Friction-Marker Catchup"` step 3). The buffer can hold markers whose session-log write never landed (DEC-011); folding them in is what makes clearing it at step 7 lossless (FB-120).
 2. Read `.claude/support/workspace/.interaction-assessment.json` (Track 2, just written above)
 3. Read `.claude/version.json` for template version
 4. Compile into a unified export:
@@ -396,7 +396,7 @@ After writing both the handoff file and interaction assessment, compile the sess
   "source_project": "[project name from git remote or root CLAUDE.md]",
   "template_version": "[from version.json]",
   "session_date": "YYYY-MM-DD",
-  "automated_markers": [ /* Track 1 markers from session log */ ],
+  "automated_markers": [ /* Track 1 markers from step 1 */ ],
   "session_metrics": {
     "tasks_completed": 0,
     "verification_pass_rate": 0.0,
@@ -413,9 +413,9 @@ After writing both the handoff file and interaction assessment, compile the sess
    python3 .claude/scripts/persist-session-export.py --source .claude/support/workspace/.session-export-YYYY-MM-DD-HHMM.json
    ```
    The script reads `template_inbox_path` from `.claude/version.json`, derives `{project-slug}` from the export's `source_project` field (kebab-case), and writes the inbox copy as `{project-slug}-session-export-YYYY-MM-DD-HHMM.json`. **Always use the script — never `cp` the dot-prefixed working filename to the inbox verbatim.** Dot-files are invisible to plain `ls` in the template inbox (19 exports silently accumulated unseen before this was caught, 2026-06-11), and the rename rule was still being violated months after its v4.21.2 prose patch because prose under end-of-session context pressure is unreliable — 4 of 7 dot-prefixed exports found on 2026-08-12 postdate the rule. A script cannot forget to rename; `cp` can. The script enforces the never-dot-prefixed invariant structurally. The same rename rule applies to every inbox copy — Step 0f recovery exports (pass `--suffix recovered`) and PreCompact markers-only exports included.
-7. Clean up: delete `.session-log.jsonl` and `.interaction-assessment.json` (data is now in the export)
+7. Clean up: delete `.session-log.jsonl`, `.pending-markers.jsonl` and `.interaction-assessment.json` (data is now in the export; a leftover pending buffer is re-imported by the next Step 0d against an empty log and exported again, FB-120). Delete the step 5 working copy too when step 6 ran and the script exited `0` printing `"copied": true` (otherwise one piles up per pause); keep it when no inbox is configured or the copy failed — it is then the only copy.
 
-**Interrupted-pause recovery (FB-089):** if `/work pause` is interrupted between writing `.interaction-assessment.json` and step 7 cleanup (usage limit, Ctrl+C, harness crash), the stale file persists into the next session. The next `/work` invocation's Step 0f compiles a recovered export from the orphaned files (Track 1 + Track 2), copies to inbox if configured, then deletes both stale files. See `work-recovery.md § "Stale Track 2 Recovery"` (triggered by work.md Step 0f).
+**Interrupted-pause recovery (FB-089):** if `/work pause` is interrupted between writing `.interaction-assessment.json` and step 7 cleanup (usage limit, Ctrl+C, harness crash), the stale file persists into the next session. The next `/work` invocation's Step 0f compiles a recovered export from the orphaned files (Track 1 + Track 2), copies to inbox if configured, then deletes the stale files. See `work-recovery.md § "Stale Track 2 Recovery"` (triggered by work.md Step 0f).
 
 **If `/work pause` is not run** (PreCompact hook fires instead): The hook compiles a markers-only export (`"export_quality": "markers_only"`, `"claude_assessment": null`) from whatever Track 1 markers exist on disk. See § "Path B: PreCompact Hook" above.
 

@@ -75,10 +75,11 @@ For target task(s), check `decision_dependencies`:
 
    IF any decision is unresolved (no checked box):
      📋 Decision {DEC-NNN}: "{title}" is unresolved and blocks {N} task(s).
-       [R] Research options (spawns research-agent to populate the decision record — see `.claude/commands/research.md`)
+       [R] Research options (spawns research-agent; its findings populate the decision record — see `.claude/commands/research.md`)
        [S] Skip (you'll research manually — open the decision doc and check your selection, then run /work)
 
      IF user selects [R]:
+       → No record file yet: first create it via research.md Step 1 (topic branch), then Steps 2-4 as below
        → Gather context (decision record, spec, related tasks/decisions)
        → Spawn research-agent (see research.md Steps 2-4)
        → After research completes, re-present the decision for user selection
@@ -134,7 +135,8 @@ For each decision-*.md file, read `related.tasks` array:
       │      - Regenerate dashboard
       │
       └─ "Pending":
-           Silently fixable — add decision_dependencies and continue
+           Report and ask before adding decision_dependencies (`related.tasks` can also
+           list the task that produced the decision, which must not block on its own output)
 
     IF YES: task already tracks this decision → no issue
 ```

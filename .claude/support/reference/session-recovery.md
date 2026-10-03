@@ -49,9 +49,9 @@ Scan all non-archived `task-*.json` files and check for recoverable states:
 
 2. STATUS: "Blocked" WITH notes containing "[VERIFICATION TIMEOUT]"
    AND verification_attempts < 3
-   (Verify-agent ran out of turns — implementation is done, verification needs retry)
+   (Verify-agent twice returned no valid report — implementation is done, verification needs retry)
 
-   → Auto-recover: set status to "Awaiting Verification", spawn verify-agent with max_turns: 40 (extended from 30)
+   → Auto-recover: set status to "Awaiting Verification", spawn verify-agent with an extended turn budget (up from 30) in its dispatch prompt: `Turn budget: about 40 tool calls. If you get close, follow verify-agent.md § Turn Budget Protocol (result "fail", unfinished checks "skipped").`
    → Clear the [VERIFICATION TIMEOUT] note
    → Log: "⚡ Retrying verification for task {id} with extended turn limit"
 

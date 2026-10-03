@@ -18,8 +18,9 @@ Deterministic helpers invoked by the `/work` orchestrator (or by the user direct
 
 All scripts follow these rules:
 
-- **Stdlib only.** Python 3.10+ assumed. No `pip install` required.
-- **Read-only by default.** None of these scripts write to `.claude/` paths. Orchestrator captures stdout and writes where needed. The single exception is `persist-session-export.py`, which performs the inbox copy itself (the copy-with-rename is the operation that keeps failing — handing the `cp` back to the orchestrator would leave the failure surface in place, per FB-109). Its destination is the user-configured external `template_inbox_path`, never a `.claude/` path, so it does not violate the DEC-004 subagent-write constraint (it is orchestrator-invoked, never from a Task subagent).
+- **Stdlib only, Python 3.10+.** No `pip install` required. Below 3.10 each script exits `2` naming the interpreter it found (macOS's `/usr/bin/python3` is 3.9).
+- **Keep syntax 3.10-valid:** no backslashes, comments or reused quotes inside f-string `{…}` (3.12+ only). `tests/test_python_floor.py` compiles every script with a real 3.10, skipping when none is found (FB-120).
+- **Read-only by default.** None of these scripts write to `.claude/` paths. Orchestrator captures stdout and writes where needed. The single exception is `persist-session-export.py`, which performs the inbox copy itself (the copy-with-rename is the operation that keeps failing — handing the `cp` back to the orchestrator would leave the failure surface in place, per FB-109). Its destination is the user-configured external `template_inbox_path`, never a `.claude/` path, so it does not violate the DEC-004 subagent-write constraint (it is orchestrator-invoked, never from an `Agent` subagent).
 - **Stdout: machine-parseable** (JSON or newline-delimited records).
 - **Stderr: human-readable diagnostics.**
 - **Exit codes:** `0` = success, `1` = validation failure, `2` = runtime/usage error.

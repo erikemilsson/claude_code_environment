@@ -373,7 +373,7 @@ This step MUST run on every Step 2b invocation. It is the caller's responsibilit
 **When a decision blocks work**, present options including research:
 ```
 Decision {DEC-NNN}: "{title}" is unresolved and blocks Task {id}.
-  [R] Research options (spawns research-agent to investigate and populate the decision record)
+  [R] Research options (spawns research-agent to investigate; its findings populate the decision record)
   [S] Skip (you'll research manually — non-blocked tasks still dispatch normally)
 ```
 
@@ -386,7 +386,7 @@ Ambiguity detected: {description of the choice point}
 ```
 Claude must never resolve ambiguities autonomously. This applies during routing, spec checking, task dispatch, and any other step where Claude faces a choice the user hasn't explicitly decided.
 
-If user selects `[R]`: Gather context (decision record, spec, related tasks/decisions), then spawn research-agent. See `.claude/commands/research.md` Steps 2-4 for the delegation flow. After research completes, re-present the decision for user selection. If user selects via checkbox, auto-update frontmatter per the phase-decision-gates procedure and continue.
+If user selects `[R]`: if no decision record exists yet (e.g. a task's `decision_dependencies` names a DEC-NNN with no record file), first create one via `.claude/commands/research.md` Step 1's topic branch ("If a topic was provided"). Gather context (decision record, spec, related tasks/decisions), then spawn research-agent. See `.claude/commands/research.md` Steps 2-4 for the delegation flow. After research completes, re-present the decision for user selection. If user selects via checkbox, auto-update frontmatter per the phase-decision-gates procedure and continue.
 
 If all checks pass → proceed to Step 2c.
 
@@ -519,7 +519,7 @@ The orchestrator owns ALL `.claude/` state transitions — agents cannot write t
 
 **Resume-pending check (DEC-010):** if the task JSON has a `partial_completion` field, read `.claude/support/reference/work-recovery.md § "Resume-Pending Dispatch"` and follow it (git-diff audit, envelope injection, clearing the field afterwards) as part of this dispatch.
 
-Dispatch implement-agent (Task tool; set `model` per `.claude/CLAUDE.md § Model Requirement`) instructing it to read `.claude/agents/implement-agent.md` and follow Steps 1-6. Agent returns a structured report. **The dispatch prompt must state the envelope contract explicitly** — include: *"Return ONLY the structured JSON report envelope from `implement-agent.md § Step 6` — raw JSON, no prose summary, no markdown fences."* (Persona-via-prompt alone does not reliably transmit the output contract; a prose return was observed downstream.)
+Dispatch implement-agent (Agent tool; set `model` per `.claude/CLAUDE.md § Model Requirement`) instructing it to read `.claude/agents/implement-agent.md` and follow Steps 1-6. Agent returns a structured report. **The dispatch prompt must state the envelope contract explicitly** — include: *"Return ONLY the structured JSON report envelope from `implement-agent.md § Step 6` — raw JSON, no prose summary, no markdown fences."* (Persona-via-prompt alone does not reliably transmit the output contract; a prose return was observed downstream.)
 
 **After agent returns:** apply "After implement-agent returns" from State Persistence Protocol. Then, if `implementation_status == "completed"`, dispatch verify-agent per "If Verifying (Per-Task)" and apply "After verify-agent returns" protocol.
 
@@ -548,10 +548,9 @@ When Step 2c produces a parallel batch of >= 2 tasks, execute them concurrently.
 **You must spawn verify-agent as a separate agent. Do not verify inline.** This holds for tasks you implemented inline too, and if you cannot dispatch a subagent, the task stays in Awaiting Verification (`rules/agents.md § "Dispatch Invariants vs Efficiency Defaults"`).
 
 ```
-Task tool call:
+Agent tool call:
   subagent_type: "general-purpose"
-  model: "opus[1m]"  # canonical value: .claude/CLAUDE.md § Model Requirement
-  max_turns: 30
+  model: "opus"  # canonical value: .claude/CLAUDE.md § Model Requirement
   description: "Verify task {id}"
   prompt: |
     You are the verify-agent. Read `.claude/agents/verify-agent.md` and follow
@@ -561,11 +560,12 @@ Task tool call:
     Spec file: .claude/spec_v{N}.md (section: "{spec_section}")
 
     Verify the implementation independently. Do NOT assume correctness.
+    Turn budget: about 30 tool calls. If you get close, follow verify-agent.md § Turn Budget Protocol (result "fail", unfinished checks "skipped").
     Return ONLY the structured JSON verification report (verify-agent.md
     per-task report schema) — raw JSON, no prose summary, no markdown fences.
 ```
 
-**Timeout handling:** If verify-agent exhausts `max_turns` without returning a valid report, treat as verification failure — per State Persistence Protocol, increment `verification_attempts`, set task to "Blocked" with `[VERIFICATION TIMEOUT]` note, report to user.
+**Timeout handling:** If verify-agent returns without a valid report (prose instead of the report schema, malformed JSON, or nothing usable), ask it once for the report — resume it with SendMessage, or re-dispatch — without incrementing `verification_attempts`. Only a second invalid return is a timeout: treat as verification failure — per State Persistence Protocol, increment `verification_attempts`, set task to "Blocked" with `[VERIFICATION TIMEOUT]` note, report to user. **Infrastructure terminations are interruptions, not timeouts (FB-120):** after a zero-token return, a usage-limit/HTTP 429 kill, an API or harness error, or a stop the user asked for, do NOT increment `verification_attempts` (same rule as an interrupted verifier at `/work pause`); the task stays Awaiting Verification. Per `work-procedures.md § "State Persistence Protocol"` → "After implement-agent returns" step 1, "Zero-token return — platform limit cutoff (FB-103)", report the interruption to the user and apply its post-limit dispatch rule before re-dispatching a fresh verify-agent.
 
 **Empirical Evidence Gate:** if `report.result == "pass"` and the task's output is a web-UI route/component in a web-framework project, and `checks.runtime_validation` is `"partial"` (or `"pass"` without browser measurement), read `.claude/support/reference/work-web-evidence.md § "Empirical Evidence Gate"` and run it **before** persisting the pass. Non-web tasks skip it.
 
@@ -583,10 +583,9 @@ Task tool call:
 **MANDATORY: Reconciliation Gate** — Before starting phase-level verification, ALL drift must be reconciled. Check `drift-deferrals.json`; if any deferrals exist, block verification until reconciled.
 
 ```
-Task tool call:
+Agent tool call:
   subagent_type: "general-purpose"
-  model: "opus[1m]"  # canonical value: .claude/CLAUDE.md § Model Requirement
-  max_turns: 50
+  model: "opus"  # canonical value: .claude/CLAUDE.md § Model Requirement
   description: "Phase-level verification"
   prompt: |
     ultrathink
@@ -599,6 +598,7 @@ Task tool call:
 
     Validate the full implementation against spec acceptance criteria.
     Create fix tasks for any issues found. Do NOT implement fixes yourself.
+    Turn budget: about 50 tool calls. If you get close, follow verify-agent.md § Turn Budget Protocol (result "fail", plus one "Complete phase-level verification" fix task).
     Return ONLY the structured JSON phase-level report (verify-agent.md
     phase-level schema) — raw JSON, no prose summary, no markdown fences.
 ```

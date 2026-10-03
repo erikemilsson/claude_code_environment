@@ -9,7 +9,7 @@ Three specialist agents with distinct roles:
 
 ## Context Separation
 
-verify-agent always runs as a separate Task agent, dispatched by the `/work` orchestrator — never inline in the implementation conversation. This applies to both sequential and parallel execution modes. "Fresh eyes" is preserved because the verifier evaluates in its own context with no implementation memory; the fact that the orchestrator (not the verify-agent itself) writes the verification result to the task JSON does not affect verification independence. See DEC-004.
+verify-agent always runs as a separate subagent (`Agent` tool), dispatched by the `/work` orchestrator — never inline in the implementation conversation. This applies to both sequential and parallel execution modes. "Fresh eyes" is preserved because the verifier evaluates in its own context with no implementation memory; the fact that the orchestrator (not the verify-agent itself) writes the verification result to the task JSON does not affect verification independence. See DEC-004.
 
 ## Dispatch Invariants vs Efficiency Defaults (FB-119)
 
@@ -26,7 +26,7 @@ The same applies when carrying a task record's description of external or live s
 
 ## State Ownership
 
-All `.claude/` state transitions (task JSON writes, dashboard regeneration, verification-result.json, session-log.jsonl) are owned by the `/work` orchestrator. Subagents (implement-agent, verify-agent, research-agent) return structured reports; they do not write to `.claude/` paths. This is a hard constraint of the Claude Code harness (subagents are sandboxed from `.claude/` writes per Anthropic issue #38806) and is not expected to change. See DEC-004 for the full rationale.
+All `.claude/` state transitions (task JSON writes, dashboard regeneration, verification-result.json, session-log.jsonl) are owned by the orchestrator (the main session running `/work`, or `/research` for decision records). Subagents (implement-agent, verify-agent, research-agent) return structured reports; they do not write to `.claude/` paths. This is a hard constraint of the Claude Code harness (subagents are sandboxed from `.claude/` writes per Anthropic issue #38806) and is not expected to change. See DEC-004 for the full rationale.
 
 **Capability grounding:** the subagent boundaries above (no `.claude/` writes, no `permissions.allow` inheritance, Explore/Plan agents skip CLAUDE.md + git status; nested dispatch is platform-supported but not used by the template) are documented in `.claude/support/reference/claude-code-authoring.md § "Subagent Boundaries"` as load-bearing constraints for spec/skill/agent authors who would otherwise design workflows that violate them. The reference doc is the canonical home for "facts about Claude Code that authors trip over" (DEC-017).
 
@@ -115,11 +115,11 @@ Why: bash `grep` on macOS/BSD can silently produce no output on certain files, a
 
 ## Dispatch Convention
 
-Dispatch implement-agent, verify-agent and research-agent via the `Task` tool with `subagent_type: "general-purpose"`, directing the persona in the prompt ("You are the verify-agent. Read `.claude/agents/verify-agent.md`..."). Keep all dispatch sites uniform on this; the portability rationale and the migration gate to named types live in `.claude/support/reference/claude-code-authoring.md § "subagent_type: \"general-purpose\" portability convention"` (lazy).
+Dispatch implement-agent, verify-agent and research-agent via the `Agent` tool with `subagent_type: "general-purpose"`, directing the persona in the prompt ("You are the verify-agent. Read `.claude/agents/verify-agent.md`..."). Keep all dispatch sites uniform on this; the portability rationale and the migration gate to named types live in `.claude/support/reference/claude-code-authoring.md § "subagent_type: \"general-purpose\" portability convention"` (lazy).
 
 ## Model Requirement
 
-All agents run on the model pinned in `.claude/CLAUDE.md § Model Requirement` — the canonical source for both the design pin and the `Task` dispatch value.
+All agents run on the model pinned in `.claude/CLAUDE.md § Model Requirement` — the canonical source for both the design pin and the `Agent` dispatch value.
 
 **Effort defaults:** Opus 5.5 defaults to `medium` effort on every plan, which matches or beats Opus 5 at `high` on coding and knowledge work. Don't add "ultrathink" or "think carefully" instructions by default. The standing exception is phase-level verification, whose dispatch includes "ultrathink" (it requests deeper reasoning for that turn; the effort level sent to the API is unchanged). To lower thinking, lower effort rather than instructing it in the prompt. Per-agent effort is possible via `effort:` frontmatter in a named agent definition, which the `general-purpose` Dispatch Convention doesn't use yet.
 

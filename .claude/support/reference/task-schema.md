@@ -128,11 +128,11 @@
 | cross_phase | Boolean | When true, task is exempt from the phase gate — eligible when its `dependencies`/`decision_dependencies` are met, regardless of prior phase completion. Phase membership is unchanged (task still belongs to its declared phase for verification and dashboard rendering). Use for long-lead work (procurement, recruitment, approvals) that must start before prior phase is fully done. Default: false. |
 | conflict_note | String | **Transient.** Set during parallel dispatch when a task is held back due to file conflicts (e.g., `"Held: file conflict with Task 3 on src/models.py"`). Cleared when the task is dispatched or during post-parallel cleanup. Surfaced in the dashboard Status column. |
 | recovery_state | String | **Transient.** Set by `/work` Step 0 when auto-recovering a stuck task. Values: `"verification_retry"` (respawning verify-agent), `"agent_retry"` (user chose to retry after timeout). Cleared after recovery completes. Prevents double-recovery if `/work` runs again before recovery finishes. |
-| user_review_pending | Boolean | Set to `true` by verify-agent when a `both`-owned task passes verification, OR when any task has a `test_protocol` (runtime validation was partial, human testing needed). Keeps the task visible for user action until the user runs `/work complete {id}` or completes guided testing. Cleared by `/work complete`. |
-| verification_attempts | Number | Count of per-task verification attempts (incremented by verify-agent on each run). Escalates to human review at >= 3 (initial + 2 retries). Default: 0 (omit until first verification). |
+| user_review_pending | Boolean | Set to `true` by `/work` (from verify-agent's report) when a `both`-owned task passes verification, OR when any task has a `test_protocol` (runtime validation was partial, human testing needed). Keeps the task visible for user action until the user runs `/work complete {id}` or completes guided testing. Cleared by `/work complete`. |
+| verification_attempts | Number | Count of per-task verification attempts (incremented by the `/work` orchestrator when verify-agent returns, per DEC-004). Escalates to human review at >= 3 (initial + 2 retries). Default: 0 (omit until first verification). |
 | verification_history | Array | Append-only log of all verification attempts (pass and fail). Each entry records attempt number, result, checks, issues, and notes. Coexists with `task_verification` (which stays as the latest result for quick checks). See Verification History section below. |
-| task_verification | Object | Per-task verification result recorded by verify-agent |
-| test_protocol | Object | Structured testing steps for human-guided verification. Written by verify-agent when runtime validation is `"partial"` or task needs human testing. See Test Protocol section below. |
+| task_verification | Object | Per-task verification result (verify-agent's report, recorded by `/work`) |
+| test_protocol | Object | Structured testing steps for human-guided verification. Produced by verify-agent (written to the task by `/work`) when runtime validation is `"partial"` or task needs human testing. See Test Protocol section below. |
 | interaction_hint | String | `"cli_direct"` or `"dashboard"`. Determines how `/work` presents the task to the user. CLI-direct tasks are presented immediately in the conversation; dashboard tasks appear in "Your Tasks". Default when absent: `"dashboard"`. |
 
 ## Owner Values
@@ -187,7 +187,7 @@ The `out_of_spec` and `out_of_spec_rejected` fields mark tasks outside the spec 
 
 ## Task Verification Field
 
-Per-task verification result recorded by verify-agent when a task is in "Awaiting Verification" status. Upon passing, the task status transitions to "Finished". This enables Tier 1 (per-task) verification in the two-tier verification system.
+Per-task verification result: verify-agent's report, recorded by `/work` when a task is in "Awaiting Verification" status. Upon passing, the task status transitions to "Finished". This enables Tier 1 (per-task) verification in the two-tier verification system.
 
 ```json
 {
@@ -257,7 +257,7 @@ A task "needs per-task verification" when:
 ### Failure Handling
 
 When per-task verification fails:
-- `verification_attempts` is incremented (verify-agent increments this before writing the result)
+- `verification_attempts` is incremented (the orchestrator increments this before writing verify-agent's result)
 - The attempt is appended to `verification_history` (structured record of all attempts, including passes — see Verification History section)
 - Task status is set back to "In Progress"
 - Verification failure notes are prepended with `[VERIFICATION FAIL #{N}]` in the task `notes` field (where N = current attempt count)
@@ -335,7 +335,7 @@ Tasks that bypass verification create "verification debt" — Finished tasks wit
 
 ## Test Protocol Field
 
-Written by verify-agent when runtime validation is `"partial"` or the task needs human-guided testing. Provides structured steps for the user to walk through, typically presented via the guided testing flow in `/work` when `interaction_hint` is `"cli_direct"`.
+Produced by verify-agent (written to the task by `/work`) when runtime validation is `"partial"` or the task needs human-guided testing. Provides structured steps for the user to walk through, typically presented via the guided testing flow in `/work` when `interaction_hint` is `"cli_direct"`.
 
 ```json
 {

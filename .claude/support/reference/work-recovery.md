@@ -32,7 +32,7 @@ Recover from a prior session's interrupted `/work pause` that left `.claude/supp
 
 1. If `.claude/support/workspace/.interaction-assessment.json` does not exist, this step is a no-op — proceed to Step 1.
 2. Read the file. If invalid JSON, surface inline `Step 0f: Stale Track 2 capture malformed — discarded.`, delete, proceed to Step 1.
-3. Read `.claude/support/workspace/.session-log.jsonl` if present (Track 1 markers also orphaned from same interrupted pause).
+3. Read `.claude/support/workspace/.session-log.jsonl` if present (Track 1 markers also orphaned from same interrupted pause), plus each `.pending-markers.jsonl` entry it lacks, deduped on the Step 0d key above (normally none, since Step 0d ran first; folding covers a failed catchup, so step 9 can clear the buffer losslessly, FB-120).
 4. Read `.claude/version.json` for `template_version` + `template_inbox_path`.
 5. Compile a recovered export matching `/work pause § Session Export` shape:
    ```json
@@ -41,7 +41,7 @@ Recover from a prior session's interrupted `/work pause` that left `.claude/supp
      "source_project": "[project name]",
      "template_version": "[from version.json]",
      "session_date": "[YYYY-MM-DD from current date]",
-     "automated_markers": [/* from .session-log.jsonl if present, else [] */],
+     "automated_markers": [/* from step 3, else [] */],
      "session_metrics": {
        "tasks_completed": [computed from current task files],
        "verification_pass_rate": [computed],
@@ -58,8 +58,8 @@ Recover from a prior session's interrupted `/work pause` that left `.claude/supp
    python3 .claude/scripts/persist-session-export.py --source .claude/support/workspace/.session-export-{timestamp}-recovered.json --suffix recovered
    ```
    Never `cp` the dot-prefixed working filename to the inbox verbatim (see `context-transitions.md § "Session Export"` step 6).
-9. Delete `.interaction-assessment.json` AND `.session-log.jsonl`.
-10. Surface inline: `Step 0f: Recovered stale Track 2 capture from interrupted pause → .session-export-{timestamp}-recovered.json` (Inform — not an error.)
+9. Delete `.interaction-assessment.json`, `.session-log.jsonl` AND `.pending-markers.jsonl`. Delete the step 7 working copy too when step 8 ran and the script exited `0` printing `"copied": true`; otherwise keep it — it is then the only copy (mirrors `context-transitions.md § "Session Export"` step 7).
+10. Surface inline: `Step 0f: Recovered stale Track 2 capture from interrupted pause → {the inbox file, or the kept .session-export-{timestamp}-recovered.json}` (Inform — not an error.)
 11. Proceed to Step 1.
 
 **Why this exists:** `/work pause § Session Export step 7` cleans up `.interaction-assessment.json` after compiling the export. If pause is interrupted between the write (Interaction Assessment sub-section) and step 7 cleanup — usage limit, user `Ctrl+C`, harness crash — the file persists. Observed in echothread 2026-05-17.

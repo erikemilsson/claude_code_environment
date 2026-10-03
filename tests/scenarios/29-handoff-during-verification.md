@@ -73,7 +73,7 @@ Verify that context transitions work correctly when verify-agent is mid-verifica
 - [ ] Handoff summary mentions verification was interrupted (not just "task 7 in progress")
 - [ ] Session recovery Case 1 handles the actual re-spawn (handoff informs context, recovery handles mechanics)
 - [ ] verify-agent gets fresh context (no partial verification state leaked)
-- [ ] `verification_attempts` stays at 1 until verify-agent runs and increments it normally
+- [ ] `verification_attempts` stays at 1 until verify-agent runs and the orchestrator increments it normally
 - [ ] `session_knowledge` from handoff is available to `/work` coordinator (but NOT passed to verify-agent — context separation)
 
 ### Fail indicators

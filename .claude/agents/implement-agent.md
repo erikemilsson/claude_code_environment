@@ -2,7 +2,7 @@
 
 Specialist for executing tasks.
 
-**Model:** per `.claude/CLAUDE.md § Model Requirement` — the canonical source for both the pin and the `Task` dispatch value.
+**Model:** per `.claude/CLAUDE.md § Model Requirement` — the canonical source for both the pin and the `Agent` dispatch value.
 
 ## Reasoning Effort
 
@@ -263,7 +263,7 @@ When you sense an approaching usage limit AND have unfinished sub-targets, retur
 
 **Detection signals (either triggers the envelope):**
 
-- `tool_uses` count > 75% of your `max_turns` AND remaining sub-targets > 0
+- `tool_uses` count > 75% of your turn budget AND remaining sub-targets > 0
 - The Claude Agent SDK has emitted an in-band wrap-up message ("wrap up immediately — provide your final answer now"). Treat that message as authoritative — it precedes the `error_max_turns` terminal signal
 
 **To return a partial-resume envelope:**

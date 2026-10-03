@@ -2,7 +2,7 @@
 
 Reference for users who want to automate template workflows or run Claude Code non-interactively. Covers two complementary tools: the `claude -p` primitive (a single prompt, no session) and the fan-out pattern (many `claude -p` calls in parallel for batch workloads).
 
-**Scaling axes.** The template's parallel execution is *intra-session*: one `/work` orchestrator dispatches multiple `Task` agents in the same conversation, with file-conflict detection and verification gating. Automation is *inter-session*: many independent `claude` processes run outside any `/work` orchestrator. The two axes are complementary — use intra-session parallelism for spec-driven task batches (the default); use inter-session fan-out for very large or schedule-based workloads.
+**Scaling axes.** The template's parallel execution is *intra-session*: one `/work` orchestrator dispatches multiple `Agent`-tool subagents in the same conversation, with file-conflict detection and verification gating. Automation is *inter-session*: many independent `claude` processes run outside any `/work` orchestrator. The two axes are complementary — use intra-session parallelism for spec-driven task batches (the default); use inter-session fan-out for very large or schedule-based workloads.
 
 ---
 
@@ -62,7 +62,7 @@ claude -p "..." --cwd /path/to/project --model claude-opus-4-8
 
 ## Fan-out — parallel batch execution
 
-When a workload is "same operation, many inputs," spawn many `claude -p` processes in parallel. This is how you scale past what one session (intra-session Task dispatch) can coordinate.
+When a workload is "same operation, many inputs," spawn many `claude -p` processes in parallel. This is how you scale past what one session (intra-session `Agent` dispatch) can coordinate.
 
 **Minimal pattern:**
 
@@ -130,6 +130,6 @@ The template does NOT ship any fan-out scripts. This doc is reference for users 
 
 ## Related
 
-- `.claude/support/reference/parallel-execution.md` — intra-session parallel Task dispatch (the `/work` orchestrator's path).
+- `.claude/support/reference/parallel-execution.md` — intra-session parallel `Agent` dispatch (the `/work` orchestrator's path).
 - `.claude/commands/health-check.md` — candidate for nightly `claude -p` automation.
 - Claude Code docs — full `claude -p` CLI flag reference.

@@ -22,6 +22,11 @@ import re
 import sys
 from pathlib import Path
 
+if sys.version_info < (3, 10):  # Python floor (FB-120); see README § Invocation contract
+    print(f"error: {Path(__file__).name} needs Python 3.10+; this is Python "
+          f"{'.'.join(map(str, sys.version_info[:3]))} ({sys.executable})", file=sys.stderr)
+    sys.exit(2)
+
 SYNOPSIS_MAX = 120
 
 

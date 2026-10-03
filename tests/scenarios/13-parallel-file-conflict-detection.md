@@ -77,7 +77,7 @@ Parallel execution is a core template feature: when multiple tasks are eligible 
 
 ### Expected
 
-- Task C becomes eligible immediately after Task A completes (within the same polling loop iteration)
+- Task C becomes eligible immediately after Task A completes (when the collection loop handles A's completion notification)
 - C is dispatched in parallel with still-running B and D (no file conflicts between them)
 - C's `conflict_note` is cleared when it's dispatched
 - No manual intervention needed
@@ -87,7 +87,7 @@ Parallel execution is a core template feature: when multiple tasks are eligible 
 - [ ] After A completes, C becomes eligible for dispatch within the same parallel execution cycle
 - [ ] C can run in parallel with still-running B and D
 - [ ] No user action required to unblock C
-- [ ] The re-check happens automatically via the polling loop, not only on next `/work` invocation
+- [ ] The re-check happens automatically via the collection loop, not only on next `/work` invocation
 - [ ] `conflict_note` is cleared from C when dispatched
 
 ### Fail indicators

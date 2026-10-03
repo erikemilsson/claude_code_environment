@@ -12,7 +12,7 @@ A downstream project where `/health-check` (no flags) finds:
 
 - Part 1: dashboard stale (hash mismatch) → regen fix
 - Part 1: task-12 "In Progress" for 9 days → stale, needs user choice
-- Part 3: DEC-004 file missing from dashboard Decisions table → add-entry fix
+- Part 3: DEC-004's `status:` line has a trailing `# comment` → rewrite-line fix
 - Part 5: `commands/work.md` differs upstream, local hash ≠ sidecar synced_hash (Modified upstream)
 - Part 5: `rules/dashboard.md` differs upstream, local hash == sidecar synced_hash (hash-verified clean)
 - Part 2d: capability doc 120 days stale → [V] offer
@@ -27,7 +27,7 @@ A downstream project where `/health-check` (no flags) finds:
 
 - Parts 1, 2d, 3, 5 each QUEUE their items; zero inline prompts during the run
 - After the report: ONE table with 6 rows (id, part, file, one-line fix, risk), then ONE response request
-- Risk flags: regen + add-entry + [V] offer = `—`; both sync applies = `⚠ overwrites local` (the clean one annotated `hash-verified: no local edits`); task-12 = `needs-input` with choices inline
+- Risk flags: regen + rewrite-line + [V] offer = `—`; both sync applies = `⚠ overwrites local` (the clean one annotated `hash-verified: no local edits`); task-12 = `needs-input` with choices inline
 
 ### Pass criteria
 
@@ -50,7 +50,7 @@ A downstream project where `/health-check` (no flags) finds:
 
 ### Expected
 
-- Applied: dashboard regen, DEC-004 entry, the [V] pass offer (unflagged rows only)
+- Applied: dashboard regen, DEC-004 line rewrite, the [V] pass offer (unflagged rows only)
 - NOT applied: both sync rows (⚠), task-12 (needs-input) — listed back as still-open in the post-apply summary
 - The [V] sub-flow runs after the batch, with its per-section [A]/[R]/[S] adjudication intact
 

@@ -22,7 +22,7 @@ Unlike the other scripts in this directory, this one WRITES a file — the
 inbox copy. The destination is a user-configured EXTERNAL path
 (`template_inbox_path` in `.claude/version.json`), never a `.claude/` path, so
 this does not violate the subagent-write constraint (DEC-004): the script is
-orchestrator-invoked, never from a Task subagent. Read-only scripts emit data
+orchestrator-invoked, never from an `Agent` subagent. Read-only scripts emit data
 for the orchestrator to write; this script performs the copy itself because
 the copy-with-rename IS the operation that keeps failing — handing the `cp`
 back to the orchestrator would leave the failure surface in place.
@@ -42,6 +42,10 @@ produce a malformed inbox filename.
 
 Exit codes: 0 success (incl. no-op when the inbox is unconfigured or missing);
 2 usage/runtime error.
+
+Stdout: one JSON object; `"copied": true` only once the inbox file is written.
+Callers delete the working copy on exactly that (context-transitions.md
+§ "Session Export" step 7, work-recovery.md Step 0f step 9), so keep it stable.
 """
 import argparse
 import json
@@ -50,6 +54,11 @@ import re
 import shutil
 import sys
 from pathlib import Path
+
+if sys.version_info < (3, 10):  # Python floor (FB-120); see README § Invocation contract
+    print(f"error: {Path(__file__).name} needs Python 3.10+; this is Python "
+          f"{'.'.join(map(str, sys.version_info[:3]))} ({sys.executable})", file=sys.stderr)
+    sys.exit(2)
 
 # Minute-granularity timestamp as used across the Session Export recipe
 # (FB-079). Anchored to the `YYYY-MM-DD-HHMM` form embedded in the working

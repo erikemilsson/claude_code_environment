@@ -37,11 +37,13 @@ Implicit decision detected: Charting library selection ("a suitable charting lib
 2. Delegates to research workflow (research.md Steps 2-4):
    - Gathers context from spec and new decision record
    - Spawns research-agent
+   - Persists what the agent returns (Step 4, item 1): writes the archive, applies the record edits and `status: proposed`
 
 ### Expected
 
 - Decision record created before research-agent spawned
 - Research-agent receives the decision record path
+- Research-agent writes no files; `/iterate` writes its returned artifacts via research.md Step 4
 - After research completes, decision has populated options and status `proposed`
 
 ## Trace: User selects [D] for database
@@ -74,6 +76,7 @@ Implicit decision detected: Charting library selection ("a suitable charting lib
 - [ ] Implicit decisions detected from vague spec language
 - [ ] Three options presented per implicit decision: [C], [D], [S]
 - [ ] [C] creates decision record THEN spawns research-agent
+- [ ] [C] persists the agent's returned archive and record edits via research.md Step 4 (the agent writes nothing)
 - [ ] [D] creates decision record without research
 - [ ] [S] skips without creating anything
 - [ ] Decision IDs assigned sequentially (DEC-001, DEC-002)
@@ -85,6 +88,7 @@ Implicit decision detected: Charting library selection ("a suitable charting lib
 ## Fail indicators
 
 - Research-agent spawned without first creating a decision record
+- Research-agent writes the archive or record itself, or `/iterate` drops its returned artifacts (record stays `draft`)
 - All implicit decisions bundled into one prompt (should be individual)
 - Decision record created in wrong directory
 - Stated choices (not vague) flagged as implicit decisions
