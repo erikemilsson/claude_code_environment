@@ -632,6 +632,8 @@ Tags: workflow, new-command-candidate, grill-adjacent, vision-adjacent, capabili
 **Cheap slice (direct edit):** (a) re-check `git status` immediately before parallel agent dispatch, not only at Step 0e session start (06-16 pushback: a concurrent retirement broke the tree mid-batch); (b) handoff preserve-not-consume when the handoff references another session's in-flight task; (c) a one-line "single-committer convention" note for overlapping sessions.
 **Full model** (session registry, lease/lock, cross-session state signal): route through `/research` if recurrence continues after the cheap slice.
 
+**Harvest 2026-10-03 evidence (+1, PortfolioWebsite, a fourth project, after the cheap slice shipped; cluster 15). Evidence only; the research gate is unchanged.** A second session on the same tree was found only from three unexplained modified files. The single-committer convention held (disjoint files, no `git add -A`, zero conflicts), but Step 0e can't attribute uncommitted files, so "another session is editing" reads like "you forgot to commit" (08-20-1330).
+
 ## FB-105: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
 
 **Status:** promoted 2026-07-20 — shipped v5.4.0 (script-owned Action Required + augment slot). Full entry in archive.
@@ -704,6 +706,8 @@ Tags: workflow, new-command-candidate, grill-adjacent, vision-adjacent, capabili
 
 **Harvest 2026-09-25 evidence (+6 incidents, now two projects — `template-maintenance/harvest-2026-09-25-triage.md` cluster 1).** oemmatinsightbi: prose docs that summarise a changed DAX/code pattern fell outside declared scope (task-065, 08-13: 2 declared → 4 actual), and a gold column-set change left two schema docs describing a removed column (task-074, 08-20). **styler (template 5.0.0), a new project for this item:** shared response types, a reused eligibility-helper signature, new test files, and **`package.json` test-script wiring** were under-counted on T866 (09-21), T870 + T869 (09-24), and T890 (09-24). `package.json` test wiring touches nearly every task, so it defeats the file-overlap parallelism heuristic unless it's exempted. A decomposition also split a type-narrowing task from the sibling task holding the consumer repair that the narrowing forces (09-21). **The single-project caveat above no longer applies.**
 
+**Harvest 2026-10-03 evidence (+9; PortfolioWebsite is the third project; cluster 8).** The 5.4.0 shapes add: class-gating fixes that live in a shared stylesheet and layout (task 174); a `files_affected` naming the wrong component entirely (175); a prop threaded through a layout wrapper (196); collection renames (213); and validation-script wiring across `package.json`, README and root `CLAUDE.md` (201, 202), which is this item's open `package.json` sub-issue again. **First post-v5.7.0 data (5.7.4):** PortfolioWebsite task 230 (3 declared, 6 actual, including a higher-specificity duplicate rule); styler T898 (a registry-consumer edit also needed the zod enum, the TS union and the top-level consumers list, which is the Synchronized Locations heuristic's own domain). Feed both into the 2026-12-31 mismatch-rate check.
+
 **Shared root with FB-115.** The 08-12 export named both items as one missing discipline: list what a change *invalidates*, not what it *edits*. FB-113 is the decomposition-time half (declared scope); FB-115 is the closure-time half (sweep scope). They stay separate because the fixes live in different files (`decomposition.md` vs `verify-agent.md`), but design either with the other in view.
 
 Tags: implement-agent, decomposition, files_affected, cross-artifact-parity, dispatch-brief, extends-FB-058, extends-FB-086, extends-2026-06-11-predecessor, two-project-signal, cross-references-FB-115
@@ -714,7 +718,7 @@ Tags: implement-agent, decomposition, files_affected, cross-artifact-parity, dis
 
 ## FB-115: Closure sweeps verify the phrasings you changed, not the claim's full surface — lexical vs structural
 
-**Status:** cheap action shipped v5.7.1 (2026-09-27) — verify-agent T2c item 4 (search by what the claim is about, task-ID status cross-reference, ungated mirrors, re-dated anchors) + `/iterate` Step 5 dated-anchor line. Single-project caveat stands. Not done: the drift-reconciliation fingerprint-blindness note (incident 2); add it if a second project shows the same shape.
+**Status:** cheap action shipped v5.7.1 (2026-09-27) — verify-agent T2c item 4 (search by what the claim is about, task-ID status cross-reference, ungated mirrors, re-dated anchors) + `/iterate` Step 5 dated-anchor line. **Single-project caveat superseded 2026-10-04** (PortfolioWebsite and styler; see the 2026-10-03 harvest evidence). Not done: the drift-reconciliation fingerprint-blindness note (incident 2). Its second-project trigger is now met (PortfolioWebsite 09-19-0210); ship it with FB-128, which edits the same file.
 **Captured:** 2026-08-12 (harvest cluster 5)
 **Source:** 5 unique incidents across OEMMatInsightBI exports 2026-08-05 and 2026-08-10. Full evidence + insight doc: `interaction-logs/insights/2026-08-12_verify-agent_closure-sweep-lexical-vs-structural.md`.
 
@@ -733,6 +737,8 @@ Tags: implement-agent, decomposition, files_affected, cross-artifact-parity, dis
 **Single-project caveat.** 5 incidents, single project (OEMMatInsightBI), single five-day stretch — above the 3-occurrence floor but single-project. Framed like FB-076 / FB-084 / FB-107, not as an unqualified `ready`. Re-assess for promotion (drop the caveat) on a second project signaling the same closure-sweep gap.
 
 **Harvest 2026-09-25 evidence (+3, all oemmatinsightbi, so the caveat stands — `template-maintenance/harvest-2026-09-25-triage.md` cluster 3).** (1) **Four sites in one session (08-12).** A friction-to-task translation normalised a name by assumption (FR-078). task-069's AC4 had five sites where the brief implied one. task-070 failed verification twice on file-scoped rather than value-scoped doc sweeps. An `/iterate` drain found a stale line because MQ-001's earlier fix had been section-scoped. (2) **New mechanism: re-dating re-certifies.** Moving a section's "measured YYYY-MM-DD" anchor silently re-certifies every count beneath it, turning an honestly stale claim into a falsely fresh one. This caused task-076's first verification failure (08-21: 45 vs 54). Cheapest fix: an `/iterate` spec-edit checklist line, "when moving a dated anchor, re-measure every figure it governs". (3) **Synonym-blind residue sweeps.** After correcting three "HQ relationship" claims, the residue sweep searched those three phrases and missed a fourth site ("rolled to supplier HQ country") falsified by the same correction; the verifier caught it (09-19). Same lexical-vs-structural root as incident 1 above. *(Stale annotations about live or orchestrator-written state are filed under FB-119, not here.)* See also FB-113 § "Shared root with FB-115".
+
+**Harvest 2026-10-03 evidence (+9, PortfolioWebsite and styler, so the single-project caveat no longer applies; cluster 9).** (1) **Fingerprint blindness in a second project:** a spec bullet that was wrong the day it was written registered zero drift for eight days across four cleanup passes (PortfolioWebsite 09-19-0210). That meets the trigger for the deferred `drift-reconciliation.md` note (incident 2 above). (2) **Status prose rots one decision-close behind:** § Remaining Work went stale four times, and each cleanup wrote the next stale bullet (FR-049, FR-052, FR-068, line 190; 09-08-2329 → 09-19-1234). Decision records' Residual and Risks sections contradicted shipped behaviour within hours (09-19-0005, 09-19-1234). Fix suggested in the export (09-19-0110): the spec records standing constraints only and in-flight work lives in tasks, or `/iterate` sweeps such sections when a decision closes. (3) `/iterate` updated the spec but not the project rule file named in the decision's Impact section (styler 09-28-1923). The PortfolioWebsite evidence predates v5.7.1.
 
 Tags: verify-agent, closure-sweep, lexical-vs-structural, drift-detection, section-fingerprints, ungated-mirrors, re-dating, cross-references-FB-114, cross-references-FB-113, single-project-signal
 
@@ -767,11 +773,13 @@ Tags: verify-agent, closure-sweep, lexical-vs-structural, drift-detection, secti
 
 **Harvest 2026-09-25 evidence (+4, styler on template 5.0.0 — `template-maintenance/harvest-2026-09-25-triage.md` cluster 4). A related failure: the environment exists but is temporarily unavailable.** (1) The Empirical Evidence Gate was blocked twice because Playwright MCP was held by the user's own Chrome (process-singleton conflict), and no headless browser is bundled as a fallback (09-21, 09-24). (2) **There is no "verify PASS held pending evidence" / "not run" state.** The evidence schema is pass|fail only, so a held report was parked in a workspace file and cross-linked from task notes to survive the pause (09-24). This belongs with this item's point that the verifier should honestly state what was reached. (3) Unbounded `while` loops in `browser_evaluate` hung the MCP call for 2+ minutes; bounded loops should be the documented pattern in `mcp-patterns.md` (09-24). **This does not meet FB-076 condition (a); mitigations 2 + 3 stay gated.**
 
+**Harvest 2026-10-03 evidence (+11, PortfolioWebsite is the third project; cluster 10). It does not meet FB-076 condition (a); mitigations 2 + 3 stay gated.** (1) Playwright held by the user's Chrome (the project's KI-003) blocked rendered checks for whole sessions, and an orphaned MCP Chrome held the `SingletonLock` (09-24-1238). Two agents fell back to headless Chrome over CDP (09-08-2329). (2) **Surfaces that render on zero live routes** (draft-only content, unused component states: 09-07-2032, 09-08-2329, 09-11-0757, 09-15-1510, 10-02-0820) needed throwaway probe routes until the project built a component-gallery fixture. There is no "verified by construction, render deferred to task N" state. Unlike FB-076 mode 2, no verifier passed on mocks, so this is a reachability limit, not the same gap. (3) Deploy-host parity has no local instrument (Netlify Node version, build-host ratchet, `netlify.toml` redirects: 09-15-1510, 09-19-0005, 09-24-1238). (4) **Both halves of the local-ceiling gap:** deploy-log evidence was promised before checking whether any connector could return logs (09-15-1510, 09-18-1805), and later a stored "not possible" memory proved wrong when `netlify logs --source deploy` worked (09-24-1839).
+
 Tags: verify-agent, runtime-validation, no-local-environment, local-ceiling, fabric, pyspark, tmdl, github-actions, delta, empirical-evidence-gate, extends-FB-076, extends-FB-066, extends-2026-06-11-predecessor, single-project-signal
 
 ## FB-117: Task/AC authoring internal consistency — the criterion is wrong at creation, at two authoring sites (decomposition + phase-level fix tasks)
 
-**Status:** ready (single-project / single-timeframe caveat — 9 incidents, OEMMatInsightBI, 07-22 → 08-11; framed like FB-076 / FB-084 / FB-107 / FB-115, not unqualified `ready`)
+**Status:** ready — the single-project caveat below is **superseded 2026-10-04** (PortfolioWebsite corroborates; see the 2026-10-03 harvest evidence). Originally 9 incidents, OEMMatInsightBI, 07-22 → 08-11.
 **Captured:** 2026-08-12 (harvest clusters 4+6 merged)
 **Source:** 9 unique incidents across OEMMatInsightBI exports 2026-07-22 → 2026-08-11. Full evidence + insight doc: `interaction-logs/insights/2026-08-12_task-ac-authoring-internal-consistency.md`.
 
@@ -800,6 +808,8 @@ Tags: verify-agent, runtime-validation, no-local-environment, local-ceiling, fab
 
 **Harvest 2026-09-25 evidence (+3, oemmatinsightbi — `template-maintenance/harvest-2026-09-25-triage.md` cluster 5). A third authoring shape: tasks whose only legal path is a user-typed gated command.** task-076 was `owner: both`, but its whole deliverable routes through `/iterate`, which only the user can invoke, so the two halves were never separable and `owner` carried no routing information (08-21). task-081 was `owner: claude` for the same reason (08-21, 09-19): `/work` auto-detect sees a Claude-owned Pending task, but no dispatch can complete it, since subagents can neither run a `disable-model-invocation` command nor write under `.claude/`. Only a prior handoff note prevented a doomed implement-agent dispatch. This is the FB-100 shape one layer up. Candidate authoring check: *if the only way to land the task is a user-typed gated command, set `owner: human`* (or `both` with an explicit user half). **Sub-pattern B, again:** a phase-level verifier opened task-080 on an untested premise (a page with a Drillthrough binding was called a drillthrough target, but no visual projects the bound field), which yielded an AC no implementation could meet. The verifier-authored fix task also carried no options for its design fork, so the orchestrator had to invent A/B/C (09-19).
 
+**Harvest 2026-10-03 evidence (+8, PortfolioWebsite: a second project, so the single-project caveat above is superseded; cluster 11).** **User-gated work has no honest status.** Decision-gated `owner: both` tasks sit Pending without `user_review_pending`, so Step 1d's clauses (`work.md:263-303`) treat them as Claude-actionable and the fast exit never fires (08-28-0430, 08-30-0445). One such task nearly routed a session into writing guarded prose (09-09-0005). Neither Blocked nor On Hold honestly describes decision-gating. A follow-up filed before the user chose its timing was dispatchable at once (09-19-1705). Same family as this item's gated-command shape. **Criteria wrong at creation:** an AC that named a diagnostic code but not the identifier was unsatisfiable while its target was met (09-11-1510); both remediation options were arithmetically impossible (08-30-0445); a flip-test AC couldn't tell fixed from broken (09-24-1238); an ambiguous fix locus, and design notes mixed with acceptance (09-24-2254, 09-19-0005). **Design note:** FB-128 reworks Step 1d's exit, so settle how decision-gated tasks count there as part of FB-128.
+
 Tags: task-schema, acceptance-criteria, decomposition, breakdown, phase-level-fix-tasks, owner-field, gated-command-ownership, phase-decision-gates, spec-fingerprint, circular-reverification, merge-queue, single-project-signal, cross-references-FB-115, cross-references-FB-100
 
 
@@ -809,7 +819,7 @@ Tags: task-schema, acceptance-criteria, decomposition, breakdown, phase-level-fi
 
 ## FB-119: The orchestrator is the one unverified actor — inline implementation and orchestrator-authored state annotations bypass self-review and verify-agent
 
-**Status:** shipped v5.6.0 (2026-09-27) — (a)–(c) as adapted; see ship-log. **Not archivable (2026-10-01):** the first 5.7.4 cycles show friction in the inline contract (see the 2026-10-01 evidence below); amend it. Escalate to `/research` only if inline bypass or unmeasured state claims recur.
+**Status:** shipped v5.6.0 (2026-09-27) — (a)–(c) as adapted; see ship-log. **Not archivable (2026-10-01):** the first 5.7.4 cycles show friction in the inline contract (see the 2026-10-01 evidence below); amend it. A fourth gap, dispatch briefs that carry unchecked claims, was added 2026-10-04 from the 2026-10-03 harvest. Escalate to `/research` only if inline bypass or unmeasured state claims recur.
 **Captured:** 2026-09-25 (harvest cluster 8)
 **Source:** 6 exports, two projects: oemmatinsightbi 08-12, 08-19, 08-21 ×2; styler 09-20, 09-21. Triage: `template-maintenance/harvest-2026-09-25-triage.md`. Insight: `interaction-logs/insights/2026-09-25_work_orchestrator-unverified-actor.md`.
 
@@ -825,6 +835,8 @@ Tags: task-schema, acceptance-criteria, decomposition, breakdown, phase-level-fi
 **Likely blast radius:** `rules/agents.md` (Separated Concerns / Context Separation); `commands/work.md` (inline-implementation path; supersession-annotation protocol); `support/reference/work-procedures.md`.
 
 **2026-10-01 evidence (5.7.4: styler 09-28, 10-01-1237, 10-01-1440; PortfolioWebsite 10-01-1809).** The invariant held: every inline task still got a separate verify-agent, and it caught both inline defects. Styler T894 failed spec_alignment because its fixtures were hand-written from type docs in the wrong id shape; T899 failed consistency_check because the stale-reference search used the retired literal rather than the claim's subject. The efficiency-default contract (`rules/agents.md § Dispatch Invariants vs Efficiency Defaults`) has three gaps: (1) it doesn't point inline work at the "search for what the change invalidates" / by-subject sweep that implement-agent Step 2 and verify-agent T2c item 4 carry; (2) it doesn't say that a task whose deliverable is a `.claude/` path is inline at any difficulty, since subagents can't write there (styler T898 at difficulty 5; PortfolioWebsite task 172, 08-26); (3) it doesn't say which rule wins against FB-103's post-limit no-re-dispatch rule (PortfolioWebsite implemented a difficulty-3, five-file task inline after a zero-token implement-agent return). Smaller: producer-consumer fixtures should come from the producer's own tests or emit path (T894).
+
+**Harvest 2026-10-03 evidence: a fourth gap (+7, two projects; cluster 12). Dispatch briefs carry authority nobody earned.** Agents built on brief premises that turned out wrong: a config claim inferred from a grep hit (PortfolioWebsite 09-11-1510), a defective derived sweep set (09-08-2329), a vacuous prescribed control (09-15-1510), an untested worktree build route (09-19-1234), invented rationale returned as orchestrator edits (09-24-1238), and a DAX mechanism stated as fact (oemmat 08-11-1922). v5.6.0's rule covers claims written into `.claude/` and task records, not claims in briefs or relayed to the user (09-15-1510, 09-24-1238). A cheap fix is already working downstream: briefs mark the orchestrator's claims as unverified and invite challenge ("give them no authority"; agents corrected the orchestrator four times in 09-11-1945), and mechanism claims are measured first or labelled as hypotheses.
 
 Tags: work, orchestrator, inline-implementation, verification-result, state-annotations, self-review, agent-dispatch-invariants, two-project-signal
 
@@ -890,11 +902,13 @@ Tags: work, scripts, routing, FB-011-family, context-size
 
 **Reported in the same export, not yet verified (for the harvest):** an uncommitted sync is invisible — Part 5 diffs the working tree, so a dirty tree reads as up to date, and `/work` Step 0e needs 3+ finished tasks to fire. Candidate: Part 5 Step 4 ends with a commit offer.
 
+**Harvest 2026-10-03 evidence (the note above, now verified; cluster 13).** Part 5 checks accepted files out into the working tree and ends without a commit step (Part 5 is `health-check.md:507–667` at v5.8.0; it has no commit instruction). `/work` Step 0e stays silent unless 3+ tasks finished since the last commit (`work.md:165`), so a sync-only change is never flagged. PortfolioWebsite sat for 4 days with `version.json` bumped and 36 files dirty (10-01-1243). Fix: Part 5 Step 4 ends with a commit offer. Ship it with the Part 5 fix above.
+
 Tags: health-check, part-5, sync, sync-manifest, retired-files, skills, downstream, verified-defect
 
 ## FB-127: v5.7.5 residuals — small follow-ups found while shipping (bundled per the FB-006 precedent)
 
-**Status:** ready — independent small items; none blocks anything
+**Status:** ready — independent small items; none blocks anything. (l) and (m) added 2026-10-04 from the 2026-10-03 harvest.
 **Captured:** 2026-10-02 (v5.7.5 implementation and review)
 
 (a) **Pre-DEC-024 Markdown-dashboard text still in shipped docs:** `dashboard-regeneration.md § Section Display Rules / Per-Section Format` (Tasks and phase tables, `[Fix it]`, ticking); audit wording that implies ticking the dashboard (`audit-coherence.md:27,145`, the `audit-family-core.md` triage intro, `audit-ui.md`'s `promote {ts}` "ticked" mode). The `[Fix it]` path itself works through the CLI (`fix`, `triage` → `F`), so this is wording, not mechanism, and the audit telemetry gate can still accrue. Also `### Acceptance Criteria` in `rules/spec-workflow.md` and `audit-coherence.md:386,411`; `breakdown.md:52`; `health-check.md`'s escalation to FB-011 Family C (shipped v4.22.0, superseded by DEC-024); `dashboard-regeneration.md:52,417` "(Replacing Template Example)"; scenario 06 Trace D still models the pre-DEC-024 in-file checklist (`:102-109`, `:114-116`, `:123-124`).
@@ -908,5 +922,111 @@ Tags: health-check, part-5, sync, sync-manifest, retired-files, skills, downstre
 (i) **`audit-coherence.md`'s path-drift "exists via Glob" check** is an absence claim and needs a positive control under the v5.8.0 rule. Other `Grep`/`Glob` mentions (`work.md:98,196`, `health-check.md:343,947`, `automation.md:32`) rely on the rule's general fallback.
 (j) **More pre-DEC-024 drift** found by the v5.8.0 docs pass: scenarios 06C (file links on task rows the script never renders), 06D, 07/07B, 08D, 16C steps 1–3; `drift-reconciliation.md:28` (notes-backup step); `shared-definitions.md:168` (FEEDBACK markers).
 (k) **Architecture map:** v5.8.0 adds `negative-findings.md` (the "~29 reference docs" count, the lazy-docs list, and a `rules/agents.md` → `negative-findings.md` edge). Reconcile with FB-112(a).
+(l) **`verification_history[].cost` arrives after the report** (harvest 2026-10-03 cluster 14). `work-procedures.md:50` copies `cost` "from the usage the harness reports", but on 5.7.4 that usage arrives in the task-completion notification, after the report (styler 10-01-1237, PortfolioWebsite 10-02-0820). Read literally, the step omits `cost`, and both orchestrators needed a second JSON write. The DEC-025 recheck gate counts difficulty 1–2 dispatches that carry `cost`, so say "backfill `cost` when the completion notification arrives".
+(m) **The Custom Views fill is lost on every regen, and nothing catches an unfilled placeholder** (harvest 2026-10-03; listed under FB-118 in the draft, but v5.8.0 shipped FB-118 without it). Each regen emits a fresh `<!-- CLAUDE: fill … -->` slot (`dashboard-render.py:1246-1250`, `dashboard-regeneration.md:202`), so LLM-rendered views must be redone by hand after every regen, and the HTML is gitignored, so a lost fill can't be recovered (PortfolioWebsite 09-21-1452). Sessions left the slot unfilled with `custom_views` on; the placeholder check at `dashboard-regeneration.md:300` is prose that nothing runs (09-19-1705). Options: make the fill a required step of every regen while the toggle is on, with a scripted check for a leftover fill comment; or persist the rendered blocks in the sidecar, as `augment_rows[]` does. Custom Views is off by default.
 
 Tags: residuals, dashboard, DEC-024, audit-wording, session-export, hooks, dispatch, health-check, decisions
+
+## FB-128: Detected spec drift doesn't reach the user — fast-path masking, a fast exit ahead of reconciliation, and no "absorb" path
+
+**Status:** ready — (a) and (b) verified defects, (c) a verified gap. Next release; design needs the maintainer's approval before building.
+**Captured:** 2026-10-04 (harvest 2026-10-03 cluster 1)
+**Source:** 11 exports, 3 projects: oemmat 08-03-1349, 08-04-0420, 08-05-1641; tinder-streamliner-cc 05-25-0312; styler 06-21, 09-21, 09-24-2256, 09-28, 09-30, 10-01-1237, 10-01-1440. Triage: `template-maintenance/harvest-2026-10-03-triage.md`. Insight: `interaction-logs/insights/2026-10-03_work_spec-drift-never-surfaces.md`. Extends FB-106 (v5.4.0), which covered new sections only.
+
+**Problem.** Three defects on one path (line numbers at v5.8.0):
+
+(a) **The META fast path masks edits to existing sections.** `dashboard-render.py:395` stamps the *current* spec hash into META, and `work.md:207` skips Steps 1a/1b when it matches. After any Tier-1 regen (for example at pause) that follows an `/iterate` edit to an existing section, Step 1b stops comparing task fingerprints. `pending_decomposition[]` (`work.md:217-224`) covers new `## ` sections only.
+(b) **Step 1d exits before reconciliation.** Step 1d's fast exit (`work.md:263-303`) returns before Drift Reconciliation (`:305`), so drift found in Step 1b is never shown when no Claude-actionable task remains, even when reconciling it would unblock work.
+(c) **No "absorb" option.** When drift does surface, `drift-reconciliation.md:264-291` offers only Apply (resets every Finished task in the section to Pending), Review or Skip. Nothing keeps verification for annotation-only edits or for a spec that caught up to shipped code. styler chose that ad hoc three times for one section, and one session hand-updated 304 fingerprints.
+
+**Fix sketch.** Stamp a task-provenance fingerprint in META, or have `/iterate` write a `pending_drift_reconciliation[]` marker (the FB-106 pattern); run reconciliation before Step 1d exits; add a per-section `[K] Keep verification` that refreshes fingerprints and records that it did (this relaxes the `drift-reconciliation.md:291` invariant, so only on the user's choice). Design (a) and (c) together: fixing (a) makes (c) fire on every annotation-only edit. **Ship with:** FB-115's fingerprint-blindness note (same file), and a decision on how FB-117's decision-gated `owner: both` tasks count in Step 1d.
+
+Tags: work, drift-detection, fast-path, dashboard-meta, step-1d, reconciliation, extends-FB-106, verified-defect, three-project-signal
+
+## FB-129: Agent-recorded decisions land `approved` before verification and never reach the user for ratification
+
+**Status:** ready — verified. Candidate for the release after FB-128.
+**Captured:** 2026-10-04 (harvest 2026-10-03 cluster 2; cluster 18 folded in)
+**Source:** 9 exports, 3 projects: PortfolioWebsite 09-08-2329, 09-11-0757, 09-15-1510, 09-19-0005, 09-24-1758; oemmat 05-24-1930, 07-22-2017, 07-23-0130; styler 05-27-0045. Insight: `interaction-logs/insights/2026-10-03_work_agent-decisions-approved-unratified.md`. FB-052 (archived) created the field; its approval semantics were never revisited.
+
+**Problem.** `implement-agent.md:249` tells the agent to "flag for human". But `work-procedures.md:41` (step 3) writes each `decisions_to_record[]` entry as `status: approved`, `decided_by: implement-agent`, before verify-agent runs (step 5). The renderer then counts it as resolved (`dashboard-render.py:241`) and lists only `draft`/`proposed` records (`UNRESOLVED_DECISION`, `:73`, used at `:1100`). This contradicts `rules/decisions.md` ("never resolve silently") and DEC-016.
+
+Observed: a deferral recorded as an approved decision nobody made (09-08); a self-ticked checkbox (09-11, oemmat 07-22); an approved record for an approach that verification hadn't accepted, which the orchestrator held back by hand (09-19); three coupled choices became three records behind three DEC-016 prompts (09-15, oemmat 07-23); trivial choices minted as records despite `support/reference/decisions.md` § "Skip Records For" (09-24, oemmat 05-24, styler 05-27).
+
+**Fix sketch.** Write agent decisions as `proposed` with a "ratify?" Needs-you row (or a distinct `recorded` status for documentary records of choices already shipped); persist them after the verify pass; one record per coupled decision; trivial choices go to task notes. Reword step 3's "Selected/Rationale/Options sections" to name the template's `## Decision` (`**Selected:**`) and `## Options Comparison`: PortfolioWebsite's 8 records used `## Selected` and fail `/health-check` Part 3 check 4 (`health-check.md:397-398`; 10-01-1243). **Folded in from cluster 18:** step 3 should link the numbering-namespace rule (`support/reference/decisions.md:161`). A project DEC-NNN collided with a template-cited ID (PortfolioWebsite 09-11-0757, oemmat 08-13-0916) even though the rule shipped in v5.2.0.
+
+Tags: work, decisions, decisions_to_record, implement-agent, ratification, needs-you, DEC-016, extends-FB-052, verified-defect, three-project-signal
+
+## FB-130: No defined path for a small fix after a verify pass
+
+**Status:** ready — two projects arrived at the same workaround independently
+**Captured:** 2026-10-04 (harvest 2026-10-03 cluster 3)
+**Source:** 5 exports, 2 projects: PortfolioWebsite 09-27-1040, 10-02-0820; styler 09-28-1923, 10-01-1237, 10-01-1440. Four are on 5.7.4, after FB-119 made verify-agent an invariant (v5.6.0). No recurrence found in `processed/`. Insight: `interaction-logs/insights/2026-10-03_verify-agent_post-verify-delta-recheck.md`.
+
+**Problem.** After a pass, a one-word fix, a comment, or a verifier-suggested minor change leaves two options: a full fresh verify dispatch (125–230K tokens per verify dispatch in this harvest: PortfolioWebsite 09-11-0757, 09-19-0005, 10-01-1809) or an inline edit nobody re-checks. Both projects independently resumed the *same* verifier with SendMessage for a delta re-check and recorded it as attempt N+1. Independence holds because that verifier never implemented anything (styler 10-01-1440).
+
+**Fix sketch.** Name a "post-verify delta" path in `work-procedures.md` (After verify-agent returns). Allow it only for the verifier's own findings or a user-approved micro-edit: resume the same verifier with the diff, and record a new `verification_history[]` attempt with `cost`. Anything larger gets a fresh dispatch. Kept separate from FB-119, which could have taken it as a gap, because this is a verification-protocol question rather than an orchestrator-claims one.
+
+Tags: work, verify-agent, post-verify-delta, sendmessage, verification-history, cost, DEC-025, two-project-signal
+
+## FB-131: The handoff's ~2.5KB total bound is unenforced, and its overflow file collides on same-day pauses
+
+**Status:** ready — verified; patch-sized
+**Captured:** 2026-10-04 (harvest 2026-10-03 cluster 4)
+**Source:** 5 exports, 3 projects: PortfolioWebsite 08-19-2300, 09-11-1945, 09-24-2254; oemmat 08-21-0642; styler 09-20-1916 (the last two were below the bar in the 2026-09-25 single-incident list). Insight: `interaction-logs/insights/2026-10-03_work_handoff-size-unenforced.md`.
+
+**Problem.** `context-transitions.md:86` and `:180-190` target ~2.5KB in total, but the overflow procedure fires only when a single field exceeds its bound. The field caps sum past 2.5KB (ten 25-word bullets alone are about 1.5KB), and no pause step measures the file. Observed: 3.0KB with every field in bounds (08-19), 4.4KB and 4.2KB on consecutive pauses (09-11), 12% over (styler 09-20). `:190` names the overflow file `handoff-overflow-{YYYY-MM-DD}.md`, so a second pause on the same day collides with the first (09-24-2254). FB-079 fixed this shape for session exports in v4.6.4 with minute timestamps, but not here.
+
+**Fix sketch.** After writing the handoff, measure it and run the overflow procedure on the total, not only per field; give the overflow file a minute-granularity name (`-HHMM`, as FB-079 did). Optional: point long-lived detail at auto-memory (oemmat 08-21).
+
+Tags: work-pause, handoff, context-transitions, overflow, filename-collision, extends-FB-079, verified-defect, three-project-signal
+
+## FB-132: Parallel eligibility ignores shared single-instance resources (Playwright MCP, build output directory)
+
+**Status:** ready — a prose fix. FB-011 Family D's trigger (an LLM-*missed* conflict) is still unmet: every instance here was caught before dispatch.
+**Captured:** 2026-10-04 (harvest 2026-10-03 cluster 5)
+**Source:** 5 exports, 3 projects: PortfolioWebsite 09-11-0757, 09-24-1238, 10-01-1809 (5.7.4); oemmat 08-13-0916; styler 09-24-1745. Insight: `interaction-logs/insights/2026-10-03_work_parallel-shared-runtime-resources.md`. **Extends FB-056** (archived, shipped 2026-05-13): it documented the single-session MCP constraint and parked an `mcp_resource_overlap` batch check as "lower priority". This is the recurrence that check was waiting for.
+
+**Problem.** `work.md:398` builds batches by "pairwise-comparing `files_affected`". `mcp-patterns.md:17` names the missing check (`mcp_resource_overlap`) but calls it "lower priority". When every UI task carries a rendered-verification criterion (PortfolioWebsite), nearly every UI batch needs the one Playwright session; parallel builds also share `dist/` or `.next`.
+
+**Fix sketch.** Add one exclusion to the Step 2c summary and `parallel-execution.md`: two tasks that both need the browser MCP, or both rebuild the same output directory, are not parallel-eligible (or their verification runs sequentially). A task-schema flag such as `needs_browser` is optional. Drop "lower priority" from `mcp-patterns.md:17`.
+
+Tags: work, parallel-execution, mcp, playwright, build-output, shared-resources, extends-FB-056, FB-011-family-D-adjacent, three-project-signal
+
+## FB-133: Agents leave residue the orchestrator has to find — screenshots in the project root, live servers, probe routes
+
+**Status:** ready (screenshots: two projects; leftover processes and probe routes: PortfolioWebsite only)
+**Captured:** 2026-10-04 (harvest 2026-10-03 cluster 6)
+**Source:** 6 exports, 2 projects: PortfolioWebsite 08-19-2300, 09-11-0757, 09-24-1238, 09-24-1839, 10-01-1809; oemmat 07-26-2045. Insight: `interaction-logs/insights/2026-10-03_agents_residue-after-return.md`.
+
+**Problem.** `verify-agent.md:257` prescribes `browser_take_screenshot` with no output path, and the MCP resolves a bare filename against the project root. That breaks `.claude/CLAUDE.md`'s "never create working documents in the project root" (oemmat 07-26; PortfolioWebsite 08-19, 09-11). An implement-agent reported its preview server stopped while two were still listening (09-24-1839). Cutoffs left a probe route in `src/pages/` and a live server (09-11), and flipped drafts plus orphaned servers (09-24-1238). An orphaned MCP Chrome held the profile lock (09-24-1238). Verifiers share the orchestrator's scratchpad, where an `rm -rf` on a generic name could delete evidence (10-01-1809). No after-return or post-cutoff cleanup step exists in `work-procedures.md`, `work-recovery.md`, `parallel-execution.md` or `work.md` (re-checked at v5.8.0 with `grep -c -i -E 'residue|stray file|orphan|still listening|lsof|leftover server|kill the server|stop the server'`: zero hits except two in `work-recovery.md` about orphaned markers; positive control `zero-token` hits the other three files).
+
+**Fix sketch.** Give screenshot paths explicitly (a per-agent scratchpad subfolder) in dispatch briefs and at `verify-agent.md:257`. After any agent returns, and after an infrastructure termination, check for servers the agent started, stray files in the project root and untracked probe files; clean them up or report them.
+
+Tags: agents, verify-agent, implement-agent, playwright, screenshots, dev-servers, residue, recovery, two-project-signal
+
+## FB-134: Verified small defects from the 2026-10-03 harvest — patch bundle (FB-006 precedent)
+
+**Status:** ready — each verified in v5.8.0 source; all below the 3-export bar except (e). (a) is a correctness bug in a shipped rule, so ship it soon.
+**Captured:** 2026-10-04 (harvest 2026-10-03 cluster 7)
+**Source:** PortfolioWebsite; (b) and (d) also oemmat in `processed/`. Insight: `interaction-logs/insights/2026-10-03_work_small-verified-defects.md`.
+
+(a) **Retirement restore replays the wrong diff (09-19-1234).** `feature-retirement.md:58` pins the last commit where the feature was live, and `:143` cherry-picks it. A cherry-pick replays *that commit's own diff*, not the feature; use `git checkout "$SHA" -- <affected_paths>` or `git revert <retirement-commit>`. `:153`'s `cp -r` clobbers a partly retired file with its fragment, and `retired/README.md:76` requires `spec_excerpt_path` even when the spec never described the feature.
+(b) **Completion overwrites `notes` (09-19-1705).** `work-procedures.md:14` sets `notes` to `report.notes` (implement-agent returns a one-paragraph summary, `implement-agent.md:128`), replacing the history that `:15` and `:54` prepend (`task-schema.md:263`); `:16` overwrites the same way. A re-implementation after a verify fail therefore erases its `[VERIFICATION FAIL #N]` trail (oemmat 07-23-0130 found the same clobber). Fix: prepend the report's summary to the existing `notes` instead of replacing them (and the same at `:16`).
+(c) **Step 0e compares by date** (`work.md:159,164`), so tasks finished and committed earlier the same day count as uncommitted (09-24-2254). `completion_date` is date-only (`task-schema.md`), so changing the comparison alone can't fix it: either record a completion timestamp, or count only Finished tasks whose `files_affected` appear in `git status`.
+(d) **Pass rate 0.0 when nothing ran.** `pre-compact-handoff.sh:213` and the schema example at `context-transitions.md:402` report `verification_pass_rate: 0.0` when nothing was verified, which reads as "all failed" in the corpus; emit `null` (09-18-1805; oemmat 08-05-1554).
+(e) **No "fixed by a later task" trigger (3 exports).** `friction-register.md:106-111` lists five resolution triggers, none of them "a later task fixed it", so FR entries stay open after the fix ships and resurface as user questions (08-30-0445 FR-032; 09-08-2329 FR-034/039/046; 09-18-1805 FR-067). Add `resolved_by.kind: task` and close the entry in the fixing task's persistence step.
+
+Tags: residuals, feature-retirement, restore, task-notes, step-0e, session-export, friction-register, verified-defect
+
+## FB-135: Most tasks in two projects carry no section provenance, so drift can't be checked for them
+
+**Status:** new — measured 2026-10-04; split out of FB-128 by the maintainer (FB-128 design decision 6). For a later release.
+**Captured:** 2026-10-04 (FB-128 design survey)
+**Source:** read-only survey of 10 downstream repos, 2026-10-04 (`template-maintenance/plan-fb128-drift-detection.md` § Survey). PortfolioWebsite: 74 of 75 tasks have no `section_fingerprint`. OEMMatInsightBI: 19 of 20 current-version tasks have none, and all its `spec_section` values are bare headings without `## `. styler: 20 current-version tasks have none, and 47 have a `spec_section` that is not a current heading (mostly free-form values such as `§ 52.1 (…) + § 52.6 (…)`; one differs only by a trailing space).
+
+**Problem.** Decomposition stamps full provenance (`decomposition.md` step 8) and `/breakdown` copies it, but tasks created any other way get none: phase-level fix tasks (`work-procedures.md`, phase-level step 2 writes the verifier's `task_json` payload as-is), tasks filed mid-session from user feedback or reviews (no defined command path; harvest 2026-10-03 single-incident list), and out-of-spec tasks. FB-128's drift check counts these as `no_provenance` and never flags them, so a spec edit under them stays invisible. In a project that creates tasks mostly ad hoc (PortfolioWebsite), drift detection covers almost nothing.
+
+**Fix sketch.** (1) Every task-creation path stamps `spec_version`, `spec_section` (a real `## ` heading) and `section_fingerprint` when the task maps to a spec section (`fingerprint.py --sections`), and a task that maps to none says so explicitly, so the check can tell "unmapped" from "missing". (2) A one-time baseline offered by `/health-check` Part 1: for tasks whose `spec_section` resolves to a current heading but that carry no fingerprint, stamp the current hash once the user confirms that the current text is what they were built against (the same assertion as FB-128's `[K]`). (3) Optionally normalise free-form `spec_section` values. FB-128's drift JSON (`no_provenance`, `unmatched`) is the measurement before and after.
+
+Tags: drift-detection, provenance, task-creation, spec_section, section_fingerprint, health-check, follow-up-to-FB-128
