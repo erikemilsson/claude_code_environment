@@ -411,7 +411,9 @@ Based on user response:
 
 **Post-apply spec-index refresh (DEC-021):** after any apply that edited the spec, regenerate the section index so the next section-scoped read isn't stale: `python3 .claude/scripts/fingerprint.py --index .claude/spec_v{N}.md > .claude/spec_v{N}.index.json` (the script prints to stdout — the redirect writes the file). Make any frontmatter edit (`updated:`, version) BEFORE this step: frontmatter changes the file hash, and regenerating first then editing frontmatter leaves the index stale again (observed downstream, regenerated twice).
 
-**Post-apply new-section marker (FB-106):** if the apply added one or more NEW `## ` sections, append their headings to `pending_decomposition[]` in `.claude/dashboard-state.json` (create the array if absent; de-duplicate). `/work` Step 1a consumes it and offers decomposition *before* the fast-path can skip drift detection. Without this marker, a dashboard regen refreshes the META `spec_fingerprint`, the next `/work` takes the fast path, and the new section is silently never decomposed. Only genuinely new sections go in the array — edits to existing sections are covered by normal drift detection.
+**Post-apply new-section marker (FB-106):** if the apply added one or more NEW `## ` sections, append their headings to `pending_decomposition[]` in `.claude/dashboard-state.json` (create the array if absent; de-duplicate). `/work` Step 1a consumes it and offers decomposition. Without this marker the new section is silently never decomposed: the drift check only compares existing tasks with their sections, and a new section has no tasks. Only genuinely new sections go in the array.
+
+**Edited existing sections need no marker (FB-128):** `/work`'s drift check (`fingerprint.py --drift`) compares every task's section fingerprint with the current spec on each run, so an edit to a section that already has tasks surfaces at the next `/work` whatever dashboard regens happen in between.
 
 After applying (or skipping):
 
@@ -480,7 +482,7 @@ There must always be exactly **one** `spec_v{N}.md` file in `.claude/`. Not two 
 You can edit the spec file directly at any time. The system handles this gracefully:
 
 - **The decomposed snapshot** (`spec_v{N}_decomposed.md` in `previous_specifications/`) preserves the state when tasks were created
-- **Drift detection** in `/work` compares the current spec against the snapshot and shows exactly what changed
+- **Drift detection** in `/work` compares each task's section fingerprint with the current spec on every run, and shows what changed against the snapshot
 - **No data loss is possible** — the "before" state is always available for comparison
 
 You never need to version before editing. If your edits turn out to be substantial enough for a new version, `/work` will suggest it (see `.claude/support/reference/drift-reconciliation.md` § "Substantial Change Detection").

@@ -167,6 +167,7 @@ Reports tasks with `"out_of_spec": true` in a separate section of the report. In
 1. Compute: `python3 .claude/scripts/dashboard-render.py --task-hash` — the canonical convention (sha256 over sorted `id:status:difficulty:owner:review` rows, `review` = `1` when `user_review_pending` is true else `0`, newline-joined + trailing newline). Hand-compute only when the script is unavailable. Do NOT use `fingerprint.py --dashboard-rollup` (different algorithm). A dashboard rendered before the `review` field (FB-118) reads stale once; regenerating clears it.
 2. Read dashboard metadata block (if exists)
 3. Compare hashes — if different, dashboard is stale
+4. Compare META `spec_fingerprint` with the current spec hash (`python3 .claude/scripts/fingerprint.py --spec .claude/spec_v{N}.md`, which hashes the file's bytes) — if different, dashboard is stale (the same check as `/work` Step 1a)
 
 **Format staleness check:**
 1. Read `template_version` from dashboard `<!-- DASHBOARD META -->` block
@@ -174,7 +175,7 @@ Reports tasks with `"out_of_spec": true` in a separate section of the report. In
 3. If they differ (or META field is absent), dashboard is format-stale
 4. Report: "Dashboard generated with template {old} but current template is {new} — regenerate to apply format updates"
 
-A dashboard can be content-stale (task hash mismatch), format-stale (template_version mismatch), or both. Either condition triggers regeneration in auto-fix.
+A dashboard can be content-stale (task hash or spec hash mismatch), format-stale (template_version mismatch), or both. Either condition triggers regeneration in auto-fix.
 
 **Stale "In Progress" tasks:**
 - Tasks with status `"In Progress"` where `updated_date` (or `created_date`) is > 7 days old
@@ -184,7 +185,7 @@ A dashboard can be content-stale (task hash mismatch), format-stale (template_ve
 
 **Snapshot file existence:**
 - For each task with `section_snapshot_ref`, verify the referenced file exists at `.claude/support/previous_specifications/{section_snapshot_ref}`
-- Missing snapshot: WARNING — "Task {id} references snapshot `{ref}` which does not exist. Drift detection will fall back to full-spec comparison."
+- Missing snapshot: WARNING — "Task {id} references snapshot `{ref}` which does not exist. Drift is still detected (that compares section fingerprints), but reconciliation can't show a diff for this task's section; it shows the current section text instead."
 
 **Decision dependency format:**
 - For each task with `decision_dependencies`, verify each entry matches pattern `DEC-\d+`
@@ -211,7 +212,7 @@ Per the Fix Queue Protocol: each detected issue queues one fix item; "Ask user: 
 | Absorbed without `absorbed_into` | Ask user: provide absorbing task ID, or change status |
 | Absorbed referencing non-existent task | Ask user: provide valid task ID, or change status |
 | Absorbed referencing another Absorbed task (chain) | Suggest the non-Absorbed end of the chain; ask user to confirm or change |
-| Missing snapshot file | Informational only — drift detection degrades gracefully |
+| Missing snapshot file | Informational only — drift detection is unaffected; reconciliation shows the current section text instead of a diff |
 | Malformed decision dependency format | Ask user: correct or remove the entry |
 | Stale workspace files (> 30 days) | List files, ask user: graduate to final location, or delete |
 | Dashboard state sidecar missing | Create with defaults (custom_views off, other toggles on, empty notes) |

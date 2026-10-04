@@ -131,10 +131,10 @@ Canonical definitions for terms used across the environment. Terms already defin
 
 | Term | Definition |
 |------|------------|
-| **Spec Drift** | When spec changes after tasks were decomposed from it. Detected by comparing current spec hash against task fingerprints. |
-| **Drift Deferral** | When user selects "Skip section" during reconciliation. Recorded in `.claude/drift-deferrals.json` with timestamp. |
+| **Spec Drift** | When spec changes after tasks were decomposed from it. Detected on every `/work` by comparing each task's `section_fingerprint` with the current hash of its section (`fingerprint.py --drift`). |
+| **Drift Deferral** | When the user picks `[S]` Skip during reconciliation. Recorded in `.claude/drift-deferrals.json` with timestamp. |
 | **Drift Budget** | Limit on unreconciled drift. Configured via `drift_policy` in spec frontmatter: `max_deferred_sections` (default: 3), `max_deferral_age_days` (default: 14). Enforced by `/work`. |
-| **Reconciliation** | Updating tasks to match a changed spec. Options per section: apply suggestions, review individually, skip (creates deferral), mark out-of-spec. |
+| **Reconciliation** | Updating tasks to match a changed spec. Options per section: apply (reset Finished tasks to Pending), re-verify (check shipped work against the new text, no rebuild), keep (refresh fingerprints, keep verification), review individually, skip (creates deferral); per task, also edit or mark out-of-spec. Apply and re-verify also update open tasks to the new text. |
 
 ### Verification
 

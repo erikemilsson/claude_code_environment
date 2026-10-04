@@ -9,13 +9,17 @@ import/fetch). The only permitted external ref is the Google Fonts <link>.
 """
 
 import contextlib
+import hashlib
 import importlib.util
 import io
 import json
 import re
+import subprocess
+import sys
 import tempfile
 import unittest
 from datetime import datetime, timezone
+from unittest import mock
 from pathlib import Path
 
 SCRIPT = Path(__file__).resolve().parent.parent / "dashboard-render.py"
@@ -103,6 +107,22 @@ class TestMetaInHead(HtmlBase):
         self.assertIn("<!-- DASHBOARD META", head)
         self.assertRegex(head, r"task_hash:\s*sha256:[0-9a-f]{64}")
         self.assertIn("template_version: 9.9.9", head)
+
+    def test_meta_spec_fingerprint_hashes_bytes_like_fingerprint_spec(self):
+        # A7: for a CRLF spec META must carry the --spec hash, or /work Step 1a
+        # would see a changed spec on every run
+        root = self.make_env(active=[task(1, "Pending", "1")])
+        spec_path = root / "spec_v1.md"
+        spec_path.write_bytes(b"---\r\ntitle: CRLF Project\r\n---\r\n\r\n## Overview\r\n\r\nBody.\r\n")
+        out = self.render(root)
+        cli = subprocess.run([sys.executable, str(SCRIPT.with_name("fingerprint.py")), "--spec",
+                              str(spec_path)], capture_output=True, text=True, timeout=10)
+        self.assertEqual(cli.returncode, 0, cli.stderr)
+        self.assertIn(f"spec_fingerprint: {cli.stdout.strip()}\n", self.head(out))
+        self.assertIn("<h1>CRLF Project</h1>", out)
+        # positive control: the decoded-text hash (the old META value) differs here
+        text_hash = hashlib.sha256(spec_path.read_text(encoding="utf-8").encode("utf-8")).hexdigest()
+        self.assertNotEqual("sha256:" + text_hash, cli.stdout.strip())
 
     def test_meta_task_hash_matches_canonical(self):
         active = [task(1, "Pending", "1"), task(2, "Finished", "1")]
@@ -606,6 +626,123 @@ class TestLegibilityFixes(HtmlBase):
             sidecar={"user_notes": "Add wardrobe items: /wardrobe"}))
         self.assertIn('class="qlinks"', out)
         self.assertIn("<code>spec_v1.md</code>", out)
+
+
+class TestSpecDrift(NeedsYouBase):
+    """FB-128: drift found by fingerprint.py's compute_drift() reaches the page: META
+    drift_sections, the footer indicator, the pulse number and the Needs-you rows."""
+
+    SPEC = "---\ntitle: Fixture Project\n---\n\n## Auth & <Login>\n\nBody.\n\n## Billing\n\nBody.\n"
+
+    def env(self, active, deferrals=None):
+        root = self.make_env(active=active, spec_text=self.SPEC)
+        if deferrals is not None:
+            (root / "drift-deferrals.json").write_text(json.dumps(deferrals), encoding="utf-8")
+        return root
+
+    def drifted(self, id, status="Finished", section="## Auth & <Login>"):
+        kw = {"task_verification": PASS} if status == "Finished" else {}
+        return task(id, status, "1", spec_section=section, section_fingerprint="sha256:stale", **kw)
+
+    def footer(self, out):
+        return out[out.index("<footer>"):out.index("</footer>")]
+
+    def unchecked(self, compute=None):
+        return mock.patch.object(dr, "_load_compute_drift", return_value=compute)
+
+    def test_meta_drift_sections_follows_drift_deferrals(self):
+        out = self.render(self.env([self.drifted(1), self.drifted(2, "Pending", "## Gone")]))
+        self.assertIn("drift_deferrals: 0\ndrift_sections: 2\n", out[:out.index("</head>")])
+
+    def test_meta_drift_sections_unchecked(self):
+        with self.unchecked():
+            out = self.render(self.env([self.drifted(1)]))
+        self.assertIn("drift_deferrals: 0\ndrift_sections: unchecked\n", out)
+
+    def test_footer_spec_aligned_when_clean(self):
+        out = self.render(self.env([task(1, "Pending", "1")]))
+        self.assertIn(" · spec aligned · 0 drift deferrals, 0 verification debt · ", self.footer(out))
+        self.assertIn("drift_sections: 0\n", out)
+
+    def test_footer_counts_changed_sections(self):
+        out = self.render(self.env([self.drifted(1)], deferrals={"deferrals": [{"section": "## Billing"}]}))
+        self.assertIn(" · ⚠️ 1 changed spec section(s), 1 drift deferrals, 0 verification debt · ",
+                      self.footer(out))
+
+    def test_footer_drift_unchecked(self):
+        with self.unchecked():
+            out = self.render(self.env([self.drifted(1)]))
+        self.assertIn(" · drift unchecked · 0 drift deferrals, 0 verification debt · ", self.footer(out))
+        self.assertNotIn("spec aligned", out)
+
+    def test_pulse_drift_number_is_sections_plus_deferrals(self):
+        big = '<div class="big" style="color:var(--{})">{}</div><div class="lbl">drift</div>'
+        deferrals = [{"section": "## Billing"}]  # bare-list form
+        out = self.render(self.env([self.drifted(1)], deferrals=deferrals))
+        self.assertIn(big.format("bad", 2), out)
+        with self.unchecked():
+            out = self.render(self.env([self.drifted(1)], deferrals=deferrals))
+        self.assertIn(big.format("bad", 1), out)  # unchecked: deferrals only
+        self.assertIn(big.format("ok", 0), self.render(self.env([task(1, "Pending", "1")])))
+
+    def test_needs_you_rows_drifted_then_missing_then_deferral(self):
+        active = [self.drifted(3), self.drifted(1, "Pending"), self.drifted(2),
+                  self.drifted(4, "Blocked", "## Gone"),
+                  self.drifted(5, "Pending", "## Billing")]  # deferred below
+        card = self.card(self.render(self.env(active, deferrals={"deferrals": [{"section": "## Billing"}]})))
+        rows = ["<code>## Auth &amp; &lt;Login&gt;</code> changed since its tasks were built "
+                "(2 Finished, 1 Pending) → run <code>/work</code> to reconcile",
+                "<code>## Gone</code> is no longer in the spec (1 open task(s) reference it) "
+                "→ run <code>/work</code> to reconcile",
+                "1 deferred spec-drift reconciliation(s) → run <code>/work</code> to review"]
+        self.assertIn("<b>Spec Drift</b>", card)
+        positions = [card.index(r) for r in rows]
+        self.assertEqual(positions, sorted(positions))
+        self.assertNotIn("<code>## Billing</code>", card)  # fully deferred: the deferral row covers it
+
+    def test_drifted_row_counts_only_non_deferred_tasks(self):
+        # contract order, not alphabetical: In Progress before Awaiting Verification
+        active = [self.drifted(1), self.drifted(2), self.drifted(3, "Awaiting Verification"),
+                  self.drifted(4, "In Progress")]
+        card = self.card(self.render(self.env(active, deferrals={"deferrals": [
+            {"section": "Auth & <Login>", "affected_tasks": ["1"]}]})))
+        self.assertIn("were built (1 Finished, 1 In Progress, 1 Awaiting Verification) → run", card)
+
+    def test_no_spec_drift_subsection_when_aligned(self):
+        self.assertNotIn("Spec Drift", self.card(self.render(self.env([task(1, "Pending", "1")]))))
+
+    def test_compute_drift_failure_reads_unchecked(self):
+        def boom(_claude_dir):
+            raise RuntimeError("boom")
+        for compute in (boom, lambda _claude_dir: {"unexpected": 1}):
+            with self.subTest(compute=compute), self.unchecked(compute), \
+                    contextlib.redirect_stderr(io.StringIO()) as err:
+                out = self.render(self.env([self.drifted(1)]))
+                self.assertIn("drift_sections: unchecked", out)
+                self.assertIn("drift unchecked", err.getvalue())
+
+    def test_renderer_without_fingerprint_py_reads_unchecked(self):
+        # The real fallback: the renderer copied alone, with no sibling fingerprint.py.
+        with tempfile.TemporaryDirectory() as d:
+            lone = Path(d) / "dashboard-render.py"
+            lone.write_text(SCRIPT.read_text(encoding="utf-8"), encoding="utf-8")
+            mod_spec = importlib.util.spec_from_file_location("lone_render", lone)
+            lone_dr = importlib.util.module_from_spec(mod_spec)
+            mod_spec.loader.exec_module(lone_dr)
+            with contextlib.redirect_stderr(io.StringIO()) as err:
+                out = lone_dr.render_full_html(self.env([self.drifted(1)]), NOW)
+        self.assertIn("drift_sections: unchecked", out)
+        self.assertIn(" · drift unchecked · 0 drift deferrals, 0 verification debt · ", out)
+        self.assertIn("fingerprint.py", err.getvalue())
+        # positive control: beside its sibling, the same render checks drift
+        self.assertIn("drift_sections: 1", self.render(self.env([self.drifted(1)])))
+
+    def test_deferral_file_shapes_do_not_crash(self):
+        for data, count in (([{"section": "## Billing"}], 1), ({"deferrals": 5}, 0), ("text", 0),
+                            ({"deferrals": [{"section": "## Billing"}, "junk", {"section": 3}]}, 1)):
+            with self.subTest(data=data):
+                out = self.render(self.env([task(1, "Pending", "1")], deferrals=data))
+                self.assertIn(f"drift_deferrals: {count}\n", out)
 
 
 if __name__ == "__main__":

@@ -64,19 +64,20 @@ User edited `spec_v2.md` (added Phase 2 detail, removed one Phase 2 section, mod
 ### Expected
 
 1. `/work` discovers `spec_v2.md` (globs for `spec_v{N}.md`)
-2. Drift detection finds all tasks reference `spec_version: 1`
+2. The drift check (`fingerprint.py --drift .claude`) sees every task on `spec_version` 1: Finished Tasks 1-5 count as `historical`, Pending Tasks 6-10 are listed as `unmigrated`
 3. Version mismatch triggers task migration flow:
-   - Finished tasks (1-5): `spec_version` updated to 2, no other changes (work is done)
+   - Finished tasks (1-5): provenance left unchanged (historical record; they were verified against v1), so the drift check keeps skipping them
    - Pending tasks mapped to unchanged sections: fingerprints updated
-   - Pending tasks mapped to changed sections: flagged for reconciliation
+   - Pending tasks mapped to changed sections: `spec_version` updated, then flagged for reconciliation
    - Pending tasks mapped to removed sections: flagged for user decision (archive or reassign)
+   - After migrating, `/work` re-runs `fingerprint.py --drift .claude`: the migrated tasks now name spec v2, so those in changed sections come back under `drifted` and reach the reconciliation prompt in this run, not the next
 4. New sections in v2 without corresponding tasks: flagged as "needs decomposition"
 
 ### Pass criteria
 
 - [ ] Spec version mismatch detected (tasks say v1, spec is v2)
-- [ ] Finished tasks updated minimally (version number only)
-- [ ] Changed sections trigger per-task reconciliation
+- [ ] Finished tasks keep their v1 provenance (historical, not flagged by the drift check)
+- [ ] Changed sections trigger per-task reconciliation in the same `/work` run (the drift check is re-run after migration)
 - [ ] Removed sections don't silently orphan tasks
 - [ ] New sections flagged for additional decomposition
 - [ ] No tasks lost during migration
@@ -96,27 +97,27 @@ User edited `spec_v2.md` (added Phase 2 detail, removed one Phase 2 section, mod
 
 ### Scenario
 
-After task migration (22B), `/work` needs a new decomposed snapshot for v2 to enable future drift detection.
+After task migration (22B), `/work` needs a new decomposed snapshot for v2, so future reconciliation prompts can show what changed in v2.
 
 ### Expected
 
 1. Old snapshot (`spec_v1_decomposed.md`) retained in `previous_specifications/`
 2. If new tasks decomposed from v2's new sections: new snapshot created as `spec_v2_decomposed.md`
-3. All tasks now reference `spec_version: 2` with current fingerprints
-4. Future drift detection compares against v2 snapshot
+3. All migrated (unfinished) tasks now reference `spec_version: 2` with current fingerprints; Finished Tasks 1-5 stay on v1 as historical records
+4. Future drift checks compare each migrated task's fingerprints with the current v2 sections; the v2 snapshot supplies the diffs shown at reconciliation
 
 ### Pass criteria
 
 - [ ] Old decomposed snapshot preserved (not overwritten)
 - [ ] New snapshot reflects v2 content
-- [ ] Task fingerprints align with v2 sections
-- [ ] Drift detection baseline reset for v2
+- [ ] Migrated task fingerprints align with v2 sections
+- [ ] Drift detection baseline (migrated tasks' fingerprints) reset for v2
 
 ### Fail indicators
 
 - Old snapshot overwritten (can't compare v1 → v2 changes later)
-- No new snapshot created (drift detection broken for v2)
-- Some tasks still reference v1 fingerprints after migration
+- No new snapshot created (reconciliation prompts can't show v2 diffs; detection itself still works)
+- Some unfinished tasks still reference v1 fingerprints after migration
 
 ---
 

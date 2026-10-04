@@ -142,6 +142,8 @@ For each file in `files_affected`:
 
 Detect files modified during implementation that were NOT listed in `files_affected`:
 
+**Re-verification after a spec edit.** When your brief carries the line `Re-verification after a spec edit: the implementation is unchanged; check it against the current section text.`, skip this diff-based undeclared-file check: the implementation was committed long ago, so `git diff` holds no implementation changes, only perhaps the uncommitted spec edit. Set `scope_validation` to "pass" with the note "re-verification: no implementation diff", and judge the existing artifacts in `files_affected` against the current section text. Every other step runs unchanged.
+
 ```
 1. Determine which files were modified by this task using a SINGLE Bash call:
    a. Run: git diff --name-only 2>/dev/null; echo "---"; git diff --name-only --cached 2>/dev/null
@@ -161,6 +163,11 @@ Detect files modified during implementation that were NOT listed in `files_affec
    - .claude/drift-deferrals.json
    - .claude/verification-result.json
    - .claude/dashboard-state.json
+   - .claude/spec_v*.md
+   - .claude/spec_v*.index.json
+   - .claude/support/previous_specifications/*
+   (An uncommitted spec edit, such as the one behind a drift re-verification,
+   isn't counted as this task's undeclared change.)
 
 4. IF undeclared_files is non-empty:
    - Severity depends on context:

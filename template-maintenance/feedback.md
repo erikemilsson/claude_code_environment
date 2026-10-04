@@ -718,7 +718,7 @@ Tags: implement-agent, decomposition, files_affected, cross-artifact-parity, dis
 
 ## FB-115: Closure sweeps verify the phrasings you changed, not the claim's full surface — lexical vs structural
 
-**Status:** cheap action shipped v5.7.1 (2026-09-27) — verify-agent T2c item 4 (search by what the claim is about, task-ID status cross-reference, ungated mirrors, re-dated anchors) + `/iterate` Step 5 dated-anchor line. **Single-project caveat superseded 2026-10-04** (PortfolioWebsite and styler; see the 2026-10-03 harvest evidence). Not done: the drift-reconciliation fingerprint-blindness note (incident 2). Its second-project trigger is now met (PortfolioWebsite 09-19-0210); ship it with FB-128, which edits the same file.
+**Status:** cheap action shipped v5.7.1 (2026-09-27) — verify-agent T2c item 4 (search by what the claim is about, task-ID status cross-reference, ungated mirrors, re-dated anchors) + `/iterate` Step 5 dated-anchor line. **Single-project caveat superseded 2026-10-04** (PortfolioWebsite and styler; see the 2026-10-03 harvest evidence). The drift-reconciliation fingerprint-blindness note (incident 2) **shipped v5.9.0** with FB-128 (`drift-reconciliation.md` § "What fingerprints can't see (FB-115)"); its second-project trigger was met by PortfolioWebsite 09-19-0210. Still open: the 2026-10-03 evidence's status-prose rot (2) and the rule-file mirror missed at `/iterate` apply (3).
 **Captured:** 2026-08-12 (harvest cluster 5)
 **Source:** 5 unique incidents across OEMMatInsightBI exports 2026-08-05 and 2026-08-10. Full evidence + insight doc: `interaction-logs/insights/2026-08-12_verify-agent_closure-sweep-lexical-vs-structural.md`.
 
@@ -779,7 +779,7 @@ Tags: verify-agent, runtime-validation, no-local-environment, local-ceiling, fab
 
 ## FB-117: Task/AC authoring internal consistency — the criterion is wrong at creation, at two authoring sites (decomposition + phase-level fix tasks)
 
-**Status:** ready — the single-project caveat below is **superseded 2026-10-04** (PortfolioWebsite corroborates; see the 2026-10-03 harvest evidence). Originally 9 incidents, OEMMatInsightBI, 07-22 → 08-11.
+**Status:** ready — the single-project caveat below is **superseded 2026-10-04** (PortfolioWebsite corroborates; see the 2026-10-03 harvest evidence). Originally 9 incidents, OEMMatInsightBI, 07-22 → 08-11. **Step 1d slice shipped v5.9.0** (with FB-128): Step 1d first resolves ticked decisions, then lists decision-gated tasks under `Waiting on decisions:` instead of treating them as Claude-actionable. Everything else here stays open.
 **Captured:** 2026-08-12 (harvest clusters 4+6 merged)
 **Source:** 9 unique incidents across OEMMatInsightBI exports 2026-07-22 → 2026-08-11. Full evidence + insight doc: `interaction-logs/insights/2026-08-12_task-ac-authoring-internal-consistency.md`.
 
@@ -917,31 +917,19 @@ Tags: health-check, part-5, sync, sync-manifest, retired-files, skills, downstre
 (d) **Part 3 check 6** can't tell a decision's origin task from its dependents (`related.tasks`); v5.7.5 made its auto-fix report-only. Fix: an origin field, or skip the task a decision was made in.
 (e) `support/reference/decisions.md` doesn't document `partially_superseded`, which the renderer, META and `/audit-coherence` use (`/health-check` accepts it since v5.7.5).
 (f) Reported, not checked: `tests/scenarios/19-agent-crash-recovery.md:25` ("sequential mode runs inline") is out of date. *(Fixed in v5.7.5's review round.)*
-(g) **Renderer crash paths left after v5.8.0:** a non-object `version.json` or `verification-result.json`, or a non-object `section_toggles` / `phase_gates` / `audit_digest` inside the sidecar, still raises (v5.8.0 guarded only a non-object sidecar).
+(g) **Renderer crash paths left after v5.8.0:** a non-object `version.json` or `verification-result.json`, or a non-object `section_toggles` / `phase_gates` / `audit_digest` inside the sidecar, still raises (v5.8.0 guarded only a non-object sidecar). *v5.9.0 fixed one more: a bare-list or malformed `drift-deferrals.json` no longer crashes META or the Needs-you card.*
 (h) **The `rg` fallback may prompt outside auto mode:** `settings.json` allows `Bash(grep:*)` but not `rg` or `find`. A blanket allow needs care: `rg --pre` and `find -exec`/`-delete` can run or delete things.
 (i) **`audit-coherence.md`'s path-drift "exists via Glob" check** is an absence claim and needs a positive control under the v5.8.0 rule. Other `Grep`/`Glob` mentions (`work.md:98,196`, `health-check.md:343,947`, `automation.md:32`) rely on the rule's general fallback.
-(j) **More pre-DEC-024 drift** found by the v5.8.0 docs pass: scenarios 06C (file links on task rows the script never renders), 06D, 07/07B, 08D, 16C steps 1–3; `drift-reconciliation.md:28` (notes-backup step); `shared-definitions.md:168` (FEEDBACK markers).
+(j) **More pre-DEC-024 drift** found by the v5.8.0 docs pass: scenarios 06C (file links on task rows the script never renders), 06D, 07/07B, 08D, 16C steps 1–3; `drift-reconciliation.md:28` (notes-backup step; *removed in v5.9.0*); `shared-definitions.md:168` (FEEDBACK markers).
 (k) **Architecture map:** v5.8.0 adds `negative-findings.md` (the "~29 reference docs" count, the lazy-docs list, and a `rules/agents.md` → `negative-findings.md` edge). Reconcile with FB-112(a).
 (l) **`verification_history[].cost` arrives after the report** (harvest 2026-10-03 cluster 14). `work-procedures.md:50` copies `cost` "from the usage the harness reports", but on 5.7.4 that usage arrives in the task-completion notification, after the report (styler 10-01-1237, PortfolioWebsite 10-02-0820). Read literally, the step omits `cost`, and both orchestrators needed a second JSON write. The DEC-025 recheck gate counts difficulty 1–2 dispatches that carry `cost`, so say "backfill `cost` when the completion notification arrives".
 (m) **The Custom Views fill is lost on every regen, and nothing catches an unfilled placeholder** (harvest 2026-10-03; listed under FB-118 in the draft, but v5.8.0 shipped FB-118 without it). Each regen emits a fresh `<!-- CLAUDE: fill … -->` slot (`dashboard-render.py:1246-1250`, `dashboard-regeneration.md:202`), so LLM-rendered views must be redone by hand after every regen, and the HTML is gitignored, so a lost fill can't be recovered (PortfolioWebsite 09-21-1452). Sessions left the slot unfilled with `custom_views` on; the placeholder check at `dashboard-regeneration.md:300` is prose that nothing runs (09-19-1705). Options: make the fill a required step of every regen while the toggle is on, with a scripted check for a leftover fill comment; or persist the rendered blocks in the sidecar, as `augment_rows[]` does. Custom Views is off by default.
 
 Tags: residuals, dashboard, DEC-024, audit-wording, session-export, hooks, dispatch, health-check, decisions
 
-## FB-128: Detected spec drift doesn't reach the user — fast-path masking, a fast exit ahead of reconciliation, and no "absorb" path
+## FB-128: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
 
-**Status:** ready — (a) and (b) verified defects, (c) a verified gap. Next release; design needs the maintainer's approval before building.
-**Captured:** 2026-10-04 (harvest 2026-10-03 cluster 1)
-**Source:** 11 exports, 3 projects: oemmat 08-03-1349, 08-04-0420, 08-05-1641; tinder-streamliner-cc 05-25-0312; styler 06-21, 09-21, 09-24-2256, 09-28, 09-30, 10-01-1237, 10-01-1440. Triage: `template-maintenance/harvest-2026-10-03-triage.md`. Insight: `interaction-logs/insights/2026-10-03_work_spec-drift-never-surfaces.md`. Extends FB-106 (v5.4.0), which covered new sections only.
-
-**Problem.** Three defects on one path (line numbers at v5.8.0):
-
-(a) **The META fast path masks edits to existing sections.** `dashboard-render.py:395` stamps the *current* spec hash into META, and `work.md:207` skips Steps 1a/1b when it matches. After any Tier-1 regen (for example at pause) that follows an `/iterate` edit to an existing section, Step 1b stops comparing task fingerprints. `pending_decomposition[]` (`work.md:217-224`) covers new `## ` sections only.
-(b) **Step 1d exits before reconciliation.** Step 1d's fast exit (`work.md:263-303`) returns before Drift Reconciliation (`:305`), so drift found in Step 1b is never shown when no Claude-actionable task remains, even when reconciling it would unblock work.
-(c) **No "absorb" option.** When drift does surface, `drift-reconciliation.md:264-291` offers only Apply (resets every Finished task in the section to Pending), Review or Skip. Nothing keeps verification for annotation-only edits or for a spec that caught up to shipped code. styler chose that ad hoc three times for one section, and one session hand-updated 304 fingerprints.
-
-**Fix sketch.** Stamp a task-provenance fingerprint in META, or have `/iterate` write a `pending_drift_reconciliation[]` marker (the FB-106 pattern); run reconciliation before Step 1d exits; add a per-section `[K] Keep verification` that refreshes fingerprints and records that it did (this relaxes the `drift-reconciliation.md:291` invariant, so only on the user's choice). Design (a) and (c) together: fixing (a) makes (c) fire on every annotation-only edit. **Ship with:** FB-115's fingerprint-blindness note (same file), and a decision on how FB-117's decision-gated `owner: both` tasks count in Step 1d.
-
-Tags: work, drift-detection, fast-path, dashboard-meta, step-1d, reconciliation, extends-FB-106, verified-defect, three-project-signal
+**Status:** promoted 2026-10-04 — shipped v5.9.0 (deterministic drift check on every `/work`; reconciliation before Step 1d; `[V]` Re-verify and `[K]` Keep). See archive for full entry.
 
 ## FB-129: Agent-recorded decisions land `approved` before verification and never reach the user for ratification
 

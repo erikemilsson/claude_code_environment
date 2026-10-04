@@ -32,6 +32,11 @@ three-way divergence observed in styler 2026-06-11):
   (/work Step 1a, /status, /health-check) — they string-parse it
   byte-identically in HTML.
 
+Spec drift (FB-128): compute_drift() is loaded from the sibling fingerprint.py
+by path (importlib) and runs on every render. It feeds META drift_sections, the
+footer indicator, the pulse "drift" number and the Needs-you Spec Drift rows. If
+it can't load or fails, drift reads as unchecked and nothing else breaks.
+
 Archive awareness: {tasks-dir}/archive/task-*.json are read for COUNTS and
 phase-name canonicalization only. Archived Finished count toward phase
 done/total; archived Absorbed are excluded; archived tasks in any other status
@@ -56,6 +61,7 @@ Exit codes: 0 success, 2 runtime/usage error.
 import argparse
 import hashlib
 import html
+import importlib.util
 import json
 import math
 import re
@@ -176,6 +182,9 @@ def load_spec(claude_dir: Path):
     path = specs[-1]
     try:
         text = path.read_text(encoding="utf-8")
+        # bytes, not decoded text (A7): the same hash as fingerprint.py --spec and
+        # compute_drift, so a CRLF spec doesn't read as changed on every /work
+        fingerprint = "sha256:" + hashlib.sha256(path.read_bytes()).hexdigest()
     except OSError:
         return {"version": path.stem, "status": "—", "fingerprint": "—", "title": None}
     fm = parse_frontmatter(text)
@@ -186,9 +195,61 @@ def load_spec(claude_dir: Path):
     return {
         "version": path.stem,
         "status": fm.get("status", "active"),
-        "fingerprint": "sha256:" + hashlib.sha256(text.encode("utf-8")).hexdigest(),
+        "fingerprint": fingerprint,
         "title": title,
     }
+
+
+def _deferral_items(drift):
+    """Usable drift-deferrals.json entries: `{"deferrals": [...]}` or a bare list, keeping
+    only objects with a string `section`, the same entries fingerprint.py's
+    load_drift_deferrals() reads. Any other shape counts as no deferrals (it used to
+    crash the render)."""
+    items = drift.get("deferrals") if isinstance(drift, dict) else drift
+    if not isinstance(items, list):
+        return []
+    return [e for e in items if isinstance(e, dict) and isinstance(e.get("section"), str)]
+
+
+def _load_compute_drift():
+    """compute_drift() from the sibling fingerprint.py, loaded by path so it resolves
+    both when this file runs as a CLI and when tests load it by path. None when it
+    can't be loaded: the render goes on with drift unchecked."""
+    path = Path(__file__).resolve().with_name("fingerprint.py")
+    saved = sys.dont_write_bytecode
+    sys.dont_write_bytecode = True  # read-only: no __pycache__ beside the scripts
+    try:
+        mod_spec = importlib.util.spec_from_file_location("fingerprint", path)
+        module = importlib.util.module_from_spec(mod_spec)
+        mod_spec.loader.exec_module(module)
+        return module.compute_drift
+    except (Exception, SystemExit) as exc:  # absent, broken, older, or its version guard
+        print(f"warning: drift unchecked: can't load compute_drift from {path.name} ({exc})",
+              file=sys.stderr)
+        return None
+    finally:
+        sys.dont_write_bytecode = saved
+
+
+def load_drift_check(claude_dir: Path):
+    """What the render needs from compute_drift(): the unreconciled section count, the
+    unreconciled drifted sections with their non-deferred task statuses, and the
+    missing sections with their task counts. None = drift unchecked (never raises)."""
+    compute = _load_compute_drift()
+    if compute is None:
+        return None
+    try:
+        result = compute(claude_dir)
+        return {
+            "unreconciled": int(result["unreconciled_sections"]),
+            "drifted": [(str(d["section"]),
+                         [str(t["status"]) for t in d["tasks"] if not t["deferred"]])
+                        for d in result["drifted"] if not d["deferred"]],
+            "missing": [(str(m["section"]), len(m["tasks"])) for m in result["missing"]],
+        }
+    except Exception as exc:
+        print(f"warning: drift unchecked: compute_drift failed ({exc})", file=sys.stderr)
+        return None
 
 
 # ------------------------------------------------------------ phase model
@@ -379,12 +440,16 @@ def canonical_task_hash(active):
     return "sha256:" + hashlib.sha256(("\n".join(rows) + "\n").encode("utf-8")).hexdigest()
 
 
-def render_meta(active, decisions, spec, version, drift, verification_result, now):
+def render_meta(active, decisions, spec, version, drift, verification_result, now,
+                drift_check=None):
     debt = sum(1 for t in active if t.get("status") == "Finished"
                and (t.get("task_verification") or {}).get("result") != "pass")
     debt += sum(1 for t in active if t.get("status") == "Awaiting Verification")
     counts = Counter(d["status"] for d in decisions)
-    drift_count = len(drift.get("deferrals", drift) if isinstance(drift, (dict, list)) else []) if drift else 0
+    drift_count = len(_deferral_items(drift))
+    # spec_fingerprint = the spec this page was rendered from; drift_sections = the
+    # live check (FB-128), "unchecked" when compute_drift couldn't run
+    drift_sections = drift_check["unreconciled"] if drift_check is not None else "unchecked"
     return "\n".join([
         "<!-- DASHBOARD META",
         f"generated: {now.strftime('%Y-%m-%dT%H:%M:%SZ')}",
@@ -396,6 +461,7 @@ def render_meta(active, decisions, spec, version, drift, verification_result, no
         f"template_version: {version.get('template_version', '—')}",
         f"verification_debt: {debt}",
         f"drift_deferrals: {drift_count}",
+        f"drift_sections: {drift_sections}",
         f"decision_count: {len(decisions)}",
         f"decisions_approved: {counts.get('approved', 0) + counts.get('implemented', 0)}",
         f"decisions_superseded: {counts.get('superseded', 0)}",
@@ -1010,8 +1076,15 @@ def _augment_items(sidecar, active, archived):
     return actions, fyis
 
 
+def _status_counts_text(statuses):
+    """'3 Finished, 1 Pending': counts in DONUT_STATUS_ORDER, any other status after."""
+    counts = Counter(statuses)
+    order = DONUT_STATUS_ORDER + sorted(s for s in counts if s not in DONUT_STATUS_ORDER)
+    return ", ".join(f"{counts[s]} {_esc(s)}" for s in order if counts.get(s))
+
+
 def _html_needs_you(active, decisions, phases_model, status_map, sidecar,
-                    verification_result, drift, claude_dir, archived=()):
+                    verification_result, drift, claude_dir, archived=(), drift_check=None):
     """Deterministic Action Required rows (FB-105, FB-118).
 
     The script owns every mechanically-derivable row so the human-gated coverage
@@ -1065,11 +1138,21 @@ def _html_needs_you(active, decisions, phases_model, status_map, sidecar,
         f'<span class="tid">{_esc(t.get("id"))}</span>{_esc(t.get("title") or "")} — '
         f'verification incomplete → run <code>/work</code>') for t in debt])
 
-    # Spec Drift
-    d_items = (drift or {}).get("deferrals") or (drift if isinstance(drift, list) else [])
+    # Spec Drift — one row per unreconciled section (FB-128: drifted, then missing),
+    # then the deferral row
+    rows = []
+    if drift_check is not None:
+        rows += [row(f'<code>{_esc(section)}</code> changed since its tasks were built '
+                     f'({_status_counts_text(statuses)}) → run <code>/work</code> to reconcile')
+                 for section, statuses in drift_check["drifted"]]
+        rows += [row(f'<code>{_esc(section)}</code> is no longer in the spec ({n} open task(s) '
+                     f'reference it) → run <code>/work</code> to reconcile')
+                 for section, n in drift_check["missing"]]
+    d_items = _deferral_items(drift)
     if d_items:
-        sub("Spec Drift", [row(f'{len(d_items)} deferred spec-drift reconciliation(s) '
-                               f'→ run <code>/work</code> to review')])
+        rows.append(row(f'{len(d_items)} deferred spec-drift reconciliation(s) '
+                        f'→ run <code>/work</code> to review'))
+    sub("Spec Drift", rows)
 
     # Audit Findings
     digest = sidecar.get("audit_digest") or {}
@@ -1167,6 +1250,7 @@ def render_full_html(claude_dir: Path, now: datetime):
     version = load_json_file(claude_dir / "version.json") or {}
     verification_result = load_json_file(claude_dir / "verification-result.json")
     drift = load_json_file(claude_dir / "drift-deferrals.json")
+    drift_check = load_drift_check(claude_dir)  # None = drift unchecked (FB-128)
     spec = load_spec(claude_dir)
     _GLOBAL_FINISHED = {str(t.get("id")) for t in active if t.get("status") == "Finished"} | \
                        {str(t.get("id")) for t in archived if t.get("status", "Finished") == "Finished"}
@@ -1202,13 +1286,16 @@ def render_full_html(claude_dir: Path, now: datetime):
         f'<span class="lgn">{_legend_label(s)}</span><b>{status_counts.get(s, 0)}</b></div>'
         for s in DONUT_STATUS_ORDER if status_counts.get(s, 0))
 
-    meta_block = render_meta(active, decisions, spec, version, drift, verification_result, now)
+    meta_block = render_meta(active, decisions, spec, version, drift, verification_result, now,
+                             drift_check)
     debt = sum(1 for t in active if t.get("status") == "Finished"
                and (t.get("task_verification") or {}).get("result") != "pass")
     debt += sum(1 for t in active if t.get("status") == "Awaiting Verification")
-    drift_count = len(drift.get("deferrals", drift) if isinstance(drift, (dict, list)) else []) if drift else 0
+    drift_count = len(_deferral_items(drift))
+    unreconciled = drift_check["unreconciled"] if drift_check is not None else 0
+    drift_total = unreconciled + drift_count  # just the deferrals when unchecked
     debt_color = "var(--bad)" if debt else "var(--ok)"
-    drift_color = "var(--bad)" if drift_count else "var(--ok)"
+    drift_color = "var(--bad)" if drift_total else "var(--ok)"
 
     pulse = (
         f'<section><div class="pulse">{_ring(segs, frac)}'
@@ -1219,7 +1306,7 @@ def render_full_html(claude_dir: Path, now: datetime):
         f'<div><div class="big">{active_ph}</div><div class="lbl">active now</div></div></div>'
         f'<div class="row">'
         f'<div><div class="big" style="color:{debt_color}">{debt}</div><div class="lbl">verif debt</div></div>'
-        f'<div><div class="big" style="color:{drift_color}">{drift_count}</div><div class="lbl">drift</div></div>'
+        f'<div><div class="big" style="color:{drift_color}">{drift_total}</div><div class="lbl">drift</div></div>'
         f'</div></div></div></section>')
 
     heatmap = _html_heatmap(phases_model, status_map)
@@ -1230,7 +1317,7 @@ def render_full_html(claude_dir: Path, now: datetime):
 
     if toggles.get("action_required", True):
         needs_you = _html_needs_you(active, decisions, phases_model, status_map, sidecar,
-                                    verification_result, drift, claude_dir, archived)
+                                    verification_result, drift, claude_dir, archived, drift_check)
     else:
         needs_you = '<li style="color:var(--soft)">Action Required section is toggled off.</li>'
     twocol = (
@@ -1260,8 +1347,13 @@ def render_full_html(claude_dir: Path, now: datetime):
                       f'<summary>Notes<span class="ntoggle"></span></summary>'
                       f'<div class="mini notescard">{_html_notes(user_notes, spec)}</div></details></section>')
 
-    indicator = (f'⚠️ {drift_count} drift deferrals, {debt} verification debt'
-                 if (debt or drift_count) else 'spec aligned · 0 drift deferrals, 0 verification debt')
+    if drift_check is None:
+        indicator = f'drift unchecked · {drift_count} drift deferrals, {debt} verification debt'
+    elif unreconciled or drift_count or debt:
+        indicator = (f'⚠️ {unreconciled} changed spec section(s), {drift_count} drift deferrals, '
+                     f'{debt} verification debt')
+    else:
+        indicator = 'spec aligned · 0 drift deferrals, 0 verification debt'
     # task count == the completion-ring / phase-map basis (total_all: active
     # non-absorbed + archived-finished), NOT len(active) which omits archived
     # tasks and contradicts the ring/donut/phase totals on archived projects.

@@ -72,13 +72,14 @@ No fixture files or project setup needed. The state description in each scenario
 | 19 | Agent Crash and Timeout Recovery | Agent timeout/crash handling, partial work preservation |
 | 20 | Corrupted Task JSON | Malformed files, missing fields, dangling dependencies |
 
-### Spec Lifecycle (21-23)
+### Spec Lifecycle (21-23, 44)
 
 | # | Name | Tests |
 |---|------|-------|
-| 21 | Spec Drift During Execution | Section-level drift detection, reconciliation, drift budget |
+| 21 | Spec Drift During Execution | Per-task drift check, batch prompt and per-section options, regen after reconciliation, drift budget |
 | 22 | Spec Version Transition | v1 to v2 archival, task migration, when NOT to bump |
 | 23 | Iterate Distill | Vision doc to spec transformation, suggest-only boundary |
+| 44 | Drift Detection Reaches User | Drift found after a dashboard regen, reconciliation before the Step 1d fast exit, decision-gated tasks, `[K]` Keep all, `[V]` Re-verify, quiet rules |
 
 ### Research and Review (24-26)
 

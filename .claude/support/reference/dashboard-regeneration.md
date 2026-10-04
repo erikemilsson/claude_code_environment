@@ -25,7 +25,7 @@ python3 .claude/scripts/dashboard-render.py --html --claude-dir .claude [--now <
 
 ### Action Required rendering split (FB-105, v5.4.0)
 
-**Script-owned (rendered deterministically — never hand-author or restate):** Phase Transitions (boundary reached, sidecar `phase_gates` not `approved`), Verification Pending (suppressed while any task has `user_review_pending`), Verification Debt, Spec Drift (`drift-deferrals.json`), Audit Findings (sidecar `audit_digest`, `pending` minus `dismissed_ids`, with empty-state), Feedback (counts parsed from `feedback.md`), Decisions (records in `draft`/`proposed`), Your Tasks (one row per non-Absorbed task — On Hold; Finished with `user_review_pending`, any owner (a stale flag on reworked work is ignored); Blocked on the user; `owner: human` with all deps + decision-deps satisfied — precedence in § "Section Display Rules"), Reviews (`out_of_spec` without approve/reject). Sub-section order and omit-when-empty follow § "Section Display Rules"; each row carries its completion command. When nothing is user-gated the script renders an explicit "Nothing blocked on you right now."
+**Script-owned (rendered deterministically — never hand-author or restate):** Phase Transitions (boundary reached, sidecar `phase_gates` not `approved`), Verification Pending (suppressed while any task has `user_review_pending`), Verification Debt, Spec Drift (unreconciled sections from `compute_drift()` in `fingerprint.py`, plus the `drift-deferrals.json` count), Audit Findings (sidecar `audit_digest`, `pending` minus `dismissed_ids`, with empty-state), Feedback (counts parsed from `feedback.md`), Decisions (records in `draft`/`proposed`), Your Tasks (one row per non-Absorbed task — On Hold; Finished with `user_review_pending`, any owner (a stale flag on reworked work is ignored); Blocked on the user; `owner: human` with all deps + decision-deps satisfied — precedence in § "Section Display Rules"), Reviews (`out_of_spec` without approve/reject). Sub-section order and omit-when-empty follow § "Section Display Rules"; each row carries its completion command. When nothing is user-gated the script renders an explicit "Nothing blocked on you right now."
 
 **LLM-authored (sidecar `augment_rows`, FB-118):** items the script cannot derive from state — **unanswered questions from a paused session** (the open-question sweep at `/work pause`), a Blocked task's open choice, and context a mechanical row would miss. The orchestrator writes them to the sidecar and regenerates; the script renders them as the card's last sub-section, "Also Needs You". Protocol: § "Augment Rows".
 
@@ -119,7 +119,7 @@ User-authored content lives in `.claude/dashboard-state.json` as the **single so
 | `user_notes` | String | The Notes card content (Quick Links etc.). Rendered read-only as minimal HTML (headers, bullets, links, bold) |
 | `section_toggles` | Object | The sole toggle source — exactly four boolean keys: `action_required`, `decisions`, `notes` (default `true`), `custom_views` (default `false`). The script ignores any other key (§ "Section Toggle Configuration") |
 | `phase_gates` | Object | Keyed by transition (e.g., `"1→2"`). Value: `{ "status": "active"\|"approved" }`. Read-only HTML does not render an in-file gate checkbox; the script surfaces phase-gate readiness in the "Needs you" card (a transition whose gate is not `approved`) and the user approves via CLI (`/work`). Retained as state for that surfacing |
-| `pending_decomposition` | Array | `## ` headings of spec sections added by `/iterate` that no task references yet (FB-106). Written by `/iterate`'s post-apply step; consumed by `/work` Step 1a **ahead of the fast path**, which would otherwise skip drift detection and leave the section silently undecomposed. Entries are removed once referencing tasks exist or the user drops them |
+| `pending_decomposition` | Array | `## ` headings of spec sections added by `/iterate` that no task references yet (FB-106). Written by `/iterate`'s post-apply step; consumed first thing in `/work` Step 1a. A new section has no task whose fingerprint could drift, so the drift check can't surface it, and without the marker it would stay silently undecomposed. Entries are removed once referencing tasks exist or the user drops them |
 | `inline_feedback` | Object | Keyed by task ID. Optional feedback text the user gave on a `human`/`both` task. No in-file feedback box exists in read-only HTML; the user gives feedback via CLI at `/work complete`. Retained for back-compat |
 | `custom_views_instructions` | String | Bold-labeled view instructions; emitted into the Custom Views section (between `<!-- CUSTOM VIEWS INSTRUCTIONS -->` comments in the HTML) for the LLM to render below |
 | `audit_digest` | Object | `latest_audit` (string, e.g. `"coherence-2026-05-15-1430"`), `items[]` (digest item objects, projection of latest digest.json), `dismissed_ids[]` (item IDs the user dismissed). Surfaced in the "Needs you" card. See `.claude/support/reference/audit-fix-workflow.md` |
@@ -149,7 +149,8 @@ Dashboard regeneration follows a **tiered communication strategy** (see `command
 | When routing async work to dashboard (phase gates, decision reviews) | User will go read the dashboard |
 | `/work complete` (user-initiated) | User explicitly interacting with task state |
 | After decision resolution | May unblock tasks, dashboard needs to reflect new state |
-| Step 1a freshness check | Catch-up on entry |
+| Drift reconciliation applied (any choice that wrote a task file or `drift-deferrals.json`; an `[S]`-only pass writes just the deferral file) | `task_hash` doesn't include fingerprints, notes or deferrals, so the next freshness check would miss it and the Spec Drift rows would stay stale |
+| Step 1a freshness check (`task_hash`, `template_version` or `spec_fingerprint` differs from META) | Catch-up on entry |
 | Format staleness (template_version mismatch) | Dashboard was generated with older template rules |
 
 ### Format Staleness
@@ -183,6 +184,7 @@ The dashboard META block includes a `template_version` field (copied from `.clau
 - All `task-*.json` files (tasks)
 - All `decision-*.md` files in `.claude/support/decisions/` (decisions)
 - `drift-deferrals.json` (if exists)
+- Spec drift: the script calls `compute_drift()` from the sibling `fingerprint.py` (the same check as `fingerprint.py --drift .claude`: each task's `section_fingerprint` against the current `spec_v{N}.md`). If it can't load or fails, drift is *unchecked* and the rest of the dashboard renders as usual
 - `verification-result.json` (if exists)
 - `.claude/support/feedback/feedback.md` (scan for unhandled feedback items)
 
@@ -222,10 +224,13 @@ The dashboard is read-only HTML; user content lives **only** in `.claude/dashboa
   **4/5 criteria passed**
   ```
   Rules: `status: "pass"` renders as `[x]`, `status: "fail"` renders as `[ ]`. Notes are italicized and truncated at 60 characters. The summary count line uses `criteria_passed` / (`criteria_passed` + `criteria_failed`). When the `criteria` array is absent (backward compatibility), fall back to summary-only: `**{criteria_passed}/{criteria_passed + criteria_failed} criteria passed**`. **This checklist is the authoritative acceptance-*status* surface (DEC-022)** — distinct from any inline `- [ ]` acceptance boxes a project may render in the spec, which are authored input, not live status; divergence is surfaced by `/audit-coherence`'s `acceptance-reconciliation` lens.
-- **Spec Drift sub-section:** When `drift-deferrals.json` exists with active deferrals, render each deferred section:
+- **Spec Drift sub-section:** rendered when there is unreconciled drift (`unreconciled_sections` > 0 in the `compute_drift()` result) or `drift-deferrals.json` has active entries. One row per unreconciled section, changed (`drifted`) sections first and then `missing` ones, each in heading order, followed by the deferral row:
   ```
-  - ⚠️ **{section}** — {N} tasks affected, deferred {M} days ago
+  <code>{section}</code> changed since its tasks were built ({counts}) → run <code>/work</code> to reconcile
+  <code>{section}</code> is no longer in the spec ({n} open task(s) reference it) → run <code>/work</code> to reconcile
+  {N} deferred spec-drift reconciliation(s) → run <code>/work</code> to review
   ```
+  `{counts}` lists the section's non-deferred tasks by status, in the order Finished, In Progress, Awaiting Verification, Pending, Blocked, On Hold (e.g. `3 Finished, 1 Pending`). A changed section whose tasks are all deferred gets no row of its own; the deferral row covers it. When drift is *unchecked*, only the deferral row renders.
 
 ### 4. Compute and Add Metadata Block
 
@@ -238,10 +243,11 @@ task_count: [number]
 task_hash: sha256:[hash of sorted task_id:status:difficulty:owner:review tuples; review = 1 if user_review_pending else 0]
 spec_version: [e.g., "spec_v13"]
 spec_status: [active|finalized|archived]
-spec_fingerprint: sha256:[hash of spec file content]
+spec_fingerprint: sha256:[hash of the bytes of the spec file this dashboard was rendered from, as fingerprint.py --spec computes it]
 template_version: [value from .claude/version.json template_version field]
 verification_debt: [count of tasks needing verification]
 drift_deferrals: [count from drift-deferrals.json]
+drift_sections: [unreconciled_sections from compute_drift(), or "unchecked"]
 decision_count: [total count of decision-*.md files]
 decisions_approved: [count where status == approved or implemented]
 decisions_superseded: [count where status == superseded]
@@ -249,11 +255,13 @@ decisions_partially_superseded: [count where status == partially_superseded]
 -->
 ```
 
+**`spec_fingerprint` is not a drift check.** It records which spec the dashboard was rendered from, and `/work` Step 1a regenerates when it differs from the current spec's hash. Every regen stamps the current hash whether or not a task's section changed, so a match says nothing about drift: before v5.9.0, a pause regen after an `/iterate` edit made the next `/work` skip drift detection this way (FB-128). Drift comes from the per-task check (`fingerprint.py --drift .claude`), which `/work` Step 1b runs on every run. `drift_sections` is that check's count of unreconciled sections at render time.
+
 The `template_version` field enables **format staleness detection**: when template sync updates `version.json`, the dashboard META's `template_version` no longer matches, flagging the dashboard as format-stale even if task data hasn't changed. See § "Format Staleness" above.
 
 #### Field whitelist (strict)
 
-ONLY the 13 fields listed above may appear in the META block. Specifically forbidden:
+ONLY the 14 fields listed above may appear in the META block. Specifically forbidden:
 
 - **`session_*` keys of any kind.** Session-handoff content (what just happened, what's next) belongs in `.claude/tasks/.handoff.json` (written by `/work pause`), git log, or auto-memory — never in dashboard META. The META block exists for state-fingerprinting and freshness checks, not narrative.
 - **Free-form notes, status messages, commentary, or session journals.** The META block is machine-readable; only structural fields belong here.
@@ -277,6 +285,14 @@ User-gated items that used to be in-file interactions (phase-gate approval, inli
 ### 6. Footer
 
 The script emits the footer (generated timestamp · N tasks · drift/debt indicator) as the last element before `</body>`. No manual step.
+
+The indicator takes one of three forms (`u` = unreconciled sections, `d` = drift deferrals, `k` = verification debt):
+
+- drift check couldn't run: `drift unchecked · {d} drift deferrals, {k} verification debt`
+- `u`, `d` and `k` all 0: `spec aligned · 0 drift deferrals, 0 verification debt`
+- otherwise: `⚠️ {u} changed spec section(s), {d} drift deferrals, {k} verification debt`
+
+The Pulse "drift" number is `u + d` (just `d` when unchecked), in the bad colour when above 0.
 
 ### 7. Output Size Awareness
 
@@ -404,7 +420,7 @@ The user selects an option when prompted, and `/work` updates the task according
   - **No toggle of its own:** it renders inside the "Needs you" card (so `action_required` governs it) once an audit has run.
 - Phase Transitions: only render when a phase boundary has been reached (all Phase N tasks Finished, Phase N+1 exists) AND no APPROVED marker exists for that transition
 - Verification Pending: only render when all spec tasks are Finished with passing per-task verification but no valid verification-result.json, and no task has `user_review_pending` (display order only: the user's open review comes first)
-- Spec Drift: only render when drift-deferrals.json has active entries
+- Spec Drift: only render when there is unreconciled drift (`unreconciled_sections` > 0) or drift-deferrals.json has active entries
 - **Your Tasks** (FB-118): one row per non-Absorbed task, first match wins:
   1. On Hold → only the user can resume it
   2. Finished with `user_review_pending: true`, any owner → the user's review closes it with `/work complete {id}` (a stale flag on an unfinished task is ignored)
@@ -442,7 +458,7 @@ The user selects an option when prompted, and `/work` updates the task according
 - Absorbed tasks: show status as `Absorbed → Task {id}` in Tasks section (dimmed/collapsed style); exclude from both "Done" and "Total" in Progress phase counts; exclude from critical path
 - Notes first-regeneration seeding: On first dashboard regeneration (replacing template example), seed the user notes section with **Quick Links** relevant to the project — key directories or config files mentioned in the spec, and any external resources (URLs, services, platforms) referenced in the spec. Format as a bullet list under a `**Quick Links:**` header. This gives users immediate orientation. **Do NOT hand-author a spec-version link** (e.g. `spec_v4.md`): the renderer auto-prepends a live `📄 Spec:` quick-link to the Notes card (derived from the current spec version each regen) and the Specification card link-out is also always-current — a hand-seeded `spec_v{N}.md` path is *preserve*-mode and rots on the next version bump (observed: a dashboard still pointing at `spec_v4.md` after the spec reached v5). Same for a Decisions link (the Decisions card owns it). On subsequent regenerations, the Notes section is `preserve` mode — never overwrite user content.
 - Notes generated content (subsequent): After first regen, the Notes section contains only the user section markers and whatever the user has written. No auto-generated content is added on subsequent regens. Decisions have their own section with persistent links.
-- Footer: healthy = spec aligned tooltip; issues = ⚠️ with counts
+- Footer: `spec aligned` only with no unreconciled drift, no deferrals and no verification debt; otherwise ⚠️ with counts, or `drift unchecked` when the drift check couldn't run (§ "6. Footer")
 - Custom Views section: user-defined instructions (preserved between markers) followed by Claude-generated content based on those instructions (when enabled). Multiple views are rendered as `###` sub-sections, one per bold-labeled instruction.
 
 ### Per-Section Format
@@ -452,7 +468,7 @@ The user selects an option when prompted, and `/work` updates the task according
 | Action Required → Phase Transitions | Enumerated conditions (`[x]`/`[ ]` checkboxes) between `<!-- PHASE GATE -->` markers — auto-conditions + manual approval |
 | Action Required → Verification Pending | Plain text status message |
 | Action Required → Verification Debt | `Task \| Title \| Issue` |
-| Action Required → Spec Drift | `- ⚠️ **{section}** — {N} tasks affected, deferred {M} days ago` |
+| Action Required → Spec Drift | One row per unreconciled section, then one deferral row (rules in § "3. Generate Dashboard" → Spec Drift sub-section). Changed section: `<code>{section}</code> changed since its tasks were built ({counts}) → run <code>/work</code> to reconcile`. Missing section: `<code>{section}</code> is no longer in the spec ({n} open task(s) reference it) → run <code>/work</code> to reconcile`. Deferrals: `{N} deferred spec-drift reconciliation(s) → run <code>/work</code> to review` |
 | Action Required → Audit Findings | `bundle-eligible`: `- [ ] **{C-NN}** {description ?? title} — [Fix it]`. Other kinds: `- [ ] **{C-NN}** {description ?? title} *({kind annotation})*` (annotations: `decision` → `*(spec amendment via /iterate)*`; `fix-eligible` → `*(fix-eligible — manual review pending future DEC)*`; `design` → `*(promote to FB → /research)*`). Body field selection per v3.18.0: prefer `description` (plain-English synthesizer-written sentence); fall back to `title` for older audits. Promote (tick + `/audit-{name} promote {audit-ts}`) and Dismiss (natural-language to Claude) are NOT rendered inline per-item — see Audit Findings rule "How to act on findings" above. |
 | Action Required → Feedback | `- 📝 **{N} feedback items** awaiting attention ({X} new, {Y} refined, {Z} ready) → /feedback review` |
 | Action Required → Decisions | `Decision \| Question \| Doc` |

@@ -12,7 +12,7 @@ Conceptual trace test for the Option 2 spec-scale implementation: the generated 
 
 Command path: `commands/work.md § "Step 1b: Spec Drift Detection"` → `support/reference/drift-reconciliation.md § "Spec Index Freshness"`.
 
-1. Orchestrator computes the full-spec fingerprint (already required for drift detection).
+1. Orchestrator has the full-spec fingerprint from Step 1b's drift check (`spec_fingerprint` in the `fingerprint.py --drift .claude` output).
 2. It checks `.claude/spec_v3.index.json`:
    - **Missing** → regenerate: `python3 .claude/scripts/fingerprint.py --index .claude/spec_v3.md > .claude/spec_v3.index.json`.
    - **Present, `spec_fingerprint` == current** → leave as-is.
@@ -48,21 +48,22 @@ Command path: `scripts/fingerprint.py` / `drift-reconciliation.md`.
 
 ## Trace D — subsection narrowing spares unaffected tasks (DEC-021 companion, v4.25.0)
 
-Command path: `drift-reconciliation.md § "Subsection-level drift narrowing"` → `commands/work.md § "Step 1b"`.
+Command path: `commands/work.md § "Step 1b"` (`fingerprint.py --drift .claude`) → `drift-reconciliation.md § "Subsection-level drift narrowing"`.
 
-State: `## Phase 40` (58K, subsections `### A`–`### H`) has 47 tasks. A one-line edit lands in `### X` only. Some tasks carry `spec_subsection` (DEC-021 optional provenance), some are legacy (none).
+State: `## Phase 40` (58K, subsections `### A`–`### H`) has 47 tasks. A one-line edit lands in `### X` only. Some tasks carry `spec_subsection` + `subsection_fingerprint` (DEC-021 optional provenance), some are legacy (none).
 
-1. Granular analysis flags `## Phase 40` (its `## ` hash changed).
-2. Because the section is large, drift computes the `### ` diff (`fingerprint.py --sections --depth 3`, current vs snapshot) → only `### X` changed.
-3. UI surfaces: *"Phase 40 changed — specifically `### X` (`### A`–`### H` minus X unchanged)."*
+1. The drift check lists `## Phase 40` under `drifted` (its `## ` hash changed), with every task whose `section_fingerprint` differs.
+2. Each listed task carries `subsection_unchanged`. It is `true` only when the task has a non-empty `spec_subsection` and `subsection_fingerprint`, and the current hash of that `### ` subsection, looked up under `## Phase 40` only, exists and equals `subsection_fingerprint`. The flag needs no snapshot and no section-size threshold.
+3. With the snapshot present, the UI also shows the subsection breakdown (`fingerprint.py --sections --depth 3`, current vs snapshot): *"Phase 40 changed — specifically `### X` (`### A`–`### H` minus X unchanged)."*
 4. Task grouping:
-   - Tasks with `spec_subsection == "### X"` (or a differing `subsection_fingerprint`) → flagged for reconciliation.
-   - Tasks with `spec_subsection` in an unchanged subsection → "likely unaffected (subsection unchanged)" group, `[S] Skip` recommended (surfaced, not dropped).
-   - Tasks with no `spec_subsection` (legacy) → flagged at `## `-level exactly as today.
+   - `spec_subsection == "### X"` → its stored `subsection_fingerprint` no longer matches → `subsection_unchanged: false` → flagged for reconciliation.
+   - `spec_subsection` in an unchanged subsection → `subsection_unchanged: true` → "likely unaffected (subsection unchanged)" group with `[K]` Keep recommended, surfaced, not dropped.
+   - No `spec_subsection` (legacy), no `subsection_fingerprint`, or a subsection heading no longer in the spec → `subsection_unchanged: false` → flagged at `## `-level exactly as today.
+5. Narrowed tasks stay in the section's `drifted` list, so `## Phase 40` still counts in `unreconciled_sections` until the user reconciles it.
 
-**Expected:** tasks whose subsection is provably unchanged are spared mandatory reconciliation; legacy tasks behave exactly as before; nothing is silently dropped.
+**Expected:** tasks whose subsection is provably unchanged are marked likely unaffected; legacy tasks behave exactly as before; nothing is silently dropped.
 
-**Pass criteria:** narrowing only spares tasks with provenance + unchanged subsection; conservative "surface, don't drop"; full fallback to `## `-level when there's no provenance / no snapshot / `--depth 3` unavailable / the section is small. (Additive `### ` hashing is mechanically covered by `test_sections_depth3_is_additive`.)
+**Pass criteria:** narrowing marks only tasks with both provenance fields and an unchanged current `### ` hash; conservative "surface, don't drop"; the per-task flag doesn't depend on the snapshot or the section's size (the snapshot only feeds the breakdown and the diff); `## `-level fallback when the task lacks provenance or its subsection heading is gone. (Additive `### ` hashing is mechanically covered by `test_sections_depth3_is_additive`.)
 
 ## Invariant checks
 

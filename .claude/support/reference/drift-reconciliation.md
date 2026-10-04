@@ -6,7 +6,7 @@ Procedures for detecting spec drift, reconciling changes with tasks, managing ve
 
 ## Dashboard Freshness Check
 
-Before using dashboard data, verify it's current (runs as `/work` Step 1a):
+Before using dashboard data, verify it's current (runs as `/work` Step 1a, after the FB-106 `pending_decomposition[]` check):
 
 1. **Compute current task state hash** — canonical: `python3 .claude/scripts/dashboard-render.py --task-hash`:
    ```
@@ -19,17 +19,21 @@ Before using dashboard data, verify it's current (runs as `/work` Step 1a):
    <!-- DASHBOARD META
    generated: 2026-01-28T14:30:00Z
    task_hash: sha256:abc123...
+   spec_fingerprint: sha256:def456...
    -->
    ```
 
 3. **Compare hashes:**
    ```
-   If dashboard has no META block OR task_hash differs:
+   If dashboard has no META block, task_hash differs, OR META spec_fingerprint
+   differs from the current spec hash (fingerprint.py --spec .claude/spec_v{N}.md):
    ├─ Log: "Dashboard stale — regenerating"
-   ├─ Backup user section to .claude/support/workspace/dashboard-notes-backup.md
    ├─ Regenerate dashboard from task JSON files
    └─ Continue with fresh dashboard
    ```
+   User content lives in the sidecar (`dashboard-state.json`), not in the HTML, so a regen loses nothing.
+
+   **META `spec_fingerprint`** records the spec the dashboard was rendered from. It is **not** evidence that drift was checked: every regen stamps the current spec hash, whether or not any task was reconciled. Drift is checked by Step 1b on every `/work` (§ "Spec Drift Detection").
 
 4. **Compare template_version:**
    ```
@@ -41,32 +45,58 @@ Before using dashboard data, verify it's current (runs as `/work` Step 1a):
    └─ Continue with fresh dashboard
    ```
 
-A dashboard can be content-stale (task hash mismatch) or format-stale (template_version mismatch). Either triggers full regeneration; the two checks share a single full-regen invocation when both fire. (The dashboard is read-only HTML rendered whole each time — there is no targeted-edit drift to track; the old `pending_full_regen` sentinel was retired in DEC-024.)
+A dashboard can be content-stale (task hash or spec hash mismatch) or format-stale (template_version mismatch). Either triggers full regeneration; the two checks share a single full-regen invocation when both fire. (The dashboard is read-only HTML rendered whole each time — there is no targeted-edit drift to track; the old `pending_full_regen` sentinel was retired in DEC-024.)
 
-**Why this matters:** Dashboard can become stale if tasks are modified outside `/work` or if template sync updates the format rules. This check ensures you always work from accurate data with current formatting.
+**Why this matters:** Dashboard can become stale if tasks are modified outside `/work`, if the spec is edited, or if template sync updates the format rules. This check ensures you always work from accurate data with current formatting.
 
 ---
 
 ## Spec Drift Detection (Granular)
 
-After reading the spec, perform section-level drift detection (runs as `/work` Step 1b):
+Runs as `/work` Step 1b, on every `/work`. It compares each task's `section_fingerprint` with the current hash of the section its `spec_section` names: a `## ` section, or a `### ` subsection whose heading is unique in the spec. Detection needs no snapshot: `section_snapshot_ref` is only used to show diffs in the reconciliation UI.
 
-1. **Compute current spec fingerprint** - SHA-256 hash of spec file content
-2. **Check existing tasks** - Read `spec_fingerprint` and `section_fingerprint` from task files
-3. **Compare fingerprints:**
+**Deterministic check:** `python3 .claude/scripts/fingerprint.py --drift .claude` (the argument is the `.claude` directory). It is read-only and exits 0 on success, including when there is no spec or no tasks, and 2 when the directory doesn't exist or on a usage error. Keys are always present; lists are sorted by section heading, tasks by natural id order:
 
+```json
+{
+  "spec": "spec_v3",
+  "spec_fingerprint": "sha256:…",
+  "checked": 42,
+  "drifted": [
+    {"section": "## Auth", "fingerprint": "sha256:<current section hash>", "deferred": false,
+     "tasks": [{"id": "12", "title": "…", "status": "Finished", "owner": "claude",
+                "deferred": false, "subsection_unchanged": false}]}
+  ],
+  "missing": [{"section": "## Old name",
+               "tasks": [{"id": "31", "title": "…", "status": "Pending", "owner": "claude"}]}],
+  "unmigrated": ["7"],
+  "historical": 33,
+  "unmatched": 45,
+  "no_provenance": 20,
+  "unreadable": ["task-9.json"],
+  "unreconciled_sections": 1
+}
 ```
-If tasks exist with spec_fingerprint:
-├─ Full spec fingerprint matches → Continue normally
-└─ Full spec fingerprint differs → Perform granular section analysis:
-   1. Parse current spec into sections (## level headings)
-   2. Load snapshot from section_snapshot_ref (if exists)
-   3. Parse snapshot spec into sections
-   4. For each section, compare fingerprints
-   5. Identify which sections changed
-   6. Group affected tasks by changed section
-   7. Present granular reconciliation UI
-```
+
+With no spec file, `spec` and `spec_fingerprint` are `null`, every list is empty and every count is 0.
+
+**Unreconciled drift** means `unreconciled_sections` > 0. The number counts drifted sections with at least one non-deferred task, plus missing sections. `/work` routes it to § "Granular Reconciliation UI"; `/status` and the dashboard report the same number.
+
+**Rules.** This is the prose fallback when the script can't run. `fingerprint.py` implements the same rules, so change both together. Candidates are `.claude/tasks/task-*.json` (not `archive/`); a file that fails to parse, or whose JSON is not an object, goes in `unreadable`. The current spec is the single `spec_v{N}.md` (the highest N if there are several). For each task, the first matching rule wins:
+
+1. `status` is `Absorbed` or `Broken Down`, or `out_of_spec` is true → skip; not counted. Subtasks carry the provenance (`/breakdown` copies it), and an out-of-spec task has no spec section to drift from.
+2. `spec_version` is a non-empty string that doesn't name the current spec → a Finished task counts as `historical` (Task Migration leaves its provenance unchanged by design); any other status goes in `unmigrated` (§ "Task Migration on Version Transition"). `spec_version` names the current spec when, after `.strip()`, it equals the current stem (`spec_v3`), its bare number (`3`) or `v3`. A `spec_version` that is missing, empty or not a string counts as current.
+3. `spec_section` or `section_fingerprint` is missing or empty → counted in `no_provenance`, never flagged.
+4. **Heading match**, with `s = spec_section.strip()`:
+   - (a) `s` matches a current `## ` heading line `h` when `h.strip() == s`, or else when `h.strip() == "## " + s`.
+   - (b) If no `## ` heading matches and `s` starts with `### `, `s` matches when **exactly one** current `### ` heading line has `.strip() == s`. The task is then compared with that subsection's hash and reported under the `### ` heading. Some projects record subsection-level provenance this way.
+   - (c) No match, or several `### ` matches → a Finished task adds to `unmatched` (the work shipped, and its provenance is historical or free-form, so nothing is prompted); any other status goes in `missing` under `s`.
+5. Matched → counted in `checked`. If `section_fingerprint` equals the current hash of the matched section (the subsection, under 4b), the task is in sync and nothing is reported.
+6. Matched and different → `drifted`, grouped under the matched heading. The task is `subsection_unchanged` only when it has `spec_subsection` and `subsection_fingerprint`, and the current hash of that `### ` subsection, looked up within the task's matched `## ` section only, equals `subsection_fingerprint` (§ "Subsection-level drift narrowing"). A task matched under 4b is never `subsection_unchanged`.
+
+**Deferrals.** `.claude/drift-deferrals.json` is `{"deferrals": [...]}` or a bare list; ignore anything else, and any entry without a string `section`. An entry matches a drifted section when `section.strip()` equals the heading, or `"## " + section.strip()` does. An entry with a non-empty `affected_tasks` list defers only those tasks (ids are compared as strings, so `3` and `"3"` match); otherwise it defers every drifted task in the section. A section is `deferred` when all its drifted tasks are. Missing sections are never deferred.
+
+**Tasks without a section fingerprint are never flagged.** The old fallback compared them with the full-spec hash, which flags every such task on every spec edit. It only stayed quiet because the dashboard META fast path skipped this step, and that path is gone (FB-128). Such tasks are counted in `no_provenance` instead; FB-135 tracks giving them provenance. A task's own `spec_fingerprint` isn't compared either, since a full-spec hash changes on any edit.
 
 **Hash computation:**
 ```bash
@@ -80,11 +110,10 @@ shasum -a 256 .claude/spec_v{N}.md | cut -d' ' -f1
 # For each ## section, hash: heading + all content until next ## or EOF
 printf '%s' "## Authentication\nContent here..." | shasum -a 256 | cut -d' ' -f1
 # Prefix with "sha256:" → "sha256:e5f6g7h8..."
+# A ### subsection hashes the same way: heading + content until the next ###, ## or EOF
 ```
 
-**Script alternative:** `.claude/scripts/fingerprint.py --spec PATH` (full spec) or `.claude/scripts/fingerprint.py --sections PATH` (JSON map of `## heading` → hash) — produces byte-identical output to the prose recipes above. Use when running in the orchestrator; the prose recipe remains authoritative if the script is absent. `--sections --depth 3` ALSO emits `### ` subsection hashes (additive — `## ` hashes are unchanged) for finer drift localization on very large sections (DEC-021 companion); `--index PATH` emits the spec section index (below).
-
-**Note:** Tasks without `spec_fingerprint` are treated as legacy (no warning). Tasks without `section_fingerprint` fall back to full-spec comparison.
+**Script alternative:** `.claude/scripts/fingerprint.py --spec PATH` (full spec) or `.claude/scripts/fingerprint.py --sections PATH` (JSON map of `## heading` → hash) — produces byte-identical output to the prose recipes above. Use when running in the orchestrator; the prose recipe remains authoritative if the script is absent. `--sections --depth 3` ALSO emits `### ` subsection hashes (additive — `## ` hashes are unchanged) for finer drift localization on very large sections (DEC-021 companion); `--index PATH` emits the spec section index (below); `--drift DIR` runs the whole check above.
 
 ### Spec Index Freshness (DEC-021)
 
@@ -98,20 +127,21 @@ When stale → regenerate (orchestrator owns the write):
   python3 .claude/scripts/fingerprint.py --index .claude/spec_v{N}.md  > .claude/spec_v{N}.index.json
 ```
 
-`/work` Step 1b regenerates the index proactively whenever it detects a full-spec fingerprint change (it has the hash in hand). Consumers reading the spec outside `/work` (audits, `/iterate`, agents) apply the same missing-or-mismatched guard before trusting the index, and fall back to a direct scoped/full read otherwise (subagents cannot write `.claude/`, so they read the index only if already fresh, else read the spec directly). The index carries **no task provenance** and is **not** fingerprinted into tasks — it never participates in drift reconciliation, so a stale index is a performance miss, never a correctness risk.
+`/work` Step 1b compares the index's `spec_fingerprint` with the drift JSON's `spec_fingerprint` (the current full-spec hash) and regenerates the index when they differ. Consumers reading the spec outside `/work` (audits, `/iterate`, agents) apply the same missing-or-mismatched guard before trusting the index, and fall back to a direct scoped/full read otherwise (subagents cannot write `.claude/`, so they read the index only if already fresh, else read the spec directly). The index carries **no task provenance** and is **not** fingerprinted into tasks — it never participates in drift reconciliation, so a stale index is a performance miss, never a correctness risk.
 
 ### Subsection-level drift narrowing (DEC-021)
 
-When granular analysis (above) flags a changed `## ` section that is **large** (the section index reports a high `char_count` — tens of KB), a one-line edit rehashes the entire `## ` section and would re-flag every task under it, even tasks whose actual `### ` subsection is untouched. Drill down to spare them:
+A one-line edit rehashes the entire `## ` section, so every task under it shows as drifted, even tasks whose own `### ` subsection is untouched. This matters most for **large** sections (the section index reports a high `char_count`, tens of KB). Narrowing spares those tasks:
 
-1. **Compute the subsection diff.** Hash the `### ` subsections of the current spec and of the snapshot with `fingerprint.py --sections --depth 3` (the `### ` hashes are additive — `## ` hashes are unchanged, so this never alters the `## `-level comparison above). Diff the two `### ` maps → the set of changed `### ` headings within the changed `## ` section.
-2. **Surface the subsection breakdown** in the Granular Reconciliation UI regardless of task provenance: *"`## Phase 40` changed — specifically `### X`, `### Y` (subsections `### A`–`### F` unchanged)."* This sharpens reconciliation even for legacy tasks.
-3. **Narrow the affected-task set** using optional task provenance (`spec_subsection` / `subsection_fingerprint`, see `task-schema.md`):
-   - Task **with** `spec_subsection` → flagged **only if** its `spec_subsection` is in the changed-`### ` set (or its `subsection_fingerprint` differs from the current subsection hash). If its subsection is unchanged, present it in a **"likely unaffected (subsection unchanged)"** group with `[S] Skip` recommended — never silently dropped; the user can still review.
-   - Task **without** `spec_subsection` (legacy / small-section / whole-section task) → flagged at `## `-level exactly as today. **No regression.**
-4. **On apply** for a narrowed task that IS reconciled: update `subsection_fingerprint` alongside `section_fingerprint`.
+1. **Per-task narrowing (`subsection_unchanged`).** A drifted task that carries `spec_subsection` + `subsection_fingerprint` (see `task-schema.md`) is marked `subsection_unchanged: true` when the current hash of that `### ` subsection, found within the task's matched `## ` section, still equals its `subsection_fingerprint`. A repeated `### ` heading elsewhere in the spec doesn't count. A task whose `spec_section` is itself a `### ` heading (rule 4b) is already compared at subsection level and is never marked. The reconciliation UI shows such tasks in a **"likely unaffected (subsection unchanged)"** group with `[K] Keep` recommended. They are never dropped; the user can still pick any option. A task without the pair (legacy, small-section or whole-section task) is flagged at `## `-level as before. **No regression.**
+2. **Subsection breakdown.** For a large changed section, diff the `### ` hashes of the snapshot and of the current spec and name the changed subsections in the UI, whatever the task provenance: *"`## Phase 40` changed — specifically `### X`, `### Y` (subsections `### A`–`### F` unchanged)."* With no snapshot, skip the breakdown.
+3. **On reconcile:** every option except `[S]` and `[O]` refreshes `subsection_fingerprint` along with `section_fingerprint`, when the task has one.
 
-**Fallbacks (each → `## `-level behavior, never an error):** no snapshot to diff; `--depth 3` unavailable; section not large enough to bother; no tasks carry `spec_subsection`. Narrowing is a precision *refinement* layered on top of `## `-level drift — it can only spare tasks the user would otherwise hand-skip, and the conservative "likely unaffected" grouping (surface-don't-drop) keeps it safe.
+The `### ` hashes are additive: `--depth 3` never changes the `## ` hashes, so narrowing never alters the `## `-level comparison. It is a precision refinement on top of `## `-level drift: it can only spare tasks the user would otherwise keep by hand, and the "likely unaffected" grouping (surface, don't drop) keeps it safe.
+
+### What fingerprints can't see (FB-115)
+
+Fingerprints detect change, not wrongness. A section that was wrong when it was written stays fingerprint-current, so the drift check never flags it, even while it misdescribes shipped work. A downstream project spent eight days and four cleanup passes on such sections. The instruments for this are closure sweeps (verify-agent T2c item 4) and `/audit-coherence`.
 
 ---
 
@@ -141,11 +171,11 @@ Spec has changed significantly since tasks were created:
 
 This may warrant a new spec version.
 
-[V] Create spec v{N+1} (archives current version, then reconcile)
+[N] New spec version (v{N+1}) (archives current version, then reconcile)
 [C] Continue as v{N} (reconcile changes in place)
 ```
 
-- **If user picks [V]:** Execute the Version Transition Procedure (see `iterate.md` § "Version Transition Procedure"), then run Task Migration (below), then proceed to reconciliation against the new version.
+- **If user picks [N]:** Execute the Version Transition Procedure (see `iterate.md` § "Version Transition Procedure"), then run Task Migration (below), then proceed to reconciliation against the new version.
 - **If user picks [C]:** Proceed directly to the Granular Reconciliation UI. Changes are absorbed into the current version.
 
 Either choice preserves the user's edits. The version bump is about organizational clarity, not data safety.
@@ -158,11 +188,11 @@ When `/work` detects that existing tasks reference an older spec version (tasks 
 
 ```
 For each task:
-  IF status == "Finished" or "Absorbed":
-    → Leave provenance unchanged (historical record)
+  IF status == "Finished", "Absorbed" or "Broken Down":
+    → Leave provenance unchanged (historical record; subtasks carry their own)
     → These tasks were verified/resolved against the old spec — that's correct
 
-  IF status == "Pending", "In Progress", or "On Hold":
+  IF any other status (the drift check's `unmigrated` list):
     → Check if task's spec_section heading still exists in new spec
     │
     ├─ Section exists, content matches:
@@ -184,7 +214,7 @@ For each task:
        │  [R] Reassign to different section
 ```
 
-**After migration:** Update the decomposed snapshot reference. Create `spec_v{N}_decomposed.md` if decomposition runs, or update `section_snapshot_ref` on migrated tasks to point to the new spec version's snapshot.
+**After migration:** Update the decomposed snapshot reference. Create `spec_v{N}_decomposed.md` if decomposition runs, or update `section_snapshot_ref` on migrated tasks to point to the new spec version's snapshot. Then re-run `python3 .claude/scripts/fingerprint.py --drift .claude`: the migrated tasks now name the current spec, so a changed section among them shows up as drift in this run, not the next.
 
 ---
 
@@ -207,7 +237,7 @@ drift_policy:
 
 **Tracking deferred reconciliations:**
 
-When user selects "Skip section" during reconciliation, record it:
+When the user picks `[S]` Skip during reconciliation, record it (a per-task skip lists only the skipped tasks in `affected_tasks`):
 ```json
 // In .claude/drift-deferrals.json
 {
@@ -254,7 +284,7 @@ IF any deferral expired (and count is within budget):
      3. Continue with /work (unblock)
 ```
 
-**Clearing deferrals:** When a section is reconciled (user selects Apply or reviews individually and applies), remove it from `drift-deferrals.json`.
+**Clearing deferrals:** When a section is reconciled with any option except `[S]`, remove its entry from `drift-deferrals.json`. After a per-task review, keep only the still-skipped tasks in the entry's `affected_tasks`.
 
 **See also:**
 - `.claude/support/reference/workflow.md` § "Spec Change and Feature Addition" for the end-to-end process overview.
@@ -263,18 +293,48 @@ IF any deferral expired (and count is within budget):
 
 ## Granular Reconciliation UI
 
-When section-level drift is detected, present a targeted UI showing:
-- Section name and number of affected tasks
-- Diff of changed content
-- Table of affected tasks with suggested actions
+Runs after `/work` Step 1c and before Step 1d whenever the drift check reports unreconciled drift, and for deferred sections when § "Drift Budget Enforcement" requires it. Claude recommends an option; the user always picks, and nothing applies by default.
 
-**Options per section:** `[A]` Apply suggestions, `[R]` Review individually, `[S]` Skip section
+**Batch prompt** when 2+ drifted sections are unreconciled. Missing sections are never in the batch; they always go through `[D]`/`[O]`/`[R]` per task (see "Missing sections" below).
 
-**Individual task review options:** `[A]` Apply, `[E]` Edit, `[S]` Skip, `[O]` Mark out-of-spec
+```
+{N} spec sections changed since their tasks were built:
+  ## Auth — 3 Finished, 1 Pending (has open tasks — reviewed separately)
+  ## Billing — 2 Finished
+[E] Go through each section | [K] Keep all (the edits don't change what was built)
+```
 
-**Applying changes to Finished tasks:** When reconciliation applies to a task with `status: "Finished"`, the spec section it was verified against has changed. The existing `task_verification` is stale — it validated against the old acceptance criteria.
+`[K]` applies Keep only to sections whose drifted tasks are all Finished. A section with a drifted open task (any status but Finished) is listed with the marker `(has open tasks — reviewed separately)` and always goes through the per-section prompt, whichever option the user picks here, because an open task may need its text updated before it's built. `[E]` presents every section one at a time. When every listed section is marked, `[K]` isn't offered: the list is shown as an overview and the per-section prompts follow. There is no "defer all": a project with many changed sections would exceed the deferral budget in one step.
 
-**Warning before applying:** When a section contains Finished tasks, warn before applying:
+**Per section:** show this prompt, then the affected tasks, with any `subsection_unchanged` tasks grouped as "likely unaffected (subsection unchanged)" (§ "Subsection-level drift narrowing").
+
+```
+Section "## Auth" changed — 3 Finished, 1 Pending task(s).
+  {diff, or the current section text when no snapshot exists}
+  Recommended: [K] — {one-line reason from the diff}
+  [A] Apply — reset Finished tasks to Pending (rebuild + re-verify); update open tasks
+  [V] Re-verify — check the shipped work against the new text, no rebuild; update open tasks
+  [K] Keep — the edit doesn't change what was built; keep verification
+  [R] Review individually | [S] Skip (defer)
+```
+
+| Option | Fingerprints | Finished tasks | Open tasks |
+|---|---|---|---|
+| `[A]` Apply | refreshed | reset to Pending; `task_verification` + `user_review_pending` cleared; `verification_attempts` set to 0 | description or acceptance criteria updated where the new text changes them; status unchanged; `[DRIFT UPDATED]` note |
+| `[V]` Re-verify | refreshed | → Awaiting Verification with `drift_reverify` set and `verification_attempts` set to 0; verify-agent checks the shipped work against the current text (`owner: human`: stays Finished with `user_review_pending: true`) | as `[A]` |
+| `[K]` Keep | refreshed | status, `task_verification`, `user_review_pending` untouched | untouched |
+| `[R]` Review individually | per task: `[A]` Apply, `[V]` Re-verify, `[K]` Keep, `[E]` Edit, `[S]` Skip, `[O]` Mark out-of-spec | | |
+| `[S]` Skip | unchanged; deferral recorded (budget applies) | | |
+
+**Refreshed** means `spec_fingerprint`, `section_fingerprint` and, when present, `subsection_fingerprint` are set to current values. For a task whose `spec_section` is a `### ` heading, `section_fingerprint` takes that subsection's hash. Every choice except `[S]` and `[O]` refreshes them, including per-task choices; `[O]` only sets `out_of_spec: true` and keeps the provenance fields, since the drift check skips out-of-spec tasks.
+
+**Recommendation rule.** Claude recommends one option per section, from the diff: editorial-only edits (status, annotation, typo) → `[K]`; acceptance text changed → `[V]` (re-verifies Finished work, updates open tasks); requirements changed so the shipped work must be rebuilt → `[A]`.
+
+**Attempt counter.** `[A]` and `[V]` set `verification_attempts` to 0 on the Finished tasks they send back to rebuild or re-verification; `verification_history` keeps the earlier record. The counter counts every verify return, passes included, so a Finished task can already sit at 2, and without the reset a single failed re-check would escalate it to Blocked with no fix cycle.
+
+**Open tasks under `[A]` and `[V]`** (any drifted task that isn't Finished): refresh the fingerprints, update the task's description or acceptance criteria where the new section text changes them, and leave the status alone. Append to the task's notes: `[DRIFT UPDATED {YYYY-MM-DD}] {section} changed; {what changed in the task, or "no task change needed"}`.
+
+**`[A]` Apply.** A Finished task was verified against the old section text, so its `task_verification` is stale. When a section contains Finished tasks, warn before applying:
 ```
 ⚠️ Section "{section}" contains {N} Finished task(s) that will be reset to Pending:
   - Task {id}: "{title}"
@@ -285,9 +345,28 @@ If the user selects `[N]`, fall through to `[R] Review individually` for that se
 **On apply (confirmed):**
 1. Update `spec_fingerprint` and `section_fingerprint` (and `subsection_fingerprint` if the task carries one) to current values
 2. Clear `task_verification` and `user_review_pending` (remove both fields; re-verification sets the flag again where it applies)
-3. Set `status` back to `"Pending"`
+3. Set `status` back to `"Pending"` and `verification_attempts` to 0
 4. Add note: `"Reset to Pending — spec section changed after verification. Needs re-implementation and re-verification."`
 
-This ensures the structural invariant holds: no Finished task has a verification result that was computed against a different spec version than its current fingerprints.
+Open tasks in the section: see "Open tasks under `[A]` and `[V]`" above.
 
-**Edge cases:** New section → suggest new tasks. Section deleted → flag tasks for out-of-spec or deletion. Section renamed → detected as delete + add. No snapshot → fall back to full-spec comparison.
+**`[V]` Re-verify:**
+1. Refresh fingerprints.
+2. Finished tasks not owned by `human`: set `status` to `"Awaiting Verification"`, remove `task_verification` (`verification_history` stays), set `verification_attempts` to 0 and set `drift_reverify: {"section": "{section}", "date": "{YYYY-MM-DD}"}`. There is no separate dispatch: `/work` Step 3's normal routing sends them to verify-agent (per-task), since Awaiting Verification has priority. Pass → Finished; fail → the normal fail path, starting again at attempt 1.
+3. Finished `owner: human` tasks stay Finished with `user_review_pending: true`.
+4. Append to the notes of each task in steps 2–3: `[DRIFT RE-VERIFY {YYYY-MM-DD}] {section} changed; re-verifying against the current text`. The note is the human-readable record; dispatch reads `drift_reverify`.
+5. Open tasks: as under `[A]` (above), with the `[DRIFT UPDATED …]` note.
+
+**Re-verification brief.** Every per-task verify dispatch for a task carrying `drift_reverify` adds the line `Re-verification after a spec edit: the implementation is unchanged; check it against the current section text.` That covers `/work`'s normal dispatch (`work.md § "If Verifying (Per-Task)"`), the re-dispatches in `session-recovery.md` and the timeout re-dispatch (`work-procedures.md`, "After verify-agent returns (per-task mode)" step 5). With that line, verify-agent skips its diff-based scope check (`verify-agent.md` Step T2b): the implementation was committed long ago, and the working tree may hold only the uncommitted spec edit. `drift_reverify` is removed when a per-task verification result is written for the task, pass or fail, so the fix after a failed re-check is verified as usual. It is also removed whenever the task goes back to Pending or In Progress for rework, for example a manual reset after an escalation, because the implementation then changes. A timeout keeps it for the retry.
+
+**`[K]` Keep:** refresh fingerprints; no status or verification change. Append to the notes of every task in the section: `[DRIFT KEPT {YYYY-MM-DD}] {section} changed; user kept verification: {one-line reason}`
+
+**Invariant:** no Finished task carries a verification result computed against a different section text than its current fingerprints, except in two recorded cases: the user chose `[K]`, which its notes record; or the task is `owner: human` under `[V]`, which keeps its old verification with fresh fingerprints while `user_review_pending: true` stands in until the user re-checks.
+
+**Diff baseline.** Diffs come from the decomposition snapshot (`section_snapshot_ref`), so after a `[K]`, later diffs show changes since decomposition, not since the keep. The task's latest `[DRIFT KEPT]` note says what was already accepted.
+
+**Missing sections** (open tasks whose `spec_section` has no match under rule 4: no heading, or several `### ` headings) use the § "Task Migration on Version Transition" prompt: `[D]` Delete task, `[O]` Keep as out-of-spec, `[R]` Reassign to a different section. `[R]` sets `spec_section` to the chosen heading and refreshes the fingerprints. `[O]` sets `out_of_spec: true` and keeps the provenance fields; the drift check skips out-of-spec tasks (rule 1).
+
+**After reconciling:** clear reconciled sections from `drift-deferrals.json` (§ "Drift Budget Enforcement"). Then, if any choice wrote a task file or `drift-deferrals.json` (an `[S]`-only pass writes just the deferral file), regenerate the dashboard (Tier-1 trigger: **drift reconciliation applied**). `task_hash` covers neither fingerprints nor deferrals, so the Step 1a check wouldn't notice, and the dashboard would keep showing the old drift.
+
+**Edge cases:** New section → suggest new tasks (`/iterate` adds it to `pending_decomposition[]`, and `/work` Step 1a offers decomposition). Section deleted or renamed → its open tasks are missing (above); its Finished tasks only add to `unmatched`. No snapshot → detection still works, because it compares task fingerprints with the current spec; the UI shows the current section text without a diff.

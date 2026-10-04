@@ -241,7 +241,7 @@ User → /work → Specialist Agent → /work → User
 - Pass context to agent
 - Trigger checkpoints
 - Report progress
-- Early-exit for non-actionable states (human-owned, blocked, on hold — Step 1d)
+- Early-exit for non-actionable states (human-owned, blocked, on hold, waiting on decisions — Step 1d)
 - Auto-sync dashboard after changes
 
 ---
@@ -351,10 +351,10 @@ When requests don't align with spec:
 
 ### Spec Drift (Granular Reconciliation)
 When spec changes after tasks were decomposed:
-- /work detects which specific sections changed
+- /work detects which specific sections changed, on every run (`fingerprint.py --drift`)
 - Shows diff of changed content
 - Groups affected tasks by section
-- Options per section: apply suggestions, review individually, or skip
+- Options per section: apply (reset Finished tasks to Pending), re-verify (check the shipped work against the new text), keep (keep verification), review individually, or skip (defer); apply and re-verify also update open tasks to the new text
 - Enables targeted updates without re-decomposing all tasks
 
 ### Quality Gate Failures
@@ -497,7 +497,7 @@ The handoff file (`.claude/tasks/.handoff.json`) captures environment-specific c
 
 ## Spec Change and Feature Addition
 
-Direct spec edits are always safe — the decomposed snapshot preserves the before-state, and `/work` detects drift automatically. The workflow: user edits spec → runs `/work` → drift detection shows granular section diffs → user confirms per-section (apply, review individually, or skip) → only affected tasks are updated. Completed work is preserved.
+Direct spec edits are always safe — the decomposed snapshot preserves the before-state, and `/work` detects drift automatically. The workflow: user edits spec → runs `/work` → drift detection shows granular section diffs → user confirms per-section (apply, re-verify, keep, review individually, or skip) → only affected tasks are updated. Completed work is preserved.
 
 **Versioning:** Exactly one `spec_v{N}.md` exists at a time. Version bumps are for major transitions (phase completion, inflection points), not routine edits. `/work` suggests a bump when edits are substantial enough.
 
