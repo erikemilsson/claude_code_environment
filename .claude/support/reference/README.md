@@ -39,6 +39,7 @@ The reference files form a layered system. Commands (`work.md`, `health-check.md
 | `automation.md` | `claude -p` primitive + fan-out pattern for inter-session automation |
 | `inline-command-pattern.md` | Canonical pattern for composable slash commands (child runs both standalone and inline from a parent). Pattern reference only — template does not ship inline-capable commands. |
 | `desktop-project-prompt.md` | Instructions for Claude Desktop ideation sessions |
+| `negative-findings.md` | Positive-control contract for absence claims and closure sweeps: harness search traps (no Grep/Glob tool, wrapped `grep`, `rg` skip rules), result-set scope, history probes, fail-before-trust, mutation-test restore. Read before persisting an absence claim (`rules/agents.md § "Negative Findings Require a Positive Control"`). |
 
 ## Related READMEs (in sibling directories)
 

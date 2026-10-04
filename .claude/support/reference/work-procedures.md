@@ -86,7 +86,7 @@ Use `/work complete` for manual task completion outside of implement-agent's wor
    - Dependencies must all be "Finished"
 3. **Verification enforcement:**
    - If the task has `task_verification.result == "pass"` → proceed (already verified)
-   - If the task has `user_review_pending: true` → proceed (verification already passed, user is completing their review)
+   - If the task is Finished with `user_review_pending: true` → proceed (verification already passed, user is completing their review). The flag is only set together with Finished; on any other status it's stale — ignore it
    - If the task has `owner: "human"` AND no `task_verification` → auto-generate self-attestation:
      ```json
      {
@@ -200,7 +200,7 @@ After regenerating the dashboard, check if archiving is needed:
 
 1. **Count active tasks** - All non-archived task-*.json files
 2. **If count > 100:**
-   - Identify finished tasks older than 7 days
+   - Identify finished tasks older than 7 days, except any with `user_review_pending: true` (once archived, its open review would drop off the "Needs you" card and Verification Pending could fire)
    - Move to `.claude/tasks/archive/`
    - Update archive-index.json with lightweight summaries
    - Regenerate dashboard again

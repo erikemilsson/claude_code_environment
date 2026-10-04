@@ -31,9 +31,9 @@ State: task `spec_section: "## Phase 40 — /outfits streamline"`; index present
 1. Agent reads `.claude/spec_v3.index.json`, finds the entry whose `heading` == the task's `spec_section`.
 2. Agent `Read`s `.claude/spec_v3.md` with `offset = line_start`, `limit = line_end − line_start + 1`.
 
-**Expected:** the agent loads only Phase 40's ~58K-char range, not the whole 850K file. If the index is absent, it falls back to `Grep` for the heading then a scoped `Read`. Whole-file reads are reserved for first decomposition / full audits ("whole when warranted").
+**Expected:** the agent loads only Phase 40's ~58K-char range, not the whole 850K file. If the index is absent, it searches for the heading (the `Grep` tool, or `rg` via Bash when the harness has none, per the agent's Tool Preferences), then does a scoped `Read`. The search names `.claude/spec_v3.md` directly, so `rg` skipping the hidden `.claude/` directory doesn't apply. Whole-file reads are reserved for first decomposition / full audits ("whole when warranted").
 
-**Pass criteria:** no full-spec `Read` for a single-section task; correct offset/limit derived from the index; graceful `Grep` fallback when the index is absent.
+**Pass criteria:** no full-spec `Read` for a single-section task; correct offset/limit derived from the index; graceful heading-search fallback when the index is absent, with or without a `Grep` tool.
 
 ## Trace C — companion `--depth 3` is additive (no drift churn)
 

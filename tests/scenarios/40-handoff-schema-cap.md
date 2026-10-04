@@ -8,7 +8,7 @@ Observed failure mode (styler, 2026-06-10 analysis): a 7.8KB hand-curated free-p
 
 ## State (Base)
 
-A long session ends with `/work pause`: one partial task (7), two unanswered user questions (already swept to Action Required rows per the T3 contract), and ~18 distinct conversation insights worth preserving.
+A long session ends with `/work pause`: one partial task (7), two unanswered user questions (already swept into sidecar `augment_rows[]`, rendered as Action Required rows, per the T3 contract), and ~18 distinct conversation insights worth preserving.
 
 ---
 
@@ -27,7 +27,7 @@ A long session ends with `/work pause`: one partial task (7), two unanswered use
 
 - [ ] Handoff is a bounded index; no field blows its cap
 - [ ] Overflow file exists ONLY because content genuinely exceeded a bound
-- [ ] Questions live in dashboard rows; handoff carries refs only
+- [ ] Questions live in `augment_rows[]` (rendered as dashboard rows); handoff carries refs only
 
 ### Fail indicators
 

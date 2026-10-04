@@ -10,7 +10,8 @@ Verify that workflow state persists across session boundaries using file-based c
 | Task status | `.claude/tasks/task-*.json` | `/work` task routing |
 | Decision status | `.claude/support/decisions/decision-*.md` | `/work` decision check |
 | Inflection point revision | `spec_revised` field in decision frontmatter | `/work` inflection point check, `/iterate` |
-| Dashboard | `.claude/dashboard.md` (+ META block hash) | `/work` dashboard freshness check |
+| Dashboard | `.claude/dashboard.html` (+ META block hash) | `/work` dashboard freshness check |
+| Needs-you judgment rows | `.claude/dashboard-state.json` `augment_rows[]` | Dashboard regen (re-rendered each time), `/work` Step 0g |
 | Phase progress | Derived from task statuses | `/work` task routing |
 | Drift state | `.claude/drift-deferrals.json` | `/work` drift check |
 
@@ -96,10 +97,12 @@ Run /iterate to review affected spec sections.
 
 ### Trace: `/work` dashboard freshness check
 
-- Computes `task_hash` from current task files
+- Computes `task_hash` from current task files (`dashboard-render.py --task-hash`; rows `id:status:difficulty:owner:review`)
 - Compares to dashboard META block's `task_hash`
 - Mismatch → regenerate; match → use as-is
 
 ### Pass criteria
 - [ ] Stale dashboard detected and regenerated
 - [ ] Fresh dashboard used without unnecessary regeneration
+- [ ] A `user_review_pending` flag set or cleared between sessions reads as stale
+- [ ] The regen re-renders judgment rows from `augment_rows[]`; none are lost

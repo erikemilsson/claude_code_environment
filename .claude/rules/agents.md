@@ -101,7 +101,7 @@ This complements the heartbeat (which reduces ping frequency) by catching the pi
 
 ## Tool Preferences
 
-All agents use the dedicated tools (Read, Glob, Grep, Edit, Write) for file operations, not `cat`/`find`/`grep`/`sed`/`echo >`; Bash is for git, tests, running deliverables, and network calls. This minimizes permission prompts in subagents. Each agent's own `## Tool Preferences` covers its Bash and editing specifics.
+Prefer the harness's dedicated file tools (Read, Edit, Write; Glob and Grep where present) over `cat`/`sed`/`echo >` and Bash search (fewer permission prompts in subagents). Without a Grep/Glob tool, search via Bash (`rg`, `find`); instructions naming Grep or Glob then mean that. Plain `rg` skips hidden paths like `.claude/` and gitignored files (`--hidden` adds the first, `-uu` both). Bash is otherwise for git, tests, running deliverables, and network calls. Each agent's own `## Tool Preferences` covers its Bash and editing specifics.
 
 Subagents cannot write to `.claude/` paths and don't inherit parent `permissions.allow` rules; when an agent's workflow describes a state transition, it means "include in the return report", and the orchestrator writes it. Nested dispatch is platform-supported (three levels by default) but the template doesn't use it: the orchestrator performs all dispatch, for portability and because state writes still flow through the orchestrator.
 
@@ -109,9 +109,9 @@ Subagents cannot write to `.claude/` paths and don't inherit parent `permissions
 
 ## Negative Findings Require a Positive Control
 
-A **negative finding** — "X is absent / dormant / unused / has no consumer / never fires" — may only be persisted to durable state (friction register, handoff, dashboard, verification result, retirement proposal) when the probe that produced it is shown to work: either (a) it used the dedicated `Grep` tool (ripgrep — reliable empty-vs-error semantics), or (b) it includes a **positive control** — the same probe demonstrably finding a known-present target. Without one of these, report the claim as "unverified absence" and do not write it to state.
+An absence claim ("X is absent / dormant / unused / has no consumer / never fires") may be persisted to durable state (friction register, handoff, dashboard, verification result, memory, retirement proposal), or used to close a finding, only with a **positive control that returns a hit**: the same probe (tool, flags, root, filters) finding a known-present target, whatever the tool. Otherwise report "unverified absence" and write nothing. Trust a new guard or check only after seeing it fail on the regression it targets. Read `.claude/support/reference/negative-findings.md` before persisting an absence claim, closing a finding with a sweep, or mutation-testing a guard.
 
-Why: bash `grep` on macOS/BSD can silently produce no output on certain files, and an empty result is indistinguishable from "not found". Observed cost (styler FR-040, 2026-06-10): a silent grep failure became a false "engine dormant" finding, propagated into the handoff, dashboard, and memory, and consumed a full session to unwind. Complements the Pre-Retirement Engine-Consumer Audit in `rules/feature-retirement.md` (FB-084 covers *which patterns* to search; this rule covers *whether the probe works at all*).
+Why: probes fail silently, and an empty result reads as "not found" (styler FR-040: a silent grep failure became a false "engine dormant" finding that cost a session).
 
 ## Dispatch Convention
 

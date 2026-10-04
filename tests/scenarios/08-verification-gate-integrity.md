@@ -28,7 +28,7 @@ Task 6 was implemented by Claude (owner: both). Claude set it to "Awaiting Verif
 
 - Claude implements → sets "Awaiting Verification" → triggers verify-agent
 - verify-agent evaluates → writes task_verification result
-- If owner is "both", the dashboard surfaces the task in "Your Tasks" for user review
+- If owner is "both", the pass sets `user_review_pending: true` alongside "Finished", and the dashboard surfaces the task in "Your Tasks" for user review (the review row scans every non-Absorbed task, so Finished status doesn't hide it)
 - Task stays in user's attention until they act
 
 ### Pass criteria
@@ -36,7 +36,7 @@ Task 6 was implemented by Claude (owner: both). Claude set it to "Awaiting Verif
 - [ ] implement-agent must not write `task_verification` field — that is verify-agent's exclusive responsibility
 - [ ] Only verify-agent writes `task_verification` (separation of concerns)
 - [ ] /work task routing does not skip "Awaiting Verification" tasks
-- [ ] Owner "both" tasks appear in dashboard "Your Tasks" even after verify-agent passes them
+- [ ] Owner "both" tasks appear in dashboard "Your Tasks" even after verify-agent passes them (Finished + `user_review_pending`, closed by `/work complete 6`)
 - [ ] Task requires user action (feedback or `/work complete`) to be considered done from user's perspective
 
 ### Fail indicators

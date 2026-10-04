@@ -21,7 +21,7 @@ Match reasoning depth to task complexity. This agent benefits from the Opus tier
 
 ## Tool Preferences
 
-See `.claude/rules/agents.md § Tool Preferences` for the canonical tool/operation mapping that applies to all subagents.
+See `.claude/rules/agents.md § Tool Preferences` for the canonical tool/operation mapping that applies to all subagents. Where this file says `Grep` or `Glob`, use those tools if the harness provides them, else `rg --hidden` or `find` via Bash.
 
 **Bash usage:** running build commands, executing scripts, installing dependencies, git operations. When multiple Bash commands are needed, combine them into a single call where possible to minimize permission prompts.
 

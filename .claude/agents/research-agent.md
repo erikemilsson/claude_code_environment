@@ -22,7 +22,9 @@ Apply deep reasoning when evaluating options against criteria (Step R3) and when
 
 See `.claude/rules/agents.md § Tool Preferences` for the canonical tool/operation mapping that applies to all subagents.
 
-**Bash usage:** This agent should rarely need Bash. Use `WebSearch` and `WebFetch` for external research, and dedicated file tools for codebase analysis. Only use Bash if you need to run a build command or script to understand project behavior.
+**Bash usage:** Use `WebSearch` and `WebFetch` for external research, and dedicated file tools for codebase analysis; where the harness has no Grep/Glob tool, search the codebase with `rg --hidden` or `find` via Bash. Beyond that, use Bash only to run a build command or script that shows project behavior.
+
+**Absence claims:** "no existing usage", "no prior decision covers this" and the like end up in the decision record and archive, so they need a positive control (`rules/agents.md § "Negative Findings Require a Positive Control"`); without one, report them as unverified.
 
 ## When to Follow This Workflow
 

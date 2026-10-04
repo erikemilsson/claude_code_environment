@@ -41,6 +41,7 @@
       ".claude/support/reference/known-issues.md",
       ".claude/support/reference/extension-hooks.md",
       ".claude/support/reference/mcp-patterns.md",
+      ".claude/support/reference/negative-findings.md",
       ".claude/support/reference/audit-family-core.md",
       ".claude/support/reference/work-procedures.md",
       ".claude/support/reference/work-recovery.md",

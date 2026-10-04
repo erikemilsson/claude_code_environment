@@ -8,7 +8,9 @@ absence of any file://-breaking runtime dep (no type="module", no CDN
 import/fetch). The only permitted external ref is the Google Fonts <link>.
 """
 
+import contextlib
 import importlib.util
+import io
 import json
 import re
 import tempfile
@@ -110,11 +112,13 @@ class TestMetaInHead(HtmlBase):
 
 
 class TestPlaceholders(HtmlBase):
-    def test_action_required_augment_placeholder_emitted(self):
-        # FB-105: Action Required is script-rendered; the LLM placeholder is now an
-        # APPEND-ONLY augment slot (judgment items), not a fill-the-whole-card slot.
+    def test_action_required_points_to_sidecar_augment_rows(self):
+        # FB-105 made Action Required script-rendered; FB-118 moved its judgment rows
+        # from a hand-edited HTML slot (wiped by every regen) to sidecar augment_rows[].
         out = self.render(self.make_env(active=[task(1, "Pending", "1")]))
-        self.assertIn("<!-- CLAUDE: augment", out)
+        self.assertIn("<!-- Judgment rows come from sidecar augment_rows[]", out)
+        self.assertIn("dashboard-regeneration.md", out)
+        self.assertNotIn("CLAUDE: augment", out)
         self.assertNotIn("<!-- CLAUDE: fill — Action Required", out)
         self.assertIn("Needs you", out)
 
@@ -148,8 +152,8 @@ class TestActionRequiredAutoRender(HtmlBase):
         self.assertNotIn("Blocked human task", out)
 
     def test_both_owned_awaiting_review_and_on_hold_render(self):
-        active = [task(1, "Pending", "1", owner="both", user_review_pending=True,
-                       title="Review the drape output"),
+        active = [task(1, "Finished", "1", owner="both", user_review_pending=True,
+                       task_verification=PASS, title="Review the drape output"),
                   task(2, "On Hold", "1", title="Parked work")]
         out = self.render(self.make_env(active=active))
         self.assertIn("Review the drape output", out)
@@ -172,6 +176,225 @@ class TestActionRequiredAutoRender(HtmlBase):
         active = [task(1, "Pending", "1", owner="claude")]
         out = self.render(self.make_env(active=active))
         self.assertIn("Nothing blocked on you right now", out)
+
+
+PASS = {"result": "pass"}
+
+
+class NeedsYouBase(HtmlBase):
+    def card(self, out):
+        """The Needs-you card only — task titles also render in Recent, the graph, etc."""
+        start = out.index('<h2 class="st">Needs you</h2>')
+        return out[start:out.index('<div class="side">', start)]
+
+    def card_for(self, active=(), **kw):
+        return self.card(self.render(self.make_env(active=active, **kw)))
+
+
+class TestYourTasksCoverage(NeedsYouBase):
+    """FB-118 (a): every task blocked on the user gets exactly one Your Tasks row.
+    Precedence: On Hold > review pending > Blocked on the user > yours to do."""
+
+    def test_both_owned_finished_review_row(self):
+        # The old unreachable case: user_review_pending is set together with
+        # Finished, but the loop scanned only non-Finished tasks.
+        card = self.card_for([task(1, "Finished", owner="both", user_review_pending=True,
+                                   task_verification=PASS, title="Drape review")])
+        self.assertIn("Drape review — Claude's half verified; your review closes it", card)
+        self.assertIn("<code>/work complete 1</code>", card)
+
+    def test_claude_owned_finished_review_row(self):
+        card = self.card_for([task(1, "Finished", owner="claude", user_review_pending=True,
+                                   task_verification=PASS, title="Export flow")])
+        self.assertIn("Export flow — verified; your review or testing closes it", card)
+        self.assertIn("<code>/work complete 1</code>", card)
+        self.assertNotIn("Claude's half", card)
+
+    def test_blocked_both_or_human_row(self):
+        for owner in ("both", "human"):
+            with self.subTest(owner=owner):
+                card = self.card_for([task(1, "Blocked", owner=owner, title="Pick a layout")])
+                self.assertIn("Pick a layout — Blocked — needs you; "
+                              "the blocker is in the task's notes", card)
+                self.assertIn("<code>/work 1</code>", card)
+
+    def test_escalated_claude_owned_blocked_row(self):
+        card = self.card_for([task(1, "Blocked", verification_attempts=3, title="Flaky parser")])
+        self.assertIn("Flaky parser — Blocked — verification escalated after 3 attempts; "
+                      "the blocker is in the task's notes", card)
+        self.assertIn("<code>/work 1</code>", card)
+        self.assertNotIn("Blocked — needs you", card)
+
+    def test_claude_owned_blocked_below_escalation_has_no_row(self):
+        card = self.card_for([task(1, "Blocked", verification_attempts=2, title="Parser stall")])
+        self.assertNotIn("Parser stall", card)
+        self.assertIn("Nothing blocked on you right now", card)  # the card did render
+
+    def test_one_row_per_task_first_match_wins(self):
+        card = self.card_for([
+            # On Hold beats a review flag and a human owner
+            task(1, "On Hold", owner="human", user_review_pending=True, title="Parked review"),
+            # a stale review flag on an unfinished task is ignored; Blocked wins
+            task(2, "Blocked", owner="human", user_review_pending=True, title="Blocked review")])
+        self.assertEqual(card.count("Parked review"), 1)
+        self.assertIn("Parked review — On Hold; only you can resume it", card)
+        self.assertEqual(card.count("Blocked review"), 1)
+        self.assertIn("Blocked review — Blocked — needs you", card)
+
+    def test_stale_review_flag_on_unfinished_task_is_ignored(self):
+        # user_review_pending is only set with Finished; a leftover flag on reworked
+        # work must not offer /work complete (that would skip re-verification)
+        card = self.card_for([task(1, "In Progress", owner="claude", user_review_pending=True,
+                                   title="Rework underway"),
+                              task(2, "Finished", owner="claude", user_review_pending=True,
+                                   task_verification=PASS, title="Ready for review")])
+        self.assertNotIn("Rework underway", card)
+        self.assertIn("Ready for review — verified; your review or testing closes it", card)  # positive control
+
+    def test_yours_to_do_excludes_finished(self):
+        card = self.card_for([task(1, "Finished", owner="human", task_verification=PASS,
+                                   title="Done by you"),
+                              task(2, "Pending", owner="human", title="Still yours")])
+        self.assertNotIn("Done by you", card)
+        self.assertIn("Still yours — yours to do", card)  # positive control
+
+    def test_yours_to_do_excludes_broken_down_parent(self):
+        # /work complete rejects a Broken Down parent; its subtasks carry the work
+        card = self.card_for([task(1, "Broken Down", owner="human", subtasks=["2"],
+                                   title="Parent job"),
+                              task(2, "Pending", owner="human", title="Child job")])
+        self.assertNotIn("Parent job", card)
+        self.assertIn("Child job — yours to do", card)  # positive control
+
+
+class TestVerificationPendingGate(NeedsYouBase):
+    """Verification Pending waits while a review is open: the user's open review comes first."""
+
+    def test_suppressed_while_a_review_is_pending(self):
+        card = self.card_for([task(1, "Finished", task_verification=PASS),
+                              task(2, "Finished", owner="both", user_review_pending=True,
+                                   task_verification=PASS)])
+        self.assertNotIn("Verification Pending", card)
+        self.assertIn("your review closes it", card)
+
+    def test_shown_when_no_review_is_pending(self):
+        card = self.card_for([task(1, "Finished", task_verification=PASS),
+                              task(2, "Finished", owner="both", task_verification=PASS)])
+        self.assertIn("Verification Pending", card)
+
+
+class TestAugmentRows(NeedsYouBase):
+    """FB-118 (b): judgment rows live in sidecar augment_rows[], so regens keep them."""
+
+    def with_rows(self, rows, active=None, **kw):
+        active = [task(1, "Pending", "1")] if active is None else active
+        return self.card_for(active, sidecar={"augment_rows": rows}, **kw)
+
+    def also(self, card):
+        return card[card.index("<b>Also Needs You</b>"):]  # the final sub-section
+
+    def test_rows_render_as_final_subsection(self):
+        card = self.with_rows([{"text": "Answer the cache-size question from the last session"}],
+                              active=[task(1, "Pending", owner="human", title="Collect invoices")])
+        self.assertIn("<li>Answer the cache-size question from the last session</li>",
+                      self.also(card))
+        self.assertLess(card.index("<b>Your Tasks</b>"), card.index("<b>Also Needs You</b>"))
+
+    def test_text_is_escaped(self):
+        card = self.with_rows([{"text": "Compare <script>x()</script> & pick one"}])
+        self.assertIn("Compare &lt;script&gt;x()&lt;/script&gt; &amp; pick one", card)
+        self.assertNotIn("<script>x()", card)
+
+    def test_backtick_spans_become_code(self):
+        card = self.with_rows([{"text": "Run `/work complete 7` once the scan looks right"},
+                               {"text": "Then check `a<b` holds"}])
+        self.assertIn("Run <code>/work complete 7</code> once the scan looks right", card)
+        self.assertIn("<code>a&lt;b</code>", card)  # escaped before the span conversion
+
+    def test_fyi_rows_muted_after_action_rows(self):
+        card = self.with_rows([{"text": "Staging deploy is paused", "kind": "fyi"},
+                               {"text": "Choose the export format", "kind": "action"},
+                               {"text": "Confirm the vendor list"}])  # kind defaults to action
+        self.assertIn('<li style="color:var(--soft)">FYI — Staging deploy is paused</li>', card)
+        fyi = card.index("FYI — Staging deploy is paused")
+        self.assertLess(card.index("<li>Choose the export format</li>"), fyi)
+        self.assertLess(card.index("<li>Confirm the vendor list</li>"), fyi)
+        self.assertLess(card.index("Choose the export format"),
+                        card.index("Confirm the vendor list"))  # sidecar order kept
+
+    def test_expiry_by_task_state(self):
+        active = [task(1, "Finished", task_verification=PASS),
+                  task(2, "Finished", owner="both", user_review_pending=True, task_verification=PASS),
+                  task(3, "Absorbed", absorbed_into="4"),
+                  task(4, "Pending")]
+        card = self.with_rows([{"text": "Row for finished task", "task_id": "1"},
+                               {"text": "Row for task in review", "task_id": "2"},
+                               {"text": "Row for absorbed task", "task_id": "3"},
+                               {"text": "Row for pending task", "task_id": "4"},
+                               {"text": "Row for unknown task", "task_id": "999"}], active=active)
+        self.assertNotIn("Row for finished task", card)
+        self.assertNotIn("Row for absorbed task", card)
+        for kept in ("Row for task in review", "Row for pending task", "Row for unknown task"):
+            self.assertIn(kept, card)
+
+    def test_archived_finished_task_expires_row(self):
+        # archiving moves a task out of tasks/, but it is still known: no resurrection
+        card = self.with_rows([{"text": "Row for archived task", "task_id": "5"},
+                               {"text": "Control row"}], archived=[task(5, "Finished")])
+        self.assertNotIn("Row for archived task", card)
+        self.assertIn("Control row", card)
+
+    def test_malformed_rows_skipped(self):
+        card = self.with_rows(["just a string", 42, None, ["text"], {}, {"text": ""},
+                               {"text": "   "}, {"text": 7}, {"task_id": "1"},
+                               {"text": "The one valid row", "kind": 5, "task_id": ["x"]}])
+        also = self.also(card)
+        self.assertIn("<li>The one valid row</li>", also)
+        self.assertEqual(also.count("<li"), 1)
+
+    def test_non_list_augment_rows_ignored(self):
+        for bad in ({"text": "a dict, not a list"}, "a string", 3, None):
+            with self.subTest(augment_rows=bad):
+                card = self.with_rows(bad)
+                self.assertNotIn("Also Needs You", card)
+                self.assertIn("Nothing blocked on you right now", card)
+
+    def test_nothing_blocked_accounts_for_augment_rows(self):
+        # no script rows + a rendered augment row: the empty-state line is wrong
+        card = self.with_rows([{"text": "Reply to the open question about fonts"}])
+        self.assertIn("Reply to the open question about fonts", card)
+        self.assertNotIn("Nothing blocked on you right now", card)
+        # no script rows + only an expired augment row: the empty-state line returns
+        card = self.with_rows([{"text": "Stale row", "task_id": "1"}],
+                              active=[task(1, "Finished", task_verification=PASS), task(2, "Pending")])
+        self.assertNotIn("Stale row", card)
+        self.assertNotIn("Also Needs You", card)
+        self.assertIn("Nothing blocked on you right now", card)
+
+    def test_fyi_only_rows_keep_nothing_blocked(self):
+        # fyi rows ask nothing of the user, so only action rows displace the empty-state line
+        card = self.with_rows([{"text": "Staging deploy is paused", "kind": "fyi"}])
+        self.assertIn("FYI — Staging deploy is paused", card)  # the row did render
+        self.assertIn("Nothing blocked on you right now", card)
+
+
+class TestSidecarShape(HtmlBase):
+    def test_non_object_sidecar_renders_like_missing(self):
+        # Valid JSON that isn't an object used to crash render_full_html
+        # (sidecar.get on a list). It now renders exactly as a missing sidecar.
+        root = self.make_env(active=[task(1, "Pending", "1"),
+                                     task(2, "Pending", "1", owner="human")])
+        missing = self.render(root)
+        self.assertIn("yours to do", missing)  # positive control: the card has content
+        for raw in ("[]", '[{"text": "x"}]', '"notes"', "42", "true", "null"):
+            with self.subTest(sidecar=raw):
+                (root / "dashboard-state.json").write_text(raw, encoding="utf-8")
+                err = io.StringIO()
+                with contextlib.redirect_stderr(err):
+                    out = self.render(root)
+                self.assertEqual(out, missing)
+                if raw != "null":  # null loads as None, indistinguishable from absent
+                    self.assertIn("dashboard-state.json is not a JSON object", err.getvalue())
 
 
 class TestNoFileBreakers(HtmlBase):

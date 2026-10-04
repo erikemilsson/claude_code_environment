@@ -178,16 +178,16 @@ If `.claude/support/workspace/.interaction-assessment.json` exists (a prior `/wo
 
 Enumerate every item currently gated on the user and surface it before routing. This is the session-start half of the **human-gated coverage invariant** (`rules/dashboard.md § Sections`): nothing blocked on the user may live only in handoff prose.
 
-1. Scan task files for: `owner: "human"` with status `"Pending"` and all dependencies `"Finished"`; `owner: "both"` with `user_review_pending: true`; any task with status `"On Hold"`.
+1. Scan task files for the card's Your Tasks set (`dashboard-regeneration.md § "Section Display Rules"`): status `"On Hold"`; Finished with `user_review_pending: true` (any owner); `"Blocked"` with owner `human`/`both` or `verification_attempts` ≥ 3; unfinished `owner: "human"` (not Broken Down) with all dependencies `"Finished"`.
 2. Scan `.claude/support/decisions/decision-*.md` for unresolved records (status `proposed`/`draft` — a selection is awaited).
-3. If a handoff was consumed in Step 0a: extract any questions asked of the user last session that were never answered (mid-decision pauses).
+3. Read sidecar `augment_rows[]` in `.claude/dashboard-state.json`: each unexpired action row is an item (expiry: `dashboard-regeneration.md § "Augment Rows"`), folded into its task's line when its `task_id` names a task from step 1. If a handoff was consumed in Step 0a, also extract any questions asked of the user last session that were never answered (mid-decision pauses) and no row already carries.
 4. Output, merged into Step 0c's summary when both fire (skip the block entirely when N == 0):
    ```
    Waiting on you ({N}):
    1. {item} — {concrete question or action} → {file link}
    ...
    ```
-5. **Dashboard cross-check:** every item found must have a 🚨 Action Required ("Needs you") item with the question/action inline. If any are missing, regenerate `dashboard.html` (a full regen is cheap, and the script re-derives every mechanical row) so the queue is complete. Unanswered questions from a paused session are the LLM-augmented part — append them to the card's `<!-- CLAUDE: augment -->` slot after the regen.
+5. **Dashboard cross-check:** every item found must have a 🚨 Action Required ("Needs you") item with the question/action inline. If any are missing, regenerate `dashboard.html` (a full regen is cheap, and the script re-derives every mechanical row) so the queue is complete. Unanswered questions from a paused session are judgment rows: make sure each is in sidecar `augment_rows[]` (add missing ones, prune answered ones) before that regen — never edit the HTML (`dashboard-regeneration.md § "Augment Rows"`).
 
 ### Step 1: Gather Context
 
@@ -223,9 +223,9 @@ Spec section "{heading}" was added by /iterate and has no tasks yet.
 
 Remove a heading from the array once it has referencing tasks or the user picks `[X]`. This runs ahead of the fast path deliberately: a matching `spec_fingerprint` would otherwise skip drift detection entirely and route to an unrelated pending task, leaving the new section silently undecomposed. (This marker supersedes the interim pause carve-out in § "Context Transition" — with `pending_decomposition[]` present, regenerating at pause is safe again.)
 
-Verify the dashboard is current before using its data. Compute a SHA-256 hash of all task IDs, statuses, difficulties, and owners, compare against the dashboard's `<!-- DASHBOARD META -->` block. If the hash differs or no metadata exists, regenerate the dashboard from task JSON files before continuing.
+Verify the dashboard is current before using its data. Compute the canonical `task_hash` (`python3 .claude/scripts/dashboard-render.py --task-hash`; its rows include each task's review flag) and compare against the dashboard's `<!-- DASHBOARD META -->` block. If the hash differs or no metadata exists, regenerate the dashboard from task JSON files before continuing.
 
-Also compare `template_version` in the META block against `template_version` in `.claude/version.json`. If they differ or the META field is absent, the dashboard was generated with older format rules and should be regenerated (see dashboard-regeneration.md § "Format Staleness"). **Migration (DEC-024):** if a legacy Markdown `.claude/dashboard.md` is present, migrate its `<!-- USER SECTION -->` / `<!-- SECTION TOGGLES -->` / `<!-- CUSTOM VIEWS INSTRUCTIONS -->` content into the sidecar, delete it, and regenerate `dashboard.html`.
+Also compare `template_version` in the META block against `template_version` in `.claude/version.json`. If they differ or the META field is absent, the dashboard was generated with older format rules and should be regenerated (see dashboard-regeneration.md § "Format Staleness"). **Migration (DEC-024):** if a legacy Markdown `.claude/dashboard.md` is present, migrate its `<!-- USER SECTION -->` / `<!-- SECTION TOGGLES -->` / `<!-- CUSTOM VIEWS INSTRUCTIONS -->` content into the sidecar, delete it, and regenerate `dashboard.html`. Likewise, before regenerating over hand-inserted rows at an old `<!-- CLAUDE: augment -->` comment (pre-FB-118), move the still-relevant ones into sidecar `augment_rows[]`.
 
 **Full procedure:** `.claude/support/reference/drift-reconciliation.md` § "Dashboard Freshness Check"
 
@@ -278,13 +278,12 @@ After Step 1c, check whether the project state has any Claude-actionable work. T
 IF remaining_tasks is NOT empty
    AND every task in remaining_tasks satisfies at least one of:
      - owner == "human" (regardless of status)
-     - owner == "both" AND user_review_pending == true (Claude's half done, awaiting the user — FB-100)
      - status == "Blocked"
      - status == "On Hold"
    → FAST EXIT
 ```
 
-A both-owned task counts as non-actionable only once Claude's half is delivered (`user_review_pending == true`); one waiting on a physical-world prerequisite should be `Blocked` or `On Hold`, not `Pending` (FB-100).
+A both-owned task counts as non-actionable only when Blocked or On Hold: once Claude's half is delivered it is Finished with `user_review_pending` and out of `remaining_tasks` (a stale flag on unfinished work doesn't count). One waiting on a physical-world prerequisite should be `Blocked` or `On Hold`, not `Pending` (FB-100).
 
 **Before presenting fast-exit output:** Verify dashboard freshness (same check as Step 5 item 4). If stale, regenerate first — the user may check the dashboard after seeing this message.
 
@@ -636,7 +635,7 @@ Run quick validation after task dispatch to catch issues early:
 1. **Task file integrity** — Verify the task JSON that was just modified is valid JSON and parseable
 2. **Dashboard exists** — Confirm `.claude/dashboard.html` exists and has a `<!-- DASHBOARD META -->` comment in its `<head>`
 3. **Session sentinel** — Write `.claude/tasks/.last-clean-exit.json` with current timestamp and in-progress task list (enables fast-path recovery check on next `/work` run)
-4. **Session boundary dashboard freshness** — When the main work loop has reached a natural stopping point (phase boundary, blocking decision, verification failure needing human escalation, or no more eligible tasks), verify dashboard freshness against actual task state. Compute a hash of all task IDs/statuses/owners and compare against the `<!-- DASHBOARD META -->` block. If stale, regenerate now — the user should never see a stale dashboard as the final state of a work session.
+4. **Session boundary dashboard freshness** — When the main work loop has reached a natural stopping point (phase boundary, blocking decision, verification failure needing human escalation, or no more eligible tasks), verify dashboard freshness against actual task state: recompute `task_hash` (`dashboard-render.py --task-hash`) and compare against the `<!-- DASHBOARD META -->` block. If stale, regenerate now — the user should never see a stale dashboard as the final state of a work session.
 
 For full maintenance validation (schema checks, decision integrity, template sync), use `/health-check`.
 
@@ -680,7 +679,7 @@ Read `.claude/support/reference/context-transitions.md` and follow the Path A (U
 - Do NOT increment `verification_attempts` if verify-agent was interrupted
 - Do NOT skip the handoff file — that's the whole point
 - `session_knowledge` captures what would otherwise be lost: user preferences, informal decisions, discovered patterns
-- **Open-question sweep (human-gated coverage):** before writing the handoff, enumerate every question asked of the user this session that went unanswered, plus any newly user-gated items (tasks put On Hold, unblocked `owner: "human"` tasks, unresolved decisions). Each MUST land in the dashboard's 🚨 Action Required ("Needs you") card with the concrete question inline — regenerate `dashboard.html` so the card is complete. The handoff may point at those items; it must never be a blocking question's only home. (Counterpart: Step 0g prints this queue at the next session start.)
+- **Open-question sweep (human-gated coverage):** before writing the handoff, enumerate every question asked of the user this session that went unanswered, plus any newly user-gated items (tasks put On Hold, Blocked on the user or flagged for review, unblocked `owner: "human"` tasks, unresolved decisions). Each MUST land in the dashboard's 🚨 Action Required ("Needs you") card with the concrete question inline: the script derives task and decision rows; write each unanswered question (and any Blocked task's open choice) to sidecar `augment_rows[]`, prune answered ones, then regenerate `dashboard.html` — never edit the HTML (`dashboard-regeneration.md § "Augment Rows"`). The handoff may point at those items; it must never be a blocking question's only home. (Counterpart: Step 0g prints this queue at the next session start.)
 - **New spec sections (FB-106):** if `/iterate` added a new `## ` section this session that no task references, confirm its heading is in `pending_decomposition[]` in `.claude/dashboard-state.json` (`/iterate`'s post-apply step writes it). Regenerating at pause is then safe — Step 1a consumes the marker ahead of the fast path, so the decomposition offer survives the refreshed `spec_fingerprint`. If the marker is somehow absent and you cannot add it, fall back to the pre-v5.4.0 rule: skip the regen, print blocking items inline, and flag the undecomposed section in the handoff.
 
 ### Interaction Assessment + Session Export (Track 2 — Cross-Project Logging)

@@ -133,7 +133,7 @@ Task 5 has now failed verification twice. implement-agent attempts a fix and tri
 4. Task status set to "Blocked"
 5. Notes explain the repeated failures
 6. Task escalated to human review
-7. Dashboard surfaces Task 5 in "Action Required" as blocked/needing human attention
+7. Dashboard surfaces Task 5 in "Action Required → Your Tasks" as Blocked, escalated: `verification_attempts` is now 3, which qualifies the row even though `owner: "claude"`
 
 ### Pass criteria
 
@@ -141,7 +141,7 @@ Task 5 has now failed verification twice. implement-agent attempts a fix and tri
 - [ ] Task set to "Blocked" (not "In Progress" for another attempt)
 - [ ] Notes document the history of failures
 - [ ] Human review is explicitly requested
-- [ ] Dashboard surfaces the blocked task prominently
+- [ ] Dashboard surfaces the blocked task in Your Tasks (claude-owned, escalated)
 - [ ] Dependent tasks (6, 7) remain blocked
 
 ### Fail indicators

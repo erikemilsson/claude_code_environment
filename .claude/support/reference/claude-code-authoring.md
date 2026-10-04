@@ -179,6 +179,18 @@ Per `rules/agents.md § "Dispatch Convention"`: the dispatch sites (`commands/wo
 
 **Spec authors:** do not write tasks that reference named subagent types directly. Reference the orchestrator's dispatch behavior or the agent's prompt body instead.
 
+### Search tools: Grep/Glob may be absent, grep and rg skip files
+
+**Harness-observed (2026-10, auto mode):** the harness provides no `Grep` or `Glob` tool, loaded or deferred (`ToolSearch` `select:Grep,Glob` matches nothing), and its system prompt directs search through Bash. Sessions in three projects, subagents included, ran without them (FB-114). Text that names Grep or Glob must still work through Bash; `rules/agents.md § "Tool Preferences"` maps it.
+
+In the Bash tool, `grep`, `rg` and `find` are shell functions from `~/.claude/shell-snapshots/` that run tools embedded in the Claude Code binary (`type grep` shows this):
+
+- `grep` runs ugrep with `--ignore-files -I`, so a recursive search from the repo root skips gitignored and binary files.
+- `rg` keeps ripgrep's defaults: it skips hidden paths (all of `.claude/`, unless the search path names it) and gitignored files. The `Grep` tool, where present, is ripgrep and honours `.gitignore` as well.
+- `find` runs bfs, which skips neither hidden nor gitignored files.
+
+**Implication for authors:** don't write an absence check, a closure sweep or a "no references found" pass condition that relies on a bare repo-root `grep -r` or `rg`. Name `rg -uu`, `find` or explicit paths, and require a positive control. Full contract: `support/reference/negative-findings.md`.
+
 ---
 
 ## MCP Constraints

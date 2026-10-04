@@ -9,12 +9,14 @@ hard-retired in this change; HTML is the only surface.
 
 Division of labor (per support/reference/dashboard-regeneration.md
 § Script-First Rendering): the script renders every structural/data section
-deterministically; the LLM fills the SYNTHESIS placeholders — Action Required
-(the "Needs you" card) and Custom Views rendered content — via the
-`<!-- CLAUDE: fill ... -->` HTML comments this script emits, with HTML. The
+deterministically, including every mechanical Action Required ("Needs you")
+row (FB-105); the LLM fills only the Custom Views placeholder, via the
+`<!-- CLAUDE: fill ... -->` HTML comment this script emits, with HTML. The
 sidecar (dashboard-state.json) owns user content: section_toggles control which
-sections render; user_notes seeds the read-only Notes card. The user does not
-hand-edit the HTML — there are no in-file editable markers (DEC-024).
+sections render; user_notes seeds the read-only Notes card; augment_rows[]
+carries the Needs-you card's judgment rows, rendered as its final "Also Needs
+You" sub-section (FB-118). Nobody hand-edits the HTML — there are no in-file
+editable markers (DEC-024), and a full regen would wipe any hand edit.
 
 Modes:
   --html                   render the FULL dashboard as HTML to stdout
@@ -22,11 +24,13 @@ Modes:
 
 Canonical task_hash (this script is the single authority — fixes the
 three-way divergence observed in styler 2026-06-11):
-  sha256 over "\\n".join(sorted("{id}:{status}:{difficulty}:{owner}"
-  for each ACTIVE task)) + "\\n"   — string sort, archive excluded,
-  rendered with a "sha256:" prefix. Carried in the <!-- DASHBOARD META -->
-  comment (relocated to <head>) for freshness consumers (/work Step 1a,
-  /status, /health-check) — they string-parse it byte-identically in HTML.
+  sha256 over "\\n".join(sorted("{id}:{status}:{difficulty}:{owner}:{review}"
+  for each ACTIVE task)) + "\\n"   — review = 1 when user_review_pending is
+  truthy, else 0 (FB-118: toggling a review flag must read as stale); string
+  sort, archive excluded, rendered with a "sha256:" prefix. Carried in the
+  <!-- DASHBOARD META --> comment (relocated to <head>) for freshness consumers
+  (/work Step 1a, /status, /health-check) — they string-parse it
+  byte-identically in HTML.
 
 Archive awareness: {tasks-dir}/archive/task-*.json are read for COUNTS and
 phase-name canonicalization only. Archived Finished count toward phase
@@ -359,8 +363,18 @@ DECISION_STATUS_DISPLAY = {"approved": "Decided", "implemented": "Decided",
 
 # --------------------------------------------- META + task_hash (shared)
 
+def _review_pending(task):
+    """The user's review/testing half is still open (user_review_pending truthy)."""
+    return bool(task.get("user_review_pending"))
+
+
 def canonical_task_hash(active):
-    rows = sorted(f"{t.get('id')}:{t.get('status')}:{t.get('difficulty')}:{t.get('owner')}"
+    """sha256 over sorted "{id}:{status}:{difficulty}:{owner}:{review}" rows
+    (review = 1 when user_review_pending is truthy, else 0), newline-joined
+    plus a trailing newline. The review field makes setting or clearing a
+    review flag a freshness change (FB-118)."""
+    rows = sorted(f"{t.get('id')}:{t.get('status')}:{t.get('difficulty')}:{t.get('owner')}:"
+                  f"{1 if _review_pending(t) else 0}"
                   for t in active)
     return "sha256:" + hashlib.sha256(("\n".join(rows) + "\n").encode("utf-8")).hexdigest()
 
@@ -957,16 +971,57 @@ def _load_feedback_counts(claude_dir: Path):
     return (counts["new"], counts["refined"], counts["ready"])
 
 
+def _attempts(task):
+    """verification_attempts as an int; 0 when absent or malformed."""
+    try:
+        return int(task.get("verification_attempts") or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _augment_items(sidecar, active, archived):
+    """Sidecar augment_rows[] → (action_texts, fyi_texts), the valid and unexpired
+    rows in sidecar order (FB-118). Each item: {"text": str (required),
+    "task_id": str, "kind": "action" | "fyi" (default "action"), "created":
+    "YYYY-MM-DD"}. Malformed input is skipped, never fatal: a non-list
+    augment_rows, items that aren't objects, items without non-empty string text.
+    Expiry: a row whose task_id names a known task (active, else archived) is
+    dropped once that task is Absorbed, or Finished without user_review_pending.
+    An unknown task_id keeps the row — never silently hide a user-gated item."""
+    items = sidecar.get("augment_rows") if isinstance(sidecar, dict) else None
+    if not isinstance(items, list):
+        return [], []
+    # archived entries default to Finished (load_archived's index fallback may omit status)
+    known = {str(t.get("id")): (t.get("status", "Finished"), _review_pending(t)) for t in archived}
+    known.update({str(t.get("id")): (t.get("status"), _review_pending(t)) for t in active})
+    actions, fyis = [], []
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        text = item.get("text")
+        if not isinstance(text, str) or not text.strip():
+            continue
+        task_id = item.get("task_id")
+        state = known.get(str(task_id).strip()) if task_id is not None else None
+        if state and (state[0] == "Absorbed" or (state[0] == "Finished" and not state[1])):
+            continue
+        kind = str(item.get("kind") or "action").strip().lower()
+        (fyis if kind == "fyi" else actions).append(text.strip())
+    return actions, fyis
+
+
 def _html_needs_you(active, decisions, phases_model, status_map, sidecar,
-                    verification_result, drift, claude_dir):
-    """Deterministic Action Required rows (FB-105).
+                    verification_result, drift, claude_dir, archived=()):
+    """Deterministic Action Required rows (FB-105, FB-118).
 
     The script owns every mechanically-derivable row so the human-gated coverage
     invariant cannot be silently dropped by an unfilled placeholder (observed: a
-    regen left the card empty while 5 user-gated items were outstanding). The LLM
-    appends judgment items — unanswered questions from a paused session, nuanced
-    phrasing — into the trailing augment placeholder. Sub-section order follows
-    dashboard-regeneration.md § Section Display Rules.
+    regen left the card empty while 5 user-gated items were outstanding).
+    Judgment items the script can't derive (unanswered questions from a paused
+    session, context a mechanical row would miss) come from sidecar augment_rows[]
+    and render as the final "Also Needs You" sub-section, so a regen never wipes
+    them. Sub-section order follows dashboard-regeneration.md § Section Display
+    Rules.
     """
     out = []
 
@@ -995,7 +1050,11 @@ def _html_needs_you(active, decisions, phases_model, status_map, sidecar,
     # Verification Pending / Debt
     non_absorbed = [t for t in active if t.get("status") != "Absorbed"]
     open_tasks = [t for t in non_absorbed if t.get("status") != "Finished"]
-    if non_absorbed and not open_tasks and not verification_result:
+    # Held while any review is open, even when every task is Finished: a
+    # display-order choice (the user's open review comes first), not a readiness
+    # gate; /work's phase routing doesn't check the flag (FB-118, from LTP).
+    review_open = any(_review_pending(t) for t in non_absorbed)
+    if non_absorbed and not open_tasks and not verification_result and not review_open:
         sub("Verification Pending", [row(
             "All tasks Finished but no phase verification result — run <code>/work</code> "
             "to dispatch phase-level verification")])
@@ -1040,21 +1099,35 @@ def _html_needs_you(active, decisions, phases_model, status_map, sidecar,
         f'<a href="support/decisions/{_esc(d["file"])}">{_esc(d["file"])}</a>')
         for d in decisions if d["status"] in UNRESOLVED_DECISION])
 
-    # Your Tasks — human-owned unblocked, both-owned awaiting review, On Hold
+    # Your Tasks — at most one row per task, first match wins (FB-118). Scans all
+    # non-Absorbed tasks: user_review_pending is set together with Finished, so
+    # scanning open_tasks made every review row unreachable.
+    #   (a) On Hold  (b) review pending: Finished + user_review_pending, any owner
+    #   (the flag is only set with Finished; a stale flag on reworked work is ignored
+    #   so the card never offers /work complete for unverified work)  (c) Blocked on the user: owner both/human, or
+    #   verification escalated (>= 3 attempts)  (d) human-owned, actionable, deps met
+    #   (not Broken Down: /work complete rejects a parent; its subtasks carry the work)
     rows = []
-    for t in sorted(open_tasks, key=lambda t: numeric_key(t.get("id"))):
+    for t in sorted(non_absorbed, key=lambda t: numeric_key(t.get("id"))):
         owner, status = t.get("owner"), t.get("status")
         deps_ok = all(str(d) in finished_ids for d in (t.get("dependencies") or [])) and \
                   all(str(d) in resolved for d in (t.get("decision_dependencies") or []))
+        attempts = _attempts(t)
         tid = f'<span class="tid">{_esc(t.get("id"))}</span>{_esc(t.get("title") or "")}'
         cmd = f' → run <code>/work complete {_esc(t.get("id"))}</code>'
+        resume = f' → run <code>/work {_esc(t.get("id"))}</code>'
         if status == "On Hold":
-            rows.append(row(f'{tid} — On Hold; only you can resume it → run '
-                            f'<code>/work {_esc(t.get("id"))}</code>'))
-        elif owner == "human" and deps_ok and status != "Blocked":
+            rows.append(row(f'{tid} — On Hold; only you can resume it{resume}'))
+        elif status == "Finished" and _review_pending(t):
+            half = ("Claude's half verified; your review closes it" if owner == "both"
+                    else "verified; your review or testing closes it")
+            rows.append(row(f'{tid} — {half}{cmd}'))
+        elif status == "Blocked" and (owner in ("both", "human") or attempts >= 3):
+            why = (f"verification escalated after {attempts} attempts" if attempts >= 3
+                   else "needs you")
+            rows.append(row(f"{tid} — Blocked — {why}; the blocker is in the task's notes{resume}"))
+        elif owner == "human" and status not in ("Blocked", "Broken Down", "Finished", "On Hold") and deps_ok:
             rows.append(row(f'{tid} — yours to do{cmd}'))
-        elif owner == "both" and t.get("user_review_pending"):
-            rows.append(row(f'{tid} — Claude\'s half verified; your review closes it{cmd}'))
     sub("Your Tasks", rows)
 
     # Reviews — out-of-spec awaiting approval
@@ -1064,14 +1137,17 @@ def _html_needs_you(active, decisions, phases_model, status_map, sidecar,
         for t in open_tasks if t.get("out_of_spec")
         and not t.get("out_of_spec_approved") and not t.get("out_of_spec_rejected")])
 
+    # Also Needs You — judgment rows from sidecar augment_rows[] (FB-118): action
+    # rows first, then muted FYI rows; same inline markdown as the Notes card.
+    script_rows = bool(out)
+    actions, fyis = _augment_items(sidecar, active, archived)
     out.append(
-        "<!-- CLAUDE: augment — append <li> rows ONLY for judgment items the script"
-        " cannot derive: unanswered questions from a paused session, and context a"
-        " mechanical row would miss. The rows above are script-owned (task JSON,"
-        " decisions, sidecar, feedback.md) — do NOT restate or duplicate them. Leave"
-        " this comment in place. Contract: dashboard-regeneration.md § Action Item"
-        " Contract. -->")
-    if len(out) == 1:  # no mechanical rows at all
+        "<!-- Judgment rows come from sidecar augment_rows[] in dashboard-state.json"
+        " (contract: dashboard-regeneration.md); the HTML is generated and not"
+        " hand-edited. -->")
+    sub("Also Needs You", [row(_mdi(text)) for text in actions] +
+        [f'<li style="color:var(--soft)">FYI — {_mdi(text)}</li>' for text in fyis])
+    if not script_rows and not actions:  # fyi rows ask nothing of the user
         out.insert(0, '<li style="color:var(--soft)">Nothing blocked on you right now.</li>')
     return "".join(out)
 
@@ -1082,7 +1158,12 @@ def render_full_html(claude_dir: Path, now: datetime):
     active = load_tasks(tasks_dir) if tasks_dir.is_dir() else []
     archived = load_archived(tasks_dir) if tasks_dir.is_dir() else []
     decisions = load_decisions(claude_dir / "support" / "decisions")
-    sidecar = load_json_file(claude_dir / "dashboard-state.json") or {}
+    sidecar = load_json_file(claude_dir / "dashboard-state.json")
+    if not isinstance(sidecar, dict):  # missing, unreadable, or valid JSON that isn't an object
+        if sidecar is not None:
+            print("warning: dashboard-state.json is not a JSON object; rendering as if absent",
+                  file=sys.stderr)
+        sidecar = {}
     version = load_json_file(claude_dir / "version.json") or {}
     verification_result = load_json_file(claude_dir / "verification-result.json")
     drift = load_json_file(claude_dir / "drift-deferrals.json")
@@ -1149,7 +1230,7 @@ def render_full_html(claude_dir: Path, now: datetime):
 
     if toggles.get("action_required", True):
         needs_you = _html_needs_you(active, decisions, phases_model, status_map, sidecar,
-                                    verification_result, drift, claude_dir)
+                                    verification_result, drift, claude_dir, archived)
     else:
         needs_you = '<li style="color:var(--soft)">Action Required section is toggled off.</li>'
     twocol = (

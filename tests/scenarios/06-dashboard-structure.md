@@ -70,20 +70,25 @@ All phases, tasks, and decisions visible with blocking context.
   - Task with missing verification (verification debt)
   - Pending decision blocking tasks
   - Human-owned task needing action
+  - Claude-owned task Finished with `user_review_pending: true` (a `test_protocol` awaits the user)
+  - `owner: "both"` task Blocked on the user's A-or-B choice; the choice is in sidecar `augment_rows[]` with `task_id` set
 
 ### Expected
 
 Every item in Action Required is fully actionable from the dashboard:
 - Each item has a description of what the user needs to do
 - Each item links to the relevant file (relative path from dashboard)
-- Each item provides a way to signal completion
+- Each item provides a way to signal completion (`fyi` augment rows excepted)
 - Items are consistent with their detail sections (Tasks, Decisions)
+- Your Tasks lists the review-pending task whatever its owner (it is Finished; a stale flag on unfinished work gets no row), and the Blocked both-owned task; "Also Needs You" (last) carries the A-or-B question
 
 ### Pass criteria
 
 - [ ] Verification debt lists affected tasks with instruction to run `/work`
 - [ ] Pending decisions link to decision doc with question summary
 - [ ] Human tasks have action descriptions and file links
+- [ ] Review-pending row closes with `/work complete {id}`, even for a Finished, Claude-owned task
+- [ ] The Blocked task's choice is answerable from the card alone
 - [ ] No item requires browsing the file tree to figure out what to do
 
 ### Fail indicators
@@ -92,6 +97,7 @@ Every item in Action Required is fully actionable from the dashboard:
 - Links missing or using absolute paths
 - No instruction on how to resolve or signal completion
 - Action Required references items missing from detail sections
+- Review-pending or Blocked-on-you task missing because of its owner or status
 
 ---
 

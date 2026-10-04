@@ -112,12 +112,14 @@ Before the user runs `/work complete`, something triggers a dashboard regenerati
 - Next `/work` run detects hash mismatch and regenerates the dashboard
 - Dashboard now reflects the manual edit
 - Dashboard header includes a staleness note for when viewed without running `/work`
+- An edit that only sets or clears `user_review_pending` also counts: the hash rows carry a `review` field
 
 ### Pass criteria
 
 - [ ] Dashboard META block hash enables staleness detection
 - [ ] `/work` catches mismatch and regenerates
 - [ ] After regeneration, dashboard matches actual file state
+- [ ] Clearing a review flag by hand removes the task's review row on the next `/work`
 
 ### Fail indicators
 

@@ -91,7 +91,8 @@ For any of these, the fix is always: regenerate.
 - The sidecar is the **single source** for user content (DEC-024) — the read-only HTML has no in-file markers to cross-reference. Validate the sidecar's own consistency only (e.g., `phase_gates` statuses are `active`/`approved`)
 - `section_toggles` keys are among the four the renderer reads: `action_required`, `decisions`, `notes`, `custom_views`. It silently ignores any other key (e.g. `progress`, `tasks` from older first-regeneration defaults): ℹ️
 - `decisions: false` while decision records exist (likely the pre-v5.7.5 first-regen default): ℹ️ — the Decisions card stays hidden until the user sets it `true`
-- These two are report-only, with no fix row: the toggles are the user's to change
+- `augment_rows` (optional, FB-118) is a list of objects, each with a non-blank string `text` (schema: `dashboard-regeneration.md § "Dashboard State Sidecar"`). A non-list value (ignored), or an item that isn't an object or lacks such a `text` (skipped): ℹ️. A `kind` that isn't `action` or `fyi` (any case): ℹ️ — it renders as an action row
+- These are report-only, with no fix row: the toggles are the user's to change, and judgment rows are the orchestrator's to rewrite
 
 #### 5. Status Rules
 
@@ -163,7 +164,7 @@ Reports tasks with `"out_of_spec": true` in a separate section of the report. In
 #### 10. Dashboard Staleness
 
 **Task state hash check:**
-1. Compute: `python3 .claude/scripts/dashboard-render.py --task-hash` — the canonical convention (sha256 over sorted `id:status:difficulty:owner` rows, newline-joined + trailing newline). Hand-compute only when the script is unavailable. Do NOT use `fingerprint.py --dashboard-rollup` (different algorithm, for `/status`).
+1. Compute: `python3 .claude/scripts/dashboard-render.py --task-hash` — the canonical convention (sha256 over sorted `id:status:difficulty:owner:review` rows, `review` = `1` when `user_review_pending` is true else `0`, newline-joined + trailing newline). Hand-compute only when the script is unavailable. Do NOT use `fingerprint.py --dashboard-rollup` (different algorithm). A dashboard rendered before the `review` field (FB-118) reads stale once; regenerating clears it.
 2. Read dashboard metadata block (if exists)
 3. Compare hashes — if different, dashboard is stale
 
@@ -817,28 +818,30 @@ Check if the sidecar's `user_notes` (rendered as the dashboard's Notes card) con
 
 #### 4. Action Required Actionability (H4 — Navigation)
 
-**4a. Actionability.** Every item in the Action Required section should have a file link and a completion command or checkbox.
+Script-owned rows are exempt from 4a and 4b: the renderer emits them (with their command, or as status lines such as Audit Findings rows and "Nothing blocked on you right now."), and its tests pin their wording. Both checks read the "Also Needs You" rows, rendered from the sidecar's `augment_rows` — the card's only LLM-written rows.
+
+**4a. Actionability.** Every "Also Needs You" action row needs a completion command (a `code` span) or a link (`[text](path)` in the row's `text`). `fyi` rows (rendered "FYI — …") are context and are exempt.
 
 | Condition | Result | Severity |
 |-----------|--------|----------|
-| All items have links | Pass | — |
-| Item missing link or action | Error per item: "Action Required item '{title}' has no link or completion command." | 3 |
+| Every action row has a command or link (or there are none) | Pass | — |
+| Action row with neither | Error per row: "Augment row '{text}' has no command or link — add one to its `augment_rows` entry, or set `kind: \"fyi\"` if it asks nothing of the user." | 3 |
 
-**4b. Summary-shape content (FB-015 / FB-038).** Scan the Action Required section for retrospective content that violates the rule in `support/reference/dashboard-regeneration.md` § Action Item Contract ("must NOT include work summaries, completion reports, or recent-activity recaps").
+**4b. Summary-shape content (FB-015 / FB-038).** Scan the "Also Needs You" rows (both kinds) for retrospective content that violates the rule in `support/reference/dashboard-regeneration.md` § Action Item Contract ("must NOT include work summaries, completion reports, or recent-activity recaps").
 
-Detection heuristics — flag if ANY match within the Action Required section:
+Detection heuristics — flag if ANY match:
 
-- **Past-tense completion verbs** in item title or body (not in the imperative form): `finished`, `completed`, `shipped`, `fixed`, `Task {N} finished/completed`, `successfully added/removed`. Watch for false positives — "Complete the form" is imperative (OK); "Form completed" is retrospective (flag).
-- **Forbidden sub-section headings:** `Recent Activity`, `Work Summary`, `Completed This Session`, `Recently Completed`, `Done` (as a section name, not a checkbox label).
-- **Long prose items:** any single item with more than 2 paragraphs of prose. Legitimate actionable items rarely need that much explanation — the contract requires "just enough context to act."
-- **Bulleted lists of finished work:** any bulleted list inside Action Required where >2 consecutive items start with past-tense verbs (e.g., "✅ Task 5 added X", "✅ Task 6 fixed Y").
+- **Past-tense completion verbs** in a row (not in the imperative form): `finished`, `completed`, `shipped`, `fixed`, `Task {N} finished/completed`, `successfully added/removed`. Watch for false positives — "Complete the form" is imperative (OK); "Form completed" is retrospective (flag).
+- **Forbidden sub-section headings** anywhere in the card: `Recent Activity`, `Work Summary`, `Completed This Session`, `Recently Completed`, `Done` (as a section name, not a checkbox label). The script never emits them, so one means the HTML was hand-edited.
+- **Long prose rows:** any single row with more than 2 paragraphs of prose. Legitimate actionable items rarely need that much explanation — the contract requires "just enough context to act."
+- **Runs of finished work:** >2 consecutive rows starting with past-tense verbs (e.g., "✅ Task 5 added X", "✅ Task 6 fixed Y").
 
 | Condition | Result | Severity |
 |-----------|--------|----------|
 | No summary-shape content | Pass | — |
-| Summary-shape match found | Error per match: "Action Required contains retrospective content: '{excerpt}'. Belongs in git log / task notes / nowhere — not the dashboard." | 3 |
+| Summary-shape match found | Error per match: "Action Required contains retrospective content: '{excerpt}'. Belongs in git log / task notes / nowhere — prune it from `augment_rows`." | 3 |
 
-When `4b` fires repeatedly across `/health-check` runs on the same project, the root cause is likely LLM emitter compliance rather than a documentation gap — escalate to FB-011 Family C (extract dashboard regeneration into a deterministic script, tracked in `template-maintenance/scripts-candidates.md`).
+When `4b` fires repeatedly across `/health-check` runs on the same project, the orchestrator keeps writing recaps into `augment_rows`: tighten `dashboard-regeneration.md § "Augment Rows"` (capture it as feedback) rather than the renderer.
 
 #### 5. Dashboard Size (H1 — Readability)
 

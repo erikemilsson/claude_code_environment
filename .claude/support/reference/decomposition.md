@@ -59,7 +59,7 @@ Use a fuzzy-match (e.g., `Glob` for the basename) to suggest the closest existin
 
 ### Leg 2: Ripple Inference
 
-**Start from what the change invalidates, not what it edits** (FB-113). For each task, name the thing it changes (a field, column, type, function signature, threshold, file path, documented behaviour), then search for every file that reads, restates, or tests it: code, tests and fixtures, schema docs, SQL/DAX/notebooks, architecture docs, config. Search with Grep; don't infer the list from the task text. What the search finds are candidates for `files_affected`.
+**Start from what the change invalidates, not what it edits** (FB-113). For each task, name the thing it changes (a field, column, type, function signature, threshold, file path, documented behaviour), then search for every file that reads, restates, or tests it: code, tests and fixtures, schema docs, SQL/DAX/notebooks, architecture docs, config. Search with Grep, or `rg --hidden` via Bash where there's no Grep tool; don't infer the list from the task text. What the search finds are candidates for `files_affected`.
 
 The heuristics below are recurring shapes of that search, worked out from downstream friction. They're examples, not the boundary:
 

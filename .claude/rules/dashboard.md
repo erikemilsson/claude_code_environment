@@ -20,12 +20,12 @@ The dashboard is regenerated whole by the script (`dashboard-render.py --html`) 
 
 A full regen is cheap (a single script call), so any Tier-1 trigger runs a full regen.
 
-**Script-first (DEC-024):** full regens render the entire HTML — structural sections + inline-SVG visualizations — via `python3 .claude/scripts/dashboard-render.py --html > .claude/dashboard.html` (the script writes to **stdout**; the redirect lands the on-disk file — omitting it silently leaves `dashboard.html` stale with no error). The orchestrator then augments the "Needs you" card with judgment items (only when there are any) and fills Custom Views content when that section is on. See `dashboard-regeneration.md § "Script-First Rendering — HTML target"` for the division of labor and the canonical `task_hash` mode.
+**Script-first (DEC-024):** full regens render the entire HTML — structural sections + inline-SVG visualizations — via `python3 .claude/scripts/dashboard-render.py --html > .claude/dashboard.html` (the script writes to **stdout**; the redirect lands the on-disk file — omitting it silently leaves `dashboard.html` stale with no error). The orchestrator then fills Custom Views content when that section is on. See `dashboard-regeneration.md § "Script-First Rendering — HTML target"` for the division of labor and the canonical `task_hash` mode.
 
 ## Sections
 
 Sections render from data; only four have a switch in sidecar `section_toggles` (`.claude/dashboard-state.json`; edit it or ask Claude): `action_required`, `decisions`, `notes` (default on), `custom_views` (off). Other keys are ignored. Sections:
-- 🚨 Action Required ("Needs you" card) — decisions, tasks, reviews needing user input. **Script-rendered + LLM-augmented** (FB-105): the script derives every mechanical row (human/both/On-Hold tasks, unresolved decisions, verification debt, drift, audit findings, feedback counts, out-of-spec reviews) from state; the LLM appends only judgment items into the `<!-- CLAUDE: augment -->` slot. **Human-gated coverage invariant:** every item blocked on the user — `owner: human` tasks with satisfied dependencies, `owner: both` tasks awaiting review, On Hold tasks, unresolved decisions, and unanswered questions from a paused session — must appear here with the concrete question/action inline; handoff prose must never be a blocking item's only home. The script enforces all but the last (which is the augment slot's job). `/work` prints this queue at session start (Step 0g) and sweeps it at pause.
+- 🚨 Action Required ("Needs you" card) — decisions, tasks, reviews needing user input. **Script-rendered** (FB-105, FB-118): the script derives every mechanical row (task rows, unresolved decisions, verification debt, drift, audit findings, feedback counts, out-of-spec reviews) from state; judgment rows go in sidecar `augment_rows[]`, then regenerate (never edit the HTML). **Human-gated coverage invariant:** every item blocked on the user must appear here with the concrete question/action inline; handoff prose must never be a blocking item's only home. The script covers `owner: human` tasks with satisfied dependencies, tasks awaiting review (any owner), Blocked tasks owned by human/both or escalated (≥3 attempts), On Hold tasks and unresolved decisions; the rest (unanswered questions from a paused session, any Blocked task's open choice) needs an `augment_rows[]` entry. `/work` prints this queue at session start (Step 0g) and sweeps it at pause.
 - 📊 Pulse + Phase map — completion ring, status donut, count chips, phase heatmap, active-front cards
 - 🔀 Flow — inline-SVG dependency graph + critical path (auto-hidden when degenerate)
 - 🗓️ Timeline — due dates / external dependencies (when present)
@@ -47,7 +47,7 @@ The dashboard auto-adapts to project size:
 
 The dashboard is a derived, gitignored artifact, so the template ships no `dashboard.html` — a fresh project generates it on the first `/work` after spec decomposition. **First regeneration** is detected by the absence of a `dashboard-state.json` sidecar (and no legacy `dashboard.md` to migrate); on it, the orchestrator seeds the Notes Quick Links and the static section-toggle defaults.
 
-User content lives **only** in `dashboard-state.json` (the sidecar): `section_toggles` (the four switches) and `user_notes` (the Notes card). The HTML has no editable markers — the sidecar is the single source of truth.
+User content lives **only** in `dashboard-state.json` (the sidecar): `section_toggles` (the four switches), `user_notes` (the Notes card) and `augment_rows` (judgment rows). The HTML has no editable markers — the sidecar is the single source of truth.
 
 ## References
 

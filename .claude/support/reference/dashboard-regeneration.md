@@ -18,22 +18,22 @@ python3 .claude/scripts/dashboard-render.py --html --claude-dir .claude [--now <
 
 | Owner | Sections |
 |-------|----------|
-| **Script** (deterministic) | the entire HTML document: `<head>` + META comment block (incl. the canonical `task_hash`), masthead, Pulse (ring + donut + count chips), Phase heatmap + active-front cards, the inline-SVG **dependency graph** (auto-hidden when degenerate), Timeline, Recent activity, 📋 Decisions (collapsed, link-out + search), 📄 Specification (link-out card), Notes card (from sidecar `user_notes`), footer |
-| **LLM** (synthesis) | **Augmenting** the **Needs you** card (🚨 Action Required) and Custom Views *rendered* content. Since v5.4.0 (FB-105) the script renders every *mechanically-derivable* Action Required row itself — see § "Action Required rendering split" — and emits a trailing `<!-- CLAUDE: augment … -->` slot for judgment items only. Custom Views still uses a `<!-- CLAUDE: fill … -->` placeholder. **Append HTML `<li>` rows into the augment slot; never restate script-owned rows** |
+| **Script** (deterministic) | the entire HTML document: `<head>` + META comment block (incl. the canonical `task_hash`), masthead, Pulse (ring + donut + count chips), Phase heatmap + active-front cards, the inline-SVG **dependency graph** (auto-hidden when degenerate), Timeline, Recent activity, the **Needs you** card (every mechanical row, plus sidecar `augment_rows` as "Also Needs You"), 📋 Decisions (collapsed, link-out + search), 📄 Specification (link-out card), Notes card (from sidecar `user_notes`), footer |
+| **LLM** (synthesis) | **Judgment rows** for the Needs you card (🚨 Action Required), written to sidecar `augment_rows` — never into the HTML (§ "Augment Rows") — and Custom Views *rendered* content, via a `<!-- CLAUDE: fill … -->` placeholder. Since v5.4.0 (FB-105) the script renders every *mechanically-derivable* Action Required row itself — see § "Action Required rendering split"; never restate those |
 
-**Flow:** the sidecar (`dashboard-state.json`) is the **sole source** of user content — `section_toggles` (which toggleable sections render) and `user_notes` (the Notes card). There are no editable markers in the HTML (the user does not hand-edit it). So: write/merge the sidecar first (Step 2), run the script, `Write` its stdout to `.claude/dashboard.html`, then — **only if there are judgment items to add** — `Edit` them into the `<!-- CLAUDE: augment … -->` slot (and fill the Custom Views `<!-- CLAUDE: fill … -->` placeholder when that section is on). The script is read-only (per `scripts/README.md` invocation contract); the orchestrator performs all writes.
+**Flow:** the sidecar (`dashboard-state.json`) is the **sole source** of what the HTML can't derive — `section_toggles` (which toggleable sections render), `user_notes` (the Notes card) and `augment_rows` (the card's judgment rows). There are no editable markers in the HTML, and nobody hand-edits it. So: write/merge the sidecar first (Step 2, including any `augment_rows` to add or prune), run the script, `Write` its stdout to `.claude/dashboard.html`, then fill the Custom Views `<!-- CLAUDE: fill … -->` placeholder when that section is on. The script is read-only (per `scripts/README.md` invocation contract); the orchestrator performs all writes.
 
 ### Action Required rendering split (FB-105, v5.4.0)
 
-**Script-owned (rendered deterministically — never hand-author or restate):** Phase Transitions (boundary reached, sidecar `phase_gates` not `approved`), Verification Pending, Verification Debt, Spec Drift (`drift-deferrals.json`), Audit Findings (sidecar `audit_digest`, `pending` minus `dismissed_ids`, with empty-state), Feedback (counts parsed from `feedback.md`), Decisions (records in `draft`/`proposed`), Your Tasks (`owner: human` with all deps + decision-deps satisfied; `owner: both` with `user_review_pending`; On Hold), Reviews (`out_of_spec` without approve/reject). Sub-section order and omit-when-empty follow § "Section Display Rules"; each row carries its completion command. When nothing is user-gated the script renders an explicit "Nothing blocked on you right now."
+**Script-owned (rendered deterministically — never hand-author or restate):** Phase Transitions (boundary reached, sidecar `phase_gates` not `approved`), Verification Pending (suppressed while any task has `user_review_pending`), Verification Debt, Spec Drift (`drift-deferrals.json`), Audit Findings (sidecar `audit_digest`, `pending` minus `dismissed_ids`, with empty-state), Feedback (counts parsed from `feedback.md`), Decisions (records in `draft`/`proposed`), Your Tasks (one row per non-Absorbed task — On Hold; Finished with `user_review_pending`, any owner (a stale flag on reworked work is ignored); Blocked on the user; `owner: human` with all deps + decision-deps satisfied — precedence in § "Section Display Rules"), Reviews (`out_of_spec` without approve/reject). Sub-section order and omit-when-empty follow § "Section Display Rules"; each row carries its completion command. When nothing is user-gated the script renders an explicit "Nothing blocked on you right now."
 
-**LLM-owned (the augment slot):** items the script cannot derive from state — **unanswered questions from a paused session** (the open-question sweep at `/work pause`) and context a mechanical row would miss. Append `<li>` rows; leave the comment in place for the next regen.
+**LLM-authored (sidecar `augment_rows`, FB-118):** items the script cannot derive from state — **unanswered questions from a paused session** (the open-question sweep at `/work pause`), a Blocked task's open choice, and context a mechanical row would miss. The orchestrator writes them to the sidecar and regenerates; the script renders them as the card's last sub-section, "Also Needs You". Protocol: § "Augment Rows".
 
-**Why the split:** the human-gated coverage invariant used to depend on the LLM filling a bare placeholder every regen. A missed fill silently emptied the card while user-gated items were outstanding (observed downstream: 5 items reachable only via the handoff). Script-rendering the mechanical portion makes the card **fail-safe** — an un-augmented card is incomplete at worst, never empty-while-blocked. It also removes the per-regen Read+Edit dance for the common case (nothing to augment → no edit at all).
+**Why the split:** the human-gated coverage invariant used to depend on the LLM filling a bare placeholder every regen. A missed fill silently emptied the card while user-gated items were outstanding (observed downstream: 5 items reachable only via the handoff). Script-rendering the mechanical portion makes the card **fail-safe** — a card with no judgment rows is incomplete at worst, never empty-while-blocked. Judgment rows live in the sidecar so each regen re-renders them; rows hand-inserted into the HTML were wiped by every regen and re-authored up to ~10× a session (FB-118).
 
-**The script is the executable contract** for the structural rules in this file. On divergence between prose and script for a script-owned section, the script is authoritative; fix the prose (or the script, deliberately) rather than hand-rendering. Documented simplifications live in the script's docstring. The prose remains load-bearing for: the Action Item Contract (the quality bar every row must meet, script-rendered or augmented), the augment-slot content, and as the specification the script's tests pin.
+**The script is the executable contract** for the structural rules in this file. On divergence between prose and script for a script-owned section, the script is authoritative; fix the prose (or the script, deliberately) rather than hand-rendering. Documented simplifications live in the script's docstring. The prose remains load-bearing for: the Action Item Contract (the quality bar every row must meet, mechanical or judgment), the `augment_rows` content, and as the specification the script's tests pin.
 
-**Canonical `task_hash`:** `dashboard-render.py --task-hash` (sha256 over sorted `id:status:difficulty:owner` rows, newline-joined + trailing newline, active tasks only). Carried in the `<!-- DASHBOARD META -->` comment relocated into `<head>`. This is the single hash authority — `fingerprint.py --dashboard-rollup` computes a *different* hash (`id:status`, for `/status`) and must not be used for dashboard META.
+**Canonical `task_hash`:** `dashboard-render.py --task-hash` (sha256 over sorted `id:status:difficulty:owner:review` rows — `review` is `1` when `user_review_pending` is true, else `0` — newline-joined + trailing newline, active tasks only). Carried in the `<!-- DASHBOARD META -->` comment relocated into `<head>`. The `review` field (FB-118) makes setting or clearing a review flag read as stale; it changed every hash, so a dashboard rendered before it reads stale once and regenerates. This is the single hash authority — `fingerprint.py --dashboard-rollup` computes a *different* hash (`id:status`) and must not be compared with dashboard META.
 
 **The script is required** — there is no Markdown fallback. HTML cannot be hand-rendered the way the old Markdown could; if `python3` is unavailable the dashboard cannot be regenerated (the previously-rendered `dashboard.html` remains readable). The Markdown render target (`--render`, `--tasks-section`) was hard-retired in DEC-024.
 
@@ -59,6 +59,8 @@ decisions        → true always (the renderer omits the card while there are no
 notes            → true always (preserve mode)
 custom_views     → false always (user opts in when they want custom views)
 ```
+
+`augment_rows` needs no seed: absent or empty renders no "Also Needs You" sub-section.
 
 ### On Phase Transitions
 
@@ -102,6 +104,10 @@ User-authored content lives in `.claude/dashboard-state.json` as the **single so
     "items": [],
     "dismissed_ids": []
   },
+  "augment_rows": [
+    {"text": "Increment 2: approach A (keep sessions) or B (stateless)? Answer at the next `/work`", "kind": "action", "created": "2026-01-28"},
+    {"text": "Export format for task 21: X (CSV) or Y (Parquet)? Answer at the next `/work`", "task_id": "21", "created": "2026-01-28"}
+  ],
   "updated": "2026-01-28T14:30:00Z"
 }
 ```
@@ -117,11 +123,12 @@ User-authored content lives in `.claude/dashboard-state.json` as the **single so
 | `inline_feedback` | Object | Keyed by task ID. Optional feedback text the user gave on a `human`/`both` task. No in-file feedback box exists in read-only HTML; the user gives feedback via CLI at `/work complete`. Retained for back-compat |
 | `custom_views_instructions` | String | Bold-labeled view instructions; emitted into the Custom Views section (between `<!-- CUSTOM VIEWS INSTRUCTIONS -->` comments in the HTML) for the LLM to render below |
 | `audit_digest` | Object | `latest_audit` (string, e.g. `"coherence-2026-05-15-1430"`), `items[]` (digest item objects, projection of latest digest.json), `dismissed_ids[]` (item IDs the user dismissed). Surfaced in the "Needs you" card. See `.claude/support/reference/audit-fix-workflow.md` |
+| `augment_rows` | Array | Optional (FB-118). The Needs you card's judgment rows, rendered as its last sub-section, "Also Needs You". Each item: `text` (string, required; inline markup as in the Notes card), `task_id` (string, optional; drives expiry only, never displayed), `kind` (`"fyi"`, or anything else = `"action"`, the default), `created` (`YYYY-MM-DD`, optional, informational). Orchestrator-written per § "Augment Rows". Items that aren't objects, or whose `text` is not a non-blank string, are skipped; so is an expired row — one whose `task_id` names a task, active or archived, that is Absorbed, or Finished without `user_review_pending` |
 | `updated` | String | ISO 8601 timestamp of last write |
 
 **Lifecycle:**
 - **MUST** exist before the script runs — the script reads `section_toggles` and `user_notes` from it. If missing, create it with defaults (`custom_views` off, the other toggles on) before regenerating.
-- Updated by the orchestrator whenever the user changes notes/toggles (via CLI request) — the script only reads it
+- Updated by the orchestrator whenever the user changes notes/toggles (via CLI request) and whenever judgment rows are added or pruned (`augment_rows`) — the script only reads it
 - Never deleted by any command
 - On migration from a Markdown `dashboard.md`, extract its `<!-- USER SECTION -->` / `<!-- SECTION TOGGLES -->` / `<!-- CUSTOM VIEWS INSTRUCTIONS -->` marker content into the sidecar once, then delete `dashboard.md` (the markers do not exist in the HTML target)
 
@@ -184,28 +191,28 @@ The dashboard META block includes a `template_version` field (copied from `.clau
 The dashboard is read-only HTML; user content lives **only** in `.claude/dashboard-state.json`. There are no in-HTML markers to extract — the script reads the sidecar directly at render time.
 
 - **2a.** Read `.claude/dashboard-state.json`. If missing, create it with defaults (`custom_views` off, the other toggles on, empty `user_notes`).
-- **2b.** Apply any user change the orchestrator was asked to make this turn (toggle a section, edit notes, record a Custom-Views instruction, update `audit_digest`/`phase_gates` status). The user requests these via CLI; the orchestrator writes them to the sidecar.
-- **2c.** **One-time migration:** if a legacy Markdown `.claude/dashboard.md` is present, extract its `<!-- USER SECTION -->` (→ `user_notes`), `<!-- SECTION TOGGLES -->` (→ `section_toggles`), and `<!-- CUSTOM VIEWS INSTRUCTIONS -->` (→ `custom_views_instructions`) content into the sidecar, then delete `dashboard.md`.
-- **2d.** No separate injection step — the script pulls `section_toggles` and `user_notes` from the sidecar when it renders.
+- **2b.** Apply any user change the orchestrator was asked to make this turn (toggle a section, edit notes, record a Custom-Views instruction, update `audit_digest`/`phase_gates` status). The user requests these via CLI; the orchestrator writes them to the sidecar. Add or prune `augment_rows` here too (§ "Augment Rows").
+- **2c.** **One-time migration:** if a legacy Markdown `.claude/dashboard.md` is present, extract its `<!-- USER SECTION -->` (→ `user_notes`), `<!-- SECTION TOGGLES -->` (→ `section_toggles`), and `<!-- CUSTOM VIEWS INSTRUCTIONS -->` (→ `custom_views_instructions`) content into the sidecar, then delete `dashboard.md`. Likewise, if the current `dashboard.html` still carries hand-inserted rows at an old `<!-- CLAUDE: augment -->` comment, move the still-relevant ones into `augment_rows` before the script overwrites it (§ "Augment Rows").
+- **2d.** No separate injection step — the script pulls `section_toggles`, `user_notes` and `augment_rows` from the sidecar when it renders.
 
 ### 3. Generate Dashboard
 
-**Script-first (DEC-024):** run `dashboard-render.py --html --claude-dir .claude [--now <ISO>]` and `Write` its stdout to `.claude/dashboard.html` (see § "Script-First Rendering — HTML target"). The script renders the entire HTML document — all structural sections (including every mechanical Action Required row, per § "Action Required rendering split"), the inline-SVG visualizations, and the `<!-- DASHBOARD META -->` block in `<head>`. Then append any judgment items to the `<!-- CLAUDE: augment … -->` slot and fill the Custom Views `<!-- CLAUDE: fill … -->` placeholder when that section is on **with HTML**. The bullets below are the data/semantic specification — the script's contract for its sections and the LLM's instructions for the augment/placeholder regions.
+**Script-first (DEC-024):** run `dashboard-render.py --html --claude-dir .claude [--now <ISO>]` and `Write` its stdout to `.claude/dashboard.html` (see § "Script-First Rendering — HTML target"). The script renders the entire HTML document — all structural sections (including every mechanical Action Required row, per § "Action Required rendering split", and the sidecar's `augment_rows`), the inline-SVG visualizations, and the `<!-- DASHBOARD META -->` block in `<head>`. Then fill the Custom Views `<!-- CLAUDE: fill … -->` placeholder when that section is on **with HTML**. The bullets below are the data/semantic specification — the script's contract for its sections and the LLM's instructions for the placeholder region.
 
-- The script emits the document structure deterministically; the LLM edits **only** the augment/placeholder regions — appending `<li>` rows before the `<!-- CLAUDE: augment … -->` comment (judgment items only; leave the comment in place) and replacing the Custom Views `<!-- CLAUDE: fill … -->` comment with rendered blocks
+- The script emits the document structure deterministically; the LLM edits **only** the Custom Views region, replacing its `<!-- CLAUDE: fill … -->` comment with rendered blocks. Judgment rows for the Needs you card go in sidecar `augment_rows` (Step 2), never into the HTML
 - The four toggleable sections follow sidecar `section_toggles`; the Notes card comes from sidecar `user_notes` — both read by the script
 - **Timeline:** the script renders it when any task has `due_date` or `external_dependency.expected_date`
 - **Dependency graph:** the script renders it as inline SVG when ≥4 incomplete task nodes with edges exist; auto-hidden when degenerate; >15 nodes reduce to critical path + neighbors (see § "Dependency Graph")
 - **Acceptance criteria:** the script renders the live status surface from `verification-result.json` `criteria[]` (DEC-022)
 - Enforce atomicity: only tasks with JSON files, only decisions with MD files
 - On **first regeneration** (no `dashboard-state.json` sidecar yet, and no legacy `dashboard.md` to migrate): seed the static toggle defaults, and `user_notes` with Quick Links, per § "First Regeneration"
-- **User review gate for `both` tasks:** When generating "Your Tasks", include `both`-owned tasks that have `user_review_pending: true` — even if their status is "Finished". These tasks passed verification but still need user review. Show them with status `✅ Verified — awaiting your review` and include a `/work complete {id}` prompt. Remove them from "Your Tasks" only after the user runs `/work complete`.
+- **User review gate:** "Your Tasks" includes every Finished task with `user_review_pending: true`, whatever its owner (a `both` task's review half, or any task carrying a `test_protocol`). These tasks passed verification but still need the user. The flag is only set together with Finished, so a stale flag on reworked (unfinished) work is ignored: the card never offers `/work complete` for unverified work. The row closes with `/work complete {id}` and leaves only once that clears the flag.
 - **Feedback on a task:** the read-only HTML has no in-file feedback box. When a `human`/`both` task wants feedback, the "Needs you" item names the task and says to give feedback via the CLI at `/work complete {id}`; the orchestrator stores it in the task JSON `user_feedback` field.
 - **Phase Transitions item:** When all tasks in Phase N are "Finished" AND Phase N+1 tasks exist AND the sidecar's `phase_gates["{N}→{N+1}"].status` is not `approved`, the "Needs you" card shows the gate as an HTML item listing the conditions and their met/unmet state, ending with the approval action:
   - Auto-conditions (all Phase N tasks finished; all per-task verifications passed; any spec `### Gate Conditions` / `### Transition Criteria` bullets) are rendered as read-only ✓/○ status — they reflect actual state, the user does not toggle them.
   - The transition is approved via CLI (`/work` prompts `[Y] Approve / [N] Hold`); on approval the orchestrator sets `phase_gates` status to `approved` (see `phase-decision-gates.md`).
   - Show an unmet auto-condition with detail, e.g. "Verifications: 8/10 — 2 tasks have verification debt".
-- **Verification Pending item:** When all spec tasks are "Finished" with passing per-task verification AND no valid `verification-result.json` exists, the "Needs you" card shows: "All tasks complete — phase-level verification will run on next `/work`."
+- **Verification Pending item:** When all spec tasks are "Finished" with passing per-task verification AND no valid `verification-result.json` exists AND no task has `user_review_pending` (a display-order choice, not a gate: the user's open review comes first), the "Needs you" card shows: "All tasks complete — phase-level verification will run on next `/work`."
 - **Acceptance Criteria sub-section (Progress section):** When `verification-result.json` exists and has a `criteria` array, render a compact checklist as a sub-section under `## 📊 Progress` (after the phase table, before the critical path one-liner):
   ```
   ### Acceptance Criteria
@@ -228,7 +235,7 @@ The script emits this block as an HTML comment inside `<head>` (so freshness con
 <!-- DASHBOARD META
 generated: [ISO timestamp]
 task_count: [number]
-task_hash: sha256:[hash of sorted task_id:status:difficulty:owner tuples]
+task_hash: sha256:[hash of sorted task_id:status:difficulty:owner:review tuples; review = 1 if user_review_pending else 0]
 spec_version: [e.g., "spec_v13"]
 spec_status: [active|finalized|archived]
 spec_fingerprint: sha256:[hash of spec file content]
@@ -261,6 +268,7 @@ The script reads user content from `.claude/dashboard-state.json` directly when 
 - **User notes** → the read-only Notes card (script renders `user_notes` as minimal HTML: headers, bullets, links, bold). On first regeneration, seed `user_notes` with project Quick Links per the "Notes first-regeneration seeding" rule and write the seed to the sidecar.
 - **Custom Views instructions** → emitted into the Custom Views section (between `<!-- CUSTOM VIEWS INSTRUCTIONS -->` comments) when `custom_views` is on; the LLM fills the rendered content in the adjacent `<!-- CLAUDE: fill -->` region.
 - **Section toggles** → `section_toggles` decides which of the four toggleable sections the script emits.
+- **Judgment rows** → `augment_rows` renders as the Needs you card's last sub-section, "Also Needs You" (§ "Augment Rows").
 
 User-gated items that used to be in-file interactions (phase-gate approval, inline feedback on a task, audit promote/dismiss) are **not** rendered as editable controls in the read-only HTML. They surface in the "Needs you" card as actions with the CLI command to run — script-rendered from the sidecar (`phase_gates`, `audit_digest`) and task JSON (`user_feedback`) since v5.4.0. See § "Action Required rendering split" + § "Action Item Contract".
 
@@ -272,7 +280,7 @@ The script emits the footer (generated timestamp · N tasks · drift/debt indica
 
 ### 7. Output Size Awareness
 
-Output per response is capped (model-dependent; see `.claude/CLAUDE.md § Model Requirement`). The script writes the **entire** HTML document via `Write` in one call — but the LLM only edits the small placeholder regions afterward (the Action Required augment slot, and Custom Views when on), so the cap effectively applies only to those `Edit`s, not the whole document.
+Output per response is capped (model-dependent; see `.claude/CLAUDE.md § Model Requirement`). The script writes the **entire** HTML document via `Write` in one call — but the LLM only edits the small Custom Views placeholder afterward (when that section is on), so the cap effectively applies only to that `Edit`, not the whole document.
 
 **The curated HTML stays light by design** (typically ~25–150 KB) so the single Write is comfortable:
 - The script renders structure deterministically; completed phases collapse into the phase heatmap (one cell each) rather than repeated headers
@@ -281,15 +289,15 @@ Output per response is capped (model-dependent; see `.claude/CLAUDE.md § Model 
 - The dependency graph auto-hides when degenerate and reduces to critical-path + neighbors above 15 nodes
 - **META block field whitelist (Step 4):** no `session_*` keys, no narrative content, only the structural fields
 
-If the LLM's "Needs you" fill is itself very large (dozens of human-gated items), prioritize the highest-urgency items and link the rest — the card is a queue, not an archive.
+If `augment_rows` grows large (dozens of judgment rows), prune resolved rows and fold the rest into the highest-urgency few — the card is a queue, not an archive.
 
 ### 8. Post-Regeneration Validation
 
-After writing `.claude/dashboard.html` (and any augment/placeholder edits), verify integrity:
+After writing `.claude/dashboard.html` (and any Custom Views fill), verify integrity:
 
 1. **Well-formed:** the file starts `<!doctype html>` and ends `</html>`
 2. **Metadata check:** `<!-- DASHBOARD META -->` is present in `<head>` with a valid `task_hash`
-3. **Placeholder check:** no `<!-- CLAUDE: fill` comment remains (Custom Views must be filled when that section is on). The `<!-- CLAUDE: augment … -->` comment **stays** — it is a persistent append slot, not an unfilled section; a card with no judgment items is complete as rendered
+3. **Placeholder check:** no `<!-- CLAUDE: fill` comment remains (Custom Views must be filled when that section is on). The Needs you card has nothing to fill: judgment rows render from sidecar `augment_rows`, and a card with none is complete as rendered
 4. **Offline invariant:** no `type="module"`, no CDN `import`/`fetch` (only the Google-Fonts `<link>` is permitted) — anything else breaks `file://` open
 
 If any check fails:
@@ -311,9 +319,21 @@ Every item in "Action Required" must be:
 4. **Contextual** — if feedback is needed, provide a feedback area or link
 5. **Instructional** — for human-owned tasks, include a brief "how to proceed" note. If the task requires external tools, name them. If it requires access to specific systems, say so. The user should never need to open the task JSON to understand what to do next
 
+An `fyi` augment row is context, not an action: items 1 and 3 don't apply to it, but the recap ban below does. In augment row text, a link is `[text](path)`, with the path relative to `.claude/` (where `dashboard.html` lives).
+
 **Must NOT include:** work summaries, completion reports, or recent-activity recaps. "Action Required" is a list of things the user still needs to do — not a record of what has happened. Git log and task JSON already preserve history; duplicating it here slows the user down when scanning for next actions. If an item describes completed work (e.g., "Task 5 finished — added X"), it belongs elsewhere (or nowhere). This rule applies to every sub-section under Action Required (Phase Transitions, Verification Pending, Your Tasks, Reviews, etc.): each entry must be an action the user takes, not a status report on one they already took. Do not add a "Recent Activity", "Work Summary", "Completed This Session" or similar sub-section — the canonical Sections list in `.claude/rules/dashboard.md` intentionally omits them.
 
-**Coverage (human-gated items — the other half of the contract):** beyond per-item quality, Action Required must be *complete* over user-gated state. Every one of the following must appear as a row: `owner: "human"` tasks with all dependencies Finished; `owner: "both"` tasks with `user_review_pending: true`; On Hold tasks; unresolved decision records; and any question asked of the user during a session that went unanswered (recorded at `/work pause`). An item blocked on the user that exists only in the handoff file violates the contract — the handoff may reference rows, never replace them. `/work` Step 0g cross-checks coverage at session start; the pause flow's open-question sweep enforces it at session end (both trigger a full regen).
+**Coverage (human-gated items — the other half of the contract):** beyond per-item quality, Action Required must be *complete* over user-gated state. Every one of the following must appear as a row: On Hold tasks; Finished tasks with `user_review_pending: true` (any owner); Blocked tasks owned by `human`/`both`, or escalated (`verification_attempts` ≥ 3); `owner: "human"` tasks (not Broken Down) with all dependencies Finished; unresolved decision records; and, as `augment_rows` entries, any question asked of the user during a session that went unanswered (recorded at `/work pause`) and any Blocked task's open choice. An item blocked on the user that exists only in the handoff file violates the contract — the handoff may reference rows, never replace them. `/work` Step 0g cross-checks coverage at session start; the pause flow's open-question sweep enforces it at session end (both trigger a full regen).
+
+### Augment Rows
+
+The script derives every mechanical row; judgment rows (what state can't show) live in sidecar `augment_rows` (schema: § "Dashboard State Sidecar"). **Never edit the card in `dashboard.html`:** every full regen rewrites the file and wipes hand-inserted rows (FB-118).
+
+- **Add** a row, then regenerate, for: an unanswered question to the user (the `/work pause` open-question sweep), a Blocked task's open choice (the options inline, `task_id` set), or context a mechanical row misses (`kind: "fyi"` when it asks nothing of the user). Never restate a script-owned row.
+- **Write** each row to stand alone: `task_id` is never displayed, so name the task in `text`. Markup is the Notes card's: `code` spans, `[text](path)` links and `**bold**` render; everything else is escaped. The renderer prefixes `fyi` rows with "FYI — ", so don't start their text with "FYI". Give each action row a command (`code` span) or a link; `/health-check` Part 6 check 4a flags one with neither. Set `task_id` when the row concerns one task, and `created` to today.
+- **Prune** a row once it's answered or acted on. A row with a `task_id` also expires at render once that task is Absorbed, or Finished without `user_review_pending`. The lookup includes archived tasks, so a row stays expired after its task is archived; a `task_id` that matches no task, active or archived, still renders.
+
+**Upgrading from the HTML augment slot (one-time):** rows hand-inserted at the old `<!-- CLAUDE: augment -->` comment in an existing `dashboard.html` disappear at the first regen after upgrading (the `task_hash` change forces one on the next `/work`). Before that regen, move any still-relevant ones into `augment_rows` (Step 2c).
 
 ### Review Item Derivation
 
@@ -352,7 +372,7 @@ The user selects an option when prompted, and `/work` updates the task according
 ### Section Display Rules
 
 - Action Required sub-sections: only render when they have content (omit empty categories entirely)
-- Action Required sub-section order: Phase Transitions, Verification Pending, Verification Debt, Spec Drift, **Audit Findings**, Feedback, Decisions, Your Tasks, Reviews
+- Action Required sub-section order: Phase Transitions, Verification Pending, Verification Debt, Spec Drift, **Audit Findings**, Feedback, Decisions, Your Tasks, Reviews, Also Needs You (always last)
 - **Audit Findings sub-section in Action Required** (auto-renders when sidecar's `audit_digest.items` has any item with `status: pending` and `id` not in `dismissed_ids`):
   - Header line: `*Last audit: {audit_name} {ran_at} ({N} pending · {K} promoted · {M} dismissed since last audit)*`
   - Marker-bracketed for sidecar persistence:
@@ -383,8 +403,14 @@ The user selects an option when prompted, and `/work` updates the task according
   - **Empty state** (no `pending` items but `latest_audit` is non-empty): `*No pending audit findings. Last audit: {date}. Run /health-check to refresh.*`
   - **No toggle of its own:** it renders inside the "Needs you" card (so `action_required` governs it) once an audit has run.
 - Phase Transitions: only render when a phase boundary has been reached (all Phase N tasks Finished, Phase N+1 exists) AND no APPROVED marker exists for that transition
-- Verification Pending: only render when all spec tasks are Finished with passing per-task verification but no valid verification-result.json
+- Verification Pending: only render when all spec tasks are Finished with passing per-task verification but no valid verification-result.json, and no task has `user_review_pending` (display order only: the user's open review comes first)
 - Spec Drift: only render when drift-deferrals.json has active entries
+- **Your Tasks** (FB-118): one row per non-Absorbed task, first match wins:
+  1. On Hold → only the user can resume it
+  2. Finished with `user_review_pending: true`, any owner → the user's review closes it with `/work complete {id}` (a stale flag on an unfinished task is ignored)
+  3. Blocked, and owner `human`/`both` or `verification_attempts` ≥ 3 (escalated) → blocked on the user
+  4. Unfinished `owner: "human"` (not Broken Down) with all task + decision dependencies met → "yours to do"
+- **Also Needs You** (FB-118): sidecar `augment_rows` (§ "Augment Rows"), action rows first, then `fyi` rows muted and prefixed "FYI — ". Text renders through the Notes card's inline markup (`code`, `[text](path)`, `**bold**`; everything else escaped). Skipped at render: malformed rows, and expired rows (`task_id` names a task, active or archived, that is Absorbed, or Finished without `user_review_pending`). A `task_id` that matches no task still renders
 - Feedback: only render when `feedback.md` has entries with status `new`, `refined`, or `ready` — render as: `- 📝 **{N} feedback items** awaiting attention ({X} new, {Y} refined, {Z} ready) → /feedback review`
 - Reviews sub-section format: `- [ ] **Item title** — what to do → [link to file](path)`
 - Reviews appear for: out_of_spec tasks without approval, draft/proposed decisions
@@ -432,6 +458,7 @@ The user selects an option when prompted, and `/work` updates the task according
 | Action Required → Decisions | `Decision \| Question \| Doc` |
 | Action Required → Your Tasks | `Task \| What To Do \| Where` |
 | Action Required → Reviews | `- [ ] **Item title** — what to do → [link](path)` — derived, not stored |
+| Action Required → Also Needs You | One `<li>` per sidecar `augment_rows` item (inline markup only); `fyi` rows muted, prefixed "FYI — " |
 | Progress → Status Summary | `Status \| Count` table — rendered when task_count > 20 (see Status summary table rule in Section Display Rules above) |
 | Progress → Phase table | `Phase \| Done \| Total \| Status` — status: Complete, Active, Partially Actionable, Blocked (reason) |
 | Progress → Acceptance Criteria | `- [x]/[ ] Criterion — *notes*` checklist + `**N/M criteria passed**` summary. Only when `verification-result.json` has `criteria` array; falls back to summary-only when absent. |

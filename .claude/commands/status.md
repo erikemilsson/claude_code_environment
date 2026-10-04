@@ -33,9 +33,9 @@ Read (but don't modify):
 
 **Scale optimization (50+ tasks):** For large projects, use a lightweight freshness check first: glob for `task-*.json` files and compare the count against dashboard metadata `task_count`. If counts match, the dashboard is likely fresh — use dashboard data for finished task totals and only read non-Finished task JSON files for active-task details. If counts differ, fall back to full hash computation below.
 
-**Dashboard freshness check:** Compute `SHA-256(sorted list of task_id + ":" + status)` from task JSON files and compare against the `task_hash` in the dashboard's `<!-- DASHBOARD META -->` block. If the hash differs or no metadata exists, flag the dashboard as stale in the Health Indicators output. At scale (50+ tasks), this full check only runs when the lightweight count check above detects a discrepancy. Task counts always come from JSON files regardless of freshness. If `template_version` in the META block differs from `template_version` in `.claude/version.json` (or the META field is absent), report: `⚠️ Dashboard format stale — run /work or /health-check to refresh`.
+**Dashboard freshness check:** Compute the canonical `task_hash` with `python3 .claude/scripts/dashboard-render.py --task-hash` (read-only; sorted `id:status:difficulty:owner:review` rows, the same value `/health-check` check 10 uses) and compare against the `task_hash` in the dashboard's `<!-- DASHBOARD META -->` block. If the hash differs or no metadata exists, flag the dashboard as stale in the Health Indicators output. At scale (50+ tasks), this full check only runs when the lightweight count check above detects a discrepancy. Task counts always come from JSON files regardless of freshness. If `template_version` in the META block differs from `template_version` in `.claude/version.json` (or the META field is absent), report: `⚠️ Dashboard format stale — run /work or /health-check to refresh`.
 
-**Script alternative:** `.claude/scripts/fingerprint.py --dashboard-rollup .claude/tasks` produces the canonical task-JSON rollup hash in a single call.
+Don't use `fingerprint.py --dashboard-rollup` here: it hashes `id:status` rows only, so it never matches META and would always report the dashboard stale.
 
 ### Step 2: Determine Phase
 

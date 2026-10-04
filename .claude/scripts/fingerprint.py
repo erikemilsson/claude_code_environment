@@ -156,7 +156,7 @@ def build_index(path: Path) -> dict:
 
 def hash_dashboard_rollup(task_dir: Path) -> str:
     """SHA-256 of sorted 'task_id:status\\n' lines across task-*.json files in task_dir.
-    Mirrors the formula in commands/status.md line 36."""
+    Not the dashboard freshness hash: that is dashboard-render.py --task-hash (META task_hash)."""
     entries = []
     for task_file in sorted(task_dir.glob("task-*.json")):
         try:

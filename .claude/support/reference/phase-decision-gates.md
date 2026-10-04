@@ -26,7 +26,9 @@ Determine the current active phase by walking phases in ascending order:
             per-task verifications passed; plus any spec-defined gate criteria).
          3. IF auto-conditions NOT all met:
               → Set gate.status = "active"; surface the gate in the dashboard's
-                "Needs you" card (LLM-filled) listing met/unmet conditions.
+                "Needs you" card (the script renders the gate row once the phase is Complete,
+                and any verification debt; record unmet spec-defined criteria as an
+                `augment_rows` entry, and prune that entry on approval).
               → Log: "Phase gate {P}→{next_phase}: {N} of {M} conditions met."
               → STOP — do not dispatch any tasks
          4. IF auto-conditions met but the user has not yet approved:

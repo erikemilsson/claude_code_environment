@@ -142,7 +142,7 @@ Array of decision IDs actively being researched or awaiting user input during th
 
 ### `open_question_refs`
 
-Optional array of short pointer strings — one per user-gated item the pause sweep wrote to the dashboard (per `work.md § Context Transition` key rules: every open question lands as a 🚨 Action Required row with the concrete question inline). Pointers only (e.g., `"dashboard § Action Required → DEC-007"`) — the rows hold the questions; the handoff must never be a blocking question's only home.
+Optional array of short pointer strings — one per user-gated item the pause sweep put on the dashboard (per `work.md § Context Transition` key rules: every open question becomes a sidecar `augment_rows[]` entry, rendered as a 🚨 Action Required row with the concrete question inline). Pointers only (e.g., `"dashboard § Action Required → DEC-007"`) — the rows hold the questions; the handoff must never be a blocking question's only home.
 
 ### `session_knowledge`
 

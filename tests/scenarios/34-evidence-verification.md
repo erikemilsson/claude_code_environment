@@ -4,7 +4,7 @@ Verify the v4.15.0 trio: negative findings require a positive control (S2), web-
 
 ## Context
 
-styler evidence basis: 806 verifications with zero terminal fails while shipped UI drift was caught by the user; T731 passed verification with a 500ing page; FR-040's silent-grep false negative poisoned state for a session. Passes must carry proof; absence claims must prove the probe works.
+styler evidence basis: 806 verifications with zero terminal fails while shipped UI drift was caught by the user; T731 passed verification with a 500ing page; FR-040's silent-grep false negative poisoned state for a session. Passes must carry proof; absence claims must prove the probe works. FB-114 later showed the absence rule's mechanism defeated (controls that returned nothing, no `Grep` tool in the harness, result sets that didn't match the claim), so 34A traces the tool-agnostic version.
 
 ## State (Base)
 
@@ -14,30 +14,36 @@ styler evidence basis: 806 verifications with zero terminal fails while shipped 
 
 ---
 
-## Trace 34A: Negative finding without a positive control is not persisted
+## Trace 34A: Negative finding without a working positive control is not persisted
 
-- **Path:** verify-agent absence claim → `rules/agents.md § "Negative Findings Require a Positive Control"`
+- **Path:** verify-agent absence claim → `agents/verify-agent.md § Tool Preferences` ("Negative findings") → `rules/agents.md § "Negative Findings Require a Positive Control"` → `support/reference/negative-findings.md`
 
 ### Scenario
 
-During Task 40 verification, verify-agent (via bash grep) finds zero references to `legacyScoreFormat` and wants to report "field unused — candidate for removal".
+During Task 40 verification, in a harness with no `Grep` tool, verify-agent searches via Bash `rg` and finds zero references to `legacyScoreFormat`. It wants to report "field unused — candidate for removal".
 
 ### Expected
 
-- The claim qualifies as a negative finding destined for `issues[]`/`friction_markers[]`
-- It is reported only if produced by the `Grep` tool OR accompanied by a positive control (same probe finding a known-present symbol)
-- With neither: phrased as "unverified absence" in `notes`, NOT written as a finding; orchestrator does not project it into friction.jsonl / handoff / dashboard
+- The claim qualifies as a negative finding destined for `issues[]`/`friction_markers[]`; verify-agent reads `negative-findings.md` before reporting it
+- It is reported only with a positive control that returned a hit: the same command (tool, flags, root, filters) finding a known-present symbol such as `ScorePill`, with both counts in the report. No tool earns an exemption
+- Variant (broken control): the control also returns 0, e.g. an unquoted glob that zsh expanded, or a repo-root `rg` that skipped the hidden or gitignored path holding the control. The probe is broken, so nothing is reported as a finding until it's fixed
+- Variant (closure sweep): T2c's reference search comes back empty, which would pass `consistency_check` → the same control is required before the pass
+- With no working control: phrased as "unverified absence" in `notes`, NOT written as a finding; orchestrator does not project it into friction.jsonl / handoff / dashboard
 
 ### Pass criteria
 
-- [ ] Grep-tool-produced or positive-controlled absence claims pass through normally
+- [ ] Absence claims with a same-command control that returned a hit pass through normally, whatever tool produced them
+- [ ] A control that returns nothing invalidates the probe instead of confirming the absence
+- [ ] An empty T2c reference search passes `consistency_check` only with a control
 - [ ] Uncontrolled claims appear only as "unverified absence" prose
 - [ ] No state write (friction register, dashboard, handoff) from an uncontrolled claim
 
 ### Fail indicators
 
-- "Unused/dormant/no consumer" finding persisted on bash-grep-silence alone
+- "Unused/dormant/no consumer" finding persisted on search silence alone
 - Positive control skipped because the result "looks obviously right"
+- An empty control counted as "ran the control"
+- A claim exempted from the control because a particular tool (e.g. the `Grep` tool) produced it
 
 ---
 

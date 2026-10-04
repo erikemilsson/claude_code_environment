@@ -8,9 +8,10 @@ Procedures for detecting spec drift, reconciling changes with tasks, managing ve
 
 Before using dashboard data, verify it's current (runs as `/work` Step 1a):
 
-1. **Compute current task state hash:**
+1. **Compute current task state hash** — canonical: `python3 .claude/scripts/dashboard-render.py --task-hash`:
    ```
-   task_hash = SHA-256(sorted list of: task_id + ":" + status + ":" + difficulty + ":" + owner for each task-*.json)
+   task_hash = SHA-256(sorted list of: task_id + ":" + status + ":" + difficulty + ":" + owner + ":" + review
+                       for each active task-*.json; review = 1 if user_review_pending else 0)
    ```
 
 2. **Read dashboard metadata** (if present):
@@ -283,7 +284,7 @@ If the user selects `[N]`, fall through to `[R] Review individually` for that se
 
 **On apply (confirmed):**
 1. Update `spec_fingerprint` and `section_fingerprint` (and `subsection_fingerprint` if the task carries one) to current values
-2. Clear `task_verification` (remove the field)
+2. Clear `task_verification` and `user_review_pending` (remove both fields; re-verification sets the flag again where it applies)
 3. Set `status` back to `"Pending"`
 4. Add note: `"Reset to Pending — spec section changed after verification. Needs re-implementation and re-verification."`
 

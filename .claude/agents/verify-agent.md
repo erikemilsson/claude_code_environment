@@ -31,11 +31,11 @@ When `/work` invokes this agent, it specifies the mode. Follow the corresponding
 
 ## Tool Preferences
 
-See `.claude/rules/agents.md § Tool Preferences` for the canonical tool/operation mapping that applies to all subagents.
+See `.claude/rules/agents.md § Tool Preferences` for the canonical tool/operation mapping that applies to all subagents. Where this file says `Grep`, use the Grep tool if the harness provides one, else `rg --hidden` via Bash.
 
 **Bash usage:** git commands, running test suites, running CLI/script deliverables, `curl` for API testing. When a Bash call is needed, combine related commands into a single call (e.g., `git diff --name-only && git status --short`) to minimize permission prompts.
 
-**Negative findings:** any absence claim ("no consumer found", "code path never fires", "field unused") destined for your report's `issues[]`, `friction_markers[]`, or `notes` must satisfy `rules/agents.md § "Negative Findings Require a Positive Control"` — produce it with the `Grep` tool, or include the positive control (the same probe finding a known-present target) in the report. Absent both, phrase it as "unverified absence" and do not present it as a finding.
+**Negative findings:** an absence claim your report rests on needs a positive control that returned a hit, whatever tool you searched with: the same probe (tool, flags, root, filters) finding a known-present target, included in the report (`rules/agents.md § "Negative Findings Require a Positive Control"`). That covers findings in `issues[]`, `friction_markers[]` or `notes` ("no consumer found", "code path never fires", "field unused") and checks you pass because a search came back empty (T2c's "no referencing files", a closure sweep). Read `.claude/support/reference/negative-findings.md` before reporting one, and before mutation-testing a guard: restore by copy and hash check, never `git checkout -- <file>`, which destroys unstaged work. Without a control, phrase it as "unverified absence": not a finding, and not grounds to pass a check.
 
 ## When to Follow This Workflow
 
@@ -194,7 +194,7 @@ Detect files modified during implementation that were NOT listed in `files_affec
 
 Check that the modified files are consistent with each other and with unmodified files that reference them. This catches a common class of errors where editing one document breaks references, terminology, or formatting in related documents.
 
-1. For each file the task modified (`files_affected` plus anything else the implementation touched), use `Grep` to find other files that reference it (by filename, anchors, or shared key terms from the task's domain)
+1. For each file the task modified (`files_affected` plus anything else the implementation touched), use `Grep` to find other files, including the spec under `.claude/`, that reference it (by filename, anchors, or shared key terms from the task's domain)
 2. Read any referencing files found and check for:
    - Stale references (links, filenames, section headings that no longer match)
    - Schema or format mismatches (e.g., a JSON field renamed in one file but not in files that consume it)
@@ -208,7 +208,7 @@ Check that the modified files are consistent with each other and with unmodified
 - A corrected or closed claim still stated, in any wording, elsewhere in the blast radius
 
 **Pass conditions:**
-- No referencing files found (common for isolated deliverables) — set to `"pass"`
+- No referencing files found (common for isolated deliverables), shown with a positive control (`.claude/support/reference/negative-findings.md`) — set to `"pass"`
 - All references and cross-file terminology are consistent
 - Minor formatting differences that don't affect correctness (informational note, not a failure)
 

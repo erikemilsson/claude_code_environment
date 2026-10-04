@@ -566,7 +566,7 @@ For large projects (100+ tasks), finished tasks are automatically archived.
 ### Auto-Archive Behavior
 
 When active task count exceeds 100, `/work` automatically:
-1. Identifies finished tasks older than 7 days
+1. Identifies finished tasks older than 7 days, excluding any with `user_review_pending: true` (an open review stays on the card)
 2. Moves them to `.claude/tasks/archive/`
 3. Updates archive-index.json
 
