@@ -87,7 +87,7 @@ This environment is domain-agnostic — it works for software, research, procure
 
 ## Workflow Rules
 
-Rules files are loaded via explicit imports (Claude Code auto-reads `@path` references in CLAUDE.md):
+Claude Code loads every `.claude/rules/*.md` without `paths:` frontmatter at launch; the imports below list those seven:
 
 @.claude/rules/task-management.md
 @.claude/rules/spec-workflow.md
@@ -105,7 +105,7 @@ Summary of each:
 - `agents.md` — agent separation, tool preferences, model requirement (MCP patterns + cross-project capture protocol live in lazy reference docs; the stubs inside say when to read them)
 - `archiving.md` — file placement, archive locations, credentials
 - `session-management.md` — ending sessions, persistence mechanisms, plans, context survival (user-facing session ops: `.claude/README.md § "Session Operations"`)
-- `feature-retirement.md` — **lazy, NOT auto-loaded:** before retiring or restoring ANY feature, READ `.claude/rules/feature-retirement.md` first (snapshot, manifest, spec annotation, restore path)
+- `feature-retirement.md` — **path-scoped, not loaded at launch:** its `paths:` frontmatter loads it only when a file under `.claude/support/retired/` is read or edited (Read, Write or Edit tool). Before retiring or restoring ANY feature, READ `.claude/rules/feature-retirement.md` first (snapshot, manifest, spec annotation, restore path)
 
 ## Glossary
 

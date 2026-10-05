@@ -174,10 +174,10 @@ After Step 5, construct and return the structured implementation report per the 
 **Multi-file scope flag:** When the task modified multiple files, include the count in `notes` (e.g., `[Multi-file: 5 files modified]`). This signals verify-agent to calibrate its cross-file consistency check — single-file tasks need minimal consistency checking, while multi-file tasks need thorough cross-reference validation.
 
 **What the orchestrator does with your report:**
-- For `completed`: sets status to "Awaiting Verification", writes your notes/completion_date, dispatches verify-agent
-- For `partial`: leaves status "In Progress", prepends `[PARTIAL]` to notes, returns control to `/work`
-- For `partial_resume_pending`: leaves status "In Progress", persists `partial_completion` envelope on the task JSON, prepends `[PARTIAL_RESUME_PENDING]` to notes. Next `/work` reads the envelope, runs a git-diff audit, and re-dispatches with the envelope injected into the prompt
-- For `blocked`: sets status to "Blocked", returns control with your `issues_discovered` list
+- For `completed`: sets status to "Awaiting Verification", prepends your notes to the task's `notes` (earlier notes are kept), writes completion_date, dispatches verify-agent
+- For `partial`: leaves status "In Progress", prepends your notes tagged `[PARTIAL]`, returns control to `/work`
+- For `partial_resume_pending`: leaves status "In Progress", persists `partial_completion` envelope on the task JSON, prepends your notes tagged `[PARTIAL_RESUME_PENDING]`. Next `/work` reads the envelope, runs a git-diff audit, and re-dispatches with the envelope injected into the prompt
+- For `blocked`: sets status to "Blocked", prepends your notes tagged `[BLOCKED]`, returns control with your `issues_discovered` list
 - For `misaligned`: does not advance status, routes to spec-alignment flow
 
 In all cases, the orchestrator appends your `friction_markers` to `.claude/support/workspace/.session-log.jsonl` (canonical session log) AND, for audit-eligible kinds (`vocab_drift`, `path_drift`, `design_contradiction`, `terminology_mismatch`, `spec_implementation_gap`), to `.claude/support/friction.jsonl` (audit register, consumed by `audit-coherence` — see `.claude/support/reference/friction-register.md`). The orchestrator assigns `FR-NNN` ids and `status: open` for register entries. You do not perform any of these persistence steps yourself.
@@ -213,7 +213,7 @@ Extend each location in the same task — don't trust `files_affected` to be exh
 
 ### Progress Tracking
 
-For larger tasks, include progress information in the `notes` field of your return report (e.g., "Phase 1/3: Database schema created. Starting API routes next."). The orchestrator writes these notes to the task JSON.
+For larger tasks, include progress information in the `notes` field of your return report (e.g., "Phase 1/3: Database schema created. Starting API routes next."). The orchestrator prepends these notes to the task's `notes`.
 
 ## Handling Issues
 
@@ -318,7 +318,7 @@ Note: `task_id` is added by the orchestrator from the task dispatched to you —
 
 ## Wind-Down Protocol
 
-When `/work pause` is triggered during implementation, wind down gracefully. Finish the current logical unit if close, otherwise stop. Return your report with `implementation_status: "partial"` and `[PARTIAL]`-prefixed notes (what's done, what remains). The orchestrator keeps task status as "In Progress" and writes the handoff file.
+When `/work pause` is triggered during implementation, wind down gracefully. Finish the current logical unit if close, otherwise stop. Return your report with `implementation_status: "partial"` and plain notes: what's done, what remains. Don't prefix them with `[PARTIAL]`; the orchestrator adds the tag once when it prepends your notes. It keeps task status as "In Progress" and writes the handoff file.
 
 **Full procedure:** `.claude/support/reference/context-transitions.md` § "Implement-Agent Wind-Down"
 

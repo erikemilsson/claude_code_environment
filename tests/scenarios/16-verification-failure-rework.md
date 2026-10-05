@@ -53,7 +53,7 @@ Verification is not a rubber stamp. When verify-agent finds issues, the task mus
    }
    ```
 5. Task status set back to "In Progress"
-   - `[VERIFICATION FAIL]` prepended to notes
+   - `[VERIFICATION FAIL #1]` and the fail summary prepended to notes, which now read `[VERIFICATION FAIL #1] Missing upsert for raw_game_designers table. Implemented ETL pipeline for 4 bronze tables`
    - `completion_date` cleared
 6. Dashboard regenerated showing Task 5 back to "In Progress"
 
@@ -63,7 +63,7 @@ Verification is not a rubber stamp. When verify-agent finds issues, the task mus
 - [ ] Spec alignment check catches the missing table
 - [ ] `task_verification.result` is "fail" with specific issues
 - [ ] Task status reverts to "In Progress" (not "Pending" or "Finished")
-- [ ] `[VERIFICATION FAIL]` notes document what's wrong
+- [ ] The `[VERIFICATION FAIL #1]` note documents what's wrong, ahead of the original notes (prepended, not replacing them)
 - [ ] `completion_date` cleared
 - [ ] Dashboard regenerated to reflect status change
 
@@ -83,16 +83,16 @@ Verification is not a rubber stamp. When verify-agent finds issues, the task mus
 
 ### Scenario
 
-After 16A, `/work` detects Task 5 "In Progress" with `[VERIFICATION FAIL]` notes. Routes to implement-agent. implement-agent reads the failure notes, adds the missing 4th table upsert, then triggers re-verification.
+After 16A, `/work` detects Task 5 "In Progress" with a `[VERIFICATION FAIL #1]` note. Routes to implement-agent. implement-agent reads the failure notes, adds the missing 4th table upsert, then triggers re-verification.
 
 ### Expected
 
-1. implement-agent reads `[VERIFICATION FAIL]` notes → understands what to fix
+1. implement-agent reads the `[VERIFICATION FAIL #1]` note → understands what to fix
 2. Implements missing `raw_game_designers` upsert
 3. Existing checks (if any) pass; notes name what was run
-4. Sets "Awaiting Verification" again
-5. Hands off to verify-agent
-6. verify-agent re-verifies:
+4. Returns `completed` with notes `Added the raw_game_designers upsert. Ran the pipeline tests: pass.` The orchestrator sets "Awaiting Verification" again and prepends these notes (`work-procedures.md § "State Persistence Protocol"`), so the trail stays: `Added the raw_game_designers upsert. Ran the pipeline tests: pass. [VERIFICATION FAIL #1] Missing upsert for raw_game_designers table. Implemented ETL pipeline for 4 bronze tables`
+5. The orchestrator dispatches verify-agent
+6. verify-agent re-verifies, reading the earlier fail in the notes:
    - All 4 tables present → spec_alignment: pass
    - All checks pass
    - `task_verification.result: "pass"`
@@ -104,6 +104,7 @@ After 16A, `/work` detects Task 5 "In Progress" with `[VERIFICATION FAIL]` notes
 - [ ] implement-agent reads and uses verification failure notes to guide fix
 - [ ] Fix addresses the specific issue identified by verify-agent
 - [ ] Task goes through full cycle: In Progress → Awaiting Verification → Finished
+- [ ] The re-implementation's notes are prepended: the `[VERIFICATION FAIL #1]` entry and the original notes are still in `notes` when verify-agent reads them
 - [ ] verify-agent re-verifies with fresh eyes (not just checking the fix in isolation)
 - [ ] Dependent tasks (6, 7) unblock after Task 5 passes verification
 - [ ] Dashboard shows Task 5 as "Finished" and Tasks 6, 7 as eligible
@@ -111,6 +112,7 @@ After 16A, `/work` detects Task 5 "In Progress" with `[VERIFICATION FAIL]` notes
 ### Fail indicators
 
 - implement-agent ignores verification failure notes
+- The `completed` write replaces `notes` with the new report's notes, erasing the `[VERIFICATION FAIL #1]` trail
 - Task skips re-verification and goes directly to "Finished"
 - verify-agent only checks the new file, not the full task scope
 - Dependent tasks don't unblock
@@ -123,15 +125,15 @@ After 16A, `/work` detects Task 5 "In Progress" with `[VERIFICATION FAIL]` notes
 
 ### Scenario
 
-Task 5 has now failed verification twice. implement-agent attempts a fix and triggers a third verification attempt. verify-agent detects this is the 3rd attempt.
+Task 5 has now failed verification twice (`verification_attempts: 2`). implement-agent attempts a fix and triggers a third verification attempt, which fails too.
 
 ### Expected
 
-1. verify-agent counts previous `[VERIFICATION FAIL]` entries in task notes
-2. Detects this is attempt 3 (after 2 prior failures)
+1. The orchestrator counts this as attempt 3 from `verification_attempts` (verify-agent doesn't count attempts)
+2. The notes still hold both earlier fails, newest first: `{fix 2 notes} [VERIFICATION FAIL #2] … {fix 1 notes} [VERIFICATION FAIL #1] … Implemented ETL pipeline for 4 bronze tables`
 3. Maximum 2 re-verification attempts per task exceeded
 4. Task status set to "Blocked"
-5. Notes explain the repeated failures
+5. `[VERIFICATION ESCALATED]` is prepended to the notes, which still explain the repeated failures
 6. Task escalated to human review
 7. Dashboard surfaces Task 5 in "Action Required → Your Tasks" as Blocked, escalated: `verification_attempts` is now 3, which qualifies the row even though `owner: "claude"`
 

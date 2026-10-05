@@ -13,7 +13,7 @@ The rule: **never modify template-owned files** (`.claude/CLAUDE.md`, `.claude/r
 | Project-specific rule files | `.claude/rules/project-*.md` (e.g., `project-domain-vocabulary.md`) | No — `project-*.md` is in sync-manifest `ignore` |
 | Project-specific reference docs (extracted from CLAUDE.md or new) | `.claude/support/reference/project-*.md` | No — `project-*.md` is in sync-manifest `ignore` |
 | Project-specific slash commands (audit family or custom) | `.claude/commands/audit-{name}.md` or other non-template name | Custom names not in sync-manifest `sync` are untouched by sync |
-| Project-specific skills | `.claude/skills/{name}/SKILL.md` (the template ships no skills — any skill dir here is project-owned) | Custom skill dirs untouched by sync |
+| Project-specific skills | `.claude/skills/{name}/SKILL.md` (the template ships no skills — any skill dir here is project-owned, except the three Skills the template removed in v4.12.0: `dashboard-style`, `decomposition-heuristics`, `spec-checklist`) | Custom skill dirs untouched by sync. Those three are retired template files: `/health-check` Part 5 offers to remove them |
 | Project decisions (architectural choices, /research outcomes) | `.claude/support/decisions/decision-*.md` | No — `decision-*.md` is in sync-manifest `ignore` |
 | Decision research archives | `.claude/support/decisions/.archive/*` | No — in sync-manifest `ignore` |
 | Captured feedback (ideas, friction, deferred work) | `.claude/support/feedback/feedback.md` | No — in sync-manifest `ignore`. `/feedback` writes here, `/feedback review` triages |

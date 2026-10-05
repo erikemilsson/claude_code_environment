@@ -99,6 +99,27 @@ No fixture files or project setup needed. The state description in each scenario
 | 30 | Handoff During Parallel Batch | Multi-agent wind-down, batch state preservation, correct parallel resumption |
 | 31 | Handoff at Phase Boundary | Cross-phase knowledge preservation, strategic context bridging phases |
 
+### Later Additions (32-43, 45-48)
+
+| # | Name | Tests |
+|---|------|-------|
+| 32 | /diagnose Visual Recipe | Measured-value contracts for browser-rendering bugs; screenshots never decide pass/fail |
+| 33 | Waiting-on-You Queue | Human-gated coverage invariant: every user-blocked item reaches the Needs-you card |
+| 34 | Evidence-Carrying Verification | Positive controls, the Empirical Evidence Gate, phase UI smoke |
+| 35 | Lazy-Rule Triggers | Lazy rule files load when their trigger fires |
+| 36 | Audit-Family Core Delegation | Audit commands delegate shared mechanics to `audit-family-core.md` |
+| 37 | /work Procedure Stubs | STOP-gated stubs load their `work-procedures.md` bodies |
+| 38 | /iterate Batch Approval | Single-response resolution of a proposal's decisions |
+| 39 | /health-check Batch Fix Triage | Collect-don't-prompt fix queue; Part 5 commit offer |
+| 40 | Handoff Schema Cap | Bounded handoff index |
+| 41 | Script-First Dashboard Regeneration | The renderer produces the whole dashboard |
+| 42 | Section-Scoped Spec Reading | Spec index, scoped reads, freshness guard (DEC-021) |
+| 43 | Acceptance Reconciliation Lens | Spec boxes vs `verification-result.json` criteria (DEC-022) |
+| 45 | Template Sync Removes Retired Files | Retired sync patterns and files, `⚠ deletes` rows, commit offer (FB-126) |
+| 46 | Notes History and Friction Close | Notes are newest-first history; a fixing task closes its friction entries (FB-134) |
+| 47 | Uncommitted-Work Check | Step 0e counts finished tasks by their uncommitted files (FB-134) |
+| 48 | Restoring a Retired Feature | Revert or scoped diff of the retirement commit, pin check, no spec edits through git (FB-134) |
+
 ## Example Project
 
 All scenarios use a "data analysis pipeline" with:

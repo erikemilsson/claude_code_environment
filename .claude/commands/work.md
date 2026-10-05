@@ -154,19 +154,20 @@ Detect silent drift between "tasks marked Finished" and "code committed". Runs o
 
 **Procedure:**
 
-1. If `.git` is absent (no git repository), this step is a no-op — proceed to Step 0f.
+1. If `git rev-parse --is-inside-work-tree` doesn't print `true` (the project isn't in a git work tree), this step is a no-op — proceed to Step 0f. Don't test for `.git` in the project root: a project nested in a larger repository has none, and Step 4's commands still work there, relative to the project root.
 2. Run `git log -1 --format=%ct HEAD` to get last-commit Unix timestamp. If the command fails (no commits in repo), skip Step 0e — proceed to Step 0f.
 3. Convert timestamp to YYYY-MM-DD format (last-commit date).
-4. Compute working-copy state (git's native gitignore handling does the `.claude/` scoping — see note below):
-   - `MODIFIED = git diff --name-only HEAD` (tracked files only — gitignored `.claude/` state never appears here)
+4. Compute working-copy state from the project root, so both commands list paths relative to it (git's native gitignore handling does the `.claude/` scoping — see note below):
+   - `MODIFIED = git diff --name-only --relative HEAD` (tracked files only — gitignored `.claude/` state never appears here)
    - `UNTRACKED = git ls-files --others --exclude-standard` (`--exclude-standard` omits gitignored paths)
-   - Count = len(MODIFIED) + len(UNTRACKED)
-5. Scan task files for finished-since-commit count: tasks where `status == "Finished"` AND `completion_date >= last-commit-date`.
-6. If `finished_since_commit < 3` OR `(MODIFIED + UNTRACKED) == 0`: silent, proceed to Step 0f.
-7. Else surface inline:
-   - Default form: `Step 0e: {N} tasks Finished since last commit ({M} files modified, {K} untracked). Consider committing before continuing. Use \`git status\` to inspect.`
-   - Post-handoff form (when Step 0a just deleted a handoff): `Step 0e: {N} tasks Finished since last commit (prior session paused without committing). Consider committing before resuming work.`
+5. Count `finished_uncommitted`: tasks with `status == "Finished"`, `completion_date >= last-commit-date`, and at least one `files_affected` entry matching a path in MODIFIED ∪ UNTRACKED. An entry matches a path when it is that path, a directory entry ending `/` that contains it, or a glob that matches it (`**` crosses `/`; `*` and `?` don't; every other character, `[` included, is literal).
+6. If `finished_uncommitted < 3` OR MODIFIED and UNTRACKED are both empty: silent, proceed to Step 0f.
+7. Else surface inline, with `{N}` = `finished_uncommitted`, `{M}` = len(MODIFIED), `{K}` = len(UNTRACKED):
+   - Default form: `Step 0e: {N} finished tasks have uncommitted changes in their files ({M} files modified, {K} untracked). Consider committing before continuing. Use \`git status\` to inspect.`
+   - Post-handoff form (when Step 0a just deleted a handoff): `Step 0e: {N} finished tasks have uncommitted changes in their files (prior session paused without committing). Consider committing before resuming work.`
 8. Always proceed to Step 0f (never block).
+
+The file match is needed because `completion_date` is only a date: tasks finished and committed earlier the same day have clean files, so they no longer count.
 
 Rely on git's own gitignore handling for `.claude/` — don't add a blanket `.claude/` filter (projects that track `.claude/` files should see them counted; FB-099).
 

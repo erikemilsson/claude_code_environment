@@ -573,11 +573,13 @@ Two files control template behavior:
 
 | Category | Purpose | Examples |
 |----------|---------|----------|
-| `sync` | Updated from template | Commands, agents, reference docs |
-| `customize` | User-editable, template provides defaults | `.claude/CLAUDE.md`, README.md, documents/README.md |
+| `sync` | Updated from template | `.claude/CLAUDE.md`, commands, agents, rules, reference docs |
+| `customize` | User-editable, template provides defaults | `.claude/README.md`, root README.md, documents/README.md |
 | `ignore` | Project-specific data, never synced | Tasks, dashboard, decision records, learnings |
 
-**settings.local.json** — Pre-approved permissions for consistent Claude Code behavior. Ensures the template works the same way for everyone using it.
+A file the template retires (ships it as a `sync` file or with exactly this content, later deletes it) is offered for removal at the next `/health-check` template sync; files the template never shipped are never flagged.
+
+**settings.json / settings.local.json** — `settings.json` is template-owned (`sync`): the base `permissions.allow` and the DEC-016 `permissions.ask` guardrails, so the template works the same way for everyone. `settings.local.json` is yours (`ignore`): extra permissions, hooks, env vars. Claude Code merges both.
 
 ### Project Structure
 

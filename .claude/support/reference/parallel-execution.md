@@ -354,5 +354,5 @@ After all agents complete (active_agents AND active_verifiers are empty):
 
 When some tasks pass and others fail verification:
 - Passed tasks remain "Finished" — they are done
-- Failed tasks are set back to "In Progress" by verify-agent within their thread
+- Failed tasks are set back to "In Progress" by the orchestrator when it processes their verify-agent report
 - On the next loop iteration, failed tasks are re-eligible for dispatch (potentially in a new parallel batch)

@@ -44,7 +44,7 @@ Recover from a prior session's interrupted `/work pause` that left `.claude/supp
      "automated_markers": [/* from step 3, else [] */],
      "session_metrics": {
        "tasks_completed": [computed from current task files],
-       "verification_pass_rate": [computed],
+       "verification_pass_rate": [computed; null when no task has a verification result],
        "recovery_events": 0
      },
      "claude_assessment": [/* parsed Track 2 JSON */],

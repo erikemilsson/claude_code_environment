@@ -204,9 +204,9 @@ The graceful, preferred path. Claude has full conversation context and can wind 
    - If at Step 5 (running checks): let a running check finish, skip the rest (name the skipped checks in notes), and return the structured report with `implementation_status: "partial"`
    - If at Step 6 (return report): complete the report — orchestrator writes state from it
    - If verify-agent is running: let it reach its own turn budget wind-down, or return an empty report with `result: null`
-3. Update task JSON with `[PARTIAL]` notes (prefix existing notes or write new):
+3. The orchestrator prepends `"[PARTIAL] " + report.notes` to the task's `notes`, which are newest first (the agent returns its notes without the tag and never writes task JSON, DEC-004):
    ```
-   [PARTIAL] Completed column mapping and type coercion. Aggregation pipeline not started.
+   [PARTIAL] Completed column mapping and type coercion. Aggregation pipeline not started. {existing notes}
    ```
 4. Keep task status as "In Progress" (do not change to Blocked, On Hold, etc.)
 5. Write `.claude/tasks/.handoff.json`
@@ -224,7 +224,7 @@ Fires when auto-compaction or manual `/compact` triggers. Runs as a shell script
 
 **What the hook does:**
 1. Reads task JSON files from `.claude/tasks/` to discover in-flight work
-2. Builds a structural handoff from disk state (task statuses, phases, recent completions)
+2. Builds a structural handoff from disk state (task statuses, phases, recent completions). An In Progress task's `partial_notes` is the first 600 characters of its `notes` (newest entries first), with `…` appended when cut
 3. Writes `.claude/tasks/.handoff.json`
 4. Does NOT modify task JSON files
 5. Skips if a handoff already exists (user already ran `/work pause` — don't overwrite the richer handoff)
@@ -303,13 +303,13 @@ When implement-agent receives a wind-down signal (via `/work pause`):
 
 1. **Stop new implementation work** — don't start a new file or logical unit
 2. **Finish the current logical unit if close** — if you're a few lines from completing a function, finish it; if you're starting a major new component, stop
-3. **Write partial completion notes** — same format as the Completion Notes Contract, but covering partial work:
+3. **Write partial completion notes for your report** — same format as the Completion Notes Contract, but covering partial work, and without a `[PARTIAL]` prefix (the orchestrator adds it):
    - What was completed so far
    - Key decisions made during this partial implementation
    - What remains to be done
    - Any gotchas or context the next session needs
-4. **Update task JSON**: add `[PARTIAL]` prefix to notes, update `updated_date`, keep status "In Progress"
-5. **Return control** to `/work` coordinator for handoff file creation
+4. **Don't write task JSON** (DEC-004). The orchestrator keeps the status "In Progress", prepends `"[PARTIAL] " + report.notes` to the task's existing `notes`, and updates `updated_date`.
+5. **Return control** to `/work` coordinator with `implementation_status: "partial"`, for handoff file creation
 
 ### Verify-Agent Wind-Down
 
@@ -399,7 +399,7 @@ After writing both the handoff file and interaction assessment, compile the sess
   "automated_markers": [ /* Track 1 markers from step 1 */ ],
   "session_metrics": {
     "tasks_completed": 0,
-    "verification_pass_rate": 0.0,
+    "verification_pass_rate": null,  /* tasks whose verification result is "pass" ÷ tasks with a verification result, 2 decimals; null when no task has a verification result */
     "recovery_events": 0
   },
   "claude_assessment": { /* Track 2 assessment */ },

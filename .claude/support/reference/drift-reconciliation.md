@@ -332,7 +332,7 @@ Section "## Auth" changed — 3 Finished, 1 Pending task(s).
 
 **Attempt counter.** `[A]` and `[V]` set `verification_attempts` to 0 on the Finished tasks they send back to rebuild or re-verification; `verification_history` keeps the earlier record. The counter counts every verify return, passes included, so a Finished task can already sit at 2, and without the reset a single failed re-check would escalate it to Blocked with no fix cycle.
 
-**Open tasks under `[A]` and `[V]`** (any drifted task that isn't Finished): refresh the fingerprints, update the task's description or acceptance criteria where the new section text changes them, and leave the status alone. Append to the task's notes: `[DRIFT UPDATED {YYYY-MM-DD}] {section} changed; {what changed in the task, or "no task change needed"}`.
+**Open tasks under `[A]` and `[V]`** (any drifted task that isn't Finished): refresh the fingerprints, update the task's description or acceptance criteria where the new section text changes them, and leave the status alone. Prepend to the task's notes: `[DRIFT UPDATED {YYYY-MM-DD}] {section} changed; {what changed in the task, or "no task change needed"}`.
 
 **`[A]` Apply.** A Finished task was verified against the old section text, so its `task_verification` is stale. When a section contains Finished tasks, warn before applying:
 ```
@@ -346,7 +346,7 @@ If the user selects `[N]`, fall through to `[R] Review individually` for that se
 1. Update `spec_fingerprint` and `section_fingerprint` (and `subsection_fingerprint` if the task carries one) to current values
 2. Clear `task_verification` and `user_review_pending` (remove both fields; re-verification sets the flag again where it applies)
 3. Set `status` back to `"Pending"` and `verification_attempts` to 0
-4. Add note: `"Reset to Pending — spec section changed after verification. Needs re-implementation and re-verification."`
+4. Prepend to its notes: `"Reset to Pending — spec section changed after verification. Needs re-implementation and re-verification."`
 
 Open tasks in the section: see "Open tasks under `[A]` and `[V]`" above.
 
@@ -354,12 +354,12 @@ Open tasks in the section: see "Open tasks under `[A]` and `[V]`" above.
 1. Refresh fingerprints.
 2. Finished tasks not owned by `human`: set `status` to `"Awaiting Verification"`, remove `task_verification` (`verification_history` stays), set `verification_attempts` to 0 and set `drift_reverify: {"section": "{section}", "date": "{YYYY-MM-DD}"}`. There is no separate dispatch: `/work` Step 3's normal routing sends them to verify-agent (per-task), since Awaiting Verification has priority. Pass → Finished; fail → the normal fail path, starting again at attempt 1.
 3. Finished `owner: human` tasks stay Finished with `user_review_pending: true`.
-4. Append to the notes of each task in steps 2–3: `[DRIFT RE-VERIFY {YYYY-MM-DD}] {section} changed; re-verifying against the current text`. The note is the human-readable record; dispatch reads `drift_reverify`.
+4. Prepend to the notes of each task in steps 2–3: `[DRIFT RE-VERIFY {YYYY-MM-DD}] {section} changed; re-verifying against the current text`. The note is the human-readable record; dispatch reads `drift_reverify`.
 5. Open tasks: as under `[A]` (above), with the `[DRIFT UPDATED …]` note.
 
 **Re-verification brief.** Every per-task verify dispatch for a task carrying `drift_reverify` adds the line `Re-verification after a spec edit: the implementation is unchanged; check it against the current section text.` That covers `/work`'s normal dispatch (`work.md § "If Verifying (Per-Task)"`), the re-dispatches in `session-recovery.md` and the timeout re-dispatch (`work-procedures.md`, "After verify-agent returns (per-task mode)" step 5). With that line, verify-agent skips its diff-based scope check (`verify-agent.md` Step T2b): the implementation was committed long ago, and the working tree may hold only the uncommitted spec edit. `drift_reverify` is removed when a per-task verification result is written for the task, pass or fail, so the fix after a failed re-check is verified as usual. It is also removed whenever the task goes back to Pending or In Progress for rework, for example a manual reset after an escalation, because the implementation then changes. A timeout keeps it for the retry.
 
-**`[K]` Keep:** refresh fingerprints; no status or verification change. Append to the notes of every task in the section: `[DRIFT KEPT {YYYY-MM-DD}] {section} changed; user kept verification: {one-line reason}`
+**`[K]` Keep:** refresh fingerprints; no status or verification change. Prepend to the notes of every task in the section: `[DRIFT KEPT {YYYY-MM-DD}] {section} changed; user kept verification: {one-line reason}`
 
 **Invariant:** no Finished task carries a verification result computed against a different section text than its current fingerprints, except in two recorded cases: the user chose `[K]`, which its notes record; or the task is `owner: human` under `[V]`, which keeps its old verification with fresh fingerprints while `user_review_pending: true` stands in until the user re-checks.
 

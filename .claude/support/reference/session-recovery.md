@@ -37,7 +37,9 @@ A lightweight file at `.claude/tasks/.last-clean-exit.json` tracks whether the p
 
 ## Full Recovery Scan
 
-Scan all non-archived `task-*.json` files and check for recoverable states:
+Scan all non-archived `task-*.json` files and check for recoverable states.
+
+**Newest state tag.** Cases 2–5 match on a task's newest state tag: the first of `[BLOCKED]`, `[AGENT TIMEOUT]`, `[VERIFICATION TIMEOUT]`, `[VERIFICATION ESCALATED]`, `[VERIFICATION FAIL #N]`, `[PARTIAL]` and `[PARTIAL_RESUME_PENDING]` found in `notes`, reading from the start. Notes are newest first and keep old tags, so a tag further down is history, not the task's current state.
 
 ```
 1. STATUS: "Awaiting Verification"
@@ -49,22 +51,21 @@ Scan all non-archived `task-*.json` files and check for recoverable states:
    → Log: "⚡ Recovering task {id} — spawning verification (previous session incomplete)"
    → Continue to Step 1 after recovery spawns complete
 
-2. STATUS: "Blocked" WITH notes containing "[VERIFICATION TIMEOUT]"
+2. STATUS: "Blocked" WITH newest state tag "[VERIFICATION TIMEOUT]"
    AND verification_attempts < 3
    (Verify-agent twice returned no valid report — implementation is done, verification needs retry)
 
    → Auto-recover: set status to "Awaiting Verification", spawn verify-agent with an extended turn budget (up from 30) in its dispatch prompt: `Turn budget: about 40 tool calls. If you get close, follow verify-agent.md § Turn Budget Protocol (result "fail", unfinished checks "skipped").` A task carrying drift_reverify also gets Case 1's re-verification line.
-   → Clear the [VERIFICATION TIMEOUT] note
    → Log: "⚡ Retrying verification for task {id} with extended turn limit"
 
-3. STATUS: "Blocked" WITH notes containing "[VERIFICATION TIMEOUT]"
+3. STATUS: "Blocked" WITH newest state tag "[VERIFICATION TIMEOUT]"
    AND verification_attempts >= 3
    (Verify-agent failed 3 times — needs human review)
 
-   → Replace note: "[VERIFICATION ESCALATED] 3 verification attempts exhausted — requires human review"
+   → Prepend note: "[VERIFICATION ESCALATED] 3 verification attempts exhausted — requires human review"
    → Log: "Task {id} escalated to human review after 3 failed verification attempts"
 
-4. STATUS: "Blocked" WITH notes containing "[AGENT TIMEOUT]"
+4. STATUS: "Blocked" WITH newest state tag "[AGENT TIMEOUT]"
    (Parallel agent timed out — task may be too complex or need breakdown)
 
    → Present to user:
@@ -73,7 +74,7 @@ Scan all non-archived `task-*.json` files and check for recoverable states:
    │  [B] Break down (run /breakdown {id})
    │  [S] Skip (stays Blocked)
 
-5. STATUS: "Blocked" WITH notes containing "[VERIFICATION ESCALATED]"
+5. STATUS: "Blocked" WITH newest state tag "[VERIFICATION ESCALATED]"
    (Intentional escalation — already surfaced, no auto-action)
 
    → Report only: "Task {id} awaiting human review (3 verification attempts exhausted)"

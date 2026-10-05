@@ -890,25 +890,13 @@ Tags: work, scripts, routing, FB-011-family, context-size
 
 **Status:** promoted 2026-10-02 — shipped v5.7.5 (`/health-check` checks match the generated HTML dashboard, DEC-024). See archive for full entry.
 
-## FB-126: Retired template files persist downstream — `/health-check` Part 5 never drops a pattern or a file the template retired
+## FB-126: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
 
-**Status:** downstream cleanup done 2026-10-03 (user go-ahead): the three Skill directories deleted in styler, flirty-gym and difficult-conversation-simplifier (every file matched a shipped template version byte for byte; flirty-gym's 7 project skills kept), the stale `sync` pattern dropped from flirty-gym's and difficult-conversation-simplifier's manifests, orphan `.sync-state.json` entries removed. Left uncommitted in each repo. **Still open: the template-side Part 5 fix.**
-**Captured:** 2026-10-02 (inbox preview; verified on disk)
-**Source:** PortfolioWebsite 2026-10-01-1243 (5.7.4), plus a direct check of the synced projects.
-
-**Problem.** DEC-020 retired the three template Skills in v4.12.0, but `dashboard-style` (its description still says to regenerate `.claude/dashboard.md` with Mermaid, pre-DEC-024), `decomposition-heuristics` and `spec-checklist` are still on disk in styler, flirty-gym and difficult-conversation-simplifier, all on 5.7.4. Their descriptions load into the skill listing every session. Two mechanisms: (1) since v5.7.4, Part 5 Step 2 unions the upstream manifest's `sync` patterns with local extras and Step 4 writes the union back (`health-check.md:622`), so a pattern the template dropped stays forever (flirty-gym and difficult-conversation-simplifier still list `.claude/skills/*/SKILL.md`); (2) nothing removes template-owned files the template deleted (styler's manifest no longer lists skills, but its copies remain). PortfolioWebsite found its own copies by hand on 10-01 and removed them.
-
-**Fix sketch.** Part 5: flag local-only sync patterns the upstream manifest no longer lists (offer to drop them), and list local files that match a template-owned pattern but no longer exist upstream (offer removal; never touch project-owned files such as flirty-gym's own skills). Downstream: delete the three retired skill directories in the three projects (keep flirty-gym's project skills) and drop the stale manifest pattern.
-
-**Reported in the same export, not yet verified (for the harvest):** an uncommitted sync is invisible — Part 5 diffs the working tree, so a dirty tree reads as up to date, and `/work` Step 0e needs 3+ finished tasks to fire. Candidate: Part 5 Step 4 ends with a commit offer.
-
-**Harvest 2026-10-03 evidence (the note above, now verified; cluster 13).** Part 5 checks accepted files out into the working tree and ends without a commit step (Part 5 is `health-check.md:507–667` at v5.8.0; it has no commit instruction). `/work` Step 0e stays silent unless 3+ tasks finished since the last commit (`work.md:165`), so a sync-only change is never flagged. PortfolioWebsite sat for 4 days with `version.json` bumped and 36 files dirty (10-01-1243). Fix: Part 5 Step 4 ends with a commit offer. Ship it with the Part 5 fix above.
-
-Tags: health-check, part-5, sync, sync-manifest, retired-files, skills, downstream, verified-defect
+**Status:** promoted 2026-10-05 — shipped v5.10.0 (Part 5 removes what the template retired; `sync-check.py`; commit offer). See archive for full entry.
 
 ## FB-127: v5.7.5 residuals — small follow-ups found while shipping (bundled per the FB-006 precedent)
 
-**Status:** ready — independent small items; none blocks anything. (l) and (m) added 2026-10-04 from the 2026-10-03 harvest.
+**Status:** ready — independent small items; none blocks anything. (l) and (m) added 2026-10-04 from the 2026-10-03 harvest; (n)–(q) added 2026-10-05 from the v5.10.0 build.
 **Captured:** 2026-10-02 (v5.7.5 implementation and review)
 
 (a) **Pre-DEC-024 Markdown-dashboard text still in shipped docs:** `dashboard-regeneration.md § Section Display Rules / Per-Section Format` (Tasks and phase tables, `[Fix it]`, ticking); audit wording that implies ticking the dashboard (`audit-coherence.md:27,145`, the `audit-family-core.md` triage intro, `audit-ui.md`'s `promote {ts}` "ticked" mode). The `[Fix it]` path itself works through the CLI (`fix`, `triage` → `F`), so this is wording, not mechanism, and the audit telemetry gate can still accrue. Also `### Acceptance Criteria` in `rules/spec-workflow.md` and `audit-coherence.md:386,411`; `breakdown.md:52`; `health-check.md`'s escalation to FB-011 Family C (shipped v4.22.0, superseded by DEC-024); `dashboard-regeneration.md:52,417` "(Replacing Template Example)"; scenario 06 Trace D still models the pre-DEC-024 in-file checklist (`:102-109`, `:114-116`, `:123-124`).
@@ -924,6 +912,10 @@ Tags: health-check, part-5, sync, sync-manifest, retired-files, skills, downstre
 (k) **Architecture map:** v5.8.0 adds `negative-findings.md` (the "~29 reference docs" count, the lazy-docs list, and a `rules/agents.md` → `negative-findings.md` edge). Reconcile with FB-112(a).
 (l) **`verification_history[].cost` arrives after the report** (harvest 2026-10-03 cluster 14). `work-procedures.md:50` copies `cost` "from the usage the harness reports", but on 5.7.4 that usage arrives in the task-completion notification, after the report (styler 10-01-1237, PortfolioWebsite 10-02-0820). Read literally, the step omits `cost`, and both orchestrators needed a second JSON write. The DEC-025 recheck gate counts difficulty 1–2 dispatches that carry `cost`, so say "backfill `cost` when the completion notification arrives".
 (m) **The Custom Views fill is lost on every regen, and nothing catches an unfilled placeholder** (harvest 2026-10-03; listed under FB-118 in the draft, but v5.8.0 shipped FB-118 without it). Each regen emits a fresh `<!-- CLAUDE: fill … -->` slot (`dashboard-render.py:1246-1250`, `dashboard-regeneration.md:202`), so LLM-rendered views must be redone by hand after every regen, and the HTML is gitignored, so a lost fill can't be recovered (PortfolioWebsite 09-21-1452). Sessions left the slot unfilled with `custom_views` on; the placeholder check at `dashboard-regeneration.md:300` is prose that nothing runs (09-19-1705). Options: make the fill a required step of every regen while the toggle is on, with a scripted check for a leftover fill comment; or persist the rendered blocks in the sidecar, as `augment_rows[]` does. Custom Views is off by default.
+(n) **The Notes card doesn't render headings.** `### X` in sidecar `user_notes` comes out as a literal `<p>### X</p>`, but the `_html_notes` docstring in `dashboard-render.py` and `dashboard-regeneration.md` (the `user_notes` row and § 5) say headers render. v5.10.0's retirement Step 5 uses a bold label instead. Fix the renderer or the docs.
+(o) **`work-user-flows.md` overwrites `user_feedback`** when guided testing fails ("record failure in task's `user_feedback` field"), the same history loss FB-134(b) fixed for `notes`.
+(p) **A shallow template history hides retirements.** `sync-check.py` reads deletions and old manifests from the template's history; with a shallow `--template-repo` clone it silently finds fewer. Part 5's `git fetch template` is full, so only manual runs are exposed. Candidate: warn when the repo is shallow (`git rev-parse --is-shallow-repository`).
+(q) **Part 5 needs git.** LTP and escalation_map_training have no repository, so `/health-check` can't sync them; they were synced by hand on 2026-09-27.
 
 Tags: residuals, dashboard, DEC-024, audit-wording, session-export, hooks, dispatch, health-check, decisions
 
@@ -993,19 +985,9 @@ Tags: work, parallel-execution, mcp, playwright, build-output, shared-resources,
 
 Tags: agents, verify-agent, implement-agent, playwright, screenshots, dev-servers, residue, recovery, two-project-signal
 
-## FB-134: Verified small defects from the 2026-10-03 harvest — patch bundle (FB-006 precedent)
+## FB-134: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
 
-**Status:** ready — each verified in v5.8.0 source; all below the 3-export bar except (e). (a) is a correctness bug in a shipped rule, so ship it soon.
-**Captured:** 2026-10-04 (harvest 2026-10-03 cluster 7)
-**Source:** PortfolioWebsite; (b) and (d) also oemmat in `processed/`. Insight: `interaction-logs/insights/2026-10-03_work_small-verified-defects.md`.
-
-(a) **Retirement restore replays the wrong diff (09-19-1234).** `feature-retirement.md:58` pins the last commit where the feature was live, and `:143` cherry-picks it. A cherry-pick replays *that commit's own diff*, not the feature; use `git checkout "$SHA" -- <affected_paths>` or `git revert <retirement-commit>`. `:153`'s `cp -r` clobbers a partly retired file with its fragment, and `retired/README.md:76` requires `spec_excerpt_path` even when the spec never described the feature.
-(b) **Completion overwrites `notes` (09-19-1705).** `work-procedures.md:14` sets `notes` to `report.notes` (implement-agent returns a one-paragraph summary, `implement-agent.md:128`), replacing the history that `:15` and `:54` prepend (`task-schema.md:263`); `:16` overwrites the same way. A re-implementation after a verify fail therefore erases its `[VERIFICATION FAIL #N]` trail (oemmat 07-23-0130 found the same clobber). Fix: prepend the report's summary to the existing `notes` instead of replacing them (and the same at `:16`).
-(c) **Step 0e compares by date** (`work.md:159,164`), so tasks finished and committed earlier the same day count as uncommitted (09-24-2254). `completion_date` is date-only (`task-schema.md`), so changing the comparison alone can't fix it: either record a completion timestamp, or count only Finished tasks whose `files_affected` appear in `git status`.
-(d) **Pass rate 0.0 when nothing ran.** `pre-compact-handoff.sh:213` and the schema example at `context-transitions.md:402` report `verification_pass_rate: 0.0` when nothing was verified, which reads as "all failed" in the corpus; emit `null` (09-18-1805; oemmat 08-05-1554).
-(e) **No "fixed by a later task" trigger (3 exports).** `friction-register.md:106-111` lists five resolution triggers, none of them "a later task fixed it", so FR entries stay open after the fix ships and resurface as user questions (08-30-0445 FR-032; 09-08-2329 FR-034/039/046; 09-18-1805 FR-067). Add `resolved_by.kind: task` and close the entry in the fixing task's persistence step.
-
-Tags: residuals, feature-retirement, restore, task-notes, step-0e, session-export, friction-register, verified-defect
+**Status:** promoted 2026-10-05 — shipped v5.10.0 (restore path, notes history, Step 0e by files, null pass rate, `resolves_friction`). See archive for full entry.
 
 ## FB-135: Most tasks in two projects carry no section provenance, so drift can't be checked for them
 

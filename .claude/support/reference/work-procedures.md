@@ -8,13 +8,17 @@ After any agent (implement-agent or verify-agent) returns a structured report, t
 
 **Schemas:** The two agent return schemas are defined in `.claude/agents/implement-agent.md` § "Step 6: Return Structured Report" and `.claude/agents/verify-agent.md` § "Step T6: Construct Verification Report" (per-task) + § "Step 7: Include Verification Result in Report" (phase-level).
 
+**Task `notes` are history, newest first.** Every `notes` write, here and everywhere else, prepends: `notes` becomes `new_text + " " + notes` (just `new_text` when `notes` is empty). Never replace them: a re-implementation must keep the `[VERIFICATION FAIL #N]` trail the verifier reads.
+
+**Friction entries a task fixes.** When a task with `resolves_friction` becomes Finished with no user review pending — a per-task pass without `user_review_pending` ("After verify-agent returns (per-task mode)" step 4), `/work complete` (which also completes a pending review), or parent auto-completion (step 7 there; `/work complete` step 6) once no subtask has `user_review_pending` (`/work complete` on that subtask re-runs the parent check) — set each listed entry that is `open` in `.claude/support/friction.jsonl` to `status: "resolved"`, `resolved_by: {"kind": "task", "ref": "<task id>", "at": "<ISO timestamp>"}`, via `friction-register.md § "Status update protocol"`. Skip ids not in the register and entries already `resolved` or `dismissed`.
+
 **After implement-agent returns:**
 
 1. **Status transition** based on `implementation_status`:
-   - `completed`: write `{ "status": "Awaiting Verification", "completion_date": report.completion_date, "updated_date": today, "notes": report.notes }` to task JSON
-   - `partial`: leave status "In Progress"; prepend `[PARTIAL]` to notes
-   - `partial_resume_pending` (per DEC-010): leave status "In Progress"; write `{ "partial_completion": report.partial_completion, "updated_date": today, "notes": "[PARTIAL_RESUME_PENDING] " + report.notes }` to task JSON. Surface inline: `Task {id} returned partial — resume scheduled. Confidence: {confidence}. Run /work again to re-dispatch.` Do NOT dispatch verify-agent — verification is gated on `completed`.
-   - `blocked`: write `{ "status": "Blocked", "notes": "...", "updated_date": today }`; surface `issues_discovered[]` to user
+   - `completed`: write `{ "status": "Awaiting Verification", "completion_date": report.completion_date, "updated_date": today }` to task JSON and prepend `report.notes` to `notes`
+   - `partial`: leave status "In Progress"; prepend `"[PARTIAL] " + report.notes` to `notes`
+   - `partial_resume_pending` (per DEC-010): leave status "In Progress"; write `{ "partial_completion": report.partial_completion, "updated_date": today }` to task JSON and prepend `"[PARTIAL_RESUME_PENDING] " + report.notes` to `notes`. Surface inline: `Task {id} returned partial — resume scheduled. Confidence: {confidence}. Run /work again to re-dispatch.` Do NOT dispatch verify-agent — verification is gated on `completed`.
+   - `blocked`: write `{ "status": "Blocked", "updated_date": today }` to task JSON and prepend `"[BLOCKED] " + report.notes` to `notes`; surface `issues_discovered[]` to user
    - `misaligned`: do not advance status; route to spec-alignment flow with `issues_discovered[]` context
    - **Zero-token return — platform limit cutoff (FB-103):** if the agent returns `subagent_tokens: 0` with no structured report at all, a platform usage/session limit killed it mid-tool-call. This is NOT a normal failure and NO envelope exists — DEC-010's `partial_completion` covers only *self-detected* turn-budget limits; a platform cutoff gives zero warning. Recovery (proven twice downstream): (1) assess on-disk state directly — run the project's typecheck + test suite from the orchestrator (cheap, no agent risk); (2) if genuinely green, dispatch a FRESH implement-agent whose only job is to confirm spec alignment of the on-disk work and return the structured report (verify-agent dispatch needs one) — instruct explicitly "do not rebuild; the mechanical work is on disk"; (3) if not green, treat the partial files as an interrupted implementation — finish inline (small remainder) or re-dispatch with the on-disk state described. Surface the limit-hit to the user, and apply the post-limit dispatch rule (`parallel-execution.md § "Pre-Dispatch Confirmation"`, pre-flight checks): no parallel/heavy re-dispatch in the same session without explicit user confirmation.
 
@@ -50,12 +54,12 @@ After any agent (implement-agent or verify-agent) returns a structured report, t
 2. **Build `verification_history` entry** from report's `checks`, `issues`, `notes`, with `{"attempt": new_attempts, "result": report.result, "timestamp": report.timestamp}`. Add `"cost": {"total_tokens": N, "tool_uses": N, "duration_ms": N}` copied from the usage the harness reports for this verify-agent dispatch (the token count may arrive as `subagent_tokens` or `total_tokens` — store it as `total_tokens`); omit `cost` (or any sub-key) the harness didn't report — never estimate it. Append to task's `verification_history[]` array (create array if absent).
 3. **Write `task_verification`** field to task JSON using report's `result`, `timestamp`, `checks`, `notes`, `issues` — plus `evidence[]` when the Empirical Evidence Gate ran (see `work-web-evidence.md § "Empirical Evidence Gate"`). Remove `drift_reverify` if the task carries it, on pass or fail: the re-verification after a spec edit is done, and a fix after a fail is verified against its real diff.
 4. **Status transition** based on `result`:
-   - `pass`: set `status: "Finished"`, `updated_date: today`. If `report.user_review_pending == true`, also write `user_review_pending: true`, `test_protocol: report.test_protocol`, `interaction_hint: report.interaction_hint`
+   - `pass`: set `status: "Finished"`, `updated_date: today`. If `report.user_review_pending == true`, also write `user_review_pending: true`, `test_protocol: report.test_protocol`, `interaction_hint: report.interaction_hint` (its friction entries then wait for `/work complete`); otherwise close the task's friction entries ("Friction entries a task fixes" above).
    - `fail` AND `new_attempts < 3`: set `status: "In Progress"`, `updated_date: today`. Clear `completion_date`. Prepend `[VERIFICATION FAIL #{new_attempts}]` to notes with the fail summary
    - `fail` AND `new_attempts >= 3`: set `status: "Blocked"`, `updated_date: today`. Prepend `[VERIFICATION ESCALATED]` note — "3 attempts exhausted — requires human review"
 5. **Timeout detection:** if verify-agent returned without a valid report (prose instead of the report schema, malformed JSON, or nothing usable), ask it once for the report — resume it with SendMessage, or re-dispatch — without incrementing `verification_attempts`. Any re-dispatch in this step, like every per-task verify dispatch, adds the `drift_reverify` line when the task carries that field (work.md § "If Verifying (Per-Task)"). Only a second invalid return is a timeout — treat as fail: increment `verification_attempts`, set status to "Blocked", add `[VERIFICATION TIMEOUT]` note (no result is written, so `drift_reverify` stays for the retry in `session-recovery.md`). **Infrastructure terminations are interruptions, not timeouts (FB-120):** after a zero-token return, a usage-limit/HTTP 429 kill, an API or harness error, or a stop the user asked for, do NOT increment `verification_attempts` or write `task_verification` (same rule as an interrupted verifier at `/work pause`); leave status "Awaiting Verification". Per "After implement-agent returns" step 1, "Zero-token return — platform limit cutoff (FB-103)", report the interruption to the user and apply its post-limit dispatch rule before re-dispatching a fresh verify-agent.
 6. **Append friction markers** from `report.friction_markers` (same as implement-agent)
-7. **Parent auto-completion:** if task has `parent_task` and all siblings are now "Finished", set parent to "Finished"
+7. **Parent auto-completion:** if task has `parent_task` and all siblings are now "Finished", set parent to "Finished" and close the parent's friction entries ("Friction entries a task fixes" above)
 8. **`files_affected` drift update (FB-086):** if `report.issues[]` contains a minor severity entry with the form "files_affected declared {N} files but implementation touched {M}" AND `report.friction_markers[]` includes a `verification_gap` marker with `template_area: "task-schema files_affected"`, update the task JSON's `files_affected` to match the union of declared and actually-touched files (excluding infrastructure paths filtered in verify-agent T2b step 3). This keeps Step 2c's parallel-batch heuristic accurate for future dispatches.
 9. **Dashboard regeneration:** sequential mode — regenerate now; parallel mode — defer
 
@@ -174,15 +178,17 @@ Use `/work complete` for manual task completion outside of implement-agent's wor
      "status": "Finished",
      "completion_date": "YYYY-MM-DD",
      "updated_date": "YYYY-MM-DD",
-     "notes": "What was done, any follow-ups needed",
+     "notes": "{what was done, any follow-ups needed} {existing notes}",
      "user_feedback": "Use OAuth2 instead of JWT. The client requires SSO support."
    }
    ```
+   - `notes`: prepend what was done to the existing `notes` (just the new text when `notes` is empty); never replace them (§ "State Persistence Protocol").
    - If `user_review_pending` is `true`, clear it.
    - If `test_protocol` exists and guided testing was completed, record results in `user_feedback`.
+   - Close the task's friction entries (State Persistence Protocol, "Friction entries a task fixes").
 6. **Check parent auto-completion:**
    - If parent_task exists and all non-Absorbed sibling subtasks are "Finished"
-   - Set parent status to "Finished"
+   - Set parent status to "Finished" and close the parent's friction entries (same rule)
 7. **Regenerate dashboard** - Follow `.claude/support/reference/dashboard-regeneration.md` (this is user-initiated, so the dashboard should be current when they're done)
 8. **Surface unblocked tasks** - After regen, check if this completion unblocked any human-owned or both-owned tasks. If so, announce inline: `Note: Task {id} ("{title}") is now available for you — {brief description}`.
 9. **Auto-archive check** - If active task count > 100, archive old tasks (§ "Auto-Archive" below)

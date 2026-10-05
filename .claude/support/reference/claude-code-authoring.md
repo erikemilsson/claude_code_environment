@@ -41,6 +41,17 @@ The em-dash convention is the empirically-converged pattern across the template'
 
 Beyond colon-space, avoid unquoted YAML values that begin with `[`, `{`, `&`, `*`, `!`, `|`, `>`, `'`, `"`, `%`, `@`, `` ` ``. These are also strict-YAML special-meaning tokens. If a description must start with one of these, quote the entire value.
 
+### Rules loading
+
+From `code.claude.com/docs/en/memory` and `/sub-agents` (checked 2026-10-05):
+
+- Every `.md` file under `.claude/rules/`, found recursively, loads **at launch** with the same priority as `.claude/CLAUDE.md` unless it has `paths:` frontmatter. Leaving a rule out of CLAUDE.md's `@` imports doesn't keep it out of context: a lazy rule needs `paths:`, or must live outside `rules/` (as the `support/reference/` docs do).
+- `paths:` holds glob patterns, as a YAML list (a comma-separated string also works). The rule loads when Claude uses the Read, Write or Edit tool on a matching file. The docs name no other tool, so reading the file through Bash (`cat`, `sed -n`) doesn't load it. Claude Code strips the frontmatter before loading the rule.
+- Frontmatter that doesn't parse is ignored, and the rule then loads at launch as if it had no `paths:`. Quote each pattern: one starting with `*` is a YAML alias token (see above). `claude --debug` shows the parse error.
+- A non-fork subagent starts with the CLAUDE.md hierarchy the main conversation loads, which the docs say includes project rules (Explore and Plan skip it; a definition's `omitClaudeMd` drops it). The docs don't say whether a path-scoped rule loads when a subagent reads or edits a matching file.
+
+The template's one path-scoped rule is `rules/feature-retirement.md` (`.claude/support/retired/**`, v5.10.0; before that it loaded in every session although `.claude/CLAUDE.md` called it lazy). `.claude/CLAUDE.md` still says to read it before retiring or restoring a feature, because a retirement starts before any file under that directory is touched.
+
 ---
 
 ## Skill Frontmatter Scope

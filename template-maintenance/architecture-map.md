@@ -19,7 +19,8 @@ Everything under `.claude/` ships to downstream projects (see root `CLAUDE.md §
 ## Load order — what enters context when
 
 - **Every session (auto):** `.claude/CLAUDE.md` + the 7 rules in its `@`-import list: task-management, spec-workflow, decisions, dashboard, agents, archiving, session-management (~54 KB).
-- **Lazy by design (read on trigger, stubs say when):** `rules/feature-retirement.md`, `reference/mcp-patterns.md`, `reference/extension-hooks.md`, `reference/claude-code-authoring.md`, most other reference docs. *Caveat (observed 2026-07-19):* at least one harness auto-loads all of `rules/*.md` regardless of the import list — so `feature-retirement.md` may be loaded anyway. Adding a rules file may cost every-session context even if unimported; prefer `support/reference/` for new lazy docs.
+- **Path-scoped:** `rules/feature-retirement.md` (`paths:` frontmatter since v5.10.0: loads when Read/Write/Edit touches `.claude/support/retired/**`; before that it loaded every session, because Claude Code loads every rule file without `paths:` at launch).
+- **Lazy by design (read on trigger, stubs say when):** `reference/mcp-patterns.md`, `reference/extension-hooks.md`, `reference/claude-code-authoring.md`, most other reference docs. Claude Code loads every `rules/*.md` without `paths:` at launch (`claude-code-authoring.md § "Rules loading"`); for a new lazy doc, prefer `support/reference/`, or give the rule `paths:` frontmatter.
 - **On command invocation:** the command file itself, then its cited reference docs on demand (edges below).
 
 ## Dependency edges — command/agent → reference docs and scripts
@@ -29,7 +30,7 @@ Traced from actual citations (2026-07-19). "—" = self-contained.
 | Consumer | Reference docs cited | Scripts invoked |
 |---|---|---|
 | `work.md` | claude-code-authoring, context-transitions, dashboard-regeneration, decomposition, drift-reconciliation, known-issues, parallel-execution, phase-decision-gates, session-recovery, work-procedures, work-recovery (on trigger), work-user-flows (on trigger), work-web-evidence (on trigger), workflow | fingerprint.py (+ dashboard-render.py, persist-friction.py via dashboard-regeneration/friction procedures) |
-| `health-check.md` | claude-code-authoring, dashboard-regeneration, decisions, mcp-patterns, paths, root-claude-md-template, shared-definitions, task-schema, workflow | dashboard-render.py, validate-tasks.py |
+| `health-check.md` | claude-code-authoring, dashboard-regeneration, decisions, mcp-patterns, paths, root-claude-md-template, shared-definitions, task-schema, workflow | dashboard-render.py, validate-tasks.py, sync-check.py (Part 5, v5.10.0) |
 | `iterate.md` | claude-code-authoring, decisions, desktop-project-prompt, drift-reconciliation, merge-queue, spec-checklist | — |
 | `audit-coherence.md` | audit-family-core, audit-fix-workflow | — |
 | `audit-ui.md` | audit-family-core, mcp-patterns | — |
@@ -58,7 +59,7 @@ All `.claude/` writes are orchestrator-owned (DEC-004); subagents only return re
 | `tasks/.handoff.json` (gi) | `/work pause`, `hooks/pre-compact-handoff.sh` | `/work` Step 0 (consumed on read) |
 | `tasks/.last-clean-exit.json` (gi) | `/work` | `/work` Step 0 |
 | `support/workspace/.session-log.jsonl` (gi) | orchestrator (+ pre-compact hook reads for export) | `/work pause` export, `/audit-coherence` |
-| `support/friction.jsonl` (gi) | persist-friction.py (orchestrator-invoked) | `/audit-coherence`, `/audit-ui`, `/diagnose` |
+| `support/friction.jsonl` (gi) | persist-friction.py (orchestrator-invoked); status updates by the audit family, `/iterate`, and `/work` when a task with `resolves_friction` finishes (v5.10.0) | `/audit-coherence`, `/audit-ui`, `/diagnose` |
 | `drift-deferrals.json` (gi) | `/work` | `/status`, verify-agent, dashboard-render.py |
 | `.spec-merge-queue.jsonl` (gi) | `/grill`, `/shakedown`, `/feedback` (producers) | `/iterate` (consumer, DEC-023) |
 | `.sync-state.json` (gi) | `/health-check` Part 5 | `/health-check` Part 5 |
@@ -75,7 +76,8 @@ The hidden couplings. Each row is a place where an isolated-looking edit silentl
 | Task JSON fields (`reference/task-schema.md`) | `scripts/validate-tasks.py`, both agents' report envelopes, `reference/work-procedures.md`, dashboard-render.py field reads + its tests |
 | dashboard-render.py output shape | Depends on `fingerprint.py` `compute_drift()` (loaded by path, v5.9.0) for the drift footer/rows. Format is pinned by `scripts/tests/test_dashboard_render*.py` (100 tests at v5.9.0: 26 + 74); prose contracts in `rules/dashboard.md` + `reference/dashboard-regeneration.md`; `/health-check` validates the HTML shape (doctype, `<!-- DASHBOARD META -->`, no CDN deps) |
 | `settings.json` `permissions.ask` gates | DEC-016/023 prose in `rules/spec-workflow.md § Direct edits`, `.claude/README.md § Auto Mode`, `sync-manifest.json` notes field |
-| `sync-manifest.json` categories | `scripts/pre-commit-hook.sh` `SYNC_PATTERNS` is a **hand-mirrored copy** (noted in its header); `/health-check` Part 5 diff logic |
+| `sync-manifest.json` categories | `scripts/pre-commit-hook.sh` `SYNC_PATTERNS` is a **hand-mirrored copy** (noted in its header); `/health-check` Part 5 diff logic; `sync-check.py` reads every historical manifest version (a file counts as template-owned when it was in `sync` at deletion), so category moves change what Part 5 offers to remove |
+| sync-check.py output shape (v5.10.0, FB-126) | Consumer: `/health-check` Part 5 Steps 2–5; its rules are restated as the prose fallback in Part 5 Step 2 (dual location); pinned by `scripts/tests/test_sync_check.py` |
 | fingerprint.py output shapes | Consumers: `/work` Step 1b, `/status`, index readers (agents, spec-workflow rule), `reference/drift-reconciliation.md`. **`compute_drift()` / `--drift` (v5.9.0, FB-128)** is also loaded by `dashboard-render.py` by path (META `drift_sections`, footer, Needs-you drift rows; degrades to "drift unchecked"), and its rules are restated as the prose fallback in `drift-reconciliation.md` § "Spec Drift Detection" (dual location); pinned by `scripts/tests/test_fingerprint.py` + the renderer tests. Known trap: `--spec` emits a bare `sha256:` string while `--index`/`--sections` emit JSON (downstream-reported 2026-06-25, unfixed) |
 | persist-friction.py / friction schema | `reference/friction-register.md`, `rules/agents.md § Friction Register` kind lists, audit-family consumption |
 | Model pin / dispatch value | Single source: `.claude/CLAUDE.md § Model Requirement`. Dispatch sites (work.md ×2, research.md) cite it — never restate IDs. Dispatch convention (`subagent_type: "general-purpose"` + persona-via-prompt) enumerated in `rules/agents.md § Dispatch Convention`; 3 sites must stay uniform |

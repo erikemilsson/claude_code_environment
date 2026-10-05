@@ -59,6 +59,7 @@ A downstream project where `/health-check` (no flags) finds:
 - [ ] No sync-category file overwritten by bare `A`
 - [ ] Still-open rows listed back explicitly (nothing silently dropped)
 - [ ] Dashboard regen runs at most once, last
+- [ ] No Part 5 Step 5 commit offer: no Part 5 row was applied and no earlier sync is uncommitted
 
 ### Fail indicators
 
@@ -77,17 +78,20 @@ A downstream project where `/health-check` (no flags) finds:
 - Row 5 applies (explicit inclusion by id satisfies the ⚠ gate); the Modified-upstream sync row still excluded (not named)
 - task-12 → On Hold with notes, from the same single response
 - Sidecar updated only for the applied sync file; excluded file resurfaces next sync
+- A Part 5 row was applied, so after the post-apply summary Part 5 Step 5 offers the commit: `M .claude/rules/dashboard.md` and `M .claude/version.json` (plus `M .claude/sync-manifest.json` if the write-back changed it), with `[C]` / `[L]`. The DEC-004 rewrite, task-12's change, the regenerated dashboard and `.sync-state.json` are not listed (not Part 5 paths, or gitignored)
 
 ### Pass criteria
 
 - [ ] One response carries apply-set + ⚠ inclusion + a needs-input answer simultaneously
 - [ ] Only the named ⚠ row applies
 - [ ] `[D] 4` before deciding prints the full diff and re-prompts without consuming the response
+- [ ] The commit offer comes after the post-apply summary and lists only Part 5 paths
 
 ### Fail indicators
 
 - "include 5" interpreted as including ALL ⚠ rows
 - The per-item answer requiring a second round-trip
+- The commit offer appearing before the batch applies, or listing the decision record or task file
 
 ---
 
@@ -98,12 +102,12 @@ A downstream project where `/health-check` (no flags) finds:
 ### Expected
 
 - Part 8 still presents its interactive audit-dispatch menu (gates expensive audits, not fixes) — unchanged by the protocol
-- `--report` run: report only; no queue, no table, no prompts
+- `--report` run: report only; no queue, no table, no prompts (no Part 5 Step 5 commit offer either)
 
 ### Pass criteria
 
 - [ ] Part 8 menu intact and interactive
-- [ ] `--report` produces zero fix prompts
+- [ ] `--report` produces zero fix prompts and no commit offer
 
 ### Fail indicators
 

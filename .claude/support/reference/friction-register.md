@@ -51,7 +51,7 @@ Each line is a single JSON object:
 | `what` | string | One-sentence description. Plain English; no template jargon. |
 | `source_anchor` | string | File + section reference (e.g., `spec_v13.md § 42.5`, `decision-050-*.md`, `package.json`). Used by `audit-coherence` to dedupe and to anchor the [Fix it] re-read. |
 | `status` | string enum | `open`, `resolved`, `dismissed`. |
-| `resolved_by` | object (optional) | When `status != open`. `kind` (`bundled_apply` / `fix_it` / `promote_fb` / `iterate` / `manual`); `ref` (audit run id, FB-NNN, commit hash, etc.); `at` (ISO timestamp). |
+| `resolved_by` | object (optional) | When `status != open`. `kind` (`bundled_apply` / `fix_it` / `promote_fb` / `iterate` / `task` / `manual`); `ref` (audit run id, FB-NNN, commit hash, task id, etc.); `at` (ISO timestamp). |
 | `dismiss_reason` | string (optional) | Free-text reason when `status: dismissed`. |
 
 ### Kind semantics
@@ -100,7 +100,7 @@ The orchestrator (or `audit-coherence` via the orchestrator) updates entries in-
 
 1. Read entire `friction.jsonl`
 2. Find line by `id`
-3. Update `status`, `resolved_by`, `resolved_at` fields
+3. Update `status` and `resolved_by` (or `dismiss_reason`)
 4. Rewrite file (entire contents, atomic)
 
 Triggered by:
@@ -108,7 +108,10 @@ Triggered by:
 - **[Fix it]** (audit family Stage 6): same, with `resolved_by.kind: fix_it`.
 - **Promote to FB**: mark `resolved` with `resolved_by.kind: promote_fb`, `ref: FB-NNN`.
 - **`/iterate` resolution**: when `/iterate` amends spec to resolve a captured friction, the iterate command marks the entry `resolved` with `resolved_by.kind: iterate`, `ref: spec_vN+1`. (Convention: include the FR-id in the spec change commit message; iterate detects and updates.)
+- **Fixing task finished**: when a task whose `resolves_friction` lists the entry is Finished with no user review pending (a per-task verify pass without `user_review_pending`, `/work complete`, or parent auto-completion once no subtask has a review pending), `/work` marks it `resolved` with `resolved_by: {"kind": "task", "ref": "<task id>", "at": "<ISO timestamp>"}`. Only `open` entries change; ids not in the register, and entries already `resolved` or `dismissed`, are skipped.
 - **User dismissal during audit review**: mark `dismissed` with `dismiss_reason`.
+
+When you create a task to fix open entries, list their ids in its `resolves_friction` field (`task-schema.md § "Resolves Friction Field"`); a task that only cites an entry, or raised it, doesn't close it.
 
 ---
 

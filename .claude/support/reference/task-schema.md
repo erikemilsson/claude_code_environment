@@ -108,7 +108,7 @@
 | parent_task | String | Parent task ID if this is a subtask |
 | files_affected | Array | File paths this task will modify |
 | external_dependency | Object | External blocker - see External Dependencies below |
-| notes | String | Context, warnings, or completion notes - see Completion Notes Contract below |
+| notes | String | Context, warnings, or completion notes, newest first: every write prepends and never replaces - see Completion Notes Contract below |
 | user_feedback | String | Feedback provided by the user via dashboard inline areas or during /work complete |
 | spec_fingerprint | String | SHA-256 hash of the full spec at task decomposition, refreshed by drift reconciliation. The drift check doesn't use it (it compares `section_fingerprint`) |
 | spec_version | String | Spec filename when task was created (e.g., "spec_v1") |
@@ -135,6 +135,7 @@
 | task_verification | Object | Per-task verification result (verify-agent's report, recorded by `/work`) |
 | test_protocol | Object | Structured testing steps for human-guided verification. Produced by verify-agent (written to the task by `/work`) when runtime validation is `"partial"` or task needs human testing. See Test Protocol section below. |
 | interaction_hint | String | `"cli_direct"` or `"dashboard"`. Determines how `/work` presents the task to the user. CLI-direct tasks are presented immediately in the conversation; dashboard tasks appear in "Your Tasks". Default when absent: `"dashboard"`. |
+| resolves_friction | Array | `FR-NNN` ids of the friction-register entries this task was created to fix. When the task is Finished with no user review pending, `/work` closes the listed entries that are still open. See Resolves Friction Field below |
 
 ## Owner Values
 
@@ -277,7 +278,7 @@ When per-task verification fails:
 
 ### Drift Reconciliation Notes
 
-When the user reconciles a changed spec section (`drift-reconciliation.md § "Granular Reconciliation UI"`), these options append a dated note to `notes`:
+When the user reconciles a changed spec section (`drift-reconciliation.md § "Granular Reconciliation UI"`), these options prepend a dated note to `notes`:
 
 - `[DRIFT RE-VERIFY {YYYY-MM-DD}] {section} changed; re-verifying against the current text` (`[V]` Re-verify), on the section's Finished tasks. A Finished task not owned by `human` goes back to Awaiting Verification with `task_verification` cleared and `verification_attempts` reset to 0 (`verification_history` keeps the earlier attempts), and is re-verified without a rebuild. `[V]` also sets `drift_reverify` on it, which tells verify-agent the implementation is unchanged and is removed once the re-verification result is written. A Finished `owner: human` task stays Finished with `user_review_pending: true`.
 - `[DRIFT UPDATED {YYYY-MM-DD}] {section} changed; {what changed in the task, or "no task change needed"}` (`[A]` Apply and `[V]` Re-verify), on the section's open tasks. Claude updates the task's description or acceptance criteria where the new section text changes them; status doesn't change.
@@ -421,11 +422,25 @@ Determines how `/work` presents human-involved tasks. Set by verify-agent during
 
 **Overridable:** Users can always use `/work complete {id}` from the dashboard flow regardless of the hint.
 
+## Resolves Friction Field
+
+Optional `resolves_friction`: the entries in the friction register (`.claude/support/friction.jsonl`, `FR-NNN` ids) this task was created to fix.
+
+```json
+{ "resolves_friction": ["FR-012", "FR-013"] }
+```
+
+**Set by** whoever creates the task, when creating it or at the latest before it is verified: e.g. a task filed from an audit finding, a review, or a user request that cites FR ids. List only entries the task fixes; citing an entry in `notes`, or having raised it, closes nothing.
+
+**Effect:** when the task is Finished with no user review pending (a per-task verify pass without `user_review_pending`; `/work complete`, which also completes a pending review; or parent auto-completion once no subtask has a review pending), `/work` closes each listed entry that is `open`: `status: "resolved"`, `resolved_by: {"kind": "task", "ref": "<task id>", "at": "<ISO timestamp>"}`, per `friction-register.md § "Status update protocol"`. Ids not in the register, and entries already `resolved` or `dismissed`, are skipped. A `both`-owned task whose guided test is still pending closes nothing until `/work complete`.
+
 ## Completion Notes Contract
 
 The `notes` field serves as structured completion notes for context transfer between implement-agent and verify-agent.
 
 **Purpose:** When implement-agent completes a task, it writes completion notes that verify-agent reads to understand what was done — without carrying the full implementation conversation.
+
+**Newest first; each write prepends.** Every `notes` write (implement-agent's report, inline work, `/work complete`, `/breakdown`, verification and drift notes) is prepended to the existing `notes` and never replaces them (`work-procedures.md § "State Persistence Protocol"`), so a re-implementation keeps the `[VERIFICATION FAIL #N]` trail the verifier reads.
 
 **Expected format:**
 ```json
