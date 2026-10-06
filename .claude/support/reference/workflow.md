@@ -579,6 +579,8 @@ Two files control template behavior:
 
 A file the template retires (ships it as a `sync` file or with exactly this content, later deletes it) is offered for removal at the next `/health-check` template sync; files the template never shipped are never flagged.
 
+Template sync (`/health-check` Part 5) classifies each `sync` file by the template's own history (`sync-check.py`). A file whose content equals any template version of its path is an unchanged template copy and updates with the default `[A]` answer. A file that matches no template version is locally modified and is overwritten only when you include its row. `sync-apply.py` writes the included files, the version fields in `version.json`, the local manifest lists and the sync-state sidecar. A project that isn't a git repository can sync too: the check runs against a temporary clone of the template, and there is no commit offer.
+
 **settings.json / settings.local.json** — `settings.json` is template-owned (`sync`): the base `permissions.allow` and the DEC-016 `permissions.ask` guardrails, so the template works the same way for everyone. `settings.local.json` is yours (`ignore`): extra permissions, hooks, env vars. Claude Code merges both.
 
 ### Project Structure

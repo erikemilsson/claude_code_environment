@@ -1,6 +1,6 @@
 # Scenario 39: /health-check Batch Fix Triage (collect, don't prompt)
 
-Verify the Fix Queue Protocol + Step 4 triage table (shipped v4.21.0, Plan 3 T2): parts collect proposed fixes instead of prompting inline; one run = one fix prompt; ⚠ rows (sync-category applies, unreviewed appends) never ride bare `[A]`.
+Verify the Fix Queue Protocol + Step 4 triage table (shipped v4.21.0, Plan 3 T2): parts collect proposed fixes instead of prompting inline; one run = one fix prompt; ⚠ rows (locally modified sync files, unreviewed appends) never ride bare `[A]`. Since v5.12.0 a sync file that is an unchanged template copy is a `—` row and applies under bare `[A]`.
 
 ## Context
 
@@ -13,8 +13,8 @@ A downstream project where `/health-check` (no flags) finds:
 - Part 1: dashboard stale (hash mismatch) → regen fix
 - Part 1: task-12 "In Progress" for 9 days → stale, needs user choice
 - Part 3: DEC-004's `status:` line has a trailing `# comment` → rewrite-line fix
-- Part 5: `commands/work.md` differs upstream, local hash ≠ sidecar synced_hash (Modified upstream)
-- Part 5: `rules/dashboard.md` differs upstream, local hash == sidecar synced_hash (hash-verified clean)
+- Part 5: `commands/work.md` differs upstream and matches no template version of its path (`sync-check.py` status `modified`: Locally modified)
+- Part 5: `rules/dashboard.md` differs upstream and equals the template's v5.4.0 copy of its path (status `template_copy`: Unchanged template copy)
 - Part 2d: capability doc 120 days stale → [V] offer
 
 ---
@@ -27,13 +27,14 @@ A downstream project where `/health-check` (no flags) finds:
 
 - Parts 1, 2d, 3, 5 each QUEUE their items; zero inline prompts during the run
 - After the report: ONE table with 6 rows (id, part, file, one-line fix, risk), then ONE response request
-- Risk flags: regen + rewrite-line + [V] offer = `—`; both sync applies = `⚠ overwrites local` (the clean one annotated `hash-verified: no local edits`); task-12 = `needs-input` with choices inline
+- Rows in queue order: 1 dashboard regen, 2 DEC-004 rewrite, 3 [V] offer, 4 `commands/work.md`, 5 `rules/dashboard.md`, 6 task-12
+- Risk flags: regen + rewrite-line + [V] offer = `—`; row 4 `Update template file (locally modified, [D] shows the diff)` = `⚠ overwrites local`; row 5 `Update template file (unchanged copy of v5.4.0; includes dashboard regen)` = `—`; task-12 = `needs-input` with choices inline
 
 ### Pass criteria
 
 - [ ] Zero mid-run prompts (no "[V]/[S]/[D]?", no "Apply all / Select individually?", no per-file menus)
 - [ ] Exactly one fix prompt in the whole run
-- [ ] BOTH sync rows flagged ⚠ — including the hash-verified one
+- [ ] The locally modified sync row is flagged ⚠; the unchanged-copy row is `—`
 - [ ] task-12 row carries its question inline, not a separate prompt
 
 ### Fail indicators
@@ -50,16 +51,17 @@ A downstream project where `/health-check` (no flags) finds:
 
 ### Expected
 
-- Applied: dashboard regen, DEC-004 line rewrite, the [V] pass offer (unflagged rows only)
-- NOT applied: both sync rows (⚠), task-12 (needs-input) — listed back as still-open in the post-apply summary
+- Applied: dashboard regen, DEC-004 line rewrite, the [V] pass offer, and the `rules/dashboard.md` update (unflagged rows only)
+- NOT applied: the `commands/work.md` row (⚠), task-12 (needs-input) — listed back as still-open in the post-apply summary
+- `rules/dashboard.md` is a dashboard-rule file, so its row's regen and row 1's are one regen, run last
 - The [V] sub-flow runs after the batch, with its per-section [A]/[R]/[S] adjudication intact
 
 ### Pass criteria
 
-- [ ] No sync-category file overwritten by bare `A`
+- [ ] No locally modified sync file overwritten by bare `A`; the unchanged copy is updated
 - [ ] Still-open rows listed back explicitly (nothing silently dropped)
 - [ ] Dashboard regen runs at most once, last
-- [ ] No Part 5 Step 5 commit offer: no Part 5 row was applied and no earlier sync is uncommitted
+- [ ] A Part 5 row was applied, so after the post-apply summary Part 5 Step 5 offers the commit: `M .claude/rules/dashboard.md` and `M .claude/version.json` (plus `M .claude/sync-manifest.json` if the write-back changed it), with `[C]` / `[L]` and the message suffix ` (partial: 1 sync files not updated)`. The DEC-004 rewrite, the regenerated dashboard and `.sync-state.json` are not listed (not Part 5 paths, or gitignored)
 
 ### Fail indicators
 
@@ -71,25 +73,25 @@ A downstream project where `/health-check` (no flags) finds:
 
 ## Trace 39C: Explicit inclusion + per-item answers in one response
 
-- **Path:** user responds `A include 5, 6: on-hold` (row 5 = hash-verified sync apply; row 6 = task-12)
+- **Path:** user responds `A include 4, 6: on-hold` (row 4 = the locally modified `commands/work.md`; row 6 = task-12)
 
 ### Expected
 
-- Row 5 applies (explicit inclusion by id satisfies the ⚠ gate); the Modified-upstream sync row still excluded (not named)
+- Row 4 applies (explicit inclusion by id satisfies the ⚠ gate); row 5 applies under the bare `A`. Without `include 4`, row 4 would stay open
 - task-12 → On Hold with notes, from the same single response
-- Sidecar updated only for the applied sync file; excluded file resurfaces next sync
-- A Part 5 row was applied, so after the post-apply summary Part 5 Step 5 offers the commit: `M .claude/rules/dashboard.md` and `M .claude/version.json` (plus `M .claude/sync-manifest.json` if the write-back changed it), with `[C]` / `[L]`. The DEC-004 rewrite, task-12's change, the regenerated dashboard and `.sync-state.json` are not listed (not Part 5 paths, or gitignored)
+- One `sync-apply.py` call writes both files; afterwards the sidecar has an entry for every compare-set file that equals upstream, not only these two
+- After the post-apply summary Part 5 Step 5 offers the commit: `M .claude/commands/work.md`, `M .claude/rules/dashboard.md` and `M .claude/version.json` (plus `M .claude/sync-manifest.json` if the write-back changed it), with `[C]` / `[L]`. The DEC-004 rewrite, task-12's change, the regenerated dashboard and `.sync-state.json` are not listed (not Part 5 paths, or gitignored)
 
 ### Pass criteria
 
 - [ ] One response carries apply-set + ⚠ inclusion + a needs-input answer simultaneously
-- [ ] Only the named ⚠ row applies
+- [ ] The ⚠ row applies only because it is named
 - [ ] `[D] 4` before deciding prints the full diff and re-prompts without consuming the response
 - [ ] The commit offer comes after the post-apply summary and lists only Part 5 paths
 
 ### Fail indicators
 
-- "include 5" interpreted as including ALL ⚠ rows
+- `commands/work.md` overwritten by a response that doesn't name row 4
 - The per-item answer requiring a second round-trip
 - The commit offer appearing before the batch applies, or listing the decision record or task file
 

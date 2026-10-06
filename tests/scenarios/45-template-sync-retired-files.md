@@ -1,6 +1,6 @@
 # Scenario 45 — Template sync removes retired template files (FB-126)
 
-Conceptual trace test for v5.10.0. `/health-check` Part 5 runs `sync-check.py` after the fetch. A sync pattern the template no longer syncs is not compared and is offered for dropping. A file the template shipped (as a sync file, or with exactly this content) and later deleted is offered for removal (`⚠ deletes`, explicit inclusion only). A file the template never shipped is never flagged. Step 5 offers to commit what the sync changed, including an earlier sync that was never committed, even after the template has moved on.
+Conceptual trace test for v5.10.0 (row shapes and statuses as of v5.12.0, FB-136; classification itself is scenario 50). `/health-check` Part 5 runs `sync-check.py` after the fetch. A sync pattern the template no longer syncs is not compared and is offered for dropping. A file the template shipped (as a sync file, or with exactly this content) and later deleted is offered for removal (`⚠ deletes`, explicit inclusion only). A file the template never shipped is never flagged. Step 5 offers to commit what the sync changed, including an earlier sync that was never committed, even after the template has moved on.
 
 ## Setup / State
 
@@ -10,9 +10,9 @@ Conceptual trace test for v5.10.0. `/health-check` Part 5 runs `sync-check.py` a
   - `.claude/skills/dashboard-style/SKILL.md`, `.claude/skills/decomposition-heuristics/SKILL.md` and `.claude/skills/spec-checklist/SKILL.md`, byte-identical to the copies the template deleted in v4.12.0 (commit `<del-412>`), when `.claude/skills/*/SKILL.md` was in its `sync` list.
   - `.claude/commands/complete-task.md`. The template deleted it in v1.5.0 (commit `<del-150>`), when `.claude/commands/*.md` was in `sync`. The project has since rewritten it as a redirect stub, so it matches no template version.
   - `.claude/skills/outfit-rules/SKILL.md`, the project's own skill. It has never existed in template history.
-  - `.claude/commands/work.md`, which differs from `template/main` (`+15 -8`); its local hash equals the sidecar's `synced_hash`.
+  - `.claude/commands/work.md`, which differs from `template/main`; it is byte-identical to the template's v5.7.4 copy of that path.
 - `.claude/.sync-state.json` (gitignored) has `files` entries for `.claude/commands/work.md`, `.claude/skills/dashboard-style/SKILL.md` (from a sync before v4.12.0) and `.claude/support/reference/legacy-notes.md` (deleted by hand long ago).
-- Nothing else differs from `template/main`, and no other part queues a row. `src/app.py` (unrelated work) is staged but not committed when `/health-check` starts.
+- Nothing else differs from `template/main`, file modes match, the local `customize` and `ignore` lists equal the upstream ones, and no other part queues a row. `src/app.py` (unrelated work) is staged but not committed when `/health-check` starts.
 
 ## Trace A — the report: retired files, the retired pattern, and the project's own skill
 
@@ -44,14 +44,15 @@ Command path: `commands/health-check.md § "Part 5: Template Sync Check"` → `�
      "warnings": []
    }
    ```
-2. `patterns.compare` is the compare set, and `.claude/skills/*/SKILL.md` is not in it. The compare loop classifies `.claude/commands/work.md` as Template content not yet applied. `.claude/commands/complete-task.md` matches `.claude/commands/*.md` and is absent upstream, but it is in `retired_files`, so its status is Retired upstream, not Local only.
+   The keys v5.12.0 added are left out of the excerpt: `history_complete` is true, `manifest` has empty `add` and `drop` lists, `sidecar` is `{"exists": true, "gitignored": true, "tracked": false}`, and every `files[]` entry is `up_to_date` except `{"path": ".claude/commands/work.md", "status": "template_copy", "mode": "100644", "mode_matches": true, "version": "5.7.4", "basis": "history", "shared_lines": null}`.
+2. `patterns.compare` is the compare set, and `.claude/skills/*/SKILL.md` is not in it. `.claude/commands/work.md` is an Unchanged template copy. `.claude/commands/complete-task.md` matches `.claude/commands/*.md` and is absent upstream, but it is in `retired_files`, so its status is Retired upstream, not Local only.
 3. `.claude/skills/outfit-rules/SKILL.md` appears nowhere. No compare pattern matches it, and the template never deleted it (it never had it), so it isn't a `retired_files` candidate. The same walk lists the three template skills in the same directory (positive control).
 4. Report:
    ```
    Template updates available (v5.7.4 → v5.10.0):
 
-     Template content not yet applied (hash-verified: no local edits):
-       .claude/commands/work.md (+15 -8 lines)
+     Unchanged template copies (no local edits):
+       .claude/commands/work.md (copy of v5.7.4)
 
      Retired upstream (the template removed these files):
        .claude/commands/complete-task.md (removed in v1.5.0; locally modified)
@@ -67,7 +68,7 @@ Command path: `commands/health-check.md § "Part 5: Template Sync Check"` → `�
    ```
    | # | Part | File | Proposed fix | Risk |
    |---|------|------|--------------|------|
-   | 1 | 5 | .claude/commands/work.md | Apply template version (+15 -8) | ⚠ overwrites local (hash-verified: no local edits) |
+   | 1 | 5 | .claude/commands/work.md | Update template file (unchanged copy of v5.7.4) | — |
    | 2 | 5 | .claude/commands/complete-task.md | Remove retired template file (removed upstream in v1.5.0; locally modified, [D] shows the diff) | ⚠ deletes |
    | 3 | 5 | .claude/skills/dashboard-style/SKILL.md | Remove retired template file (removed upstream in v4.12.0; unchanged template copy) | ⚠ deletes |
    | 4 | 5 | .claude/skills/decomposition-heuristics/SKILL.md | Remove retired template file (removed upstream in v4.12.0; unchanged template copy) | ⚠ deletes |
@@ -86,24 +87,24 @@ Variant A2, no `python3`: the Step 2 fallback finds the same pattern (`git log t
 
 Command path: `§ "Step 4: Batch Fix Triage"` → Part 5 `§ "4. Apply Updates"`.
 
-1. The user answers `A include 1, 3, 4, 5`. Bare `A` applies row 6 (unflagged), and rows 1, 3, 4 and 5 apply by explicit inclusion. Row 2 (`⚠ deletes`, not named) is listed back as still open.
-2. Row 1: `.claude/commands/work.md` is checked out from `template/main`.
-3. Rows 3–5: each file is tracked, so each is removed with `git rm -q -- {path}`, which also deletes its now-empty skill directory. The parent-directory pass finds nothing more to prune: `.claude/skills/` still holds `outfit-rules/`. Had the files been untracked, `rm -- {path}` would leave the three skill directories empty, and the pass would remove them and stop at `.claude/skills/`.
-4. Row 1 is a sync-file update, so `.claude/version.json` gets `template_version: "5.10.0"`. Removal and drop rows alone would leave it at `5.7.4`.
-5. Write-back: the local `sync` list becomes `patterns.compare`. Row 6 was applied, so `.claude/skills/*/SKILL.md` is gone. Had row 6 been excluded, the list would be `patterns.compare` plus that pattern, and the next run would offer the drop again.
-6. Sidecar: the `.claude/commands/work.md` entry gets the new hash. The `.claude/skills/dashboard-style/SKILL.md` entry is dropped (file removed), and so is `.claude/support/reference/legacy-notes.md` (path no longer exists). `last_full_sync_version` becomes `5.10.0`, `last_full_sync_date` today.
+1. The user answers `A include 3, 4, 5`. Bare `A` applies rows 1 and 6 (unflagged), and rows 3, 4 and 5 apply by explicit inclusion. Row 2 (`⚠ deletes`, not named) is listed back as still open.
+2. Step 4a runs first. Rows 3–5: each file is tracked, so each is removed with `git rm -q -- {path}`, which also deletes its now-empty skill directory. The parent-directory pass finds nothing more to prune: `.claude/skills/` still holds `outfit-rules/`. Had the files been untracked, `rm -- {path}` would leave the three skill directories empty, and the pass would remove them and stop at `.claude/skills/`.
+3. Step 4b: one call, `python3 .claude/scripts/sync-apply.py --ref template/main --paths-from <file>`, the file holding the one line `.claude/commands/work.md`. No `--keep-pattern` (row 6 was included) and no `--manifest-lists` (no such row). The script writes `work.md` with the content at `template/main`.
+4. Row 1 is a sync-file update, so the script sets `template_version` to `5.10.0` and `template_release_date` to the upstream date in `.claude/version.json`. Removal and drop rows alone would leave both as they were.
+5. Write-back: the local `sync` list becomes `patterns.compare`. Row 6 was applied, so `.claude/skills/*/SKILL.md` is gone. Had row 6 been excluded, the call would carry `--keep-pattern ".claude/skills/*/SKILL.md"`, the list would be `patterns.compare` plus that pattern, and the next run would offer the drop again.
+6. Sidecar: every compare-set file now equals upstream, so each has a `synced_hash` entry, `work.md` with its new hash. The `.claude/skills/dashboard-style/SKILL.md` entry is dropped (the file was removed in step 2), and so is `.claude/support/reference/legacy-notes.md` (not a compare-set path). `last_full_sync_version` becomes `5.10.0`, `last_full_sync_date` today.
 7. `.claude/commands/complete-task.md` is untouched and stays in `retired_files` for the next run.
 8. Post-apply summary: applied 1, 3, 4, 5 and 6; still open: 2.
 
 **Expected:** only the included removal rows delete files; empty directories are pruned up to, never including, `.claude/`, and a directory that still has files is kept.
 
-**Pass criteria:** bare `A` deletes nothing; the excluded locally modified file survives; the write-back drops exactly the included retired pattern; the sidecar keeps no entry for a missing path.
+**Pass criteria:** bare `A` deletes nothing; the excluded locally modified file survives; removals run before the script call, so the sidecar keeps no entry for a missing path; the write-back drops exactly the included retired pattern.
 
 ## Trace C — Step 5 commits only the sync's paths
 
 Command path: Part 5 `§ "5. Commit Offer"`, after Trace B's post-apply summary.
 
-1. A Part 5 row was applied, so Step 5 fires. Paths: `.claude/commands/work.md` (changed), the three removed skill files, and `.claude/version.json` and `.claude/sync-manifest.json` (both changed); `uncommitted_sync` was empty. `.claude/.sync-state.json` is gitignored and drops out. `src/app.py` is not a Part 5 path.
+1. A Part 5 row was applied, so Step 5 fires. Paths: the script's `changed_paths` (`.claude/.sync-state.json`, `.claude/commands/work.md`, `.claude/sync-manifest.json`, `.claude/version.json`) plus the three removed skill files; `uncommitted_sync` was empty. `.claude/.sync-state.json` is gitignored and drops out. `src/app.py` is not a Part 5 path.
 2. Prompt:
    ```
    Template sync changed 6 files and they are not committed:
@@ -121,7 +122,7 @@ Command path: Part 5 `§ "5. Commit Offer"`, after Trace B's post-apply summary.
 
 Variant: had `HEAD:.claude/version.json` already said `5.10.0`, the message would be `Sync template files (v5.10.0)`.
 
-Variant C2: had the user answered a bare `A` in Trace B, only row 6 (the pattern drop) would apply. No sync-file row applied, so `template_version` stays `5.7.4`, and Step 5 lists one path, `M .claude/sync-manifest.json`, with the message `Sync template files (v5.7.4)`. Had the drop bumped the version, the commit would read `Sync template v5.7.4 → v5.10.0` while holding no v5.10.0 file.
+Variant C2: had the user answered `A except 1` in Trace B, only row 6 (the pattern drop) would apply. No sync-file row applied, so `template_version` stays `5.7.4`, and Step 5 lists one path, `M .claude/sync-manifest.json`, with the message `Sync template files (v5.7.4)`. Had the drop bumped the version, the commit would read `Sync template v5.7.4 → v5.10.0` while holding no v5.10.0 file.
 
 **Expected:** one commit holding exactly what the sync changed; the user's other staged work is untouched.
 
@@ -146,12 +147,12 @@ Command path: Part 5 `§ "5. Commit Offer"` (`[L]`) → next run: `§ "2. Compar
    ]
    ```
    `work.md` is listed because it matches a compare pattern and equals a template version of that path (here the current one); the skills because they are template deletions of files the template owned; `version.json` and `sync-manifest.json` because other paths are listed and their status shows a change.
-3. Report: the compare loop finds no diffs. The Retired upstream group lists `complete-task.md` again (excluded in Trace B), followed by `ℹ️ 6 synced files are not committed (an earlier sync was never committed)`. The table has one row: the `complete-task.md` removal (`⚠ deletes`).
+3. Report: every `files[]` entry is `up_to_date`. The Retired upstream group lists `complete-task.md` again (excluded in Trace B), followed by `ℹ️ 6 synced files are not committed (an earlier sync was never committed)`. The table has one row: the `complete-task.md` removal (`⚠ deletes`).
 4. The user answers `N`. No Part 5 row applies, but `uncommitted_sync` is non-empty, so Step 5 fires after the post-apply summary with the same six paths and the same `Sync template v5.7.4 → v5.10.0` message (`HEAD` still says `5.7.4`).
 
-Variant D2: after `[L]`, the user edits `.claude/commands/work.md` by hand. It now equals no template version of that path, so `uncommitted_sync` leaves it out, the compare loop shows it as Modified upstream, and the commit offer lists five paths.
+Variant D2: after `[L]`, the user edits `.claude/commands/work.md` by hand. It now equals no template version of that path, so `uncommitted_sync` leaves it out, `files[]` gives it as `modified` (Locally modified, a `⚠ overwrites local` row), and the commit offer lists five paths.
 
-**Expected:** `[L]` changes nothing; the next run surfaces the uncommitted sync, and offers the commit again, even when the compare loop finds no diffs; a hand edit made after the sync is never swept into the sync commit.
+**Expected:** `[L]` changes nothing; the next run surfaces the uncommitted sync, and offers the commit again, even when every sync file is up to date; a hand edit made after the sync is never swept into the sync commit.
 
 **Pass criteria:** the `ℹ️` line appears whenever `uncommitted_sync` is non-empty; the offer fires with no Part 5 row applied; the message uses `HEAD`'s version as `{old}`; an excluded removal row is offered again.
 
@@ -174,9 +175,9 @@ Command path: next run: `§ "2. Compare Sync Files"` (`uncommitted_sync`) → `�
 State: Trace D after `[L]`: the v5.10.0 sync's six paths are uncommitted. Before the next `/health-check`, the template releases v5.11.0, which changes `.claude/commands/work.md` again (`+4 -1`), and the fetch moves `template/main` there.
 
 1. The script reports `local_version` `5.10.0` and `upstream_version` `5.11.0`. The local `work.md` is v5.10.0's copy: no longer the template's current copy, but one of the versions of that path in `template/main`'s history. `uncommitted_sync` holds the same six paths as in Trace D.
-2. Report: `Template updates available (v5.10.0 → v5.11.0)`; `work.md` under Template content not yet applied (its hash equals the `synced_hash` Trace B wrote); `complete-task.md` under Retired upstream; `ℹ️ 6 synced files are not committed (an earlier sync was never committed)`. Table: row 1 applies `work.md` (`⚠ overwrites local (hash-verified: no local edits)`), row 2 removes `complete-task.md` (`⚠ deletes`).
+2. Report: `Template updates available (v5.10.0 → v5.11.0)`; `work.md` under Unchanged template copies (`copy of v5.10.0`: v5.10.0 was the release that set this content); `complete-task.md` under Retired upstream; `ℹ️ 6 synced files are not committed (an earlier sync was never committed)`. Table: row 1 `Update template file (unchanged copy of v5.10.0)` for `work.md` (`—`), row 2 removes `complete-task.md` (`⚠ deletes`).
 3. The user answers `N`. No row applies, so `template_version` stays `5.10.0`. Step 5 offers the six paths with `Sync template v5.7.4 → v5.10.0`, and `[C]` commits the v5.10.0 sync whole: `version.json` at 5.10.0 together with 5.10.0's `work.md`.
-4. Variant F2: the user answers `A include 1`. `work.md` is checked out at v5.11.0 and, a sync-file row having applied, `template_version` becomes `5.11.0`. Step 5 lists the same six paths with `Sync template v5.7.4 → v5.11.0`.
+4. Variant F2: the user answers `A`. Row 1 applies (row 2 stays open): `work.md` is written at v5.11.0 and, a sync-file row having applied, `template_version` becomes `5.11.0`. Step 5 lists the same six paths with `Sync template v5.7.4 → v5.11.0`.
 
 Had `uncommitted_sync` listed a changed file only when it equals the template's *current* copy, `work.md` would drop out at step 1, leaving the three deletions, `version.json` and `sync-manifest.json`. `[C]` would then commit `version.json` at 5.10.0 without 5.10.0's `work.md`, and later runs wouldn't list `work.md` either: it would stay uncommitted until a sync row overwrote it. difficult-conversation-simplifier shows the stakes: measured against the template at v5.9.0, its uncommitted v5.7.4 sync has 62 listed paths, and a current-copy-only rule lists 26 of them.
 
@@ -193,6 +194,6 @@ Had `uncommitted_sync` listed a changed file only when it equals the template's 
 - Retired patterns are never compared. One stays in the local `sync` list only while its drop row is declined, and is offered again on every run.
 - A local `sync` pattern never brings in a file that an upstream `customize` or `ignore` pattern matches (e.g. `.claude/support/reference/project-api.md`). Only a path the upstream `sync` list names exactly is compared despite an `ignore` match (`.claude/vision/README.md`).
 - Step 5 stages and commits only the paths it listed (`git commit -- <paths>`). It never runs `git commit -a` or a pathless `git add`, never pushes, and leaves other staged work staged.
-- `sync-check.py` writes nothing and never fetches.
+- `sync-check.py` writes nothing and never fetches; `sync-apply.py` is the only writer, and writes only inside `.claude/`.
 - `uncommitted_sync` lists a changed sync file when its content equals any template version of its path, current or older; a file equal to none is never listed.
 - After Step 4, `.sync-state.json` has no entry for a path that doesn't exist.
