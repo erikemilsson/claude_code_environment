@@ -896,7 +896,7 @@ Tags: work, scripts, routing, FB-011-family, context-size
 
 ## FB-127: v5.7.5 residuals — small follow-ups found while shipping (bundled per the FB-006 precedent)
 
-**Status:** ready — independent small items; none blocks anything. (l) and (m) added 2026-10-04 from the 2026-10-03 harvest; (n)–(q) added 2026-10-05 from the v5.10.0 build.
+**Status:** ready — independent small items; none blocks anything. (l) and (m) added 2026-10-04 from the 2026-10-03 harvest; (n)–(q) added 2026-10-05 from the v5.10.0 build; (r) added 2026-10-06 from the v5.11.0 build.
 **Captured:** 2026-10-02 (v5.7.5 implementation and review)
 
 (a) **Pre-DEC-024 Markdown-dashboard text still in shipped docs:** `dashboard-regeneration.md § Section Display Rules / Per-Section Format` (Tasks and phase tables, `[Fix it]`, ticking); audit wording that implies ticking the dashboard (`audit-coherence.md:27,145`, the `audit-family-core.md` triage intro, `audit-ui.md`'s `promote {ts}` "ticked" mode). The `[Fix it]` path itself works through the CLI (`fix`, `triage` → `F`), so this is wording, not mechanism, and the audit telemetry gate can still accrue. Also `### Acceptance Criteria` in `rules/spec-workflow.md` and `audit-coherence.md:386,411`; `breakdown.md:52`; `health-check.md`'s escalation to FB-011 Family C (shipped v4.22.0, superseded by DEC-024); `dashboard-regeneration.md:52,417` "(Replacing Template Example)"; scenario 06 Trace D still models the pre-DEC-024 in-file checklist (`:102-109`, `:114-116`, `:123-124`).
@@ -916,6 +916,7 @@ Tags: work, scripts, routing, FB-011-family, context-size
 (o) **`work-user-flows.md` overwrites `user_feedback`** when guided testing fails ("record failure in task's `user_feedback` field"), the same history loss FB-134(b) fixed for `notes`.
 (p) **A shallow template history hides retirements.** `sync-check.py` reads deletions and old manifests from the template's history; with a shallow `--template-repo` clone it silently finds fewer. Part 5's `git fetch template` is full, so only manual runs are exposed. Candidate: warn when the repo is shallow (`git rev-parse --is-shallow-repository`).
 (q) **Part 5 needs git.** LTP and escalation_map_training have no repository, so `/health-check` can't sync them; they were synced by hand on 2026-09-27.
+(r) **`/review` reads a ratified agent decision as drift.** `commands/review.md` flags `status: approved` records with no `implementation_anchors` ("implementation may be drifting"). From v5.11.0 a ratified agent-recorded decision is `approved`, already built and verified, and usually has no anchors. Skip records that carry `ratified` and `decided_by: implement-agent`/`orchestrator`, or have Persist write anchors from the task's `files_affected`. Also `extension-patterns.md`'s auto-update summary omits `ratified`.
 
 Tags: residuals, dashboard, DEC-024, audit-wording, session-export, hooks, dispatch, health-check, decisions
 
@@ -923,19 +924,9 @@ Tags: residuals, dashboard, DEC-024, audit-wording, session-export, hooks, dispa
 
 **Status:** promoted 2026-10-04 — shipped v5.9.0 (deterministic drift check on every `/work`; reconciliation before Step 1d; `[V]` Re-verify and `[K]` Keep). See archive for full entry.
 
-## FB-129: Agent-recorded decisions land `approved` before verification and never reach the user for ratification
+## FB-129: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
 
-**Status:** ready — verified. Candidate for the release after FB-128.
-**Captured:** 2026-10-04 (harvest 2026-10-03 cluster 2; cluster 18 folded in)
-**Source:** 9 exports, 3 projects: PortfolioWebsite 09-08-2329, 09-11-0757, 09-15-1510, 09-19-0005, 09-24-1758; oemmat 05-24-1930, 07-22-2017, 07-23-0130; styler 05-27-0045. Insight: `interaction-logs/insights/2026-10-03_work_agent-decisions-approved-unratified.md`. FB-052 (archived) created the field; its approval semantics were never revisited.
-
-**Problem.** `implement-agent.md:249` tells the agent to "flag for human". But `work-procedures.md:41` (step 3) writes each `decisions_to_record[]` entry as `status: approved`, `decided_by: implement-agent`, before verify-agent runs (step 5). The renderer then counts it as resolved (`dashboard-render.py:241`) and lists only `draft`/`proposed` records (`UNRESOLVED_DECISION`, `:73`, used at `:1100`). This contradicts `rules/decisions.md` ("never resolve silently") and DEC-016.
-
-Observed: a deferral recorded as an approved decision nobody made (09-08); a self-ticked checkbox (09-11, oemmat 07-22); an approved record for an approach that verification hadn't accepted, which the orchestrator held back by hand (09-19); three coupled choices became three records behind three DEC-016 prompts (09-15, oemmat 07-23); trivial choices minted as records despite `support/reference/decisions.md` § "Skip Records For" (09-24, oemmat 05-24, styler 05-27).
-
-**Fix sketch.** Write agent decisions as `proposed` with a "ratify?" Needs-you row (or a distinct `recorded` status for documentary records of choices already shipped); persist them after the verify pass; one record per coupled decision; trivial choices go to task notes. Reword step 3's "Selected/Rationale/Options sections" to name the template's `## Decision` (`**Selected:**`) and `## Options Comparison`: PortfolioWebsite's 8 records used `## Selected` and fail `/health-check` Part 3 check 4 (`health-check.md:397-398`; 10-01-1243). **Folded in from cluster 18:** step 3 should link the numbering-namespace rule (`support/reference/decisions.md:161`). A project DEC-NNN collided with a template-cited ID (PortfolioWebsite 09-11-0757, oemmat 08-13-0916) even though the rule shipped in v5.2.0.
-
-Tags: work, decisions, decisions_to_record, implement-agent, ratification, needs-you, DEC-016, extends-FB-052, verified-defect, three-project-signal
+**Status:** promoted 2026-10-06 — shipped v5.11.0 (agent decisions held until the verify pass, written `recorded`, one Needs-you ratify row, `/work ratify` and `/work reconsider`). See archive for full entry.
 
 ## FB-130: No defined path for a small fix after a verify pass
 

@@ -249,7 +249,7 @@ When `/work` runs, Step 0 checks for a handoff file **before** the existing sess
 
 ```
 1. Check for .claude/tasks/.handoff.json
-   IF not found → proceed to existing session recovery (sentinel check, 6-case scan)
+   IF not found → proceed to existing session recovery (sentinel check, 7-case scan)
 
 2. Read and validate handoff file
    IF invalid JSON or missing required fields → warn, delete, proceed to session recovery

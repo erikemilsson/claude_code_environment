@@ -21,8 +21,8 @@ v4.18.0 split work.md (Plan 2 P3): the orchestrator file had ~20 ship-log patche
 ### Expected
 
 - Before any state write, the orchestrator reads `work-procedures.md § "State Persistence Protocol"` (first agent return of the session; subsequent returns reuse the in-context copy)
-- ALL protocol steps execute — including the ones the stub only summarizes: the DEC-011 dual-write (markers to `.pending-markers.jsonl` AND `.session-log.jsonl`, immediately, never deferred), audit-register projection for eligible kinds, decision persistence, then verify-agent dispatch
-- After verify-agent returns: attempts/history/`task_verification` (+`evidence[]` if the gate ran), status transition, FB-086 drift update when flagged
+- ALL protocol steps execute — including the ones the stub only summarizes: the DEC-011 dual-write (markers to `.pending-markers.jsonl` AND `.session-log.jsonl`, immediately, never deferred), audit-register projection for eligible kinds, holding the agent's decisions in `decisions_pending` (no decision file), then verify-agent dispatch
+- After verify-agent returns: attempts/history/`task_verification` (+`evidence[]` if the gate ran), status transition, on pass the `recorded` record from `decisions_pending`, FB-086 drift update when flagged
 
 ### Pass criteria
 

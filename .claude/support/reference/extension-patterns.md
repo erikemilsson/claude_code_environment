@@ -146,7 +146,7 @@ When `/work` detects a task blocked by an unresolved decision:
 
 ### Post-Decision Behavior in `/work`
 
-When `/work` detects a checked box in "## Select an Option" and the decision's frontmatter status is not yet `approved`/`implemented`:
+When `/work` detects a checked box in "## Select an Option" and the decision's frontmatter status is `draft`/`proposed`:
 
 1. **Auto-update frontmatter** — set `status: approved` and `decided: [today's date]`, extract selected option name
 2. **Check `inflection_point` field** in the decision record

@@ -99,7 +99,7 @@ No fixture files or project setup needed. The state description in each scenario
 | 30 | Handoff During Parallel Batch | Multi-agent wind-down, batch state preservation, correct parallel resumption |
 | 31 | Handoff at Phase Boundary | Cross-phase knowledge preservation, strategic context bridging phases |
 
-### Later Additions (32-43, 45-48)
+### Later Additions (32-43, 45-49)
 
 | # | Name | Tests |
 |---|------|-------|
@@ -119,6 +119,7 @@ No fixture files or project setup needed. The state description in each scenario
 | 46 | Notes History and Friction Close | Notes are newest-first history; a fixing task closes its friction entries (FB-134) |
 | 47 | Uncommitted-Work Check | Step 0e counts finished tasks by their uncommitted files (FB-134) |
 | 48 | Restoring a Retired Feature | Revert or scoped diff of the retirement commit, pin check, no spec edits through git (FB-134) |
+| 49 | Agent Decisions Recorded and Ratified | Choices held until the verify pass, one `recorded` record per task, `/work ratify` and `/work reconsider`, `/health-check` legacy rows (FB-129) |
 
 ## Example Project
 

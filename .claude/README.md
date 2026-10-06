@@ -94,6 +94,7 @@ See Claude Code's permission-modes documentation (`https://code.claude.com/docs/
 | `/work` | Main entry point — checks spec, decomposes tasks, routes to agents |
 | `/work pause` | Graceful wind-down — preserve context for next session |
 | `/work complete` | Complete current in-progress task (or `/work complete {id}`) |
+| `/work ratify` | Ratify decisions an agent made while building (`/work ratify all` or `/work ratify DEC-NNN …`); `/work reconsider DEC-NNN` reopens one |
 | `/iterate` | Structured spec review and refinement (checks gaps, asks questions, proposes spec changes) |
 | `/grill` | Interview-style interrogation to sharpen fuzzy requirements; builds a `./CONTEXT.md` domain glossary |
 | `/shakedown` | Acceptance-by-example — probe the built system against real-use examples to map its capability boundary |
@@ -114,6 +115,7 @@ See Claude Code's permission-modes documentation (`https://code.claude.com/docs/
 |---------|-----------|---------|-------------|
 | **Phase** | Sequential project stage. Phase N+1 blocked until Phase N complete. | "Build pilot first, then production" | All phase tasks finish, next phase unlocks |
 | **Decision** | Choice with multiple viable options. Blocks dependent tasks. | "Postgres or SQLite?" | User checks selection in decision doc |
+| **Agent-recorded decision** | A choice an agent made while building, recorded after the work is verified. Never blocks. | "Used the existing retry helper instead of a new one" | You ratify (`/work ratify`) or reopen (`/work reconsider DEC-NNN`); the dashboard lists them in one row |
 | **Human Task** | Action only the user can do. `/work` skips it. | "Configure the API keys" | User completes it and marks done |
 | **Inflection Point** | A decision that changes *what* gets built. | "Monolith or microservices?" | After selection, `/work` pauses and suggests `/iterate` to revisit spec |
 

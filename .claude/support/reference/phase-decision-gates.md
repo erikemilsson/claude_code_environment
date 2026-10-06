@@ -24,6 +24,8 @@ Determine the current active phase by walking phases in ascending order:
               → Already approved. Continue to next phase.
          2. Evaluate auto-conditions (all Phase P tasks Finished; all their
             per-task verifications passed; plus any spec-defined gate criteria).
+            Unratified agent decisions (status `recorded`) are never a
+            condition: they don't block a gate.
          3. IF auto-conditions NOT all met:
               → Set gate.status = "active"; surface the gate in the dashboard's
                 "Needs you" card (the script renders the gate row once the phase is Complete,
@@ -36,6 +38,9 @@ Determine the current active phase by walking phases in ascending order:
                 conditions (all met) + the approval prompt.
               → Prompt via CLI: "Phase {P} complete — approve transition to
                 Phase {next_phase}? [Y] Approve  [N] Hold". STOP until approved.
+                When any decision record has status `recorded`, the prompt adds
+                one line: "{N} agent decision(s) not yet ratified: {DEC ids} —
+                /work ratify all (does not block this gate)".
          5. ON user approval (CLI reply Y):
               → Set gate.status = "approved" in the sidecar (orchestrator write).
               → Log: "Phase {P} → {next_phase} approved"
@@ -75,7 +80,12 @@ For target task(s), check `decision_dependencies`:
 1. Read each referenced decision record
 2. Check if decision has a checked box in "## Select an Option"
 
-   IF any decision is unresolved (no checked box):
+   IF frontmatter status is "recorded" (agent-recorded; it has no
+   "## Select an Option" section), or "approved"/"implemented" with no checked box:
+     → Resolved. It does not block; ratification (/work ratify) is separate.
+
+   IF any decision is unresolved (record missing, or status "draft"/"proposed"
+   with no checked box):
      📋 Decision {DEC-NNN}: "{title}" is unresolved and blocks {N} task(s).
        [R] Research options (spawns research-agent; its findings populate the decision record — see `.claude/commands/research.md`)
        [S] Skip (you'll research manually — open the decision doc and check your selection, then run /work)
@@ -92,17 +102,20 @@ For target task(s), check `decision_dependencies`:
        → Continue checking remaining decisions
        → Non-blocked tasks still dispatch normally
 
-   IF decision has a checked box AND frontmatter status is NOT "approved"/"implemented":
+   IF decision has a checked box AND frontmatter status is "draft"/"proposed":
      → AUTO-UPDATE FRONTMATTER:
        1. Extract selected option name from the checked line (text after `[x] `)
        2. Update frontmatter fields:
           - status: approved
           - decided: [today's date, YYYY-MM-DD]
+          - ratified: [today's date] — only when the record has
+            `decided_by: implement-agent` or `orchestrator` (a reconsidered agent
+            decision: the tick is the user's confirmation; `decided_by` stays)
        3. Log: "Decision {id} resolved → status updated to 'approved' (selected: {option_name})"
      → Run post-decision check (see below)
 
-   IF decision has a checked box AND frontmatter status is already "approved"/"implemented":
-     → Already processed. Run post-decision check if dependent tasks are still blocked.
+   IF decision has a checked box AND frontmatter status is "recorded"/"approved"/"implemented":
+     → Already processed (a box on a "recorded" record is not a ratification; only /work ratify sets "approved"). Run post-decision check if dependent tasks are still blocked.
 ```
 
 ---
@@ -113,6 +126,8 @@ Catches decisions that reference tasks which don't know about the decision yet:
 
 ```
 For each decision-*.md file, read `related.tasks` array:
+  (Skip records with `decided_by: implement-agent` or `orchestrator`, whatever
+   their status: their `related.tasks` names the task that produced them.)
   For each referenced task ID:
     Read task JSON
     Check if decision ID is in task's `decision_dependencies`
@@ -147,7 +162,9 @@ For each decision-*.md file, read `related.tasks` array:
 
 ## Post-Decision Check
 
-When `/work` detects a resolved decision (status `approved` or `implemented`) that has dependent tasks:
+**Reconsidered agent decision (both callers — `/work` Step 2b and `/iterate` Step 1a — with or without dependent tasks).** When the record just approved by a tick carries `decided_by: implement-agent` or `orchestrator` and the selection differs from what its related task built (the `**Selected:**` choice the agent wrote; note it before repopulating `## Decision`), offer to create a new task for the change. The Finished task is not reset.
+
+When `/work` detects a resolved decision (status `recorded`, `approved` or `implemented`) that has dependent tasks:
 
 ```
 1. Read the decision record

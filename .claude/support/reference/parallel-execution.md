@@ -251,7 +251,7 @@ During parallel execution, strict write ownership prevents file corruption. The 
 | Writer | May write to | Must NOT write to |
 |--------|-------------|-------------------|
 | Each parallel agent | Nothing — agents return structured reports only (harness prohibits subagent writes to `.claude/`, per DEC-004) | Any `.claude/` path |
-| `/work` orchestrator | All task JSONs, parent task JSONs, dashboard.html, verification-result.json, dashboard-state.json, session-log.jsonl, fix-task JSON files | Nothing — orchestrator is the sole writer in this architecture |
+| `/work` orchestrator | All task JSONs, parent task JSONs, decision records, dashboard.html, verification-result.json, dashboard-state.json, session-log.jsonl, fix-task JSON files | Nothing — orchestrator is the sole writer in this architecture |
 
 The orchestrator performs all writes: it sets `conflict_note` fields before dispatch, consumes each agent's return report to persist task-JSON state, performs parent auto-completion, and regenerates the dashboard at batch end.
 
@@ -268,6 +268,7 @@ Use Claude Code's `Agent` tool to spawn one agent per task. **Always set `model:
 - Instructions to read `.claude/agents/implement-agent.md`
 - Instructions to follow Steps 1-6 (understand, implement, run existing checks, return structured report)
 - **Sibling files (FB-113):** the `files_affected` of every other task in the batch, with the instruction: "Don't edit these files; they belong to parallel tasks. If your change requires one, report it in `issues_discovered` with `suggested_action: 'stop and report'`." Files outside the whole batch's declared scope may be edited and reported, per implement-agent Step 2
+- **Held decisions:** if the task has `decisions_pending` (a fix round or resume), its entries: the agent restates the set, amended as needed, in its report
 - **Wind-down instruction:** "Turn budget: about 40 tool calls. If you get close, stop and return your report with what you have, marked partial — by tool call 35 if not complete, with `implementation_status: 'partial'` and detailed notes. Do NOT attempt writes to `.claude/` — subagents cannot write there; orchestrator handles all persistence from your report."
 - **Explicit instruction:** "Return a structured implementation report per `.claude/agents/implement-agent.md` § Step 6. Do NOT write to task JSON, do NOT spawn verify-agent, do NOT regenerate dashboard — orchestrator owns all state persistence."
 
@@ -290,6 +291,7 @@ WHILE active_agents or active_verifiers is non-empty:
        - Status transition on task JSON per implementation_status
        - Dual-write friction_markers to .pending-markers.jsonl AND .session-log.jsonl
          immediately upon agent return (per DEC-011 Option ABp — do NOT defer or batch)
+       - Hold decisions_to_record in the task's decisions_pending (no decision file yet)
     3. If implementation_status == "completed":
        Dispatch verify-agent for this task (Agent tool, model: "opus", turn budget of about 30 tool calls in the prompt)
        Add to active_verifiers. Verify-agent dispatch is individual — one per completed
@@ -310,6 +312,8 @@ WHILE active_agents or active_verifiers is non-empty:
     2. Apply "After verify-agent returns (per-task mode)" protocol from work.md § State Persistence Protocol:
        - Write task_verification, append verification_history, increment verification_attempts
        - Transition status (Finished / In Progress retry / Blocked escalate)
+       - On pass: persist decisions_pending as one `recorded` decision record ("Persist
+         decisions"); the id is assigned here, so tasks in a batch can't pick the same one
        - Dual-write friction_markers (per DEC-011 Option ABp — see work.md § State Persistence Protocol step 2)
        - Check parent auto-completion
        - No valid report → ask once for it (no increment; it stays in active_verifiers); a

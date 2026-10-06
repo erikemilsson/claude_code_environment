@@ -25,7 +25,7 @@ python3 .claude/scripts/dashboard-render.py --html --claude-dir .claude [--now <
 
 ### Action Required rendering split (FB-105, v5.4.0)
 
-**Script-owned (rendered deterministically — never hand-author or restate):** Phase Transitions (boundary reached, sidecar `phase_gates` not `approved`), Verification Pending (suppressed while any task has `user_review_pending`), Verification Debt, Spec Drift (unreconciled sections from `compute_drift()` in `fingerprint.py`, plus the `drift-deferrals.json` count), Audit Findings (sidecar `audit_digest`, `pending` minus `dismissed_ids`, with empty-state), Feedback (counts parsed from `feedback.md`), Decisions (records in `draft`/`proposed`), Your Tasks (one row per non-Absorbed task — On Hold; Finished with `user_review_pending`, any owner (a stale flag on reworked work is ignored); Blocked on the user; `owner: human` with all deps + decision-deps satisfied — precedence in § "Section Display Rules"), Reviews (`out_of_spec` without approve/reject). Sub-section order and omit-when-empty follow § "Section Display Rules"; each row carries its completion command. When nothing is user-gated the script renders an explicit "Nothing blocked on you right now."
+**Script-owned (rendered deterministically — never hand-author or restate):** Phase Transitions (boundary reached, sidecar `phase_gates` not `approved`), Verification Pending (suppressed while any task has `user_review_pending`), Verification Debt, Spec Drift (unreconciled sections from `compute_drift()` in `fingerprint.py`, plus the `drift-deferrals.json` count), Audit Findings (sidecar `audit_digest`, `pending` minus `dismissed_ids`, with empty-state), Feedback (counts parsed from `feedback.md`), Decisions (records in `draft`/`proposed`; plus one row for the whole project listing `recorded` records awaiting ratification), Your Tasks (one row per non-Absorbed task — On Hold; Finished with `user_review_pending`, any owner (a stale flag on reworked work is ignored); Blocked on the user; `owner: human` with all deps + decision-deps satisfied — precedence in § "Section Display Rules"), Reviews (`out_of_spec` without approve/reject). Sub-section order and omit-when-empty follow § "Section Display Rules"; each row carries its completion command. When nothing is user-gated the script renders an explicit "Nothing blocked on you right now."
 
 **LLM-authored (sidecar `augment_rows`, FB-118):** items the script cannot derive from state — **unanswered questions from a paused session** (the open-question sweep at `/work pause`), a Blocked task's open choice, and context a mechanical row would miss. The orchestrator writes them to the sidecar and regenerates; the script renders them as the card's last sub-section, "Also Needs You". Protocol: § "Augment Rows".
 
@@ -149,6 +149,7 @@ Dashboard regeneration follows a **tiered communication strategy** (see `command
 | When routing async work to dashboard (phase gates, decision reviews) | User will go read the dashboard |
 | `/work complete` (user-initiated) | User explicitly interacting with task state |
 | After decision resolution | May unblock tasks, dashboard needs to reflect new state |
+| Agent decision recorded, ratified or reconsidered ("Persist decisions" at a verify pass; `/work ratify`; `/work reconsider`) | `task_hash` doesn't include decisions, so the ratify row and `decisions_recorded` would stay stale |
 | Drift reconciliation applied (any choice that wrote a task file or `drift-deferrals.json`; an `[S]`-only pass writes just the deferral file) | `task_hash` doesn't include fingerprints, notes or deferrals, so the next freshness check would miss it and the Spec Drift rows would stay stale |
 | Step 1a freshness check (`task_hash`, `template_version` or `spec_fingerprint` differs from META) | Catch-up on entry |
 | Format staleness (template_version mismatch) | Dashboard was generated with older template rules |
@@ -250,6 +251,7 @@ drift_deferrals: [count from drift-deferrals.json]
 drift_sections: [unreconciled_sections from compute_drift(), or "unchecked"]
 decision_count: [total count of decision-*.md files]
 decisions_approved: [count where status == approved or implemented]
+decisions_recorded: [count where status == recorded]
 decisions_superseded: [count where status == superseded]
 decisions_partially_superseded: [count where status == partially_superseded]
 -->
@@ -261,7 +263,7 @@ The `template_version` field enables **format staleness detection**: when templa
 
 #### Field whitelist (strict)
 
-ONLY the 14 fields listed above may appear in the META block. Specifically forbidden:
+ONLY the 15 fields listed above may appear in the META block. Specifically forbidden:
 
 - **`session_*` keys of any kind.** Session-handoff content (what just happened, what's next) belongs in `.claude/tasks/.handoff.json` (written by `/work pause`), git log, or auto-memory — never in dashboard META. The META block exists for state-fingerprinting and freshness checks, not narrative.
 - **Free-form notes, status messages, commentary, or session journals.** The META block is machine-readable; only structural fields belong here.
@@ -339,7 +341,7 @@ An `fyi` augment row is context, not an action: items 1 and 3 don't apply to it,
 
 **Must NOT include:** work summaries, completion reports, or recent-activity recaps. "Action Required" is a list of things the user still needs to do — not a record of what has happened. Git log and task JSON already preserve history; duplicating it here slows the user down when scanning for next actions. If an item describes completed work (e.g., "Task 5 finished — added X"), it belongs elsewhere (or nowhere). This rule applies to every sub-section under Action Required (Phase Transitions, Verification Pending, Your Tasks, Reviews, etc.): each entry must be an action the user takes, not a status report on one they already took. Do not add a "Recent Activity", "Work Summary", "Completed This Session" or similar sub-section — the canonical Sections list in `.claude/rules/dashboard.md` intentionally omits them.
 
-**Coverage (human-gated items — the other half of the contract):** beyond per-item quality, Action Required must be *complete* over user-gated state. Every one of the following must appear as a row: On Hold tasks; Finished tasks with `user_review_pending: true` (any owner); Blocked tasks owned by `human`/`both`, or escalated (`verification_attempts` ≥ 3); `owner: "human"` tasks (not Broken Down) with all dependencies Finished; unresolved decision records; and, as `augment_rows` entries, any question asked of the user during a session that went unanswered (recorded at `/work pause`) and any Blocked task's open choice. An item blocked on the user that exists only in the handoff file violates the contract — the handoff may reference rows, never replace them. `/work` Step 0g cross-checks coverage at session start; the pause flow's open-question sweep enforces it at session end (both trigger a full regen).
+**Coverage (human-gated items — the other half of the contract):** beyond per-item quality, Action Required must be *complete* over user-gated state. Every one of the following must appear as a row: On Hold tasks; Finished tasks with `user_review_pending: true` (any owner); Blocked tasks owned by `human`/`both`, or escalated (`verification_attempts` ≥ 3); `owner: "human"` tasks (not Broken Down) with all dependencies Finished; unresolved decision records; `recorded` decision records (one ratify row for all of them); and, as `augment_rows` entries, any question asked of the user during a session that went unanswered (recorded at `/work pause`) and any Blocked task's open choice. An item blocked on the user that exists only in the handoff file violates the contract — the handoff may reference rows, never replace them. `/work` Step 0g cross-checks coverage at session start; the pause flow's open-question sweep enforces it at session end (both trigger a full regen).
 
 ### Augment Rows
 
@@ -430,6 +432,7 @@ The user selects an option when prompted, and `/work` updates the task according
 - Feedback: only render when `feedback.md` has entries with status `new`, `refined`, or `ready` — render as: `- 📝 **{N} feedback items** awaiting attention ({X} new, {Y} refined, {Z} ready) → /feedback review`
 - Reviews sub-section format: `- [ ] **Item title** — what to do → [link to file](path)`
 - Reviews appear for: out_of_spec tasks without approval, draft/proposed decisions
+- **Ratify row** (with the decision rows; only when ≥1 record is `recorded`): exactly one row — `{N} agent decisions await ratification: DEC-031, DEC-032 — run /work ratify all (or /work ratify DEC-NNN)` (`1 agent decision awaits ratification: …` for one), each id linked to its file, at most 8 ids then `+K more`. `recorded` records get no row of their own and are not unresolved
 - Timeline sub-section in Progress: only render when tasks have `due_date` or `external_dependency.expected_date` (not toggleable)
 - **Recent Activity sub-section in Progress** (auto-renders when ≥3 tasks transitioned status in the last 7 days):
   - **Strict cap: max 7 entries, each ≤1 line.**
@@ -452,7 +455,7 @@ The user selects an option when prompted, and `/work` updates the task according
 - **Partially actionable phase status:** When a phase is not yet "Active" (previous phase not fully complete) but has at least one task whose task-level dependencies (the `dependencies` array in task JSON) are ALL "Finished", show the phase status as `Partially Actionable` instead of `Blocked`. Format: `{N} task(s) eligible (task {ids}) — phase gate pending` when a phase gate exists, or `{N} task(s) eligible (task {ids}) — awaiting {blocker}` when blocked by upstream tasks. Tasks with empty `dependencies` arrays in future phases are NOT automatically eligible (they may be implicitly blocked by phase ordering). When a phase is Partially Actionable, blocked phase collapsing does NOT apply (the phase has actionable tasks by definition).
 - Tasks with `conflict_note`: show status as `Pending (held: conflict with Task {id})` during parallel dispatch
 - Tasks with `cross_phase: true`: append ` (cross-phase)` suffix after the task title in the Tasks section. Task still appears in its declared phase group. Phase table and phase counts are unchanged — the flag affects eligibility only, not phase membership.
-- Decisions: status display mapping: `approved`/`implemented` → "Decided", `draft`/`proposed` → "Pending". Selected column always links to the decision document regardless of status — Decided shows the selected option name as link text; Pending shows "Pending" as link text
+- Decisions: status display mapping: `approved`/`implemented` → "Decided", `recorded` → "Recorded" (not counted as decided), `draft`/`proposed` → "Pending". Selected column always links to the decision document regardless of status — Decided shows the selected option name as link text; Pending shows "Pending" as link text
 - Out-of-spec tasks: prefix title with ⚠️
 - On Hold tasks: show status as `⏸️ On Hold` in Tasks section; exclude from Progress phase "Done" counts but include in "Total"; exclude from critical path (paused work isn't on the path)
 - Absorbed tasks: show status as `Absorbed → Task {id}` in Tasks section (dimmed/collapsed style); exclude from both "Done" and "Total" in Progress phase counts; exclude from critical path
@@ -494,7 +497,7 @@ This format works for any project type — software, research, procurement, reno
 
 The critical path is rendered as a single line in the **Progress** section: owner-tagged steps joined by `→`, with parallel branches shown in `[ | ]` notation.
 
-1. **Build dependency graph** — include all incomplete tasks and their dependencies (both task deps and decision deps). Unresolved decisions appear as nodes (e.g., `❗ Resolve DEC-001`)
+1. **Build dependency graph** — include all incomplete tasks and their dependencies (both task deps and decision deps). Unresolved decisions (`draft`/`proposed`; `recorded` counts as resolved) appear as nodes (e.g., `❗ Resolve DEC-001`)
 2. **Compute longest path** — walk the graph to find the longest chain from any current entry point to "Done". This is the critical path (determines project duration)
 3. **Detect parallel branches** — find fork/join points along the critical path:
    - A **fork** is a node whose completion enables 2+ independent successors

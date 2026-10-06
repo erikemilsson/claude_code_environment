@@ -88,6 +88,12 @@ Scan all non-archived `task-*.json` files and check for recoverable states.
    │  [C] Continue (keep In Progress, /work will route to implement-agent)
    │  [P] Reset to Pending (start fresh)
    │  [H] Put On Hold
+
+7. STATUS: "Finished" WITH non-empty decisions_pending
+   (Crashed between the verify pass and the decision-record write)
+
+   → Handled by work.md Step 0g item 1, which runs on every /work (this scan
+     is skipped after a clean exit). Nothing more to do here.
 ```
 
 **After recovery actions complete, proceed to Step 1.**
