@@ -1,0 +1,166 @@
+{
+  "ref": "v5.14.0",
+  "ref_commit": "a6aa73494a9125a16f66a78fb9e6256fc1ddbe1c",
+  "dry_run": false,
+  "written": [
+    {
+      "path": ".claude/CLAUDE.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/agents/implement-agent.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/agents/verify-agent.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/commands/diagnose.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/commands/health-check.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/commands/work.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/rules/agents.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/rules/archiving.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/rules/task-management.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/scripts/README.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/scripts/tests/test_python_floor.py",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/support/reference/context-transitions.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/support/reference/drift-reconciliation.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/support/reference/mcp-patterns.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/support/reference/parallel-execution.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/support/reference/session-recovery.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/support/reference/task-schema.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/support/reference/work-procedures.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/support/reference/work-recovery.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/support/reference/work-user-flows.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/support/reference/work-web-evidence.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/support/reference/workflow.md",
+      "status": "template_copy",
+      "mode": "100644"
+    }
+  ],
+  "mode_fixed": [],
+  "failed": [],
+  "version": {
+    "from": "5.13.0",
+    "to": "5.14.0",
+    "bumped": true
+  },
+  "manifest": {
+    "changed": false,
+    "sync_added": [],
+    "sync_dropped": [],
+    "lists_updated": false
+  },
+  "sidecar": {
+    "recorded": 87,
+    "dropped": 0,
+    "created": false,
+    "changed": true
+  },
+  "changed_paths": [
+    ".claude/.sync-state.json",
+    ".claude/CLAUDE.md",
+    ".claude/agents/implement-agent.md",
+    ".claude/agents/verify-agent.md",
+    ".claude/commands/diagnose.md",
+    ".claude/commands/health-check.md",
+    ".claude/commands/work.md",
+    ".claude/rules/agents.md",
+    ".claude/rules/archiving.md",
+    ".claude/rules/task-management.md",
+    ".claude/scripts/README.md",
+    ".claude/scripts/tests/test_python_floor.py",
+    ".claude/support/reference/context-transitions.md",
+    ".claude/support/reference/drift-reconciliation.md",
+    ".claude/support/reference/mcp-patterns.md",
+    ".claude/support/reference/parallel-execution.md",
+    ".claude/support/reference/session-recovery.md",
+    ".claude/support/reference/task-schema.md",
+    ".claude/support/reference/work-procedures.md",
+    ".claude/support/reference/work-recovery.md",
+    ".claude/support/reference/work-user-flows.md",
+    ".claude/support/reference/work-web-evidence.md",
+    ".claude/support/reference/workflow.md",
+    ".claude/version.json"
+  ],
+  "remaining": [],
+  "warnings": [
+    "project is not a git work tree; uncommitted_sync skipped"
+  ]
+}
