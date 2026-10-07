@@ -30,7 +30,7 @@ Traced from actual citations (2026-07-19). "—" = self-contained.
 | Consumer | Reference docs cited | Scripts invoked |
 |---|---|---|
 | `work.md` | claude-code-authoring, context-transitions, dashboard-regeneration, decomposition, drift-reconciliation, known-issues, parallel-execution, phase-decision-gates, session-recovery, work-procedures, work-recovery (on trigger), work-user-flows (on trigger), work-web-evidence (on trigger), workflow | fingerprint.py (+ dashboard-render.py, persist-friction.py via dashboard-regeneration/friction procedures) |
-| `health-check.md` | claude-code-authoring, dashboard-regeneration, decisions, mcp-patterns, paths, root-claude-md-template, shared-definitions, task-schema, workflow | dashboard-render.py, validate-tasks.py, sync-check.py (Part 5, v5.10.0), sync-apply.py (Part 5 Step 4 writer, v5.12.0; behind `permissions.ask`) |
+| `health-check.md` | claude-code-authoring, dashboard-regeneration, decisions, mcp-patterns, paths, root-claude-md-template, shared-definitions, task-schema, workflow | dashboard-render.py, validate-tasks.py, sync-check.py (Part 5, v5.10.0), sync-apply.py (Part 5 Step 4 writer, v5.12.0; behind `permissions.ask`), fingerprint.py `--baseline [--write]` (Part 1 check 11, v5.13.0; `--write` edits provenance keys in task files) |
 | `iterate.md` | claude-code-authoring, decisions, desktop-project-prompt, drift-reconciliation, merge-queue, spec-checklist | — |
 | `audit-coherence.md` | audit-family-core, audit-fix-workflow | — |
 | `audit-ui.md` | audit-family-core, mcp-patterns | — |

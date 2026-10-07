@@ -162,7 +162,7 @@ For each decision-*.md file, read `related.tasks` array:
 
 ## Post-Decision Check
 
-**Reconsidered agent decision (both callers — `/work` Step 2b and `/iterate` Step 1a — with or without dependent tasks).** When the record just approved by a tick carries `decided_by: implement-agent` or `orchestrator` and the selection differs from what its related task built (the `**Selected:**` choice the agent wrote; note it before repopulating `## Decision`), offer to create a new task for the change. The Finished task is not reset.
+**Reconsidered agent decision (both callers — `/work` Step 2b and `/iterate` Step 1a — with or without dependent tasks).** When the record just approved by a tick carries `decided_by: implement-agent` or `orchestrator` and the selection differs from what its related task built (the `**Selected:**` choice the agent wrote; note it before repopulating `## Decision`), offer to create a new task for the change. The Finished task is not reset. The new task follows the creation contract (`task-schema.md § "Drift Prevention Fields"`): run `fingerprint.py --provenance` on the related task's `spec_section` for current hashes (don't copy that task's fingerprints, which may predate a spec edit); if the related task is `spec_unmapped`, so is the new one.
 
 When `/work` detects a resolved decision (status `recorded`, `approved` or `implemented`) that has dependent tasks:
 

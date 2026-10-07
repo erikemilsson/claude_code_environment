@@ -99,7 +99,7 @@ No fixture files or project setup needed. The state description in each scenario
 | 30 | Handoff During Parallel Batch | Multi-agent wind-down, batch state preservation, correct parallel resumption |
 | 31 | Handoff at Phase Boundary | Cross-phase knowledge preservation, strategic context bridging phases |
 
-### Later Additions (32-43, 45-50)
+### Later Additions (32-43, 45-51)
 
 | # | Name | Tests |
 |---|------|-------|
@@ -121,6 +121,7 @@ No fixture files or project setup needed. The state description in each scenario
 | 48 | Restoring a Retired Feature | Revert or scoped diff of the retirement commit, pin check, no spec edits through git (FB-134) |
 | 49 | Agent Decisions Recorded and Ratified | Choices held until the verify pass, one `recorded` record per task, `/work ratify` and `/work reconsider`, `/health-check` legacy rows (FB-129) |
 | 50 | Template Sync Classification | Unchanged template copies apply under bare `[A]`, not-a-variant rows, shallow history and the sidecar, manifest-list and `.gitignore` rows, non-git projects (FB-136) |
+| 51 | Task Provenance Baseline | Every creation path stamps section provenance (`fingerprint.py --provenance`), `spec_unmapped`, `/health-check` baseline from the spec's git history, `confirm_current` and `needs_section` rows, `same_day_edit` (FB-135) |
 
 ## Example Project
 

@@ -136,13 +136,14 @@ State: the current spec is `spec_v3`. `## Auth` changed since decomposition: the
 | 13b | Pending | `## Auth` (copied by `/breakdown`), old fingerprint | 4(a), 6 | `drifted` |
 | 14 | Finished | `spec_version: "spec_v2"`, `## Auth` | 2 | `historical` |
 | 15 | Pending | `spec_version: "spec_v2"` | 2 | `unmigrated` |
-| 16 | Pending | no `section_fingerprint` (created ad hoc) | 3 | `no_provenance` |
+| 16 | Pending | no `section_fingerprint` (created ad hoc before v5.13.0) | 3 | `no_provenance` |
 | 17 | Finished | `## Old Login` | 4(c) | `unmatched` |
 | 18 | Pending | `## Old Login` | 4(c) | `missing` |
 | 19 | Finished | `spec_section: " Auth "` (no `## `, stray spaces), old fingerprint | 4(a), 6 | matches `## Auth` → `drifted` |
 | 20 | Finished | `spec_section: "### Session timeout"`, that subsection's hash | 4(b), 5 | in sync, not reported |
 | 21 | Finished | `spec_section: "### Password rules"`, that subsection's old hash | 4(b), 6 | `drifted` under `### Password rules` |
 | 22 | Pending, `out_of_spec: true` (kept with `[O]` earlier) | `## Old Login`, old fingerprint | 1 | skipped, counted nowhere |
+| 23 | Pending | `spec_unmapped: true`, no `spec_section` (a repo-wide lint sweep) | 3 | `unmapped` |
 | `archive/task-3.json` | Finished | `## Auth`, old fingerprint | — | not scanned |
 
 1. Output (excerpt; `spec_fingerprint`, the section `fingerprint`, and each task's `title`, `owner`, `deferred` and `subsection_unchanged` omitted):
@@ -161,18 +162,19 @@ State: the current spec is `spec_v3`. `## Auth` changed since decomposition: the
      "historical": 1,
      "unmatched": 1,
      "no_provenance": 1,
+     "unmapped": 1,
      "unreadable": [],
      "unreconciled_sections": 3
    }
    ```
 2. Dashboard: three Spec Drift rows, `## Auth changed since its tasks were built (2 Finished, 1 Pending) → run /work to reconcile`, `### Password rules changed since its tasks were built (1 Finished) → run /work to reconcile` and `## Old Login is no longer in the spec (1 open task(s) reference it) → run /work to reconcile`. Footer `⚠️ 3 changed spec section(s), 0 drift deferrals, 0 verification debt`.
-3. `/work`: Task 15 goes through Task Migration. Two changed sections are unreconciled, so the batch prompt lists `## Auth — 2 Finished, 1 Pending (has open tasks — reviewed separately)` and `### Password rules — 1 Finished`; `[K]` Keep all would keep only `### Password rules`. Task 18 gets the `[D]`/`[O]`/`[R]` prompt outside the batch. Tasks 12, 13, 14, 16, 17, 20 and 22 never appear in a prompt.
+3. `/work`: Task 15 goes through Task Migration. Two changed sections are unreconciled, so the batch prompt lists `## Auth — 2 Finished, 1 Pending (has open tasks — reviewed separately)` and `### Password rules — 1 Finished`; `[K]` Keep all would keep only `### Password rules`. Task 18 gets the `[D]`/`[O]`/`[R]` prompt outside the batch. Tasks 12, 13, 14, 16, 17, 20, 22 and 23 never appear in a prompt.
 
 Variant: if `### Session timeout` also appeared under another `## ` section, Task 20 would take the no-match branch (Finished → `unmatched`), the same as a `### ` heading that no longer exists.
 
 **Expected:** only drifted and missing entries reach the user. Everything else is counted or skipped, so a project with historical, ad hoc or free-form provenance isn't prompted about it every session. A task whose provenance is the subsection itself (Task 20) isn't reported while that subsection is unchanged, even though its `## ` section changed; unlike DEC-021 narrowing, it isn't listed as "likely unaffected" either.
 
-**Pass criteria:** Absorbed, Broken Down and out-of-spec tasks are skipped and counted nowhere, while a Broken Down task's subtasks are checked; an out-of-spec task stays quiet although its heading is gone (Task 22); a Finished task from an older spec version counts as `historical` and isn't flagged; a task without provenance is counted, never flagged (FB-135 tracks the coverage gap); the same deleted heading gives `unmatched` for a Finished task and `missing` for a Pending one; heading matching ignores surrounding whitespace and a missing `## `; a `spec_section` naming a `### ` heading that occurs once is compared with that subsection's hash, staying quiet while it's unchanged (Task 20) and reported under the `### ` heading, with `subsection_unchanged: false`, when it changed (Task 21); `archive/` isn't scanned.
+**Pass criteria:** Absorbed, Broken Down and out-of-spec tasks are skipped and counted nowhere, while a Broken Down task's subtasks are checked; an out-of-spec task stays quiet although its heading is gone (Task 22); a Finished task from an older spec version counts as `historical` and isn't flagged; a task without provenance is counted in `no_provenance`, never flagged (`/health-check` check 11 offers the baseline that gives it provenance; Scenario 51), and one that declares `spec_unmapped: true` is counted in `unmapped` instead; the same deleted heading gives `unmatched` for a Finished task and `missing` for a Pending one; heading matching ignores surrounding whitespace and a missing `## `; a `spec_section` naming a `### ` heading that occurs once is compared with that subsection's hash, staying quiet while it's unchanged (Task 20) and reported under the `### ` heading, with `subsection_unchanged: false`, when it changed (Task 21); `archive/` isn't scanned.
 
 ## Invariant checks
 

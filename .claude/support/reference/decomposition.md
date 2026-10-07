@@ -28,7 +28,8 @@ Procedure for breaking a spec into granular tasks. Run as `/work` Step 4 "If Dec
    - `section_snapshot_ref` — Snapshot filename (e.g., "spec_v1_decomposed.md")
    - `spec_subsection` + `subsection_fingerprint` *(optional, DEC-021)* — when a task's work is scoped to a single `### ` subsection of a **large** `## ` section (consult the section index `char_count` from `fingerprint.py --index`; "large" = big enough that a one-line edit elsewhere in it would needlessly re-flag this task), record the `### ` heading + its hash (`fingerprint.py --sections --depth 3`). Lets drift detection spare this task when a *different* subsection of the same `## ` section changes. Skip for tasks in small sections or tasks that span a whole section — they use `## `-level drift.
    - **Important:** Create all task JSON files before regenerating the dashboard. Every task must have a `task-*.json` file — the dashboard is generated from these files, never the other way around.
-   - **Script alternative:** Capture hashes via `.claude/scripts/fingerprint.py --spec` / `--sections`; orchestrator writes the `sha256:...` strings into task JSON `spec_fingerprint` and `section_fingerprint` fields.
+   - **Script route:** `python3 .claude/scripts/fingerprint.py --provenance .claude --section "<heading>"` prints `spec_version`, `spec_fingerprint`, `spec_section` and `section_fingerprint` for one section, ready to merge into each of its tasks (creation contract: `task-schema.md § "Drift Prevention Fields"`). `--spec` / `--sections` print the same hashes for the whole spec in one call.
+   - **No single section:** a work item that maps to no single section (cross-cutting setup, a repo-wide sweep) gets `spec_unmapped: true` in place of `spec_section` + `section_fingerprint`; it keeps `spec_version`.
    - **`.claude/`-boundary split:** when a work item spans both `.claude/` paths and regular project paths, split it into separate tasks (or annotate it) — subagents cannot write `.claude/` (DEC-004), so the `.claude/` portion is orchestrator-implemented inline with a read-only verify-agent pass. Declaring this at decomposition prevents mid-dispatch correction (observed in 3 downstream sessions).
    - **After creating task JSONs:** run the Decomposition Pre-Pass Validation (below) to catch declared-path drift and under-counted `files_affected`, and the Test-Harness Awareness check (below) to propose scenario-authoring subtasks for runtime-shaped tasks — both run before tasks ship to `/work` Step 2c.
 
@@ -134,7 +135,7 @@ Task {id}_h: Author <harness-dir>/{id}.{ext}
   files_affected: [<harness-dir>/{id}.{ext}]
 ```
 
-The subtask is dispatched after the parent finishes — its job is to convert the verification path from "manual user playthrough" to "re-runnable scenario." Surface the subtask inline:
+The subtask is dispatched after the parent finishes — its job is to convert the verification path from "manual user playthrough" to "re-runnable scenario." It copies task {id}'s provenance fields (or its `spec_unmapped`), as a `/breakdown` child does. Surface the subtask inline:
 
 ```
 Decomposition note: Task {id} is harness-eligible (interaction_hint: cli_direct)
@@ -223,7 +224,7 @@ When absent, verify-agent infers from `package.json` (presence of `expo` + absen
 - Difficulty 1-6 (break down anything larger)
 - Explicit dependencies
 - Owner: claude/human/both
-- Include all spec provenance fields (fingerprint, version, section, section_fingerprint, section_snapshot_ref)
+- Include all spec provenance fields (fingerprint, version, section, section_fingerprint, section_snapshot_ref), or `spec_unmapped: true` for a task that maps to no single section (step 8)
 - **Phase field:** Assign `phase` based on spec section structure (e.g., tasks from "## Phase 1: Data Pipeline" get `"phase": "1"`). Also set `phase_name` to the spec's descriptive name for the phase (e.g., `"phase_name": "Data Pipeline"`). Dashboard rendering uses the format "Phase {N} — {phase_name}" — generic labels like "Phase 1" alone are not acceptable.
 - **Decision dependencies:** If a task depends on an unresolved decision, add the decision ID to `decision_dependencies` array. Note whether the decision is an inflection point in task notes.
 - **Cross-phase flag:** Consider suggesting `cross_phase: true` for long-lead tasks that must start before prior phase completion. Heuristic: `owner: human` tasks whose title or notes contain recruit/procure/approve/schedule/coordinate/stakeholder/vendor/contract, OR any task with `external_dependency.expected_date` more than 14 days out. When the heuristic fires, ask the user: `"Task {id} looks like long-lead work. Mark as cross_phase: true? [Y/N]"`. Never set silently. See `task-schema.md` § `cross_phase` for semantics.

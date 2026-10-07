@@ -111,7 +111,7 @@ Triggered by:
 - **Fixing task finished**: when a task whose `resolves_friction` lists the entry is Finished with no user review pending (a per-task verify pass without `user_review_pending`, `/work complete`, or parent auto-completion once no subtask has a review pending), `/work` marks it `resolved` with `resolved_by: {"kind": "task", "ref": "<task id>", "at": "<ISO timestamp>"}`. Only `open` entries change; ids not in the register, and entries already `resolved` or `dismissed`, are skipped.
 - **User dismissal during audit review**: mark `dismissed` with `dismiss_reason`.
 
-When you create a task to fix open entries, list their ids in its `resolves_friction` field (`task-schema.md § "Resolves Friction Field"`); a task that only cites an entry, or raised it, doesn't close it.
+When you create a task to fix open entries, list their ids in its `resolves_friction` field (`task-schema.md § "Resolves Friction Field"`); a task that only cites an entry, or raised it, doesn't close it. The task gets provenance like any other new task (creation contract: `task-schema.md § "Drift Prevention Fields"`): the spec section its entries' `source_anchor` points into when they share one, otherwise `spec_unmapped: true`.
 
 ---
 

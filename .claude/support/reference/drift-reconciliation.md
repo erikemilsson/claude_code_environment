@@ -73,6 +73,7 @@ Runs as `/work` Step 1b, on every `/work`. It compares each task's `section_fing
   "historical": 33,
   "unmatched": 45,
   "no_provenance": 20,
+  "unmapped": 3,
   "unreadable": ["task-9.json"],
   "unreconciled_sections": 1
 }
@@ -86,7 +87,7 @@ With no spec file, `spec` and `spec_fingerprint` are `null`, every list is empty
 
 1. `status` is `Absorbed` or `Broken Down`, or `out_of_spec` is true → skip; not counted. Subtasks carry the provenance (`/breakdown` copies it), and an out-of-spec task has no spec section to drift from.
 2. `spec_version` is a non-empty string that doesn't name the current spec → a Finished task counts as `historical` (Task Migration leaves its provenance unchanged by design); any other status goes in `unmigrated` (§ "Task Migration on Version Transition"). `spec_version` names the current spec when, after `.strip()`, it equals the current stem (`spec_v3`), its bare number (`3`) or `v3`. A `spec_version` that is missing, empty or not a string counts as current.
-3. `spec_section` or `section_fingerprint` is missing or empty → counted in `no_provenance`, never flagged.
+3. `spec_section` or `section_fingerprint` is missing or blank → never flagged. Counted in `unmapped` when `spec_unmapped` is `true` (the task declares it belongs to no single section), otherwise in `no_provenance`. A task that has both fields goes on to rule 4 whatever its `spec_unmapped` says.
 4. **Heading match**, with `s = spec_section.strip()`:
    - (a) `s` matches a current `## ` heading line `h` when `h.strip() == s`, or else when `h.strip() == "## " + s`.
    - (b) If no `## ` heading matches and `s` starts with `### `, `s` matches when **exactly one** current `### ` heading line has `.strip() == s`. The task is then compared with that subsection's hash and reported under the `### ` heading. Some projects record subsection-level provenance this way.
@@ -96,7 +97,7 @@ With no spec file, `spec` and `spec_fingerprint` are `null`, every list is empty
 
 **Deferrals.** `.claude/drift-deferrals.json` is `{"deferrals": [...]}` or a bare list; ignore anything else, and any entry without a string `section`. An entry matches a drifted section when `section.strip()` equals the heading, or `"## " + section.strip()` does. An entry with a non-empty `affected_tasks` list defers only those tasks (ids are compared as strings, so `3` and `"3"` match); otherwise it defers every drifted task in the section. A section is `deferred` when all its drifted tasks are. Missing sections are never deferred.
 
-**Tasks without a section fingerprint are never flagged.** The old fallback compared them with the full-spec hash, which flags every such task on every spec edit. It only stayed quiet because the dashboard META fast path skipped this step, and that path is gone (FB-128). Such tasks are counted in `no_provenance` instead; FB-135 tracks giving them provenance. A task's own `spec_fingerprint` isn't compared either, since a full-spec hash changes on any edit.
+**Tasks without a section fingerprint are never flagged.** The old fallback compared them with the full-spec hash, which flags every such task on every spec edit. It only stayed quiet because the dashboard META fast path skipped this step, and that path is gone (FB-128). Such tasks are counted in `no_provenance` instead (or in `unmapped`, when they say so with `spec_unmapped: true`). New tasks don't land in `no_provenance`: every creation path stamps provenance (`task-schema.md § "Drift Prevention Fields"`, creation contract). For tasks that already lack it, `/health-check` Part 1 check 11 offers a one-time baseline (`fingerprint.py --baseline`), which stamps the hash the section had in the spec's git history at the task's date. History-dated hashes assume the spec was edited on the line the task was built on: a side-branch edit is dated by its merge, and a fast-forwarded branch can't be told apart. A task's own `spec_fingerprint` isn't compared either, since a full-spec hash changes on any edit.
 
 **Hash computation:**
 ```bash
@@ -310,7 +311,7 @@ Runs after `/work` Step 1c and before Step 1d whenever the drift check reports u
 
 ```
 Section "## Auth" changed — 3 Finished, 1 Pending task(s).
-  {diff, or the current section text when no snapshot exists}
+  {diff, or the current section text when there is nothing to diff against}
   Recommended: [K] — {one-line reason from the diff}
   [A] Apply — reset Finished tasks to Pending (rebuild + re-verify); update open tasks
   [V] Re-verify — check the shipped work against the new text, no rebuild; update open tasks
@@ -363,10 +364,10 @@ Open tasks in the section: see "Open tasks under `[A]` and `[V]`" above.
 
 **Invariant:** no Finished task carries a verification result computed against a different section text than its current fingerprints, except in two recorded cases: the user chose `[K]`, which its notes record; or the task is `owner: human` under `[V]`, which keeps its old verification with fresh fingerprints while `user_review_pending: true` stands in until the user re-checks.
 
-**Diff baseline.** Diffs come from the decomposition snapshot (`section_snapshot_ref`), so after a `[K]`, later diffs show changes since decomposition, not since the keep. The task's latest `[DRIFT KEPT]` note says what was already accepted.
+**Diff baseline.** Diffs come from the decomposition snapshot (`section_snapshot_ref`), so after a `[K]`, later diffs show changes since decomposition, not since the keep. The task's latest `[DRIFT KEPT]` note says what was already accepted. A task with no snapshot whose `notes` carry `[BASELINE] … stamped from the spec at <sha>` is diffed against that commit (`git diff <sha> -- .claude/spec_v{N}.md`, cut to the section); only a task with neither gets the current section text alone.
 
-**Missing sections** (open tasks whose `spec_section` has no match under rule 4: no heading, or several `### ` headings) use the § "Task Migration on Version Transition" prompt: `[D]` Delete task, `[O]` Keep as out-of-spec, `[R]` Reassign to a different section. `[R]` sets `spec_section` to the chosen heading and refreshes the fingerprints. `[O]` sets `out_of_spec: true` and keeps the provenance fields; the drift check skips out-of-spec tasks (rule 1).
+**Missing sections** (open tasks whose `spec_section` has no match under rule 4: no heading, or several `### ` headings) use the § "Task Migration on Version Transition" prompt: `[D]` Delete task, `[O]` Keep as out-of-spec, `[R]` Reassign to a different section. `[R]` sets `spec_section` to the chosen heading and refreshes the fingerprints (`fingerprint.py --provenance .claude --section "<heading>"` prints the values). `[O]` sets `out_of_spec: true` and keeps the provenance fields; the drift check skips out-of-spec tasks (rule 1).
 
 **After reconciling:** clear reconciled sections from `drift-deferrals.json` (§ "Drift Budget Enforcement"). Then, if any choice wrote a task file or `drift-deferrals.json` (an `[S]`-only pass writes just the deferral file), regenerate the dashboard (Tier-1 trigger: **drift reconciliation applied**). `task_hash` covers neither fingerprints nor deferrals, so the Step 1a check wouldn't notice, and the dashboard would keep showing the old drift.
 
-**Edge cases:** New section → suggest new tasks (`/iterate` adds it to `pending_decomposition[]`, and `/work` Step 1a offers decomposition). Section deleted or renamed → its open tasks are missing (above); its Finished tasks only add to `unmatched`. No snapshot → detection still works, because it compares task fingerprints with the current spec; the UI shows the current section text without a diff.
+**Edge cases:** New section → suggest new tasks (`/iterate` adds it to `pending_decomposition[]`, and `/work` Step 1a offers decomposition). Section deleted or renamed → its open tasks are missing (above); its Finished tasks only add to `unmatched`. No snapshot → detection still works, because it compares task fingerprints with the current spec; what the UI shows instead is under "Diff baseline" above.

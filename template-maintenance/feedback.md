@@ -982,17 +982,9 @@ Tags: agents, verify-agent, implement-agent, playwright, screenshots, dev-server
 
 **Status:** promoted 2026-10-05 — shipped v5.10.0 (restore path, notes history, Step 0e by files, null pass rate, `resolves_friction`). See archive for full entry.
 
-## FB-135: Most tasks in two projects carry no section provenance, so drift can't be checked for them
+## FB-135: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
 
-**Status:** new — measured 2026-10-04; split out of FB-128 by the maintainer (FB-128 design decision 6). For a later release.
-**Captured:** 2026-10-04 (FB-128 design survey)
-**Source:** read-only survey of 10 downstream repos, 2026-10-04 (`template-maintenance/plan-fb128-drift-detection.md` § Survey). PortfolioWebsite: 74 of 75 tasks have no `section_fingerprint`. OEMMatInsightBI: 19 of 20 current-version tasks have none, and all its `spec_section` values are bare headings without `## `. styler: 20 current-version tasks have none, and 47 have a `spec_section` that is not a current heading (mostly free-form values such as `§ 52.1 (…) + § 52.6 (…)`; one differs only by a trailing space).
-
-**Problem.** Decomposition stamps full provenance (`decomposition.md` step 8) and `/breakdown` copies it, but tasks created any other way get none: phase-level fix tasks (`work-procedures.md`, phase-level step 2 writes the verifier's `task_json` payload as-is), tasks filed mid-session from user feedback or reviews (no defined command path; harvest 2026-10-03 single-incident list), and out-of-spec tasks. FB-128's drift check counts these as `no_provenance` and never flags them, so a spec edit under them stays invisible. In a project that creates tasks mostly ad hoc (PortfolioWebsite), drift detection covers almost nothing.
-
-**Fix sketch.** (1) Every task-creation path stamps `spec_version`, `spec_section` (a real `## ` heading) and `section_fingerprint` when the task maps to a spec section (`fingerprint.py --sections`), and a task that maps to none says so explicitly, so the check can tell "unmapped" from "missing". (2) A one-time baseline offered by `/health-check` Part 1: for tasks whose `spec_section` resolves to a current heading but that carry no fingerprint, stamp the current hash once the user confirms that the current text is what they were built against (the same assertion as FB-128's `[K]`). (3) Optionally normalise free-form `spec_section` values. FB-128's drift JSON (`no_provenance`, `unmatched`) is the measurement before and after.
-
-Tags: drift-detection, provenance, task-creation, spec_section, section_fingerprint, health-check, follow-up-to-FB-128
+**Status:** promoted 2026-10-07 — shipped v5.13.0 (creation contract, `spec_unmapped`, `fingerprint.py --provenance` and `--baseline`, `validate-tasks.py` warning, `/health-check` check 11 baseline). See archive for full entry.
 
 ## FB-136: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
 

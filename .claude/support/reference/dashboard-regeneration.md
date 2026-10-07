@@ -151,6 +151,7 @@ Dashboard regeneration follows a **tiered communication strategy** (see `command
 | After decision resolution | May unblock tasks, dashboard needs to reflect new state |
 | Agent decision recorded, ratified or reconsidered ("Persist decisions" at a verify pass; `/work ratify`; `/work reconsider`) | `task_hash` doesn't include decisions, so the ratify row and `decisions_recorded` would stay stale |
 | Drift reconciliation applied (any choice that wrote a task file or `drift-deferrals.json`; an `[S]`-only pass writes just the deferral file) | `task_hash` doesn't include fingerprints, notes or deferrals, so the next freshness check would miss it and the Spec Drift rows would stay stale |
+| Provenance baseline written (`/health-check` Part 1 check 11) | Same gap: the stamped fingerprints can add Spec Drift rows that `task_hash` can't see |
 | Step 1a freshness check (`task_hash`, `template_version` or `spec_fingerprint` differs from META) | Catch-up on entry |
 | Format staleness (template_version mismatch) | Dashboard was generated with older template rules |
 
