@@ -258,6 +258,8 @@ Checkpoints persist across sessions, so you can rewind even after closing and re
 1. **DEC-016 scope over-broad.** Edits to `.claude/support/reference/decisions.md` (the reference doc *about* decision format) may be blocked citing DEC-016 — but DEC-016 only covers `.claude/spec_v*.md`, `.claude/support/decisions/decision-*.md` records, and `.claude/vision/**/*.md`. Workaround: agents lead with explicit context (e.g., "this is the reference doc, not a decision record"); if still blocked, the user provides typed-text authorization in their next message.
 2. **AskUserQuestion responses don't count as classifier-bypass authorization.** When an `AskUserQuestion`-offered "authorize" option is selected, the classifier does NOT treat it as "visible user response authorizing the retry" — it requires typed-text. Workaround: agents prefer free-text prompts (not `AskUserQuestion`) when classifier-bypass authorization is the goal. `AskUserQuestion` remains appropriate for collecting preferences and structured decisions. Tracked as FB-077; upstream-Anthropic mechanism pending.
 
+**Permission prompts outside auto mode:** `/work` runs a few shell commands that `settings.json` doesn't pre-allow: `lsof`, `mkdir`, `cp`, `diff`, `mv`, `kill`, `mktemp` and `rm` (residue baseline, evidence directory, post-verify delta, handoff cleanup), and `rg` or `find` when the session has no Grep/Glob tool. Auto mode normally runs them without asking. In other modes each one prompts: choose "Yes, don't ask again" for the ones you're happy to allow, or add allow rules to `.claude/settings.local.json`. The template doesn't pre-allow them because `kill`, `mv` and `rm` can do damage.
+
 ## Where to Find Things
 
 | Looking for... | Location |

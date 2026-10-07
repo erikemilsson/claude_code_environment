@@ -37,7 +37,7 @@ No fixture files or project setup needed. The state description in each scenario
 | # | Name | Tests |
 |---|------|-------|
 | 06 | Dashboard Structure and Actionability | Full project skeleton visible, action items complete with links, section toggles, critical path |
-| 07 | Dashboard Communication and Feedback | Attention-to-resolution loop, feedback persistence, decision detection, stale dashboard |
+| 07 | Dashboard Communication and Feedback | Attention-to-resolution loop, feedback kept in `user_feedback` across regeneration, decision detection, stale dashboard |
 
 ### Verification and Gates (08)
 
@@ -69,7 +69,7 @@ No fixture files or project setup needed. The state description in each scenario
 
 | # | Name | Tests |
 |---|------|-------|
-| 19 | Agent Crash and Timeout Recovery | Agent timeout/crash handling, partial work preservation |
+| 19 | Agent Crash and Timeout Recovery | Agent timeout/crash handling, partial work preservation, the open sentinel after a cutoff (19F), a lost delta re-check in a batch (19G) |
 | 20 | Corrupted Task JSON | Malformed files, missing fields, dangling dependencies |
 
 ### Spec Lifecycle (21-23, 44)
@@ -111,7 +111,7 @@ No fixture files or project setup needed. The state description in each scenario
 | 37 | /work Procedure Stubs | STOP-gated stubs load their `work-procedures.md` bodies |
 | 38 | /iterate Batch Approval | Single-response resolution of a proposal's decisions |
 | 39 | /health-check Batch Fix Triage | Collect-don't-prompt fix queue; Part 5 commit offer |
-| 40 | Handoff Schema Cap | Bounded handoff index; total measured after the write; overflow file named to the minute (FB-131) |
+| 40 | Handoff Schema Cap | Bounded handoff index; total measured after the write; overflow file named to the minute (FB-131); the PreCompact hook's cut (40D); overflow file read, then deleted with its handoff (40E) |
 | 41 | Script-First Dashboard Regeneration | The renderer produces the whole dashboard |
 | 42 | Section-Scoped Spec Reading | Spec index, scoped reads, freshness guard (DEC-021) |
 | 43 | Acceptance Reconciliation Lens | Spec boxes vs `verification-result.json` criteria (DEC-022) |
@@ -122,7 +122,7 @@ No fixture files or project setup needed. The state description in each scenario
 | 49 | Agent Decisions Recorded and Ratified | Choices held until the verify pass, one `recorded` record per task, `/work ratify` and `/work reconsider`, `/health-check` legacy rows (FB-129) |
 | 50 | Template Sync Classification | Unchanged template copies apply under bare `[A]`, not-a-variant rows, shallow history and the sidecar, manifest-list and `.gitignore` rows, non-git projects (FB-136) |
 | 51 | Task Provenance Baseline | Every creation path stamps section provenance (`fingerprint.py --provenance`), `spec_unmapped`, `/health-check` baseline from the spec's git history, `confirm_current` and `needs_section` rows, `same_day_edit` (FB-135) |
-| 52 | Post-Verify Delta and Residue | Same-verifier delta re-check (recorded, not counted) and when there is none, residue check against a pre-dispatch baseline after an agent returns or is killed, browser and build verifications one at a time, inline bound after a cutoff (FB-130, FB-132, FB-133, FB-119) |
+| 52 | Post-Verify Delta and Residue | Same-verifier delta re-check (recorded, not counted) and when there is none, counter reset when a passed task is reopened, residue check against a pre-dispatch baseline (in context or on disk) after an agent returns or is killed, browser and build verifications and queued gates one at a time, inline bound after a cutoff (FB-130, FB-132, FB-133, FB-119) |
 
 ## Example Project
 

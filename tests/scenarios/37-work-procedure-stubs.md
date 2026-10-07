@@ -43,7 +43,7 @@ v4.18.0 split work.md (Plan 2 P3): the orchestrator file had ~20 ship-log patche
 
 ### Expected
 
-- The 10-step Process runs from the procedure file: validation, **self-attestation auto-generated** for the human-owned task (`checks: {"self_attested": "pass"}`), deliverable validation (`[A]/[P]/[W]` on mismatch), the two-prompt notes collection (template-notes prompt SHOWN since `template_inbox_path` is set), dashboard-marker fallback, task update, parent auto-completion, regen + unblocked surfacing, archive check, Step 5 validation
+- The 10-step Process runs from the procedure file: validation, **self-attestation auto-generated** for the human-owned task (`checks: {"self_attested": "pass"}`), deliverable validation (`[A]/[P]/[W]` on mismatch), the two-prompt notes collection (template-notes prompt SHOWN since `template_inbox_path` is set; the two prompts are the only feedback path, with no dashboard-marker read), task update, parent auto-completion, regen + unblocked surfacing, archive check, Step 5 validation
 
 ### Pass criteria
 

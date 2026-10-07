@@ -141,11 +141,11 @@ A verification that needs either one is an **exclusive** verification.
 
 - At most one exclusive job runs at a time. When the implement-agent of a task returns `completed` and its verification is exclusive while the queue is busy, the task stays "Awaiting Verification" and joins `exclusive_verify_queue`. The queue is first in, first out, in the order the implement reports were processed.
 - Three kinds of job take a turn, and a queue entry records which (`{task_id, kind}`). Running the head of the queue means, by kind:
-  - `verify`, an exclusive verify-agent: dispatch it and add it to `active_verifiers`.
-  - `delta`, a post-verify delta re-check that will use the browser or the build (`work-procedures.md`, "Post-verify delta"): send that verifier its SendMessage resume (step 4 there) and add it to `active_verifiers` marked `delta`, so the loop waits for its reply; the reply is handled by step 5 there, not by the verify protocol.
-  - `gate`, the orchestrator's own Empirical Evidence Gate (`work-web-evidence.md`: its browser assertions and its client-bundle production build) for a task whose verification was not judged exclusive: run the gate now, persist that task's pass, then run the next head.
-- The queue is busy while `active_verifiers` holds an exclusive verify-agent or a `delta` entry. The orchestrator's gate is its own work inside one turn; nothing is dispatched during it, so it never leaves the queue busy between notifications.
-- The gate for a task with an exclusive verification needs no entry: it runs inside that task's turn, after its verify-agent returns and before the head of the queue is run.
+  - `verify`, an exclusive verify-agent: dispatch it and add it to `active_verifiers` marked `exclusive`.
+  - `delta`, a post-verify delta re-check that will use the browser or the build (`work-procedures.md`, "Post-verify delta"): send that verifier its SendMessage resume (step 4 there) and add it to `active_verifiers` marked `delta` and `exclusive`, so the loop waits for its reply; the reply is handled by step 5 there, not by the verify protocol. A delta re-check that needs neither resource takes no turn: it is resumed at once and tracked in `active_verifiers` marked `delta` only, so the loop waits for it too, but it never makes the queue busy and its return does not run the head. **Fresh verifier after a delta:** a fresh verify-agent that step 5 calls for is an ordinary verification. When it is exclusive it joins the tail as a `verify` entry, never ahead of the queue, and the head is run if the queue is not busy.
+  - `gate`, the orchestrator's own Empirical Evidence Gate (`work-web-evidence.md`: its browser assertions and its client-bundle production build) for a task whose verification or delta re-check was not exclusive. **Queued gate:** it gets an entry when that pass arrives while the queue is busy: dual-write the report's `friction_markers` then (not again when the entry is run), keep the report, and leave the task "Awaiting Verification" until its turn. With the queue free the gate runs at once, with no entry. At the head: run the gate now, finish that task's after-return steps with the kept report (a failing gate makes it a fail), then run the next head. The kept report exists only in the conversation. If it is lost (compaction, a cutoff), the task is still "Awaiting Verification" and is verified again, by `session-recovery.md` case 1 or Step 3; the new verifier's markers are written as any return's, so the log can hold the lost report's markers twice, which is accepted.
+- The queue is busy while `active_verifiers` holds an exclusive job: an exclusive verify-agent, or a delta re-check marked `exclusive`. The orchestrator's gate is its own work inside one turn; nothing is dispatched during it, so it never leaves the queue busy between notifications.
+- The gate after an exclusive verification or an exclusive delta re-check needs no entry: it runs inside that task's turn, after the verifier returns and before the head of the queue is run.
 - When an exclusive job ends, with a report or without one, finish its after-return steps, then run the head of the queue. The residue check among those steps stops a server the agent reported and left listening only once no other agent of the batch is running (`work-procedures.md § "Residue check"`, "In a parallel batch"); the queue doesn't wait for that moment.
 - Verifications that are not exclusive are dispatched at once, as before, and run alongside.
 - Unsure whether a verification needs the browser or the build → treat it as exclusive. A queued verification costs minutes; two agents driving one tab produce snapshots of each other's pages with no error, and two builds into one directory produce a bundle neither wrote.
@@ -325,7 +325,7 @@ All agents run concurrently via parallel `Agent` tool calls with `model: "opus"`
 
 ```
 active_agents = {task_id: {agent_id, spawned_at} for each spawned implement-agent}
-active_verifiers = {task_id: {agent_id, spawned_at} for each spawned verify-agent}
+active_verifiers = {task_id: {agent_id, spawned_at, exclusive?, delta?} for each spawned or resumed verifier}
 exclusive_verify_queue = []  # {task_id, kind} entries waiting for the browser or the build; kinds, "busy" and
                              # "run the head" are defined in § "Single-Instance Resources"
 
@@ -349,8 +349,9 @@ WHILE active_agents, active_verifiers or exclusive_verify_queue is non-empty:
          Dispatch verify-agent for this task (Agent tool, model: "opus", turn budget of about
          30 tool calls in the prompt, the "Before Any Dispatch" lines with evidence directory
          {scratch}/agent-{task_id}-verify-{n}/)
-         Add to active_verifiers. Verify-agent dispatch is individual — one per completed
-         implement-agent, runs concurrent with remaining implement-agents.
+         Add to active_verifiers (marked `exclusive` when its verification is). Verify-agent
+         dispatch is individual — one per completed implement-agent, runs concurrent with
+         remaining implement-agents.
     4. Remove implement-agent from active_agents
     5. INCREMENTAL RE-DISPATCH:
        - Re-run Step 2c eligibility assessment with current state
@@ -365,11 +366,16 @@ WHILE active_agents, active_verifiers or exclusive_verify_queue is non-empty:
 
   For each completed verify-agent:
     (A reply from a verifier resumed for a delta re-check, marked `delta` in active_verifiers:
-     apply work-procedures.md "Post-verify delta" step 5 in place of steps 1-2, then steps 3-4.)
+     apply work-procedures.md "Post-verify delta" step 5 in place of steps 1-2, then steps 3-4.
+     Its gate on a pass is queued or run as step 2 says; a fresh verify-agent it calls for
+     follows § "Single-Instance Resources", "Fresh verifier after a delta".)
     1. Read verify-agent's return report (structured schema per verify-agent.md § Step T6)
        and run the Residue check for this agent first (work-procedures.md § "Residue check")
     2. On a pass, run the Empirical Evidence Gate first when it applies (work.md § "If
-       Verifying (Per-Task)"); it uses this task's exclusive turn. Then apply "After verify-agent
+       Verifying (Per-Task)"). After an exclusive job it uses this task's turn. Otherwise it
+       runs now if the queue is not busy; if the queue is busy, append {task_id, kind: "gate"}
+       to exclusive_verify_queue as § "Single-Instance Resources", "Queued gate" says, and
+       apply the rest of this step when the entry is run. Then apply "After verify-agent
        returns (per-task mode)" protocol from work.md § State Persistence Protocol:
        - Write task_verification, append verification_history, increment verification_attempts
        - Transition status (Finished / In Progress retry / Blocked escalate)
@@ -382,14 +388,20 @@ WHILE active_agents, active_verifiers or exclusive_verify_queue is non-empty:
          HTTP 429 / zero-token return / API or harness error) or a stop the user asked for is
          an interruption (FB-120): no increment, task stays "Awaiting Verification"
     3. Remove verify-agent from active_verifiers (unless it was re-asked above)
-    4. If it was an exclusive verification or a delta re-check and it left active_verifiers:
-       run the head of exclusive_verify_queue (a `verify` entry is dispatched as in implement
-       step 3, ELSE branch)
+    4. If it was marked `exclusive` (a verification or a delta re-check) and it left
+       active_verifiers: run the head of exclusive_verify_queue (a `verify` entry is
+       dispatched as in implement step 3, ELSE branch; a `gate` entry runs that task's gate
+       and finishes its step 2, then the next head is run)
 
   For each agent whose notification reports a failure (no report returned):
     Run the Residue check for this agent first (work-procedures.md § "Residue check"), in both
     cases 1 and 2: an agent that was killed stopped nothing and removed nothing. Its evidence
     directory is kept.
+    (A verifier resumed for a delta re-check, marked `delta` in active_verifiers, that ends
+     without a report: apply work-procedures.md "Post-verify delta" step 5 in place of cases
+     1-2 — its "infrastructure termination" outcome for case 1, its "anything else" outcome
+     otherwise: no second ask, no "[VERIFICATION TIMEOUT]", no Blocked — then steps 3-5. The
+     fresh verify-agent follows § "Single-Instance Resources", "Fresh verifier after a delta".)
     1. Infrastructure termination (usage limit / HTTP 429 / zero-token return / API or harness error) or a stop the user asked for is an interruption, not a timeout:
        - Implement-agent: follow work-procedures.md "Zero-token return — platform limit cutoff (FB-103)"
        - Verify-agent: no increment, task stays "Awaiting Verification" (FB-120); apply that
@@ -400,9 +412,9 @@ WHILE active_agents, active_verifiers or exclusive_verify_queue is non-empty:
        - Verify-agent: no valid report → protocol step 5 (ask once, then "[VERIFICATION TIMEOUT]")
     3. Remove from active_agents / active_verifiers
     4. Report to user: "Task {id}: agent ended without a report — may need investigation or retry"
-    5. If it was an exclusive verification: run the head of exclusive_verify_queue, unless
-       case 1's post-limit dispatch rule holds the queue for the user's go-ahead (the queued
-       tasks then stay "Awaiting Verification")
+    5. If it was marked `exclusive` (a verification or a delta re-check): run the head of
+       exclusive_verify_queue, unless case 1's post-limit dispatch rule holds the queue for
+       the user's go-ahead (the queued tasks then stay "Awaiting Verification")
 ```
 
 This enables **incremental re-dispatch**: when Task A completes and releases its files, Task C (which was held back due to conflict with A) can start immediately — even while Tasks B and D are still running. A task held because its implementation must run the build is the exception: it starts only when nothing else is running (§ "Single-Instance Resources").

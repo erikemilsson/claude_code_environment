@@ -33,6 +33,7 @@ READ — by `/work` Step 0, before session recovery scan
 
 DELETE — after successful restoration
   - Prevents stale handoffs from confusing future sessions
+  - The overflow file `overflow_ref` names is deleted with it (`work.md` Step 0a)
 ```
 
 ---
@@ -97,6 +98,7 @@ DELETE — after successful restoration
 | `trigger` | String | Yes | `"user_pause"` or `"pre_compact"`. |
 | `timestamp` | String | Yes | ISO 8601 timestamp. |
 | `spec_version` | String | Yes | Current spec filename (e.g., `"spec_v2"`). |
+| `truncated` | Boolean | No | `true` when the PreCompact hook cut content to hold the total bound (§ "Path B", step 3, which says what a cut handoff may lack). Absent otherwise; `/work pause` never writes it. |
 
 ### `position`
 
@@ -173,7 +175,7 @@ Free-form string giving the next session explicit instructions for how to resume
 
 ### `overflow_ref`
 
-Optional path to a workspace overflow file, null when everything fit. Set it when any field's content exceeds its bound, or when the total check moved content out.
+Optional path to a workspace overflow file, null when everything fit. Set it when any field's content exceeds its bound, or when the total check moved content out. It is the only record of which overflow file belongs to this handoff (`work.md` Step 0a reads that file, then deletes it with the handoff).
 
 ## Bounds and Overflow
 
@@ -189,7 +191,7 @@ Per-field caps:
 | `session_knowledge` | ≤ ~10 bullets, ≤ ~25 words each |
 | `recovery_action` | ≤ ~3 sentences |
 
-**Overflow procedure:** when content genuinely exceeds a bound, write the excess to `.claude/support/workspace/handoff-overflow-{YYYY-MM-DD-HHMM}.md` (organized by field name), set `overflow_ref` to that path, and keep only the most load-bearing content inline. `{YYYY-MM-DD-HHMM}` is the local time of this pause, to the minute, so a second pause on the same day gets its own file; one pause uses one file (the total check below appends to the file a per-field overflow started). The next session reads the handoff always, the overflow file only when `overflow_ref` is non-null and the inline summary isn't enough. Do not create the overflow file preemptively — most sessions fit the bounds.
+**Overflow procedure:** when content genuinely exceeds a bound, write the excess to `.claude/support/workspace/handoff-overflow-{YYYY-MM-DD-HHMM}.md` (organized by field name), set `overflow_ref` to that path, and keep only the most load-bearing content inline. `{YYYY-MM-DD-HHMM}` is the local time of this pause, to the minute, so a second pause on the same day gets its own file; one pause uses one file (the total check below appends to the file a per-field overflow started). The next session reads the handoff always, and the overflow file whenever `overflow_ref` names one (`work.md` Step 0a). Do not create the overflow file preemptively — most sessions fit the bounds.
 
 **Total check (after every handoff write on Path A):**
 
@@ -199,7 +201,7 @@ Per-field caps:
 
 The check moves detail out; it never drops it, and it never shortens the required fields, the task ids and `ready_for_verify` in `active_work`, `parallel_state`, `decisions_in_flight` or the `open_question_refs` pointers. If only those remain and the file is still over (a large parallel batch), stop there and state the measured size in the pause output.
 
-The PreCompact hook (Path B) doesn't run this check: it writes structural fields only and cuts each `partial_notes` to 600 characters.
+The PreCompact hook (Path B) holds its handoff to the same 2560 bytes, but it cuts what this check would move: it has no overflow file, and what it cuts is still whole in the task files (§ "Path B", step 3).
 
 ---
 
@@ -222,7 +224,7 @@ The graceful, preferred path. Claude has full conversation context and can wind 
    ```
 4. Keep task status as "In Progress" (do not change to Blocked, On Hold, etc.)
 5. Write `.claude/tasks/.handoff.json`, then measure it and bring it to 2560 bytes or fewer (§ "Bounds and Overflow", Total check)
-6. Write `.claude/tasks/.last-clean-exit.json` (this is a clean exit)
+6. Write `.claude/tasks/.last-clean-exit.json` (this is a clean exit): the sentinel is written closed, unless `work.md` Step 5 item 3 ("Kept open") says to keep it open
 
 ### Path B: PreCompact Hook (Automatic Safety Net)
 
@@ -237,9 +239,14 @@ Fires when auto-compaction or manual `/compact` triggers. Runs as a shell script
 **What the hook does:**
 1. Reads task JSON files from `.claude/tasks/` to discover in-flight work
 2. Builds a structural handoff from disk state (task statuses, phases, recent completions). An In Progress task's `partial_notes` is the first 600 characters of its `notes` (newest entries first), with `…` appended when cut
-3. Writes `.claude/tasks/.handoff.json`
-4. Does NOT modify task JSON files
-5. Skips if a handoff already exists (user already ran `/work pause` — don't overwrite the richer handoff)
+3. Measures the serialized handoff. 2560 bytes or fewer: written as built. Over: it sets `truncated: true` and cuts, stopping as soon as the handoff fits; everything it cuts is still whole in the task files, and it never drops an `active_work` entry:
+   - the `partial_notes` heads, longest first (one common length, the largest that fits; shorter heads are left alone);
+   - then titles longer than 60 characters, the same way, down to 60; then `position.recently_completed`, keeping as many ids from the front as fit; then the remaining titles;
+   - then every `active_work` entry is reduced to its `task_id` and `ready_for_verify`, and titles, cut to 60 characters, are put back for as many entries as fit, counted from the front of `active_work`. A reader accepts such an entry, and never deletes the handoff for it: the other fields this schema marks required may be missing when `truncated` is set;
+   - still over with no title back (more than about 32 tasks in flight): the handoff is written as it is, over the bound, as `/work pause` leaves one it can't shorten further. `truncated` is the only flag; a file over 2560 bytes that has it has reached this floor
+4. Writes `.claude/tasks/.handoff.json`
+5. Does NOT modify task JSON files
+6. Skips if a handoff already exists (user already ran `/work pause` — don't overwrite the richer handoff)
 
 **What the hook cannot capture** (conversation-only context):
 - `session_knowledge` — left empty (user preferences, informal decisions only exist in conversation)
@@ -265,24 +272,28 @@ When `/work` runs, Step 0 checks for a handoff file **before** the existing sess
 
 2. Read and validate handoff file
    IF invalid JSON or missing required fields → warn, delete, proceed to session recovery
+   (not for per-entry fields a `truncated` handoff lacks: § "Path B", step 3)
 
 3. Check staleness
    IF timestamp > 7 days old:
      → Present: "Handoff from {date} — project state may have changed significantly. Using for reference only."
      → Do NOT use for routing decisions — rely on task file state
-     → Delete handoff
+     → Delete handoff and its overflow file (work.md Step 0a, "Overflow file")
      → Proceed to session recovery
 
 4. Present summary to user:
    "Resuming from previous session ({trigger}, {timestamp}):
     {brief summary from position + active_work}"
    Keep it to 2-4 lines. Include task titles and progress indication.
+   (`truncated` set: say so; titles and notes may be cut or missing.)
 
-5. Load session_knowledge into working context
+5. Load session_knowledge into working context, and read the overflow
+   file when overflow_ref names one
    (Available for routing decisions and implement-agent context enrichment.
     NOT passed to verify-agent.)
 
-6. Delete .handoff.json
+6. Delete .handoff.json and its overflow file (work.md Step 0a, "Overflow
+   file", and its concurrent-session exception, which preserves both)
 
 7. Proceed to session recovery scan
    (Handoff informs context; session recovery handles mechanics.

@@ -37,36 +37,43 @@ The user runs Claude Code CLI in one pane and has `dashboard.md` open in the oth
 
 ---
 
-## Trace B: Feedback written in dashboard survives regeneration
+## Trace B: Feedback given at `/work complete` survives regeneration
+
+- **Path:** `/work complete 11` → `work-procedures.md § "Task Completion (/work complete)"` step 3c
 
 ### State
 
-- Task 11 (owner: both) needs user feedback
-- Dashboard has an inline feedback area for Task 11
-- User writes feedback in the dashboard
+- Task 11 (owner: both) is Finished with `user_review_pending: true`; its `user_feedback` already holds one dated entry from an earlier guided-testing round
+- The dashboard is read-only generated HTML (DEC-024): it has no feedback area and no `FEEDBACK:{id}` markers
+- `template_inbox_path` is not configured
 
 ### Scenario
 
-Before the user runs `/work complete`, something triggers a dashboard regeneration (e.g., a parallel agent finishes).
+The user has a remark about Task 11. A parallel agent finishes and the dashboard is regenerated before the user runs `/work complete 11`.
 
 ### Expected
 
-- Feedback written in the dashboard is preserved across regeneration
-- When `/work complete` runs, it captures the feedback before clearing the area
-- Feedback is durably stored in the task JSON after completion
+- Nothing the user wrote lived in the dashboard, so the regeneration loses nothing
+- `/work complete 11` asks the project-notes prompt (always shown); the template-notes prompt is not shown, because there is no inbox to send it to
+- The answer is prepended to the task's `user_feedback` as a dated entry; the earlier entry stays below it
+- No step reads the dashboard for feedback
+- The dashboard regenerated at the end of `/work complete` no longer shows Task 11's review row
+
+Variant, inbox configured: both prompts are shown, each skippable with Enter; a template note becomes an `FB-NNN` entry through `/feedback template:`.
 
 ### Pass criteria
 
-- [ ] Feedback areas in the dashboard have a preservation mechanism
-- [ ] `/work complete` captures inline feedback before regenerating
-- [ ] Feedback persists in task JSON after completion
-- [ ] User is never silently losing feedback they wrote
+- [ ] The two prompts are the only feedback path in `/work complete`
+- [ ] Feedback is stored in the task JSON (`user_feedback`), dated, newest first
+- [ ] An earlier `user_feedback` entry is not overwritten
+- [ ] A dashboard regeneration at any point changes nothing the user said
 
 ### Fail indicators
 
-- User writes feedback, dashboard regenerates, feedback disappears
-- No mechanism exists to capture inline feedback before regeneration
-- Feedback written but never captured in any durable location
+- `/work complete` looking for feedback markers in `dashboard.html`
+- The new entry replacing the earlier guided-testing entry
+- The template-notes prompt shown with no `template_inbox_path`
+- Feedback kept only in the conversation
 
 ---
 

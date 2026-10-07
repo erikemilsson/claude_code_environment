@@ -66,7 +66,7 @@ Guided testing complete: {passed}/{total} passed
 
 **After guided testing:**
 - All steps passed or skipped → clear `user_review_pending`, continue auto-continuation
-- Any step failed → write the round to the task's `user_feedback` as one entry, `Guided testing: step {n} failed: {what the user reported}` for each failed step, clear `user_review_pending` (a leftover flag on reworked work would let `/work complete` accept it as verified; re-verification sets the flag again), set task back to "In Progress" for fixes, route to implement-agent
+- Any step failed → write the round to the task's `user_feedback` as one entry, `Guided testing: step {n} failed: {what the user reported}` for each failed step, clear `user_review_pending` (a leftover flag on reworked work would let `/work complete` accept it as verified; re-verification sets the flag again), set task back to "In Progress" for fixes with `verification_attempts: 0` in the same write (`work-procedures.md § "State Persistence Protocol"`, "Reopening resets the counter"), route to implement-agent
 - User can also provide freeform feedback at the end of the guided testing flow; it goes in the same entry (an entry of its own when no step failed)
 - One entry per guided-testing round, written as `work-procedures.md § "State Persistence Protocol"` ("`user_feedback` is history too") defines: dated, prepended, never replacing earlier rounds, which the implement-agent fixing the task needs too.
 
@@ -81,6 +81,8 @@ Task {id}: "{title}" — ready for your review
 
 [C] Complete  [F] Needs fixes (provide feedback)
 ```
+
+`[F]` takes the failed-step path under "After guided testing": the feedback as one dated `user_feedback` entry, `user_review_pending` cleared, back to "In Progress" with the counter reset, then implement-agent.
 
 ## Out-of-Spec Task Approval
 

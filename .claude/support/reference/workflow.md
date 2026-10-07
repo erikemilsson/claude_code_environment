@@ -446,7 +446,7 @@ When runtime validation is `"partial"`, or when an `owner: "both"` task has runn
 3. `/work` presents guided testing immediately in the CLI conversation
 4. User walks through steps, signaling pass/fail for each
 5. All passed → task complete, auto-continuation resumes
-6. Any failed → task back to "In Progress" for fixes
+6. Any failed → task back to "In Progress" for fixes, with the failed steps in `user_feedback` and `verification_attempts` reset to 0 (`work-user-flows.md`, "After guided testing")
 
 ### UX Principles for Human Involvement
 
