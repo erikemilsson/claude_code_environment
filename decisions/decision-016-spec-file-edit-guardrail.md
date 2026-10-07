@@ -11,13 +11,20 @@ related:
   decisions: [DEC-013, DEC-005, DEC-008, DEC-023]
   feedback: [FB-007]
 implementation_anchors:
-  - .claude/settings.json
-  - .claude/rules/spec-workflow.md
-  - .claude/CLAUDE.md
-  - .claude/sync-manifest.json
-  - .claude/README.md
-  - .claude/support/reference/extension-hooks.md
-  - .claude/commands/health-check.md
+  - file: ".claude/settings.json"
+    description: "permissions.ask entries on Edit/Write for the spec, decision and vision path patterns"
+  - file: ".claude/rules/spec-workflow.md"
+    description: "§ Direct edits to spec, decision, and vision files (DEC-016) — the routing rule and its enforcement note"
+  - file: ".claude/CLAUDE.md"
+    description: "Critical Invariants — settings layering (allow AND ask) and the direct-edit invariant"
+  - file: ".claude/sync-manifest.json"
+    description: "notes field describes the layered settings file"
+  - file: ".claude/README.md"
+    description: "settings.json description and § Auto Mode (how the ask rules compose with the classifier)"
+  - file: ".claude/support/reference/extension-hooks.md"
+    description: "settings-layering pointer names the base permissions.ask set"
+  - file: ".claude/commands/health-check.md"
+    description: "Part 5c boundary validation accepts permissions.ask in the template-owned settings file"
 inflection_point: true
 spec_revised:
 spec_revised_date:

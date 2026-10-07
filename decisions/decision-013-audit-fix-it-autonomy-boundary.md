@@ -11,12 +11,18 @@ related:
   decisions: [DEC-004, DEC-005, DEC-008, DEC-010, DEC-011]
   feedback: []
 implementation_anchors:
-  - .claude/support/reference/audit-fix-workflow.md
-  - .claude/support/reference/dashboard-regeneration.md
-  - .claude/skills/dashboard-style/SKILL.md — mirror of .claude/support/reference/dashboard-regeneration.md (this record's anchor above); retired by DEC-020 (2026-05-27, Option A). The dashboard-regeneration.md anchor above is the surviving source
-  - .claude/commands/audit-coherence.md
-  - .claude/commands/audit-ui.md
-  - template-maintenance/audit-command-family-proposal.md
+  - file: ".claude/support/reference/audit-fix-workflow.md"
+    description: "Stage 6 section documents the [Fix it] mechanism for bundle-eligible findings only, with the transitive-consumer risk callout"
+  - file: ".claude/support/reference/dashboard-regeneration.md"
+    description: "Audit Findings rows carry kind-conditional action labels ([Fix it] on bundle-eligible only)"
+  - file: ".claude/skills/dashboard-style/SKILL.md"
+    description: "mirror of .claude/support/reference/dashboard-regeneration.md (this record's anchor above); retired by DEC-020 (2026-05-27, Option A). The dashboard-regeneration.md anchor above is the surviving source"
+  - file: ".claude/commands/audit-coherence.md"
+    description: "synthesizer prompt notes that bundle-eligible classification triggers the inline-apply path"
+  - file: ".claude/commands/audit-ui.md"
+    description: "synthesizer prompt notes that bundle-eligible classification triggers the inline-apply path"
+  - file: "template-maintenance/audit-command-family-proposal.md"
+    description: "Stage 6 restated as Option C per DEC-013 (bundle-eligible-only [Fix it]); fix-eligible upgrade path deferred"
 inflection_point: false
 spec_revised:
 spec_revised_date:

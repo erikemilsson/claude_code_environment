@@ -11,11 +11,16 @@ related:
   decisions: []
   feedback: [FB-012]
 implementation_anchors:
-  - .claude/settings.json                       # template-owned base permissions.allow (later narrowed by DEC-008)
-  - .claude/sync-manifest.json                  # settings.json slotted into sync category; notes document layered model
-  - .claude/CLAUDE.md                           # Critical Invariants documents settings layering
-  - .claude/commands/health-check.md            # Part 5c boundary validation for two-file model
-  - .claude/README.md                           # explains layered settings model to users
+  - file: ".claude/settings.json"
+    description: "template-owned base permissions.allow (later narrowed by DEC-008)"
+  - file: ".claude/sync-manifest.json"
+    description: "settings.json slotted into sync category; notes document layered model"
+  - file: ".claude/CLAUDE.md"
+    description: "Critical Invariants documents settings layering"
+  - file: ".claude/commands/health-check.md"
+    description: "Part 5c boundary validation for two-file model"
+  - file: ".claude/README.md"
+    description: "explains layered settings model to users"
 inflection_point: false
 spec_revised:
 spec_revised_date:
@@ -244,3 +249,10 @@ Three exist: `sync`, `customize`, `ignore`. **No `merge` category.**
 **If Option E is rejected on the team-sharing concern, recommend Option B over Option A.** Option A's drift property is a long-term liability that compounds. Option B's complexity is bounded and a strong candidate for script extraction under FB-011.
 
 **Confidence:** High on the research findings (runtime merge behavior is well-documented). Moderate on the recommendation — Option E is novel and depends on the team-sharing question.
+
+## Decision
+
+**Selected:** Option E: Ship base set as fully template-owned `settings.json`; require user additions in `settings.local.json` (layered)
+**Decided:** 2026-04-14
+
+**Rationale:** See `## Recommendation`. This record predates the `## Decision` section; the selection is the box ticked under `## Select an Option`.

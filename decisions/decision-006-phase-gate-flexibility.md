@@ -11,14 +11,22 @@ related:
   decisions: []
   feedback: [FB-013]
 implementation_anchors:
-  - .claude/support/reference/task-schema.md             # cross_phase field defined + phase gate rule annotated
-  - .claude/support/reference/phase-decision-gates.md    # phase gate IF/THEN respects cross_phase
-  - .claude/support/reference/parallel-execution.md      # eligibility OR-clause references cross_phase
-  - .claude/commands/work.md                             # routing eligibility includes cross_phase
-  - .claude/commands/breakdown.md                        # subtask inheritance of cross_phase flag
-  - .claude/support/reference/decomposition.md           # heuristic guidance for suggesting the flag
-  - .claude/support/reference/dashboard-regeneration.md  # cross-phase annotation in dashboard rendering
-  - system-overview.md (cross_phase documented in field catalog) — deleted 2026-07-19 (v5.1.1); superseded by this record's own .claude/support/reference/task-schema.md anchor above, which already carries the field definition. Historical content via `git show v5.1.0:system-overview.md`
+  - file: ".claude/support/reference/task-schema.md"
+    description: "cross_phase field defined + phase gate rule annotated"
+  - file: ".claude/support/reference/phase-decision-gates.md"
+    description: "phase gate IF/THEN respects cross_phase"
+  - file: ".claude/support/reference/parallel-execution.md"
+    description: "eligibility OR-clause references cross_phase"
+  - file: ".claude/commands/work.md"
+    description: "routing eligibility includes cross_phase"
+  - file: ".claude/commands/breakdown.md"
+    description: "subtask inheritance of cross_phase flag"
+  - file: ".claude/support/reference/decomposition.md"
+    description: "heuristic guidance for suggesting the flag"
+  - file: ".claude/support/reference/dashboard-regeneration.md"
+    description: "cross-phase annotation in dashboard rendering"
+  - file: "system-overview.md"
+    description: "cross_phase documented in field catalog — deleted 2026-07-19 (v5.1.1); superseded by this record's own .claude/support/reference/task-schema.md anchor above, which already carries the field definition. Historical content via `git show v5.1.0:system-overview.md`"
 inflection_point: true
 spec_revised:
 spec_revised_date:
@@ -178,3 +186,10 @@ Key reasons:
 **Confidence:** moderate-to-high. Residual uncertainty is whether decomposition heuristics will reliably surface the flag suggestion — addressable with iteration after first usage.
 
 Full investigation notes: `decisions/.archive/decision-006-research-2026-04-14.md`
+
+## Decision
+
+**Selected:** Option A: Add optional `cross_phase: true` field on individual tasks
+**Decided:** 2026-04-14
+
+**Rationale:** See `## Recommendation`. This record predates the `## Decision` section; the selection is the box ticked under `## Select an Option`.

@@ -11,9 +11,12 @@ related:
   decisions: [DEC-004, DEC-020]
   feedback: [FB-020]
 implementation_anchors:
-  - .claude/skills/spec-checklist/SKILL.md (first Skill from Option B recommendation) — retired by DEC-020 (2026-05-27, Option A — trial concluded, mirrors retired). Content lives on in .claude/support/reference/spec-checklist.md (drift was whitespace-only at retirement)
-  - .claude/skills/decomposition-heuristics/SKILL.md (second Skill) — retired by DEC-020 (2026-05-27, Option A). Content merged into .claude/support/reference/decomposition.md (the 52-line drift, including the Test-Protocol Runtime Constraints section, was migrated in before deletion)
-  - .claude/skills/dashboard-style/SKILL.md (third Skill) — retired by DEC-020 (2026-05-27, Option A). Content lives on in .claude/support/reference/dashboard-regeneration.md (drift was whitespace-only at retirement)
+  - file: ".claude/skills/spec-checklist/SKILL.md"
+    description: "first Skill from Option B recommendation — retired by DEC-020 (2026-05-27, Option A — trial concluded, mirrors retired). Content lives on in .claude/support/reference/spec-checklist.md (drift was whitespace-only at retirement)"
+  - file: ".claude/skills/decomposition-heuristics/SKILL.md"
+    description: "second Skill — retired by DEC-020 (2026-05-27, Option A). Content merged into .claude/support/reference/decomposition.md (the 52-line drift, including the Test-Protocol Runtime Constraints section, was migrated in before deletion)"
+  - file: ".claude/skills/dashboard-style/SKILL.md"
+    description: "third Skill — retired by DEC-020 (2026-05-27, Option A). Content lives on in .claude/support/reference/dashboard-regeneration.md (drift was whitespace-only at retirement)"
 inflection_point: false
 spec_revised:
 spec_revised_date:
@@ -229,3 +232,10 @@ Each is a thin wrapper over existing reference content, with description frontma
 - Domain-specific packs (software/research/procurement/renovation) deferred to a future Option C revisit
 
 **Confidence:** High on research (blocking concern definitively answered). Moderate on recommendation — Option B is conservative; a user who wants bigger gains faster might reasonably prefer Option C, but the migration load is larger and the research hasn't validated the rules subset empirically.
+
+## Decision
+
+**Selected:** Option B: Adopt Skills for on-demand reference only (subset of `support/reference/`)
+**Decided:** 2026-04-17
+
+**Rationale:** See `## Recommendation`. This record predates the `## Decision` section; the selection is the box ticked under `## Select an Option`.

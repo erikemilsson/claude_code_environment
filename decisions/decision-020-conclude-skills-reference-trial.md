@@ -10,12 +10,28 @@ related:
   decisions: [DEC-007, DEC-004, DEC-017]
   feedback: [FB-094]
 implementation_anchors:
-  - ".claude/support/reference/decomposition.md (migrated the Test-Protocol Runtime Constraints section from the retired Skill — the only real drift)"
-  - ".claude/skills/ deleted (3 SKILLs retired); 3 mirror comments removed from the reference docs"
-  - ".claude/sync-manifest.json (dropped skills/*/SKILL.md); .claude/README.md (Skills section + Essential-Files + Where-to-Find rows removed)"
-  - ".claude/rules/agents.md + .claude/support/reference/extension-hooks.md (ownership lists updated)"
-  - ".claude/support/reference/task-schema.md + .claude/rules/dashboard.md (SKILL-path citations re-pointed to the reference docs)"
-  - ".claude/commands/health-check.md (illustrative sync snippet de-skilled); .claude/version.json (4.12.0); .claude/dashboard.md (META bump)"
+  - file: ".claude/support/reference/decomposition.md"
+    description: "migrated the Test-Protocol Runtime Constraints section from the retired Skill — the only real drift"
+  - file: ".claude/skills/"
+    description: "deleted (3 SKILLs retired); 3 mirror comments removed from the reference docs"
+  - file: ".claude/sync-manifest.json"
+    description: "dropped skills/*/SKILL.md"
+  - file: ".claude/README.md"
+    description: "Skills section + Essential-Files + Where-to-Find rows removed"
+  - file: ".claude/rules/agents.md"
+    description: "ownership lists updated"
+  - file: ".claude/support/reference/extension-hooks.md"
+    description: "ownership lists updated"
+  - file: ".claude/support/reference/task-schema.md"
+    description: "SKILL-path citations re-pointed to the reference docs"
+  - file: ".claude/rules/dashboard.md"
+    description: "SKILL-path citations re-pointed to the reference docs"
+  - file: ".claude/commands/health-check.md"
+    description: "illustrative sync snippet de-skilled"
+  - file: ".claude/version.json"
+    description: "4.12.0"
+  - file: ".claude/dashboard.md"
+    description: "META bump"
 inflection_point: false
 spec_revised:
 spec_revised_date:
@@ -155,3 +171,10 @@ Drift-reconciliation is unavoidable for all three (merge before any delete; C mu
 **On the maintainer's "pressure-test value before adopting" rule (DEC-018 precedent):** applied here, it says don't retire the proven location (refs) for the unproven one (Skills) without value evidence — and that evidence can't come from current in-session tooling. **That favors A or C over B.** Between A and C: choose **A** if the position is "the on-demand benefit was called *small* and is unproven — stop paying the double-edit tax permanently"; choose **C** if the position is "I'm not ready to foreclose the platform feature and I *will* instrument OTel `skill_activated` capture to settle it" — in which case C must name that mechanism + a deadline + an owner, or it is dominated by A.
 
 **The value question is answerable, but only with opt-in OpenTelemetry capturing `invocation_trigger: "claude-proactive"` across real `/work`/`/iterate`/dashboard-regen sessions.** It is NOT answerable from the in-session UI or anything in this repo today. If the maintainer does not want to stand up that telemetry, decide on principle — and on principle the proven-value location is the reference docs (favoring A).
+
+## Decision
+
+**Selected:** Option A: Conclude — keep the reference docs, retire the 3 Skills
+**Decided:** 2026-05-27
+
+**Rationale:** See `## Recommendation`. This record predates the `## Decision` section; the selection is the box ticked under `## Select an Option`.

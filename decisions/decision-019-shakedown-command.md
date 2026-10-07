@@ -9,13 +9,22 @@ related:
   tasks: []
   decisions: [DEC-016, DEC-017, DEC-018]
 implementation_anchors:
-  - ".claude/commands/shakedown.md (new command)"
-  - ".claude/support/shakedowns/README.md (artifact-home convention)"
-  - ".claude/CLAUDE.md (Navigation + Environment Commands rows)"
-  - ".claude/rules/spec-workflow.md § Workflow Cycle (working-backward pointer)"
-  - ".claude/commands/grill.md § Where it fits (inverse-sibling cross-ref)"
-  - ".claude/sync-manifest.json (README registered; commands/*.md glob auto-covers the command)"
-  - ".claude/version.json (4.11.0); .claude/dashboard.md (META bump)"
+  - file: ".claude/commands/shakedown.md"
+    description: "new command"
+  - file: ".claude/support/shakedowns/README.md"
+    description: "artifact-home convention"
+  - file: ".claude/CLAUDE.md"
+    description: "Navigation + Environment Commands rows"
+  - file: ".claude/rules/spec-workflow.md"
+    description: "§ Workflow Cycle (working-backward pointer)"
+  - file: ".claude/commands/grill.md"
+    description: "§ Where it fits (inverse-sibling cross-ref)"
+  - file: ".claude/sync-manifest.json"
+    description: "README registered; commands/*.md glob auto-covers the command"
+  - file: ".claude/version.json"
+    description: "4.11.0"
+  - file: ".claude/dashboard.md"
+    description: "META bump"
 inflection_point: false
 spec_revised:
 spec_revised_date:

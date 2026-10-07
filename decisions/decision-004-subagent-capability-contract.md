@@ -11,12 +11,18 @@ related:
   decisions: []
   feedback: [FB-010]
 implementation_anchors:
-  - .claude/rules/agents.md                            # canonical State Ownership + Context Separation + Dispatch Convention
-  - .claude/agents/implement-agent.md                  # structured-report contract (no .claude/ writes)
-  - .claude/agents/verify-agent.md                     # structured-report contract (no .claude/ writes)
-  - .claude/commands/work.md                           # orchestrator owns state writes (verify dispatch + JSON persistence)
-  - .claude/support/reference/parallel-execution.md    # orchestrator-owned writes in parallel batches
-  - system-overview.md (state ownership documented as /work coordinator responsibility) — deleted 2026-07-19 (v5.1.1); superseded by this record's own .claude/rules/agents.md § State Ownership anchor above, which already carries the same content. Historical content via `git show v5.1.0:system-overview.md`
+  - file: ".claude/rules/agents.md"
+    description: "canonical State Ownership + Context Separation + Dispatch Convention"
+  - file: ".claude/agents/implement-agent.md"
+    description: "structured-report contract (no .claude/ writes)"
+  - file: ".claude/agents/verify-agent.md"
+    description: "structured-report contract (no .claude/ writes)"
+  - file: ".claude/commands/work.md"
+    description: "orchestrator owns state writes (verify dispatch + JSON persistence)"
+  - file: ".claude/support/reference/parallel-execution.md"
+    description: "orchestrator-owned writes in parallel batches"
+  - file: "system-overview.md"
+    description: "state ownership documented as /work coordinator responsibility — deleted 2026-07-19 (v5.1.1); superseded by this record's own .claude/rules/agents.md § State Ownership anchor above, which already carries the same content. Historical content via `git show v5.1.0:system-overview.md`"
 inflection_point: true
 spec_revised:
 spec_revised_date:
@@ -210,3 +216,10 @@ Option A is appealing but blocked on Anthropic upstream work (#38806, #19077) wi
 Confidence: high. The research is grounded in official Claude Code documentation, multiple corroborating GitHub issues, and the user's own Phase 10 observations. The implementation footprint is bounded. If Anthropic resolves the upstream issues later, the template can revisit — but only if the cost of orchestrator ownership turns out to be larger than the FB-010 evidence suggests, which currently it does not.
 
 Decision research archive: `decisions/.archive/decision-004-research-2026-04-14.md`
+
+## Decision
+
+**Selected:** Option B: Formalize orchestrator ownership — docs and code move state transitions to parent `/work`
+**Decided:** 2026-04-14
+
+**Rationale:** See `## Recommendation`. This record predates the `## Decision` section; the selection is the box ticked under `## Select an Option`.

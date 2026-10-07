@@ -11,13 +11,20 @@ related:
   decisions: [DEC-002]
   feedback: [FB-011]
 implementation_anchors:
-  - .claude/agents/implement-agent.md        # Track 1 friction marker emission
-  - .claude/agents/verify-agent.md           # Track 1 friction marker emission
-  - .claude/commands/work.md                 # /work pause Track 2 assessment + session export
-  - .claude/hooks/pre-compact-handoff.sh     # Track 1 markers-only fallback export
-  - .claude/version.json                     # template_inbox_path field
-  - .claude/commands/health-check.md         # Part 7 processing pipeline trigger
-  - interaction-logs/                        # inbox/processed/insights directory layout
+  - file: ".claude/agents/implement-agent.md"
+    description: "Track 1 friction marker emission"
+  - file: ".claude/agents/verify-agent.md"
+    description: "Track 1 friction marker emission"
+  - file: ".claude/commands/work.md"
+    description: "/work pause Track 2 assessment + session export"
+  - file: ".claude/hooks/pre-compact-handoff.sh"
+    description: "Track 1 markers-only fallback export"
+  - file: ".claude/version.json"
+    description: "template_inbox_path field"
+  - file: ".claude/commands/health-check.md"
+    description: "Part 7 processing pipeline trigger"
+  - file: "interaction-logs/"
+    description: "inbox/processed/insights directory layout"
 inflection_point: false
 spec_revised:
 spec_revised_date:

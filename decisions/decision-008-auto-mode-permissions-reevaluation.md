@@ -11,10 +11,14 @@ related:
   decisions: [DEC-005]
   feedback: [FB-026]
 implementation_anchors:
-  - .claude/settings.json                  # narrowed permissions.allow (8 entries from DEC-008 + 1 script-invocation later)
-  - .claude/commands/health-check.md       # Part 5c boundary validation
-  - .claude/CLAUDE.md                      # Critical Invariants references auto-mode + classifier short-circuit
-  - .claude/README.md                      # § Auto Mode (composition + setup guidance)
+  - file: ".claude/settings.json"
+    description: "narrowed permissions.allow (8 entries from DEC-008 + 1 script-invocation later)"
+  - file: ".claude/commands/health-check.md"
+    description: "Part 5c boundary validation"
+  - file: ".claude/CLAUDE.md"
+    description: "Critical Invariants references auto-mode + classifier short-circuit"
+  - file: ".claude/README.md"
+    description: "§ Auto Mode (composition + setup guidance)"
 inflection_point: true
 spec_revised:
 spec_revised_date:
@@ -262,3 +266,10 @@ Quantitative data not published, but for sessions with many shell commands (veri
 **FB-037 unblock implication:** Under B or D, the FB-037 hook recipe references the same `settings.local.json` pattern as today. The recipe documentation becomes: *"Add a PreToolUse hook under the `hooks` key in `.claude/settings.local.json`; if you use auto mode, this hook runs before the classifier and can hard-block even classifier-approved actions."* Clean and unambiguous.
 
 **Confidence:** High on research (mechanics well-documented). High on Option B over Option A (dontAsk/hook breakage is a concrete issue). Moderate between B and D (a documentation judgment call). Low on Option C as a forward path (status quo without an argument for it).
+
+## Decision
+
+**Selected:** Option D: Narrow AND document auto mode as the recommended primary layer in README + setup
+**Decided:** 2026-04-17
+
+**Rationale:** See `## Recommendation`. This record predates the `## Decision` section; the selection is the box ticked under `## Select an Option`.

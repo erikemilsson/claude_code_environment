@@ -11,9 +11,12 @@ related:
   decisions: [DEC-004]
   feedback: [FB-049]
 implementation_anchors:
-  - .claude/agents/implement-agent.md                  # partial_resume_pending status + partial_completion envelope schema
-  - .claude/commands/work.md                           # orchestrator persistence + resume-pending check + re-dispatch flow
-  - .claude/support/reference/context-transitions.md   # .handoff.json schema extended for envelope (string-or-object union)
+  - file: ".claude/agents/implement-agent.md"
+    description: "partial_resume_pending status + partial_completion envelope schema"
+  - file: ".claude/commands/work.md"
+    description: "orchestrator persistence + resume-pending check + re-dispatch flow"
+  - file: ".claude/support/reference/context-transitions.md"
+    description: ".handoff.json schema extended for envelope (string-or-object union)"
 inflection_point: false
 spec_revised:
 spec_revised_date:
@@ -244,6 +247,13 @@ On `result: "partial"`, orchestrator leaves the task at "Awaiting Verification" 
 7. **Reversible.** If post-trial observation shows envelopes don't help (or always fire too late / too early), removing the schema is a single-commit revert across implement-agent.md, work.md, and context-transitions.md.
 
 Confidence in this recommendation: **moderate** — the design is sound but rests on one open question (the actual fire-rate of partial returns post-implementation). Recommend a 30-day trial window (mirroring FB-011 Family E pattern) where partial envelopes are tracked, with a check-in decision at end-of-window: keep as-is, tighten thresholds, or escalate to Option B if integrity issues surface.
+
+## Decision
+
+**Selected:** Option C: Middle path — four fields, implement-only, in-handoff (recommended)
+**Decided:** 2026-05-13
+
+**Rationale:** See `## Recommendation`. This record predates the `## Decision` section; the selection is the box ticked under `## Select an Option`.
 
 ## Research Findings
 

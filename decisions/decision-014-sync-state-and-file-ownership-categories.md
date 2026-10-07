@@ -11,13 +11,20 @@ related:
   decisions: [DEC-005, DEC-008, DEC-013]
   feedback: [FB-059, FB-060]
 implementation_anchors:
-  - .claude/commands/health-check.md  # Part 5: new "Sync State Sidecar" sub-section + revised Steps 2, 3, 4; new Key Rules entries
-  - .claude/sync-manifest.json        # added .claude/.sync-state.json to ignore array
-  - .claude/version.json              # template_version 3.14.2 → 3.15.0
-  - .gitignore                        # added .claude/.sync-state.json per Q4 (gitignored)
-  - template-maintenance/feedback.md  # FB-059 promoted (relocated); FB-060 updated (Phases 3+4 shipped, Phase 2 deferred)
-  - template-maintenance/feedback-archive.md  # FB-059 archived with promotion text
-  - template-maintenance/plan-fb059-fb060.md  # status updated to partially implemented; Option F selected
+  - file: ".claude/commands/health-check.md"
+    description: "Part 5: new \"Sync State Sidecar\" sub-section + revised Steps 2, 3, 4; new Key Rules entries"
+  - file: ".claude/sync-manifest.json"
+    description: "added .claude/.sync-state.json to ignore array"
+  - file: ".claude/version.json"
+    description: "template_version 3.14.2 → 3.15.0"
+  - file: ".gitignore"
+    description: "added .claude/.sync-state.json per Q4 (gitignored)"
+  - file: "template-maintenance/feedback.md"
+    description: "FB-059 promoted (relocated); FB-060 updated (Phases 3+4 shipped, Phase 2 deferred)"
+  - file: "template-maintenance/feedback-archive.md"
+    description: "FB-059 archived with promotion text"
+  - file: "template-maintenance/plan-fb059-fb060.md"
+    description: "status updated to partially implemented; Option F selected"
 inflection_point: false
 spec_revised:
 spec_revised_date:

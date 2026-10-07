@@ -199,7 +199,7 @@ Template asks during `/iterate distill` which layout to use, based on the projec
 
 **Evidence:** No surveyed AI tool offers this choice. The convention is strongly settled: dotfiles at project root.
 
-## Comparison Matrix
+## Options Comparison
 
 | Factor | A: Subdirectory | B: Flat | C: Guided |
 |--------|:-:|:-:|:-:|

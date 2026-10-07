@@ -11,9 +11,12 @@ related:
   decisions: [DEC-001]
   feedback: [FB-057]
 implementation_anchors:
-  - .claude/commands/work.md                           # behavioral nudge ("do NOT defer") + startup catchup + dual-write to .pending-markers.jsonl
-  - .claude/support/reference/parallel-execution.md    # parallel-batch mirror of dual-write
-  - .claude/hooks/pre-compact-handoff.sh               # catchup at PreCompact reads .pending-markers.jsonl
+  - file: ".claude/commands/work.md"
+    description: "behavioral nudge (\"do NOT defer\") + startup catchup + dual-write to .pending-markers.jsonl"
+  - file: ".claude/support/reference/parallel-execution.md"
+    description: "parallel-batch mirror of dual-write"
+  - file: ".claude/hooks/pre-compact-handoff.sh"
+    description: "catchup at PreCompact reads .pending-markers.jsonl"
 inflection_point: false
 spec_revised:
 spec_revised_date:
@@ -219,6 +222,13 @@ Two natural invocation points:
 - The `.pending-markers.jsonl` transient buffer is optional polish — defer until B's catchup logs show a non-zero kill-window loss case.
 
 **Decision-record-level recommendation: ship A+B as the canonical pipeline; revisit C or D only if A+B telemetry shows catchup firing consistently (would suggest A is failing more often than tolerable, motivating a structural escalation).**
+
+## Decision
+
+**Selected:** Option ABp: Hybrid A+B + `.pending-markers.jsonl` transient buffer (recommended + abrupt-kill protection)
+**Decided:** 2026-05-13
+
+**Rationale:** See `## Recommendation`. This record predates the `## Decision` section; the selection is the box ticked under `## Select an Option`.
 
 ## Research Findings
 

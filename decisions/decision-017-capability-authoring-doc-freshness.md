@@ -11,16 +11,26 @@ related:
   decisions: [DEC-016]
   feedback: [FB-082, FB-083]
 implementation_anchors:
-  - .claude/support/reference/claude-code-authoring.md (NEW)
-  - .claude/sync-manifest.json (register new doc in sync array)
-  - .claude/CLAUDE.md (Navigation row)
-  - .claude/agents/implement-agent.md (Editing strategy cross-ref)
-  - .claude/rules/agents.md (cross-refs in State Ownership + Command Invocation Gates)
-  - .claude/commands/iterate.md (distill/propose capability-claim cross-check)
-  - .claude/commands/work.md (decomposition Pre-Pass cross-ref)
-  - .claude/commands/health-check.md (new Part for capability-doc freshness)
-  - .claude/skills/dashboard-style/SKILL.md (em-dash convention) — shipped v4.9.0; file later deleted by DEC-020 (skills trial concluded, mirrors retired). Convention lives on in support/reference/dashboard-regeneration.md
-  - .claude/version.json (MINOR bump)
+  - file: ".claude/support/reference/claude-code-authoring.md"
+    description: "NEW"
+  - file: ".claude/sync-manifest.json"
+    description: "register new doc in sync array"
+  - file: ".claude/CLAUDE.md"
+    description: "Navigation row"
+  - file: ".claude/agents/implement-agent.md"
+    description: "Editing strategy cross-ref"
+  - file: ".claude/rules/agents.md"
+    description: "cross-refs in State Ownership + Command Invocation Gates"
+  - file: ".claude/commands/iterate.md"
+    description: "distill/propose capability-claim cross-check"
+  - file: ".claude/commands/work.md"
+    description: "decomposition Pre-Pass cross-ref"
+  - file: ".claude/commands/health-check.md"
+    description: "new Part for capability-doc freshness"
+  - file: ".claude/skills/dashboard-style/SKILL.md"
+    description: "em-dash convention — shipped v4.9.0; file later deleted by DEC-020 (skills trial concluded, mirrors retired). Convention lives on in support/reference/dashboard-regeneration.md"
+  - file: ".claude/version.json"
+    description: "MINOR bump"
 implemented_note: "Shipped v4.9.0 (2026-05-24). status: flipped approved → implemented 2026-07-19 during a maintenance housekeeping pass — the flag had been left at approved by oversight; 8 of 9 anchors verified present, the 9th intentionally removed by DEC-020."
 inflection_point: true
 spec_revised:
