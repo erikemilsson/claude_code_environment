@@ -331,7 +331,7 @@ Section "## Auth" changed — 3 Finished, 1 Pending task(s).
 
 **Recommendation rule.** Claude recommends one option per section, from the diff: editorial-only edits (status, annotation, typo) → `[K]`; acceptance text changed → `[V]` (re-verifies Finished work, updates open tasks); requirements changed so the shipped work must be rebuilt → `[A]`.
 
-**Attempt counter.** `[A]` and `[V]` set `verification_attempts` to 0 on the Finished tasks they send back to rebuild or re-verification; `verification_history` keeps the earlier record. The counter counts every verify return, passes included, so a Finished task can already sit at 2, and without the reset a single failed re-check would escalate it to Blocked with no fix cycle.
+**Attempt counter.** `[A]` and `[V]` set `verification_attempts` to 0 on the Finished tasks they send back to rebuild or re-verification; `verification_history` keeps the earlier record. The counter counts every dispatched verify return, passes included (a delta re-check is not counted), so a Finished task can already sit at 2, and without the reset a single failed re-check would escalate it to Blocked with no fix cycle.
 
 **Open tasks under `[A]` and `[V]`** (any drifted task that isn't Finished): refresh the fingerprints, update the task's description or acceptance criteria where the new section text changes them, and leave the status alone. Prepend to the task's notes: `[DRIFT UPDATED {YYYY-MM-DD}] {section} changed; {what changed in the task, or "no task change needed"}`.
 

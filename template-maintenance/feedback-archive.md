@@ -2393,3 +2393,59 @@ Tags: health-check, part-5, sync-check, sync-state-sidecar, classification, mani
 **Fix sketch.** (1) Every task-creation path stamps `spec_version`, `spec_section` (a real `## ` heading) and `section_fingerprint` when the task maps to a spec section (`fingerprint.py --sections`), and a task that maps to none says so explicitly, so the check can tell "unmapped" from "missing". (2) A one-time baseline offered by `/health-check` Part 1: for tasks whose `spec_section` resolves to a current heading but that carry no fingerprint, stamp the current hash once the user confirms that the current text is what they were built against (the same assertion as FB-128's `[K]`). (3) Optionally normalise free-form `spec_section` values. FB-128's drift JSON (`no_provenance`, `unmatched`) is the measurement before and after.
 
 Tags: drift-detection, provenance, task-creation, spec_section, section_fingerprint, health-check, follow-up-to-FB-128
+
+## FB-130: No defined path for a small fix after a verify pass
+
+**Status:** promoted
+**Promoted:** 2026-10-07 — shipped v5.14.0. Shipped as sketched, with limits the review added: the delta is allowed only for the verifier's own finding or a user-approved micro-edit inside the task's `files_affected`, while no dependent has been dispatched, the phase has not been verified since and the parent is not Finished. The verifier gets `diff -u` of pre-edit copies against the edited files (not `git diff`, which would be the whole uncommitted implementation). A delta attempt is not counted; a refusal is a `delta_refused` reply. `work.md`'s pass bullet settles the verifier's minor findings before looping to the next task. Plan: `template-maintenance/plan-v5.14.0-work-loop.md`.
+**Original status:** ready — two projects arrived at the same workaround independently
+**Captured:** 2026-10-04 (harvest 2026-10-03 cluster 3)
+**Source:** 5 exports, 2 projects: PortfolioWebsite 09-27-1040, 10-02-0820; styler 09-28-1923, 10-01-1237, 10-01-1440. Four are on 5.7.4, after FB-119 made verify-agent an invariant (v5.6.0). No recurrence found in `processed/`. Insight: `interaction-logs/insights/2026-10-03_verify-agent_post-verify-delta-recheck.md`.
+
+**Problem.** After a pass, a one-word fix, a comment, or a verifier-suggested minor change leaves two options: a full fresh verify dispatch (125–230K tokens per verify dispatch in this harvest: PortfolioWebsite 09-11-0757, 09-19-0005, 10-01-1809) or an inline edit nobody re-checks. Both projects independently resumed the *same* verifier with SendMessage for a delta re-check and recorded it as attempt N+1. Independence holds because that verifier never implemented anything (styler 10-01-1440).
+
+**Fix sketch.** Name a "post-verify delta" path in `work-procedures.md` (After verify-agent returns). Allow it only for the verifier's own findings or a user-approved micro-edit: resume the same verifier with the diff, and record a new `verification_history[]` attempt with `cost`. Anything larger gets a fresh dispatch. Kept separate from FB-119, which could have taken it as a gap, because this is a verification-protocol question rather than an orchestrator-claims one.
+
+Tags: work, verify-agent, post-verify-delta, sendmessage, verification-history, cost, DEC-025, two-project-signal
+
+## FB-131: The handoff's ~2.5KB total bound is unenforced, and its overflow file collides on same-day pauses
+
+**Status:** promoted
+**Promoted:** 2026-10-07 — shipped v5.14.0. Measured first: 4 of 7 handoffs on disk downstream exceeded 2.5KB. `context-transitions.md` gains a Total check after every Path A write and the overflow file is `handoff-overflow-{YYYY-MM-DD-HHMM}.md`. Not done: the PreCompact hook does not run the total check, and nothing deletes old overflow files (FB-127). Plan: `template-maintenance/plan-v5.14.0-work-loop.md`.
+**Original status:** ready — verified; patch-sized
+**Captured:** 2026-10-04 (harvest 2026-10-03 cluster 4)
+**Source:** 5 exports, 3 projects: PortfolioWebsite 08-19-2300, 09-11-1945, 09-24-2254; oemmat 08-21-0642; styler 09-20-1916 (the last two were below the bar in the 2026-09-25 single-incident list). Insight: `interaction-logs/insights/2026-10-03_work_handoff-size-unenforced.md`.
+
+**Problem.** `context-transitions.md:86` and `:180-190` target ~2.5KB in total, but the overflow procedure fires only when a single field exceeds its bound. The field caps sum past 2.5KB (ten 25-word bullets alone are about 1.5KB), and no pause step measures the file. Observed: 3.0KB with every field in bounds (08-19), 4.4KB and 4.2KB on consecutive pauses (09-11), 12% over (styler 09-20). `:190` names the overflow file `handoff-overflow-{YYYY-MM-DD}.md`, so a second pause on the same day collides with the first (09-24-2254). FB-079 fixed this shape for session exports in v4.6.4 with minute timestamps, but not here.
+
+**Fix sketch.** After writing the handoff, measure it and run the overflow procedure on the total, not only per field; give the overflow file a minute-granularity name (`-HHMM`, as FB-079 did). Optional: point long-lived detail at auto-memory (oemmat 08-21).
+
+Tags: work-pause, handoff, context-transitions, overflow, filename-collision, extends-FB-079, verified-defect, three-project-signal
+
+## FB-132: Parallel eligibility ignores shared single-instance resources (Playwright MCP, build output directory)
+
+**Status:** promoted
+**Promoted:** 2026-10-07 — shipped v5.14.0. Shipped as a rule, no task field. Implementation stays parallel; every implement brief in parallel mode says not to use the browser MCP or run the production build; exclusive verifications queue (`exclusive_verify_queue`, entries typed `verify`/`delta`/`gate`). A task is held out of a batch only when it can't be implemented without the build. `session-recovery.md` recovers waiting verifications one at a time. `mcp-patterns.md` points at the section. FB-011 Family D stays unmet. Plan: `template-maintenance/plan-v5.14.0-work-loop.md`.
+**Original status:** ready — a prose fix. FB-011 Family D's trigger (an LLM-*missed* conflict) is still unmet: every instance here was caught before dispatch.
+**Captured:** 2026-10-04 (harvest 2026-10-03 cluster 5)
+**Source:** 5 exports, 3 projects: PortfolioWebsite 09-11-0757, 09-24-1238, 10-01-1809 (5.7.4); oemmat 08-13-0916; styler 09-24-1745. Insight: `interaction-logs/insights/2026-10-03_work_parallel-shared-runtime-resources.md`. **Extends FB-056** (archived, shipped 2026-05-13): it documented the single-session MCP constraint and parked an `mcp_resource_overlap` batch check as "lower priority". This is the recurrence that check was waiting for.
+
+**Problem.** `work.md:398` builds batches by "pairwise-comparing `files_affected`". `mcp-patterns.md:17` names the missing check (`mcp_resource_overlap`) but calls it "lower priority". When every UI task carries a rendered-verification criterion (PortfolioWebsite), nearly every UI batch needs the one Playwright session; parallel builds also share `dist/` or `.next`.
+
+**Fix sketch.** Add one exclusion to the Step 2c summary and `parallel-execution.md`: two tasks that both need the browser MCP, or both rebuild the same output directory, are not parallel-eligible (or their verification runs sequentially). A task-schema flag such as `needs_browser` is optional. Drop "lower priority" from `mcp-patterns.md:17`.
+
+Tags: work, parallel-execution, mcp, playwright, build-output, shared-resources, extends-FB-056, FB-011-family-D-adjacent, three-project-signal
+
+## FB-133: Agents leave residue the orchestrator has to find — screenshots in the project root, live servers, probe routes
+
+**Status:** promoted
+**Promoted:** 2026-10-07 — shipped v5.14.0. Shipped with the limits the review forced. Baseline before dispatch: `git status --short`, root listing, all listeners. After a return: only regular evidence-shaped files (a fixed extension and name list) are moved, only with a report and no other agent running; a new listener on a port the agent reported is stopped, a new unreported one is asked about only when its working directory is inside the project, a listener present at baseline is never touched; after a cutoff or without a baseline the check only reports. In a batch nothing is stopped or moved while another agent runs. Not done: the orphaned MCP Chrome profile lock; the baseline lives in conversation only; the previous-session residue look is skipped when a recent clean-exit sentinel exists (FB-127). Plan: `template-maintenance/plan-v5.14.0-work-loop.md`.
+**Original status:** ready (screenshots: two projects; leftover processes and probe routes: PortfolioWebsite only)
+**Captured:** 2026-10-04 (harvest 2026-10-03 cluster 6)
+**Source:** 6 exports, 2 projects: PortfolioWebsite 08-19-2300, 09-11-0757, 09-24-1238, 09-24-1839, 10-01-1809; oemmat 07-26-2045. Insight: `interaction-logs/insights/2026-10-03_agents_residue-after-return.md`.
+
+**Problem.** `verify-agent.md:257` prescribes `browser_take_screenshot` with no output path, and the MCP resolves a bare filename against the project root. That breaks `.claude/CLAUDE.md`'s "never create working documents in the project root" (oemmat 07-26; PortfolioWebsite 08-19, 09-11). An implement-agent reported its preview server stopped while two were still listening (09-24-1839). Cutoffs left a probe route in `src/pages/` and a live server (09-11), and flipped drafts plus orphaned servers (09-24-1238). An orphaned MCP Chrome held the profile lock (09-24-1238). Verifiers share the orchestrator's scratchpad, where an `rm -rf` on a generic name could delete evidence (10-01-1809). No after-return or post-cutoff cleanup step exists in `work-procedures.md`, `work-recovery.md`, `parallel-execution.md` or `work.md` (re-checked at v5.8.0 with `grep -c -i -E 'residue|stray file|orphan|still listening|lsof|leftover server|kill the server|stop the server'`: zero hits except two in `work-recovery.md` about orphaned markers; positive control `zero-token` hits the other three files).
+
+**Fix sketch.** Give screenshot paths explicitly (a per-agent scratchpad subfolder) in dispatch briefs and at `verify-agent.md:257`. After any agent returns, and after an infrastructure termination, check for servers the agent started, stray files in the project root and untracked probe files; clean them up or report them.
+
+Tags: agents, verify-agent, implement-agent, playwright, screenshots, dev-servers, residue, recovery, two-project-signal

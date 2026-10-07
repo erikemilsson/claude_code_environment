@@ -99,7 +99,7 @@ No fixture files or project setup needed. The state description in each scenario
 | 30 | Handoff During Parallel Batch | Multi-agent wind-down, batch state preservation, correct parallel resumption |
 | 31 | Handoff at Phase Boundary | Cross-phase knowledge preservation, strategic context bridging phases |
 
-### Later Additions (32-43, 45-51)
+### Later Additions (32-43, 45-52)
 
 | # | Name | Tests |
 |---|------|-------|
@@ -111,7 +111,7 @@ No fixture files or project setup needed. The state description in each scenario
 | 37 | /work Procedure Stubs | STOP-gated stubs load their `work-procedures.md` bodies |
 | 38 | /iterate Batch Approval | Single-response resolution of a proposal's decisions |
 | 39 | /health-check Batch Fix Triage | Collect-don't-prompt fix queue; Part 5 commit offer |
-| 40 | Handoff Schema Cap | Bounded handoff index |
+| 40 | Handoff Schema Cap | Bounded handoff index; total measured after the write; overflow file named to the minute (FB-131) |
 | 41 | Script-First Dashboard Regeneration | The renderer produces the whole dashboard |
 | 42 | Section-Scoped Spec Reading | Spec index, scoped reads, freshness guard (DEC-021) |
 | 43 | Acceptance Reconciliation Lens | Spec boxes vs `verification-result.json` criteria (DEC-022) |
@@ -122,6 +122,7 @@ No fixture files or project setup needed. The state description in each scenario
 | 49 | Agent Decisions Recorded and Ratified | Choices held until the verify pass, one `recorded` record per task, `/work ratify` and `/work reconsider`, `/health-check` legacy rows (FB-129) |
 | 50 | Template Sync Classification | Unchanged template copies apply under bare `[A]`, not-a-variant rows, shallow history and the sidecar, manifest-list and `.gitignore` rows, non-git projects (FB-136) |
 | 51 | Task Provenance Baseline | Every creation path stamps section provenance (`fingerprint.py --provenance`), `spec_unmapped`, `/health-check` baseline from the spec's git history, `confirm_current` and `needs_section` rows, `same_day_edit` (FB-135) |
+| 52 | Post-Verify Delta and Residue | Same-verifier delta re-check (recorded, not counted) and when there is none, residue check against a pre-dispatch baseline after an agent returns or is killed, browser and build verifications one at a time, inline bound after a cutoff (FB-130, FB-132, FB-133, FB-119) |
 
 ## Example Project
 

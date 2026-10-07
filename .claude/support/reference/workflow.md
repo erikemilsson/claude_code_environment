@@ -184,7 +184,7 @@ By separating concerns:
 **The build workflow:**
 1. `/work` orchestrator sets the next pending task to "In Progress" and dispatches implement-agent
 2. implement-agent: build, run existing checks, return structured report
-3. Orchestrator writes task status "Awaiting Verification" from the report and dispatches verify-agent as a separate subagent (fresh context, see DEC-004)
+3. Orchestrator writes task status "Awaiting Verification" from the report and dispatches verify-agent as a separate subagent (no implementation memory, see DEC-004)
 4. verify-agent (separate context): verify files, spec alignment, quality, integration boundaries, return structured verification report
 5. Orchestrator writes `task_verification` from the report. If pass: status → "Finished", regenerate dashboard, back to step 1 for next task
 6. If verification fails: orchestrator sets status → "In Progress", back to step 1 (implement-agent fixes)

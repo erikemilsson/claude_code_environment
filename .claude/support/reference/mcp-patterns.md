@@ -14,7 +14,7 @@ Single-session MCP servers cannot be safely fanned out across parallel subagents
 
 True parallel browser inspection would require multiple MCP server instances on different ports or `user-data-dir`s — not how the template ships and not trivial to set up. Out of scope for most projects.
 
-**Detection (lower priority):** `/work` Step 2c parallel-batch heuristic currently keys on `files_affected` only. It could be extended to check `mcp_resource_overlap` (any pair of tasks both expected to use the same single-instance MCP server) — same dispatch site as `shared_contract` detection in `parallel-execution.md`. Tracked separately if it becomes a recurring foot-gun.
+**Detection in `/work` batches:** `parallel-execution.md § "Single-Instance Resources"` is the rule `/work` applies: tasks that need the same single-session MCP are implemented in parallel and verified one at a time, and the orchestrator's own browser checks take the same turn.
 
 ## MCP and Result-Size Constraints
 
@@ -26,6 +26,6 @@ The same pattern applies to other MCP servers that return large result objects: 
 
 ## See Also
 
-- `.claude/support/reference/parallel-execution.md` — the full parallel-dispatch procedure these constraints bound
+- `.claude/support/reference/parallel-execution.md` — the full parallel-dispatch procedure these constraints bound; its § "Single-Instance Resources" is where `/work` checks for a shared MCP or build output directory
 - `.claude/support/reference/claude-code-authoring.md § "MCP Constraints"` — capability-fact cross-links for spec/skill authors
 - `.claude/commands/diagnose.md § "Visual / browser-rendering bugs"` — the measurement recipe that applies the result-size rule

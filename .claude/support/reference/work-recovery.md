@@ -79,6 +79,7 @@ Recover from a prior session's interrupted `/work pause` that left `.claude/supp
    - `git diff --name-only` (combined with `--cached` if needed)
    - If files in `files_affected` show no diff since the partial dispatch, surface inline: `⚠ Task {id} resume: declared-completed sub-targets show no file changes since partial. Audit may have rolled back. Continue? [Y/N]`
    - If files outside `files_affected` show diffs, surface inline: `⚠ Task {id} resume: {N} files modified since partial — review before resuming.`
+   - Run the residue check (`work-procedures.md § "Residue check"`) for the dispatch that was cut, unless it already ran when that agent returned in this session: an agent that hit a limit may have left a server listening or probe files behind. When the cut dispatch belongs to an earlier session (a limit cutoff or crash ended it), there is no baseline and no report, so the check only reports (that section, "When the check only reports"): this session can't tell what that agent started. `session-recovery.md § "Residue From a Previous Session"` runs the same look during a full recovery scan, whether or not a task has `partial_completion`; if it already ran in this session, don't repeat it here.
 3. When `confidence: low`, surface: `⚠ Task {id} resume: previous dispatch flagged low confidence in partial state. Spot-check before continuing.`
 4. Inject the envelope content into the dispatch prompt for the re-dispatched implement-agent:
    ```
@@ -90,4 +91,4 @@ Recover from a prior session's interrupted `/work pause` that left `.claude/supp
    actually present in the deliverable. If any are missing, treat them as
    remaining_subtargets instead.
    ```
-5. **After re-dispatch returns** `completed` or a fresh `partial_resume_pending`: clear the `partial_completion` field from the task JSON. (For fresh `partial_resume_pending`, the new envelope replaces the old.)
+5. **After re-dispatch returns** `completed` or a fresh `partial_resume_pending`: clear the `partial_completion` field from the task JSON. (For fresh `partial_resume_pending`, the new envelope replaces the old.) The return is an agent return like any other: the residue check runs for it (`work-procedures.md § "Residue check"`).

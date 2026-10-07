@@ -83,7 +83,7 @@ DELETE — after successful restoration
 }
 ```
 
-**The handoff is a bounded index, not a memoir.** Target ≤ ~2.5KB total. Every field has a cap (see "Bounds and Overflow" below); detail that exceeds a cap goes to a workspace overflow file that `overflow_ref` points at. A 7.8KB free-prose handoff is write-expensive and read-unreliable — the next session skims it; the dashboard's Action Required rows and task JSONs carry the durable load.
+**The handoff is a bounded index, not a memoir.** The whole file is at most 2560 bytes (2.5KB), measured after it is written, and every field has a cap (see "Bounds and Overflow" below); detail that exceeds a cap, or that pushes the file past the total, goes to a workspace overflow file that `overflow_ref` points at. A 7.8KB free-prose handoff is write-expensive and read-unreliable — the next session skims it; the dashboard's Action Required rows and task JSONs carry the durable load.
 
 ---
 
@@ -173,11 +173,13 @@ Free-form string giving the next session explicit instructions for how to resume
 
 ### `overflow_ref`
 
-Optional path to a workspace overflow file, null when everything fit. Set it when any field's content exceeds its bound.
+Optional path to a workspace overflow file, null when everything fit. Set it when any field's content exceeds its bound, or when the total check moved content out.
 
 ## Bounds and Overflow
 
-Per-field caps (the handoff targets ≤ ~2.5KB total):
+Two bounds apply: a cap per field, and 2560 bytes for the whole file. Fields that are each within their cap can still add up to more than the total (ten 25-word bullets alone are about 1.5KB), so the file is measured after every write (see "Total check" below).
+
+Per-field caps:
 
 | Field | Bound |
 |-------|-------|
@@ -187,7 +189,17 @@ Per-field caps (the handoff targets ≤ ~2.5KB total):
 | `session_knowledge` | ≤ ~10 bullets, ≤ ~25 words each |
 | `recovery_action` | ≤ ~3 sentences |
 
-**Overflow procedure:** when content genuinely exceeds a bound, write the excess to `.claude/support/workspace/handoff-overflow-{YYYY-MM-DD}.md` (organized by field name), set `overflow_ref` to that path, and keep only the most load-bearing content inline. The next session reads the handoff always, the overflow file only when `overflow_ref` is non-null and the inline summary isn't enough. Do not create the overflow file preemptively — most sessions fit the bounds.
+**Overflow procedure:** when content genuinely exceeds a bound, write the excess to `.claude/support/workspace/handoff-overflow-{YYYY-MM-DD-HHMM}.md` (organized by field name), set `overflow_ref` to that path, and keep only the most load-bearing content inline. `{YYYY-MM-DD-HHMM}` is the local time of this pause, to the minute, so a second pause on the same day gets its own file; one pause uses one file (the total check below appends to the file a per-field overflow started). The next session reads the handoff always, the overflow file only when `overflow_ref` is non-null and the inline summary isn't enough. Do not create the overflow file preemptively — most sessions fit the bounds.
+
+**Total check (after every handoff write on Path A):**
+
+1. Measure the file: `wc -c < .claude/tasks/.handoff.json`.
+2. 2560 bytes or fewer → done.
+3. More than 2560 → run the overflow procedure on the total, largest field first: take the field whose value is longest (usually `session_knowledge`, then `active_work[].partial_notes`, `recovery_action`, `position.phase_context`), move its least load-bearing content to the overflow file under that field's name, keep the shorter version inline, set `overflow_ref`, rewrite the handoff and measure again. Repeat until the file is 2560 bytes or fewer.
+
+The check moves detail out; it never drops it, and it never shortens the required fields, the task ids and `ready_for_verify` in `active_work`, `parallel_state`, `decisions_in_flight` or the `open_question_refs` pointers. If only those remain and the file is still over (a large parallel batch), stop there and state the measured size in the pause output.
+
+The PreCompact hook (Path B) doesn't run this check: it writes structural fields only and cuts each `partial_notes` to 600 characters.
 
 ---
 
@@ -209,7 +221,7 @@ The graceful, preferred path. Claude has full conversation context and can wind 
    [PARTIAL] Completed column mapping and type coercion. Aggregation pipeline not started. {existing notes}
    ```
 4. Keep task status as "In Progress" (do not change to Blocked, On Hold, etc.)
-5. Write `.claude/tasks/.handoff.json`
+5. Write `.claude/tasks/.handoff.json`, then measure it and bring it to 2560 bytes or fewer (§ "Bounds and Overflow", Total check)
 6. Write `.claude/tasks/.last-clean-exit.json` (this is a clean exit)
 
 ### Path B: PreCompact Hook (Automatic Safety Net)

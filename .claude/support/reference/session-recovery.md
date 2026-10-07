@@ -98,6 +98,12 @@ Scan all non-archived `task-*.json` files and check for recoverable states.
 
 **After recovery actions complete, proceed to Step 1.**
 
+**Recovery verifications take turns.** Cases 1 and 2 can match several tasks at once. Dispatch their verify-agents as `parallel-execution.md § "Single-Instance Resources"` says: a verification that needs the browser or runs the build goes one at a time, each after the previous one's after-return steps; the others may run together. Every dispatch follows `work.md § "Before Any Dispatch"`, and two or more at once also get the pre-flight checks of `parallel-execution.md § "Pre-Dispatch Confirmation"`.
+
 **Note:** Cases 1 and 2 are auto-recovered because the implementation is already done — we only need to run verification. Cases 4 and 6 present options because the implementation state is uncertain.
+
+## Residue From a Previous Session
+
+An agent the previous session lost (a limit cutoff, a crash, a closed terminal) stopped nothing and removed nothing. Only on the full-scan path (the sentinel is missing or stale, so the session did not end cleanly), when the scan matches case 1, 2, 4 or 6, run the Residue check once, before any recovery dispatch (`work-procedures.md § "Residue check"`). No baseline survives from that session, so it only reports, as "When the check only reports" there defines: evidence-shaped files in the project root and listeners whose working directory is inside the project, left to the user. Nothing is moved or stopped. The fast path skips this: after a clean exit, In Progress tasks are a normal pause, not a lost agent.
 
 **Malformed files during scan:** If a task file fails to parse during Step 0, skip it and continue scanning other files. The malformed file will be reported in Step 1 (see work.md "Malformed task file handling").

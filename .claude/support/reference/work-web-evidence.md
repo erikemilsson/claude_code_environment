@@ -2,7 +2,7 @@
 
 <!-- Loaded on demand by commands/work.md: read only when the trigger line in /work points here. -->
 
-Orchestrator-level browser checks for web-UI work (same applies-when detection as `/audit-ui`). Non-web tasks and projects without a web framework skip both gates.
+Orchestrator-level browser checks for web-UI work (same applies-when detection as `/audit-ui`). Non-web tasks and projects without a web framework skip both gates. During a parallel batch the per-task gate takes a turn in the exclusive-verify queue (`parallel-execution.md § "Single-Instance Resources"`): it uses the browser and may run the build.
 
 ## Empirical Evidence Gate (per-task, before persisting a pass)
 

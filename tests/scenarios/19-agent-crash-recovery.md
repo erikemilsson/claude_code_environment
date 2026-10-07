@@ -178,5 +178,5 @@ implement-agent completed successfully for Task 1 (`verification_attempts: 0`). 
 ### Fail indicators
 
 - Treated as a timeout: attempts incremented, task Blocked with `[VERIFICATION TIMEOUT]` (burns one of three attempts on an outage)
-- Parallel or heavy re-dispatch in the same session without explicit user confirmation
+- The cut-off verification, or a parallel batch, dispatched in the same session without the user's go-ahead (post-limit dispatch rule, `parallel-execution.md § "Pre-Dispatch Confirmation"`)
 - FB-103's implement-agent recovery steps applied (e.g. a fresh implement-agent dispatched to re-confirm the work)
