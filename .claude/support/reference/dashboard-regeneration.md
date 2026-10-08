@@ -116,7 +116,7 @@ User-authored content lives in `.claude/dashboard-state.json` as the **single so
 
 | Field | Type | Content |
 |-------|------|---------|
-| `user_notes` | String | The Notes card content (Quick Links etc.). Rendered read-only, one block per line: `#`–`######` headings (a `#` followed by a space), `- ` / `* ` bullets, paragraphs; inline `[text](path)` links, `**bold**` and `` `code` `` in all three. Nested or numbered lists, tables and code blocks are not rendered (§ "5. User Content") |
+| `user_notes` | String | The Notes card content (Quick Links etc.). Rendered read-only, one block per line: `#`–`######` headings (a `#` followed by a space), `- ` / `* ` bullets, paragraphs; inline `[text](path)` links, `**bold**` and `` `code` `` in all three. A link is made for a path, a `#` anchor, or an `http`, `https` or `mailto` address; any other scheme (`javascript:`, `data:`, `file:`), and a target that starts with two slashes or backslashes (`//host/…`, a network address), prints as plain `text (target)`. The same rule applies to `augment_rows` text and to a decision's selected-option text. Nested or numbered lists, tables and code blocks are not rendered (§ "5. User Content") |
 | `section_toggles` | Object | The sole toggle source — exactly four boolean keys: `action_required`, `decisions`, `notes` (default `true`), `custom_views` (default `false`). The script ignores any other key (§ "Section Toggle Configuration") |
 | `phase_gates` | Object | Keyed by transition (e.g., `"1→2"`). Value: `{ "status": "active"\|"approved" }`. Read-only HTML does not render an in-file gate checkbox; the script surfaces phase-gate readiness in the "Needs you" card (a transition whose gate is not `approved`) and the user approves via CLI (`/work`). Retained as state for that surfacing |
 | `pending_decomposition` | Array | `## ` headings of spec sections added by `/iterate` that no task references yet (FB-106). Written by `/iterate`'s post-apply step; consumed first thing in `/work` Step 1a. A new section has no task whose fingerprint could drift, so the drift check can't surface it, and without the marker it would stay silently undecomposed. Entries are removed once referencing tasks exist or the user drops them |
@@ -237,7 +237,7 @@ The dashboard is read-only HTML; user content lives **only** in `.claude/dashboa
 
 ### 4. Compute and Add Metadata Block
 
-The script emits this block as an HTML comment inside `<head>` (so freshness consumers string-parse `task_hash`/`template_version` byte-identically). The fields:
+The script emits this block as an HTML comment inside `<head>` (so freshness consumers string-parse `task_hash`/`template_version` byte-identically). A value is written on one line, with `&`, `<` and `>` as entities, so it can't end the comment or add a field; ordinary values (a version number, a status word) are unchanged. The fields:
 
 ```markdown
 <!-- DASHBOARD META
