@@ -1,0 +1,94 @@
+{
+  "ref": "v5.14.2",
+  "ref_commit": "70440c26fed087cf2be04c5c6d4cbd9c73e629e1",
+  "dry_run": false,
+  "written": [
+    {
+      "path": ".claude/commands/health-check.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/commands/research.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/commands/review.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/scripts/dashboard-render.py",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/scripts/tests/test_dashboard_render_html.py",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/support/reference/dashboard-regeneration.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/support/reference/decisions.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/support/reference/extension-patterns.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/support/reference/phase-decision-gates.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/support/reference/work-procedures.md",
+      "status": "template_copy",
+      "mode": "100644"
+    }
+  ],
+  "mode_fixed": [],
+  "failed": [],
+  "version": {
+    "from": "5.14.1",
+    "to": "5.14.2",
+    "bumped": true
+  },
+  "manifest": {
+    "changed": false,
+    "sync_added": [],
+    "sync_dropped": [],
+    "lists_updated": false
+  },
+  "sidecar": {
+    "recorded": 88,
+    "dropped": 0,
+    "created": false,
+    "changed": true
+  },
+  "changed_paths": [
+    ".claude/.sync-state.json",
+    ".claude/commands/health-check.md",
+    ".claude/commands/research.md",
+    ".claude/commands/review.md",
+    ".claude/scripts/dashboard-render.py",
+    ".claude/scripts/tests/test_dashboard_render_html.py",
+    ".claude/support/reference/dashboard-regeneration.md",
+    ".claude/support/reference/decisions.md",
+    ".claude/support/reference/extension-patterns.md",
+    ".claude/support/reference/phase-decision-gates.md",
+    ".claude/support/reference/work-procedures.md",
+    ".claude/version.json"
+  ],
+  "remaining": [],
+  "warnings": [
+    "project is not a git work tree; uncommitted_sync skipped"
+  ]
+}
