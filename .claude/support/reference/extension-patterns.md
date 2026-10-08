@@ -148,7 +148,7 @@ When `/work` detects a task blocked by an unresolved decision:
 
 When `/work` detects a checked box in "## Select an Option" and the decision's frontmatter status is `draft`/`proposed`:
 
-1. **Auto-update frontmatter** — set `status: approved` and `decided: [today's date]`, extract selected option name
+1. **Auto-update frontmatter** — set `status: approved` and `decided: [today's date]`, extract selected option name. A reconsidered agent-recorded decision also gets `ratified` (see [decisions.md](decisions.md) § "Agent-recorded decisions")
 2. **Check `inflection_point` field** in the decision record
 3. **If pick-and-go** (`inflection_point: false` or absent):
    - Unblock dependent tasks

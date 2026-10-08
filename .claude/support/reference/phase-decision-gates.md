@@ -127,7 +127,9 @@ Catches decisions that reference tasks which don't know about the decision yet:
 ```
 For each decision-*.md file, read `related.tasks` array:
   (Skip records with `decided_by: implement-agent` or `orchestrator`, whatever
-   their status: their `related.tasks` names the task that produced them.)
+   their status: their `related.tasks` names the task or tasks that produced
+   them and, when a reconsider led to one, a follow-up task appended last
+   (§ "Post-Decision Check").)
   For each referenced task ID:
     Read task JSON
     Check if decision ID is in task's `decision_dependencies`
@@ -162,7 +164,7 @@ For each decision-*.md file, read `related.tasks` array:
 
 ## Post-Decision Check
 
-**Reconsidered agent decision (both callers — `/work` Step 2b and `/iterate` Step 1a — with or without dependent tasks).** When the record just approved by a tick carries `decided_by: implement-agent` or `orchestrator` and the selection differs from what its related task built (the `**Selected:**` choice the agent wrote; note it before repopulating `## Decision`), offer to create a new task for the change. The Finished task is not reset. The new task follows the creation contract (`task-schema.md § "Drift Prevention Fields"`): run `fingerprint.py --provenance` on the related task's `spec_section` for current hashes (don't copy that task's fingerprints, which may predate a spec edit); if the related task is `spec_unmapped`, so is the new one.
+**Reconsidered agent decision (both callers — `/work` Step 2b and `/iterate` Step 1a — with or without dependent tasks).** When the record just approved by a tick carries `decided_by: implement-agent` or `orchestrator` and the selection differs from what its related task built (the `**Selected:**` choice the agent wrote; note it before repopulating `## Decision`), offer to create a new task for the change. When that task is created, append its id to the record's frontmatter `related.tasks` (after the ids already there): on a reconsidered record `/review` reads the last id as the follow-up. The Finished task is not reset. The new task follows the creation contract (`task-schema.md § "Drift Prevention Fields"`): run `fingerprint.py --provenance` on the related task's `spec_section` for current hashes (don't copy that task's fingerprints, which may predate a spec edit); if the related task is `spec_unmapped`, so is the new one.
 
 When `/work` detects a resolved decision (status `recorded`, `approved` or `implemented`) that has dependent tasks:
 
