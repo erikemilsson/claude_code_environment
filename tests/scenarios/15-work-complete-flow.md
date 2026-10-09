@@ -104,14 +104,14 @@ User runs `/work complete 10_2`. Task 10_1 is already "Finished". This is the la
    - 10_1: "Finished", 10_2: now "Finished"
    - All subtasks finished → parent auto-completes
 3. Parent Task 10 status set to "Finished"
-4. Dashboard regenerated showing both completions
+4. Dashboard regenerated: both completions count as Finished and are listed in "Recent — last 7 days"
 5. Any tasks depending on Task 10 become unblocked
 
 ### Pass criteria
 
 - [ ] Task 10_2 marked "Finished"
 - [ ] Parent Task 10 auto-completes to "Finished" (all subtasks done)
-- [ ] Dashboard shows parent as "Finished"
+- [ ] Dashboard counts the parent as Finished (phase done/total, status legend)
 - [ ] Auto-completion is triggered automatically, not requiring a separate user action
 - [ ] Downstream tasks depending on parent Task 10 become eligible
 
@@ -119,7 +119,7 @@ User runs `/work complete 10_2`. Task 10_1 is already "Finished". This is the la
 
 - Parent stays "Broken Down" despite all subtasks being finished
 - User must manually run `/work complete 10` to finish the parent
-- Dashboard shows parent as "Broken Down" while all subtasks are "Finished"
+- Dashboard still counts the parent as unfinished while all subtasks are "Finished"
 
 ---
 

@@ -20,7 +20,7 @@ The reference files form a layered system. Commands (`work.md`, `health-check.md
 | `task-schema.md` | JSON field definitions, owner/priority values, verification fields, status flow, archiving | `health-check.md` (schema validation), `CLAUDE.md` (always in context) |
 | `workflow.md` | Spec→Execute→Verify process, phase transitions, verification tiers, system overview | `work.md`, `health-check.md`, `CLAUDE.md` (always in context) |
 | `paths.md` | Canonical file locations — prevents Claude from inventing paths | `CLAUDE.md` (always in context) |
-| `dashboard-regeneration.md` | Dashboard regeneration procedure, section format, critical path, overview diagram | `work.md`, `breakdown.md`, both agents |
+| `dashboard-regeneration.md` | Dashboard regeneration procedure, sidecar schema, what each section shows, dependency graph | `work.md`, `breakdown.md`, both agents |
 | `drift-reconciliation.md` | Spec drift detection, reconciliation UI, drift budget, task migration | `work.md` (pre-execution check), `iterate.md` |
 | `parallel-execution.md` | Parallelism eligibility, file conflict algorithm, parallel dispatch | `work.md` (task routing) |
 | `session-recovery.md` | Session sentinel, crash recovery scan, stuck task detection | `work.md` (Step 0b) |

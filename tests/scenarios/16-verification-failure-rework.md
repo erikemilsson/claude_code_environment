@@ -55,7 +55,7 @@ Verification is not a rubber stamp. When verify-agent finds issues, the task mus
 5. Task status set back to "In Progress"
    - `[VERIFICATION FAIL #1]` and the fail summary prepended to notes, which now read `[VERIFICATION FAIL #1] Missing upsert for raw_game_designers table. Implemented ETL pipeline for 4 bronze tables`
    - `completion_date` cleared
-6. Dashboard regenerated showing Task 5 back to "In Progress"
+6. Dashboard regenerated: Task 5 counts under "In Progress" again (no Needs-you row while it is being reworked)
 
 ### Pass criteria
 
@@ -107,7 +107,7 @@ After 16A, `/work` detects Task 5 "In Progress" with a `[VERIFICATION FAIL #1]` 
 - [ ] The re-implementation's notes are prepended: the `[VERIFICATION FAIL #1]` entry and the original notes are still in `notes` when verify-agent reads them
 - [ ] verify-agent re-verifies with fresh eyes (not just checking the fix in isolation)
 - [ ] Dependent tasks (6, 7) unblock after Task 5 passes verification
-- [ ] Dashboard shows Task 5 as "Finished" and Tasks 6, 7 as eligible
+- [ ] Dashboard counts Task 5 as Finished (status legend, Recent); Tasks 6 and 7 are eligible in `/work` routing (the dashboard has no per-task eligibility display)
 
 ### Fail indicators
 
@@ -182,7 +182,7 @@ All spec tasks are "Finished" with passing per-task verification. Phase-level ve
 - [ ] `verification-result.json` written with `result: "fail"`
 - [ ] `/work` correctly routes to implement-agent for the fix task
 - [ ] After fix completes, phase-level verification re-runs
-- [ ] Dashboard shows fix task and verification debt
+- [ ] Dashboard shows the failed criterion in the Acceptance criteria section (`○`, `N/M passed`) and counts the fix task as Pending, so the phase reads Active again
 
 ### Fail indicators
 
@@ -219,7 +219,7 @@ During phase-level verification, verify-agent also notices that adding request c
 - [ ] Phase result is `"pass"` (not "fail" — spec criteria all passed)
 - [ ] User presented with accept/reject/defer options
 - [ ] Task not auto-executed without user approval
-- [ ] Dashboard shows recommendation with warning prefix
+- [ ] Dashboard lists the recommendation under Needs you → Reviews (`out-of-spec task awaiting your approval → run /work`)
 
 ### Fail indicators
 

@@ -10,21 +10,21 @@ Verify that the dashboard provides a complete, actionable view of the project at
 
 ### Expected
 
-All phases, tasks, and decisions visible with blocking context.
+All phases and decisions visible with blocking context; tasks appear as per-phase counts and as nodes in the Flow graph (the HTML dashboard has no per-task table, DEC-024).
 
 ### Pass criteria
 
-- [ ] All phases visible even when most work is blocked
-- [ ] Tasks grouped by phase with per-phase summary
-- [ ] Blocking reasons visible (decision IDs, phase dependencies)
-- [ ] Critical path shows the sequence including user actions
+- [ ] All phases visible in the Phase map even when most work is blocked (one heatmap cell and one active-front card each)
+- [ ] Each phase shows its done/total count and status: Phase 1 `Active` 0/3, Phase 2 `Blocked (DEC-001)` 0/3, Phase 3 `Blocked (DEC-002)` 0/2
+- [ ] Blocking reasons visible: the decision ID in the phase status, and each unresolved decision as a `❗` node feeding the tasks it gates in the Flow graph
+- [ ] The Flow graph draws the critical path with a heavier stroke, user actions (`❗` nodes) included
 - [ ] Full project journey understandable from dashboard alone
 
 ### Fail indicators
 
-- Only Phase 1 tasks shown (blocked phases hidden)
-- Tasks shown without dependency/blocking context
-- Dashboard requires reading task JSON to understand what's blocked
+- Only Phase 1 shown (blocked phases hidden)
+- A blocked phase shown without the decision that blocks it
+- Dashboard requires reading task JSON to understand which phase is blocked and by what
 
 ---
 
@@ -38,25 +38,25 @@ All phases, tasks, and decisions visible with blocking context.
 
 ### Expected
 
-- Header provides instant orientation (project name, stage, completion %, counts)
-- Action Required section appears early — within the first screenful
-- Action Required shows only populated sub-sections (empty ones omitted)
+- Masthead and Pulse provide instant orientation (project name, stage, task and phase counts, completion % ring with per-status counts)
+- The "Needs you" card (Action Required) appears early — after Pulse and the Phase map, plus the Flow graph when it renders
+- The card shows only populated sub-sections (here Decisions and Your Tasks; empty ones omitted)
 - Pending decision has a link to the decision doc file
-- Human task has an action description and a link to the relevant file
-- No "null state noise" — empty sub-sections are omitted, not shown as placeholders
+- Human task row names the action and its command: `Configure API keys — yours to do → run /work complete 5` (task rows carry a command, not a file link)
+- No "null state noise" — empty sub-sections are omitted, not shown as placeholders; the Timeline and Acceptance criteria sections are absent while they have no data
 
 ### Pass criteria
 
 - [ ] Action Required visible without scrolling past boilerplate
 - [ ] Decision listed with clickable link to decision doc
-- [ ] Human task listed with what to do and where to go
+- [ ] Human task listed with what to do and the command that closes it
 - [ ] Empty sub-sections omitted entirely (no placeholder text)
 - [ ] Dashboard fits in a reasonable length for a fresh project
 
 ### Fail indicators
 
 - User must scroll past empty sections to reach actionable content
-- Decision or human task listed without links
+- Decision listed without a link, or human task listed without its command
 - Empty sub-sections rendered with "None" or similar placeholders
 - Dashboard is excessively long for a project with no work done
 
@@ -77,16 +77,16 @@ All phases, tasks, and decisions visible with blocking context.
 
 Every item in Action Required is fully actionable from the dashboard:
 - Each item has a description of what the user needs to do
-- Each item links to the relevant file (relative path from dashboard)
-- Each item provides a way to signal completion (`fyi` augment rows excepted)
-- Items are consistent with their detail sections (Tasks, Decisions)
+- Each decision row links to its record (path relative to `.claude/`, where `dashboard.html` lives); task rows carry no file link
+- Each item names the command that resolves it (`/work`, `/work complete {id}`, `/work {id}`, or ticking an option in the decision record; `fyi` augment rows excepted)
+- Items are consistent with the rest of the page (the Decisions card, the Pulse verification-debt count)
 - Your Tasks lists the review-pending task whatever its owner (it is Finished; a stale flag on unfinished work gets no row), and the Blocked both-owned task; "Also Needs You" (last) carries the A-or-B question
 
 ### Pass criteria
 
 - [ ] Verification debt lists affected tasks with instruction to run `/work`
-- [ ] Pending decisions link to decision doc with question summary
-- [ ] Human tasks have action descriptions and file links
+- [ ] Pending decisions link to decision doc, with the decision's title
+- [ ] Human task rows read `{title} — yours to do → run /work complete {id}`
 - [ ] Review-pending row closes with `/work complete {id}`, even for a Finished, Claude-owned task
 - [ ] The Blocked task's choice is answerable from the card alone
 - [ ] No item requires browsing the file tree to figure out what to do
@@ -94,9 +94,9 @@ Every item in Action Required is fully actionable from the dashboard:
 ### Fail indicators
 
 - Items listed as counts without identifying which tasks/decisions
-- Links missing or using absolute paths
+- Decision link missing or using an absolute path
 - No instruction on how to resolve or signal completion
-- Action Required references items missing from detail sections
+- Action Required lists a decision the Decisions card doesn't have
 - Review-pending or Blocked-on-you task missing because of its owner or status
 
 ---
@@ -105,29 +105,30 @@ Every item in Action Required is fully actionable from the dashboard:
 
 ### State
 
-- Dashboard has a Sections checklist at the top
-- User unchecks "Decisions" (small project, few decisions)
+- The dashboard is read-only HTML with no in-file Sections checklist (DEC-024); the four switches (`action_required`, `decisions`, `notes`, `custom_views`) live in sidecar `section_toggles` (`dashboard-regeneration.md § "Section Toggle Configuration"`)
+- User asks Claude to turn "Decisions" off (small project, few decisions), or edits `dashboard-state.json`; the orchestrator writes `section_toggles.decisions: false` (Step 2b) and regenerates
 
 ### Expected
 
-- Unchecked sections excluded entirely from regeneration (no heading, no content)
-- Checked sections generated from source data
-- Section checklist preserved across regenerations (user's checkbox state is authoritative)
-- On first generation, static toggle defaults are seeded (Decisions on even with no records)
+- The Decisions card is excluded entirely from the regenerated page (no heading, no content); unresolved decisions still get their rows in the "Needs you" card
+- Sections switched on are generated from source data; every other section (Pulse, Phase map, Flow, Timeline, Specification) renders from data and has no switch
+- `action_required: false` is the exception: the "Needs you" card stays, with the line "Action Required section is toggled off."
+- The sidecar's toggle state is preserved across regenerations (the script only reads it)
+- On first generation, static toggle defaults are seeded (Decisions on even with no records; the card itself is omitted until a record exists)
 
 ### Pass criteria
 
-- [ ] Sections checklist exists at the top of dashboard.md
-- [ ] Unchecking a section removes it entirely from regenerated output
-- [ ] Regeneration preserves the user's checkbox state
+- [ ] No toggle checklist in `dashboard.html`; `section_toggles` in the sidecar is the only source
+- [ ] Switching a section off removes it entirely from regenerated output
+- [ ] Regeneration preserves the sidecar's toggle state
 - [ ] First generation seeds the static defaults
 
 ### Fail indicators
 
 - Toggle ignored during regeneration
 - Excluded sections still show a heading
-- Regeneration overwrites user's checklist state
-- Toggle requires editing config files instead of the dashboard itself
+- Regeneration overwrites the sidecar's toggle state
+- A toggle changed by editing `dashboard.html` (gone at the next regen)
 
 ---
 
@@ -139,23 +140,24 @@ Every item in Action Required is fully actionable from the dashboard:
 
 ### Expected
 
-- Critical path one-liner in the Progress section communicates the dependency chain
-- Owner indicators show who owns each step
-- Parallel branches use bracket notation showing fork/join points
-- User action items stand out visually
-- For complex projects, one-liner supplemented with an inline diagram
+- The Flow section's inline-SVG dependency graph communicates the dependency chain (`render_svg_graph`; there is no critical-path one-liner in the HTML dashboard)
+- Owner indicators show who owns each node: `❗` you, `🤖` Claude, `👥` both, with a fill colour per owner
+- Parallel branches sit in the same column, between the fork and join nodes their edges connect
+- User action items stand out visually: human-owned tasks and unresolved decisions (`❗ DEC-NNN`) have their own colours
+- The critical path (longest chain) has heavier node and edge strokes; the caption reads `Owners: ❗ you · 🤖 Claude · 👥 both · heavier stroke = critical path`
+- Above 15 incomplete tasks the graph reduces to the critical path plus immediate neighbours, with a caption counting the omitted tasks
 
 ### Pass criteria
 
-- [ ] Owner indicators present on every step
-- [ ] Sequential flow shown with arrows
-- [ ] Parallel branches visible via bracket notation
+- [ ] Owner indicators present on every node
+- [ ] Sequential flow shown with arrows, left to right
+- [ ] Parallel branches visible as nodes sharing a column
 - [ ] User can determine "what do I need to do" vs "what is Claude doing" at a glance
-- [ ] Step count includes parallel branches
+- [ ] Critical path distinguishable by its heavier stroke
 
 ### Fail indicators
 
-- Steps listed without owner indicators
-- One-liner wraps so many times it defeats the purpose
+- Nodes drawn without owner indicators
+- Graph drawn for a degenerate case (fewer than 4 incomplete tasks, no edges, or a dependency cycle), where it should be hidden
 - Parallel branches shown as sequential
-- Critical path is a numbered list instead of a one-liner
+- Critical path not distinguishable from the other edges

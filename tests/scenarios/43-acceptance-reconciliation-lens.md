@@ -6,7 +6,7 @@ Conceptual trace test for DEC-022 Option D (A + C): the authority doctrine (`ver
 
 - A project with `.claude/spec_v2.md` that renders per-phase acceptance criteria as inline `- [ ]` checkboxes (an *optional* project convention — the template does not mandate it). flirty-gym shape: Phase 1 boxes all `[x]`, **Phase 2 boxes all `[ ]`**.
 - `.claude/verification-result.json` exists with `result: "pass"` and `criteria[]` 7/7 `pass` (the latest phase-level result — Phase 2).
-- The dashboard renders `### Acceptance Criteria` as 7/7 passed (from that file).
+- The dashboard renders its Acceptance criteria section as `Acceptance criteria · 7/7 passed` (from that file).
 
 ## Trace A — lens flags the box-vs-`criteria[]` divergence (the flirty-gym symptom)
 
@@ -52,8 +52,8 @@ Command path: `rules/spec-workflow.md § "Acceptance-criteria authority (DEC-022
 
 State: Phase 2 verified PASS (`criteria[]` 7/7); spec Phase 2 inline boxes still `- [ ]`.
 
-1. `/health-check` Part 1 completion-gate does **not** treat the unticked spec boxes as a completion failure (the note: boxes are authored input; live status is the dashboard `### Acceptance Criteria`).
-2. A reader/agent consults the dashboard `### Acceptance Criteria` (7/7) for *status*, and the spec for the *criteria text*.
+1. `/health-check` Part 1 completion-gate does **not** treat the unticked spec boxes as a completion failure (the note: boxes are authored input; live status is the dashboard's Acceptance criteria section).
+2. A reader/agent consults the dashboard's Acceptance criteria section (7/7) for *status*, and the spec for the *criteria text*.
 
 **Expected:** unticked inline boxes never block completion or raise a false "phase incomplete" signal; the authoritative acceptance-status is `verification-result.json` `criteria[]`.
 

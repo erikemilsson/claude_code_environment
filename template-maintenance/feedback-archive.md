@@ -2468,3 +2468,48 @@ Tags: agents, verify-agent, implement-agent, playwright, screenshots, dev-server
 
 **Resolution (2026-10-07).** (a) The map was reconciled against v5.14.1 and its `Current as of` line bumped: counts (33 reference docs, 7 scripts, 10 test files), the dependency-edges table retraced from citations (rules and the hook added as consumers; script-to-script loads and the reference docs that name a script listed), state-file rows for the overflow file, the open/closed sentinel, the residue baseline, `.pending-markers.jsonl`, decision records, audit digests and the sync writer, and blast-radius rows for the hook's handoff shape, `persist-session-export.py` and the `SHIPPED` tuple. Also closes FB-127 (k). (c) The 16 records that were not in the prescribed shape were converted to `- file:` / `description:` mappings with double-quoted values (94 items became 106 entries: entries naming several paths in DEC-019, DEC-020 and DEC-024 were split one per path; DEC-013 and DEC-016 had bare paths and got descriptions written from the record's own "what ships" text and the anchored files). All 22 frontmatters parse with PyYAML and every anchor is a mapping with `file` and `description` (16 records failed that check before). Anchors to files that no longer exist (`system-overview.md`, the retired Skills, `.claude/dashboard.md`) are kept as history and say so in the description. (d) The 8 records without `## Decision` got one built from the box ticked under `## Select an Option` and the `decided:` date, with the rationale pointing at `## Recommendation`; DEC-003's `## Comparison Matrix` heading was renamed `## Options Comparison`. Not changed: DEC-003's `## Decision` body is still the unfilled placeholder although Option B is ticked.
 
+---
+
+## FB-075: TaskCreate/TaskUpdate harness reminder fires in projects that explicitly forbid built-in task tools
+
+**Status:** cheap-action-shipped + deferred (structural fix upstream-gated). **Re-assess (2026-10-02):** the v5.7.5 doc check reports that Claude Code enables TaskCreate/TaskUpdate/TaskList by default only through Opus 4.7, and none of them is in an Opus 5.5 session's tool list (verified 2026-10-01). If the reminder no longer fires on Opus 5.5, close this and trim `.claude/README.md § Known Constraints`.
+**Captured:** 2026-05-20
+**Cheap action shipped:** 2026-05-20 — Added "Harness reminders about built-in task tools" paragraph to `.claude/README.md § Known Constraints`. Documents the noise as harness-emitted (not template-emitted) and benign in projects using `.claude/tasks/*.json`. Shipped in template_version 4.6.1 (alongside FB-076 deferral).
+**Defer condition (structural fix):** structural opt-out requires Anthropic-side mechanism (CLAUDE.md sentinel, settings hook, or per-project flag). Re-assess when (a) upstream offers such a mechanism, OR (b) friction scales materially (token tax across 100+ sessions becomes meaningful).
+**Source:** Aggregated across 7 session exports (echothread + styler, 2026-05-16 → 2026-05-17). Observed in this very session 2026-05-20 during inbox triage — the harness reminder fired immediately after the AskUserQuestion confirming this FB capture.
+
+The Claude Code harness emits a system-reminder along the lines of *"The task tools haven't been used recently. Consider using TaskCreate to add new tasks and TaskUpdate to update task status..."* on most tool returns. When a project's `.claude/CLAUDE.md` contains the explicit override ("Use the project's task system (`.claude/tasks/*.json`). Never use built-in TaskCreate/TaskUpdate/TaskList tools"), the reminder is universally irrelevant — every fire costs cognitive cycles + token tax + a user-visible "ignoring per project rules" acknowledgment from the agent.
+
+### Pattern
+
+Observed cumulatively across the 7 sessions: ~60+ TaskCreate reminder fires. The reminder is built into the runtime (not template-emitted), so the template can't suppress it directly. Both echothread and styler sessions show the same pattern:
+
+1. Agent does work using the project's task JSON system (per CLAUDE.md).
+2. Harness emits the reminder after most tool returns.
+3. Agent burns tokens acknowledging + ignoring + reasserting the project rule.
+
+### Two possible mitigations
+
+1. **Harness-side (Anthropic concern):** when CLAUDE.md contains an explicit-override phrase ("Never use built-in TaskCreate"), suppress the reminder for that project's sessions.
+2. **Template-side (CCE concern):** add a CLAUDE.md marker or settings.json convention that the harness reads to disable the nudge. Example: `task_system_override: true` field in `.claude/version.json`, or a documented sentinel comment in CLAUDE.md the harness recognizes.
+
+Both paths require Anthropic-side cooperation — the reminder logic lives in the runtime, not in template-shipped files. Worth raising upstream OR documenting the unavoidable noise in `.claude/README.md` so users (and agents) don't feel the rule is broken.
+
+### Why this is worth capturing despite being upstream
+
+- **Recurring confusion signal:** agents visibly burn tokens acknowledging the reminder; users observe and ask "why does it keep suggesting that?"
+- **Project authority erosion:** explicit project rules feel less authoritative when the harness contradicts them on every tool return.
+- **Documented friction = potential fix:** if Anthropic adds an opt-out mechanism, the template can adopt it immediately.
+
+Sources:
+- `interaction-logs/processed/echothread-2026-05-16.json` (~10 fires)
+- `interaction-logs/processed/echothread-2026-05-17.json` (~10 fires)
+- `interaction-logs/processed/echothread-session-2026-05-16.json` (~20 fires)
+- `interaction-logs/processed/styler-2026-05-17.json` (~10 fires)
+- `interaction-logs/processed/styler-session-export-2026-05-16-T0955.json` (7+ fires)
+- `interaction-logs/processed/styler-session-export-2026-05-16-T1332.json` (7+ fires)
+- `interaction-logs/processed/styler-session-export-2026-05-16-T1425.json` (recurring fires)
+
+Tags: harness, task-system, system-reminders, upstream-anthropic, friction-aggregate
+
+**Resolution (2026-10-09, closed with v5.14.5).** Measured on the transcripts still on disk (65 main sessions, 214 subagent transcripts; the two excluded projects skipped), counting real `task_reminder` attachments and not quotations of the text: Opus 5: 3 fires in 1 of 20 sessions; Opus 5.5: 1 fire in 1 of 32 sessions (2026-10-07, a background session); subagents: 0. At capture it was about 10 fires per session. The reminder still exists, so the `.claude/README.md § Known Constraints` paragraph stays, shortened to one sentence that says it is rare and can be ignored (`README.md` is a `customize` file: new projects only). No structural fix is needed. Re-open only if the rate climbs again in a harvest.

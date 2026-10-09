@@ -197,7 +197,7 @@ Due to a manual edit error, task files contain a circular dependency:
 
 ## Trace 17G: Critical path reflects dependency chain
 
-- **Path:** /work critical path generation
+- **Path:** dashboard regeneration → `dashboard-render.py` `longest_path` + `render_svg_graph` (the Flow section)
 
 ### Scenario
 
@@ -206,7 +206,7 @@ Current state: Tasks 1, 2, 4 finished. Task 3 in progress. Tasks 5, 6, 7 pending
 ### Expected
 
 - Critical path identified as the longest remaining chain
-- Dashboard shows: `🤖 Build API endpoints → 🤖 Create frontend components → 🤖 Write integration tests → Done *(3 steps)*`
+- Dashboard Flow graph draws `🤖 Build API endpoints` → `🤖 Create frontend components` → `🤖 Write integration tests` with the heavier critical-path stroke; Task 3 is a node without it (4 incomplete tasks with edges, so the graph renders; the HTML dashboard has no one-line critical path or step count)
 - Human-owned steps (if any) shown with `❗` prefix
 
 ### Pass criteria

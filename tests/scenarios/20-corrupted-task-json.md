@@ -95,7 +95,7 @@ User runs `/work`. Task loading reads all task files. `task-2.json` fails to par
    - Dependency on Task 2: "Referenced task file is corrupted/unreadable"
    - Dependency on Task 99: "Referenced task does not exist"
 2. `/work` treats Task 4 as Blocked (unresolvable dependencies)
-3. Dashboard shows Task 4 with dependency issue noted
+3. Dashboard: Task 4 counts as Pending in its phase; the dependency issue is not shown there (no per-task rows, DEC-024); `/health-check` (step 1) is where the user sees it
 
 ### Pass criteria
 

@@ -79,7 +79,7 @@ Not all projects produce code. Some produce specifications, research documents, 
 - Dashboard shows documentation-appropriate progress language
 - No references to "build passing", "test coverage", or "lint status"
 - Progress metrics reference deliverables completed, not code metrics
-- Attention section references documents to review, not PRs to merge
+- The "Needs you" card references documents to review, not PRs to merge
 
 ### Pass criteria
 

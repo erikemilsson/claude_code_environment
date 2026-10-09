@@ -74,7 +74,7 @@ Many real projects already have a mature test suite before the template is appli
 
 - Failures reported with correct file paths and line numbers from pytest output
 - verify-agent marks task-1 as failing verification with specific failure details
-- Dashboard surfaces the failures in the attention section
+- The failure is announced inline (`Task 1 verification failed: {summary}`, `commands/work.md § "User Communication Strategy"`); the task goes back to In Progress, and the dashboard's Needs-you card gets a row for it only if it escalates to Blocked after 3 attempts
 
 ### Pass criteria
 

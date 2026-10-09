@@ -285,7 +285,7 @@ For each held-back task, add a temporary `conflict_note` to the task JSON:
 }
 ```
 
-This note is surfaced in the dashboard Tasks section (appended to the task's Status column as a tooltip or parenthetical) and removed when the task is dispatched.
+The dashboard does not render this note (`dashboard-render.py` doesn't read `conflict_note`); it is removed when the task is dispatched.
 
 ### Write Ownership Rules
 

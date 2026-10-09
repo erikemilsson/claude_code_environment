@@ -1,8 +1,8 @@
 # Audit Findings — Dashboard Surface and Action Protocol
 
-Documents the user-facing surface for audit findings (the dashboard's `🔍 Audit Findings` section) and the action protocol for resolving them. Audits themselves are documented per-command in `.claude/commands/audit-*.md`; this doc covers what happens *after* an audit runs.
+Documents the user-facing surface for audit findings (the Audit Findings rows on the dashboard's "Needs you" card) and the action protocol for resolving them. Audits themselves are documented per-command in `.claude/commands/audit-*.md`; this doc covers what happens *after* an audit runs.
 
-**Scope:** Stage 6a + Stage 6 Option C (per DEC-013) of the audit family proposal (`template-maintenance/audit-command-family-proposal.md`). Stage 6a surfaces digest items on the dashboard with `[Promote to FB]` / `[Dismiss]` actions for all kinds. Stage 6 Option C adds a `[Fix it]` inline-apply action for `bundle-eligible` kind only — per DEC-013's autonomy-boundary review (2026-05-15). `fix-eligible` kind defers to a future DEC pending telemetry validation. Stage 7 (bundled-apply batch UX) remains deferred — the `(Stage 7)` section below is a placeholder.
+**Scope:** Stage 6a + Stage 6 Option C (per DEC-013) of the audit family proposal (`template-maintenance/audit-command-family-proposal.md`). Stage 6a surfaces digest items on the dashboard and defines `[Promote to FB]` / `[Dismiss]` actions for all kinds. The dashboard is read-only (DEC-024), so every action runs through the CLI. Stage 6 Option C adds a `[Fix it]` inline-apply action for `bundle-eligible` kind only — per DEC-013's autonomy-boundary review (2026-05-15). `fix-eligible` kind defers to a future DEC pending telemetry validation. Stage 7 (bundled-apply batch UX) remains deferred — the `(Stage 7)` section below is a placeholder.
 
 ---
 
@@ -15,44 +15,33 @@ Each audit run writes to `.claude/support/audits/{audit}-{YYYY-MM-DD-HHmm}/`:
 - `lenses/` — per-lens raw output
 - `inputs/` — captured project state (audit-coherence) or page snapshots (audit-ui)
 
-`digest.json` is the surface-facing artifact. The dashboard's `🔍 Audit Findings` section is a projection of the most recent `digest.json` filtered for `status: pending` and not in the user's dismissal list.
+`digest.json` is the surface-facing artifact. The dashboard's Audit Findings sub-section is a projection of the most recent `digest.json` filtered for `status: pending` and not in the user's dismissal list.
 
 ---
 
 ## Dashboard surface
 
-The `🔍 Audit Findings` sub-section in Action Required renders when the dashboard sidecar (`dashboard-state.json`) has any pending, non-dismissed audit items. The sub-section is **persistent across regens** until each item is promoted, dismissed, or resolved by a subsequent audit run.
+The Audit Findings sub-section in Action Required renders when the dashboard sidecar (`dashboard-state.json`) has any pending, non-dismissed audit items. The sub-section is **persistent across regens** until each item is promoted, dismissed, or resolved by a subsequent audit run.
 
-**Rendered shape:**
+**Rendered shape** (`dashboard-render.py` `_html_needs_you`): one row per pending, non-dismissed item, holding the id and the item's body text.
 
-```markdown
-### 🔍 Audit Findings
-
-*Last audit: coherence 2026-05-15 14:30Z (6 pending · 0 promoted · 0 dismissed since last audit)*
-
-<!-- AUDIT DIGEST -->
-- [ ] **C-01** `unused-pkg` is listed in package.json dependencies but no `import` or `require` references it anywhere in `src/` — the only consumer was retired in T625. — [Fix it]
-- [ ] **C-02** Spec uses "sub-tab" and "section nav" interchangeably for the same UI element across §§ 9.1, 11.1, 42.5 — 3 occurrences need a canonical-term decision. *(spec amendment via /iterate)*
-- [ ] **C-03** Three friction-register entries (FR-014, FR-022, FR-028) cluster around the Oracle-thesis contradiction pattern, suggesting an unresolved design tension rather than isolated incidents. *(promote to FB → /research)*
-- [ ] **C-05** Five FB-* entries are >30 days old without a status change — likely abandoned threads worth re-triaging or archiving. *(fix-eligible — manual review pending future DEC)*
-- [ ] **C-07** Spec § 27.1 references a "feature retirement workflow" but no rule file, manifest schema, or directory convention exists on disk to back the reference. *(spec amendment via /iterate)*
-- [ ] **C-08** A retired feature manifest under `.claude/support/retired/pull-to-refresh/` exists, but spec § 41 doesn't carry the corresponding "Retired (YYYY-MM-DD)" marker. *(spec amendment via /iterate)*
-<!-- END AUDIT DIGEST -->
-
-*Already covered by in-flight work:*
-- C-04 → T725 (Pending) — "spec § 28 path migration cleanup"
-- C-09 → T712 (In Progress) — "FB-071 Phase 27 retirement scaffolding"
+```
+Audit Findings
+C-01  unused-pkg is listed in package.json dependencies but nothing in src/ imports it — the only consumer was retired in T625.
+C-02  Spec uses "sub-tab" and "section nav" interchangeably for the same UI element across §§ 9.1, 11.1, 42.5 — 3 occurrences need a canonical-term decision.
 ```
 
-**Per-item action affordance (post-v3.17.1):** Only `[Fix it]` is rendered inline, and only for `bundle-eligible` items — because `[Fix it]` has no checkbox/keyword alternative. Non-bundle-eligible kinds show a single italicized annotation explaining their kind (no inline `[Promote to FB] / [Dismiss]` text — those actions are still available, just not rendered per-item to avoid dead UI). See `dashboard-regeneration.md` § "Audit Findings sub-section in Action Required" for the canonical rule and the "How to act on findings" sub-section for promote/dismiss invocation patterns.
+The page renders nothing else for a finding: no header line, checkbox, `[Fix it]` token, kind annotation or "already covered" list. `triage` (below) prints each finding's kind and the actions it allows.
 
-**Body text per item (post-v3.18.0):** The bullet body is the item's `description` field — a plain-English synthesizer-written sentence describing what's wrong and where, sufficient for at-a-glance triage without opening `findings.md` (FB-006 iteration 2). Backward-compat: older digest.json files without `description` render `title` instead. See `audit-coherence.md` § "Algorithm" step 4 + Component 2 schema § "`description` vs `title`" for the field convention.
+**Per-item action affordance (post-v3.17.1):** none on the page. `[Fix it]` (bundle-eligible only), `[Promote to FB]` and `[Dismiss]` are CLI actions: see the `triage` section and the action protocol below.
+
+**Body text per item (post-v3.18.0):** The row body is the item's `description` field — a plain-English synthesizer-written sentence describing what's wrong and where, sufficient for at-a-glance triage without opening `findings.md` (FB-006 iteration 2). Backward-compat: older digest.json files without `description` render `title` instead. See `audit-coherence.md` § "Algorithm" step 4 + Component 2 schema § "`description` vs `title`" for the field convention.
 
 **Section ordering:** between Spec Drift and Feedback in Action Required.
 
 **Empty state:** when an audit has run but all items are resolved/dismissed:
 ```
-*No pending audit findings. Last audit: 2026-05-15. Run /health-check to refresh.*
+No pending audit findings. Last audit: coherence-2026-05-15-1430.
 ```
 
 When no audit has ever run (sidecar `audit_digest.latest_audit` is empty), the section is skipped entirely.
@@ -80,7 +69,7 @@ Two actions per item: `[Promote to FB]` and `[Dismiss]`. Both are user-driven �
 
 Lifts a single audit finding into a feedback entry. Same shape as `/audit-{name} promote {audit-ts}` but scoped to one finding.
 
-**User invocation:** the user clicks/copies the action and runs (or asks Claude to run) `/audit-coherence promote {audit-ts} {C-ID}` or `/audit-ui promote {audit-ts} {F-ID}`.
+**User invocation:** the user runs (or asks Claude to run) `/audit-coherence promote {audit-ts} {C-ID}` or `/audit-ui promote {audit-ts} {F-ID}`.
 
 **Mechanism (handled by the audit command's promote mode):**
 
@@ -92,7 +81,7 @@ Lifts a single audit finding into a feedback entry. Same shape as `/audit-{name}
 6. Update `friction.jsonl` in place for any friction register entries cited by the promoted finding: `status: resolved`, `resolved_by` set per the same shape (see `friction-register.md` § "Status update protocol").
 7. Update `findings.md` in place: replace `- [x] C-NN — title` with `- [x] C-NN → FB-NNN promoted {date}`.
 
-**Effect on dashboard:** next regen detects `digest.json` updated, re-runs Step 5f, the promoted item drops out (status != pending). Header line counters update (promoted count +1).
+**Effect on dashboard:** next regen detects `digest.json` updated, re-runs Step 5f, the promoted item drops out (status != pending).
 
 ### `[Dismiss]`
 
@@ -117,7 +106,7 @@ Marks a finding as not-a-problem-to-fix. Doesn't promote, doesn't change source,
 
 ## Action protocol — Stage 6 (Option C per DEC-013) — *currently shipped*
 
-Adds `[Fix it]` to the dashboard digest, scoped to `bundle-eligible` kind only. Per DEC-013 (approved 2026-05-15), `fix-eligible` defers to a future DEC pending telemetry validation; `decision` and `design` kinds are unchanged from Stage 6a.
+Adds the `[Fix it]` action, scoped to `bundle-eligible` kind only. Per DEC-013 (approved 2026-05-15), `fix-eligible` defers to a future DEC pending telemetry validation; `decision` and `design` kinds are unchanged from Stage 6a.
 
 ### `[Fix it]` — inline apply (bundle-eligible only)
 
@@ -127,7 +116,7 @@ Lifts a single bundle-eligible audit finding into an inline applied change with 
 
 - **Slash command:** `/audit-coherence fix {audit-ts} {C-ID}` or `/audit-ui fix {audit-ts} {F-ID}` — analogous to existing `promote` sub-mode
 - **Natural language:** *"fix C-02 from the latest coherence audit"* or *"address F-04 from the ui audit"* — Claude infers the slash command
-- **Dashboard click:** the `[Fix it]` link in the `🔍 Audit Findings` section expands to the slash command form
+- **Triage walker:** `[F]ix it` in `/audit-{name} triage`
 
 **Mechanism (orchestrator-side):**
 
@@ -160,7 +149,7 @@ Lifts a single bundle-eligible audit finding into an inline applied change with 
 | `decision` (touches spec/decision/vision) | — *(routes via /iterate; never inline)* | ✓ | ✓ |
 | `design` (needs research/discussion) | — *(promote to FB → /research)* | ✓ | ✓ |
 
-For non-bundle-eligible kinds, the dashboard digest renders a one-line italicized annotation explaining why `[Fix it]` doesn't appear (see `dashboard-regeneration.md` § "Audit Findings sub-section in Action Required").
+For non-bundle-eligible kinds, `fix` refuses with the kind-specific message in step 3 above; the dashboard row shows no kind.
 
 ### Known limitations (per DEC-013 research)
 

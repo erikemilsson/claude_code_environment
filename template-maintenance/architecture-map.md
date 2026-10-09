@@ -1,6 +1,6 @@
 # Template Architecture Map
 
-**Current as of:** v5.14.4
+**Current as of:** v5.14.5
 
 > The line above is machine-read by `scripts/pre-commit-hook.sh` — keep the exact `**Current as of:** v{X.Y.Z}` format. Bump it whenever this map is reconciled against a new template version.
 
@@ -87,7 +87,7 @@ The hidden couplings. Each row is a place where an isolated-looking edit silentl
 | **`template-maintenance/` (root dir) — rename/delete** | It is the **template-repo sentinel** in 4 sites: `health-check.md` Part 5 (§ "Repo-type skip"), Part 5d, Part 7, and `scripts/pre-commit-hook.sh` (top guard). Renaming it makes downstream-sync logic run inside the template repo and silently disables the hook. Migrate all 4 sites together. (Migrated from `system-overview.md` in v5.1.1.) |
 | Decision record `related.tasks` order | First id = the task that produced an agent record (`work-procedures.md` "If an agent record for this task already exists"); last id on a reconsidered record = the follow-up task (`phase-decision-gates.md § "Post-Decision Check"` writes it, `/review`'s Decision Implementation Audit reads it). Anything else that appends to or reorders the list breaks both (v5.14.2) |
 | Task JSON fields (`reference/task-schema.md`) | `scripts/validate-tasks.py`, both agents' report envelopes, `reference/work-procedures.md`, dashboard-render.py field reads + its tests |
-| dashboard-render.py output shape | Depends on `fingerprint.py` `compute_drift()` (loaded by path, v5.9.0) for the drift footer/rows. Format is pinned by `scripts/tests/test_dashboard_render*.py` (164 tests at v5.14.3: 26 + 138); prose contracts in `rules/dashboard.md` + `reference/dashboard-regeneration.md`; `/health-check` validates the HTML shape (doctype, `<!-- DASHBOARD META -->`, no CDN deps) |
+| dashboard-render.py output shape | Depends on `fingerprint.py` `compute_drift()` (loaded by path, v5.9.0) for the drift footer/rows. Format is pinned by `scripts/tests/test_dashboard_render*.py` (175 tests at v5.14.5: 26 + 149); prose contracts in `rules/dashboard.md` + `reference/dashboard-regeneration.md`; `/health-check` validates the HTML shape (doctype, `<!-- DASHBOARD META -->`, no CDN deps) |
 | `settings.json` `permissions.ask` gates | DEC-016/023 prose in `rules/spec-workflow.md § Direct edits`, `.claude/README.md § Auto Mode`, `sync-manifest.json` notes field |
 | `sync-manifest.json` categories | `scripts/pre-commit-hook.sh` `SYNC_PATTERNS` is a **hand-mirrored copy** (noted in its header); `/health-check` Part 5 diff logic; `sync-check.py` reads every historical manifest version (a file counts as template-owned when it was in `sync` at deletion), so category moves change what Part 5 offers to remove |
 | sync-check.py output shape (v5.10.0, FB-126; `files[]`/`manifest`/`sidecar`/`history_complete` v5.12.0, FB-136) | Consumers: `/health-check` Part 5 Steps 2–5 and `sync-apply.py` (imports it; writes `.claude/` files, `version.json`, `sync-manifest.json`, `.sync-state.json`; pinned by `scripts/tests/test_sync_apply.py`); its rules are restated as the prose fallback in Part 5 Step 2 (dual location); pinned by `scripts/tests/test_sync_check.py` |

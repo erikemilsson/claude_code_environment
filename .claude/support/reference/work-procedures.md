@@ -146,7 +146,7 @@ Run the Residue check above first.
 1. **Write `.claude/verification-result.json`** using the report's payload: `result`, `timestamp`, `spec_version`, `spec_fingerprint`, `summary`, `criteria_passed`, `criteria_failed`, `criteria`, `issues`, plus a `tasks_created[]` array populated with the IDs of task files you create in the next step
 2. **Create fix task files:** for each entry in `report.fix_tasks_to_create[]`, write `task-{id}.json` with the entry's `task_json` payload plus `out_of_spec` flag. An in-spec fix task gets provenance first (creation contract: `task-schema.md § "Drift Prevention Fields"`): run `python3 .claude/scripts/fingerprint.py --provenance .claude --section "<task_json.spec_section>"` and merge the four fields into the payload; a payload with `spec_unmapped: true` is written as it is. If the heading doesn't resolve (exit 1), or the payload has neither, pick the section from the spec index (`.claude/spec_v{N}.index.json`) and run `--provenance` on that, or set `spec_unmapped: true`; say which in the task's `notes`. Entries with `out_of_spec: true` need neither
 3. **Append friction markers**
-4. **Regenerate dashboard** — include Verification Debt sub-section if debt exists; show out-of-spec tasks with ⚠️ prefix
+4. **Regenerate dashboard** — the script renders the Verification Debt sub-section when debt exists and lists unapproved out-of-spec tasks under Reviews
 5. **If result is `fail`:** loop back to Execute phase for fix tasks. If `pass`: proceed to "If Completing"
 
 ## Task Completion (`/work complete`)

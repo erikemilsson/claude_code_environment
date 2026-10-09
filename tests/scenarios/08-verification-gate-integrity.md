@@ -59,7 +59,7 @@ Task 8 is owner: human. Claude should not implement, complete, or modify this ta
 ### Expected behavior
 
 - `/work` auto-detect sees Task 8 as "Pending" but does NOT route it to implement-agent
-- Dashboard shows Task 8 in "Your Tasks" with action and link
+- Dashboard shows Task 8 in "Your Tasks" with the action and its command: `Review data model design — yours to do → run /work complete 8`
 - User completes it via `/work complete 8` after doing the work themselves
 
 ### Pass criteria
@@ -120,21 +120,21 @@ All Phase 1 tasks are "Finished" with passing verification. Phase 2 tasks exist.
 ### Expected behavior
 
 - `/work` detects Phase 1 complete
-- Presents phase transition checkpoint to user
-- Dashboard shows "Approve phase transition" in Reviews
+- Presents phase transition checkpoint to user: `[Y] Approve  [N] Hold` in the CLI (`phase-decision-gates.md § "Phase Check"`); a `Y` reply sets sidecar `phase_gates["1→2"].status` to `approved`
+- Dashboard shows the gate under Needs you → Phase Transitions: `Phase 1 complete — approve the gate to start phase 2 → run /work`
 - Claude does NOT start Phase 2 work without user confirmation
 
 ### Pass criteria
 
 - [ ] Phase boundary is a user-facing checkpoint (not silently crossed)
-- [ ] Dashboard surfaces the transition as a review item with checkbox
+- [ ] Dashboard surfaces the transition as a Phase Transitions row until the gate is `approved` (read-only HTML: no checkbox; the approval is the CLI reply)
 - [ ] Claude waits for user to confirm before dispatching Phase 2 tasks
 - [ ] User can review Phase 1 results before Phase 2 begins
 
 ### Fail indicators
 
 - Claude detects Phase 1 complete and immediately starts Phase 2
-- No review item appears in dashboard for phase transition
+- No Phase Transitions row appears in dashboard for the pending gate
 - Phase transition happens without user awareness
 - User discovers Phase 2 work started when they expected to review Phase 1 first
 

@@ -80,7 +80,7 @@ Available only for findings with `kind: bundle-eligible`. Other kinds (`fix-elig
 
 ## Triage mode (canonical)
 
-`{CMD} triage [audit-ts]` — interactive walker through the audit's pending findings. The preferred entry point when an audit has multiple pending findings; closes the dashboard-tick → CLI re-specification courier pattern and the audit-name memory burden (FB-006 sub-issues 1+2).
+`{CMD} triage [audit-ts]` — interactive walker through the audit's pending findings. The preferred entry point when an audit has multiple pending findings; it removes the need to re-specify finding ids and the audit name in the CLI (FB-006 sub-issues 1+2).
 
 **Default for `audit-ts`:** `latest` — newest `{DIR-GLOB}` dir by `ran_at` (same resolution as Fix mode). The explicit `latest` keyword is equivalent to the no-arg form.
 
@@ -124,7 +124,7 @@ The kind annotation prints in the card header so the action list's reason is tra
 
 ### Edge cases
 
-- **Pre-v3.18.0 digests without `description`** → render `item.title` (same `{description ?? title}` fallback as `dashboard-regeneration.md § "Body field selection"`).
+- **Pre-v3.18.0 digests without `description`** → render `item.title` (same `{description ?? title}` fallback as the dashboard row: `dashboard-render.py` `_html_needs_you`).
 - **Parallel-session collision** — same caveat as `[Fix it]` (`audit-fix-workflow.md § "Known limitations"`): don't run triage while another session runs `/work` on overlapping files.
 - **Mixed audit kinds** — each audit family member has its own `triage` sub-command; no unified `/triage`.
 - **Re-running the audit mid-triage** — a fresh audit replaces sidecar items at next dashboard regen; the next triage walks the new digest. Acceptable — triage operates on a named digest, not the dashboard.
@@ -154,7 +154,7 @@ A plain-English one-line summary suitable for at-a-glance dashboard triage. Deri
   f. **Orphan-removal special case (DEC-013 Q3):** orphan-dependency removal and orphan-source-file deletion still classify bundle-eligible (the canonical case) but set `bundle_eligibility.transitive_consumer_risk: true` so the action layer warns the user to run tests after apply — dynamic require / `importlib.import_module` / string-keyed import patterns aren't statically detectable.
   g. **When in doubt → fix-eligible, not bundle-eligible.** The action layer's at-apply re-read invariant cannot catch semantic mismatches created at synthesis time. Conservative classification here is the load-bearing safety property.
   Set on bundle-eligible items: `bundle_eligibility.source_confirmed: true`, `reversible: true`, `files_count: {N}`, `touches_spec_or_decisions: false`, `transitive_consumer_risk: {bool}`.
-- Otherwise (implementation-only but failing ANY bundle criterion, >3 files, or ambiguous fix) → `kind: fix-eligible`. Renders on the dashboard with the italicized `*(fix-eligible — manual review pending future DEC)*` annotation only — no inline `[Fix it]` until a future DEC expands inline-apply per DEC-013's telemetry gate.
+- Otherwise (implementation-only but failing ANY bundle criterion, >3 files, or ambiguous fix) → `kind: fix-eligible`. No `[Fix it]` for this kind until a future DEC expands inline-apply per DEC-013's telemetry gate.
 
 ### Hard-rule sanity check (before returning)
 

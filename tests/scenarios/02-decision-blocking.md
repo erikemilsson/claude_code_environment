@@ -35,8 +35,8 @@ Open the decision doc to make your selection, then run /work again.
 ```
 
 ## Trace: Dashboard regeneration
-- All phases visible, blocked tasks show decision dependency in Deps column
-- Phase summary lines explain blocking reason
+- All phases visible in the Phase map; Phase 2 reads `Blocked (DEC-001)` and Phase 3 `Blocked (DEC-002)`
+- Both decisions have a row under Needs you → Decisions (linked to the record), and each is a `❗` node feeding its tasks in the Flow graph; the HTML dashboard has no per-task table or Deps column
 
 ## Pass criteria
 

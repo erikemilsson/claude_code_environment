@@ -4,7 +4,7 @@ Verify that the dashboard functions as a complete communication loop: Claude sur
 
 ## Context
 
-The user runs Claude Code CLI in one pane and has `dashboard.md` open in the other. Their workflow: check dashboard, do what it says, run `/work`, check dashboard again. If any step breaks silently, the user loses trust in the system.
+The user runs Claude Code CLI in one pane and has `dashboard.html` open in a browser in the other. Their workflow: check dashboard, do what it says, run `/work`, check dashboard again. If any step breaks silently, the user loses trust in the system.
 
 ---
 
@@ -13,26 +13,26 @@ The user runs Claude Code CLI in one pane and has `dashboard.md` open in the oth
 ### State
 
 - Task 7: "Awaiting Verification" — verify-agent will find issues
-- Dashboard currently shows Task 7 as "In Progress"
+- Dashboard was last regenerated while Task 7 was "In Progress" (it counts under "In Progress" in the status legend; the HTML has no per-task status row)
 
 ### Expected sequence
 
-1. Claude runs verify-agent, finds issues, creates fix tasks, regenerates dashboard
-2. Dashboard updates: Task 7 back to "In Progress" (failed verification), new fix task appears, verification debt shown
+1. Claude runs verify-agent, finds issues; Task 7 goes back to "In Progress" with a `[VERIFICATION FAIL #1]` note (a per-task fail creates no fix task: `work-procedures.md § "State Persistence Protocol"`, "After verify-agent returns (per-task mode)" step 4), regenerates dashboard
+2. Dashboard updates: Task 7 still counts under "In Progress"; it has no Verification Debt row, because a task under rework is not debt (debt is a task Awaiting Verification, or Finished without a pass)
 3. Claude implements fix, re-verifies, passes
-4. Dashboard updates: Task 7 "Finished", fix task "Finished", verification debt cleared
+4. Dashboard updates: Task 7 counts under "Finished" and is listed in "Recent — last 7 days"; verification debt 0; footer `spec aligned · 0 drift deferrals, 0 verification debt`
 
 ### Pass criteria
 
 - [ ] Each state transition produces a dashboard regeneration
 - [ ] Dashboard accurately reflects the current state at every step
 - [ ] No "phantom" items remain from previous states
-- [ ] The user can follow the entire lifecycle from the dashboard alone
+- [ ] The user can follow the lifecycle from the dashboard's counts (status legend, verification debt, Recent)
 
 ### Fail indicators
 
 - Dashboard shows stale status while work is happening
-- Fix task appears before it exists
+- A Verification Debt row for Task 7 while it is being reworked
 - Verification debt persists after task passes verification
 
 ---
@@ -90,7 +90,7 @@ Variant, inbox configured: both prompts are shown, each skippable with Enter; a 
 2. Decision frontmatter auto-updated (status, decided date)
 3. If inflection point: `/work` pauses and directs to `/iterate`
 4. If pick-and-go: dependent tasks unblocked immediately
-5. Dashboard updated — decision moves from Action Required to resolved
+5. Dashboard updated — DEC-002's row leaves the Needs-you card's Decisions sub-section; the Decisions card shows it as "Decided" with the selected option; Phase 3 no longer reads `Blocked (DEC-002)`
 
 ### Pass criteria
 
@@ -118,7 +118,7 @@ Variant, inbox configured: both prompts are shown, each skippable with Enter; a 
 
 - Next `/work` run detects hash mismatch and regenerates the dashboard
 - Dashboard now reflects the manual edit
-- Dashboard header includes a staleness note for when viewed without running `/work`
+- The page has no staleness banner: a reader viewing it without running `/work` has the footer's `generated {timestamp}` and `state of record = task JSON`
 - An edit that only sets or clears `user_review_pending` also counts: the hash rows carry a `review` field
 
 ### Pass criteria
@@ -140,7 +140,7 @@ Variant, inbox configured: both prompts are shown, each skippable with Enter; a 
 
 ### State
 
-- Session 1: User writes feedback for a task in a durable location (dashboard notes, decision doc)
+- Session 1: User gives feedback for a task in a durable location: at `/work complete` (the task's `user_feedback`), as a note they ask Claude to add (sidecar `user_notes`, shown on the read-only Notes card), or in a decision doc
 - Session ends
 - Session 2: User runs `/work`
 
@@ -173,20 +173,20 @@ Variant, inbox configured: both prompts are shown, each skippable with Enter; a 
 
 ### Expected
 
-- Dashboard presents recommendations with enough context to decide
-- Each recommendation links to relevant files
-- User's choice (Accept/Reject/Defer) is recorded
-- Rejected recommendations leave a trace (not silently deleted)
+- Dashboard lists each pending recommendation under Needs you → Reviews: `{id} {title} — out-of-spec task awaiting your approval → run /work` (task id, title and command; no file link)
+- `/work` presents them with `[A]` Accept / `[R]` Reject / `[D]` Defer / `[AA]` Accept all (`work-user-flows.md § "Out-of-Spec Task Approval"`); the choice is made in the CLI, not in the dashboard
+- User's choice is recorded in the task JSON: `out_of_spec_approved: true`, or `out_of_spec_rejected: true` with the optional `rejection_reason`; a deferred task keeps its Reviews row
+- Rejected recommendations leave a trace (archived to `.claude/tasks/archive/`, not silently deleted)
 
 ### Pass criteria
 
-- [ ] Recommendations presented with context in the dashboard
-- [ ] Each links to the source file
+- [ ] Each pending recommendation has a Reviews row naming the task and the command
+- [ ] An accepted or rejected recommendation has no Reviews row after the next regeneration
 - [ ] User's choice is recorded
 - [ ] Rejected items leave a record (not silently deleted)
 
 ### Fail indicators
 
-- Recommendations presented without context
+- A pending recommendation missing from Reviews
 - Rejected tasks deleted with no record
-- Accept/Reject is CLI-only with no dashboard trace
+- An accepted or rejected recommendation still listed under Reviews

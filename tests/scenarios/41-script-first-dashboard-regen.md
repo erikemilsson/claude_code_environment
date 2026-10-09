@@ -14,12 +14,12 @@ A project mid-build: 30 active tasks across 3 phases (one complete), 40 archived
 
 ## Trace 41A: Full regen runs the script; only Custom Views is filled
 
-- **Path:** `dashboard-regeneration.md § "Script-First Rendering — HTML target"` → Step 2 (sidecar merge) → `--html` → Write → Custom Views fill (when on) → Step 8
+- **Path:** `dashboard-regeneration.md § "Script-First Rendering — HTML target"` → Step 2 (sidecar merge) → `--html > .claude/dashboard.html` → Custom Views fill (when on) → Step 8
 
 ### Expected
 
 - Step 2 runs FIRST (the script reads user content and `augment_rows` from the sidecar)
-- Orchestrator runs `--html` (with `--now`) and Writes stdout to `dashboard.html` — it does NOT hand-write any section or row
+- Orchestrator runs `--html` (with `--now`) and redirects stdout to `dashboard.html` — it does NOT hand-write any section or row
 - The card's Your Tasks lists the review-pending task (`/work complete {id}`); "Also Needs You" comes last and shows the unlinked row but not the expired one
 - The only edit after the Write is the Custom Views `<!-- CLAUDE: fill … -->` region, when that section is on; Step 8 finds no `<!-- CLAUDE: fill` left
 - Completed-phase counts include the 40 archived tasks; META `task_hash` matches `--task-hash` output

@@ -75,7 +75,7 @@ User runs `/breakdown 2`. The command reads Task 2 and splits it into 3 subtasks
 - [ ] Each subtask has difficulty <= 6
 - [ ] Parent status set to "Broken Down"
 - [ ] Parent `subtasks` array lists all subtask IDs
-- [ ] Dashboard regenerated (shows subtasks, parent marked "Broken Down")
+- [ ] Dashboard regenerated (the three subtasks join the phase's task counts; the HTML has no per-task rows, so the parent's "Broken Down" status is not printed)
 
 ### Fail indicators
 

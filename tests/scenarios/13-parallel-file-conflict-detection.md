@@ -43,26 +43,27 @@ Parallel execution is a core template feature: when multiple tasks are eligible 
 
 ---
 
-## Trace 13B: Dashboard shows parallel execution status
+## Trace 13B: Parallel execution status is visible to the user
 
-- **Path:** `/work` parallel execution → dashboard task status display
+- **Path:** `/work` parallel execution → `parallel-execution.md § "Pre-Dispatch Confirmation"` (the HTML dashboard has no per-task status display, DEC-024)
 
 ### Expected
 
-- Dashboard shows A, B, D as "In Progress"
-- Task C shown as "Pending (held: conflict with Task A)" — the `conflict_note` field drives this display
+- The pre-dispatch message lists A, B, D as the batch (`Parallel dispatch ready: 3 tasks`) and sets them "In Progress"
+- Task C is listed under `Held back (file conflicts)`: `Task C: "{title}" — conflict with Task A on [src/database/models.py]`; its task JSON carries the transient `conflict_note` while it is held
+- The dashboard does not render `conflict_note`: a regeneration counts A, B, D under "In Progress" and C under "Pending" in the status legend
 - Overall progress reflects parallel work accurately
 
 ### Pass criteria
 
-- [ ] Parallel task status is visible in dashboard (A, B, D as "In Progress")
-- [ ] Conflict reason is visible in dashboard task status column via `conflict_note`
+- [ ] Batch membership is shown to the user before dispatch (A, B, D)
+- [ ] Conflict reason is visible in the pre-dispatch message and recorded in `conflict_note`
 - [ ] Queued task shows what it's waiting for and why
 - [ ] `conflict_note` is removed when the task is dispatched
 
 ### Fail indicators
 
-- Dashboard shows C as "Pending" with no explanation of why it's not running
+- C held back with no explanation to the user of why it's not running
 - No indication that A, B, D are running concurrently
 - Conflict reason is only in logs, not visible to user
 - `conflict_note` persists after conflict resolves

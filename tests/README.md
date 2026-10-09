@@ -36,7 +36,7 @@ No fixture files or project setup needed. The state description in each scenario
 
 | # | Name | Tests |
 |---|------|-------|
-| 06 | Dashboard Structure and Actionability | Full project skeleton visible, action items complete with links, section toggles, critical path |
+| 06 | Dashboard Structure and Actionability | Full project skeleton visible, action items complete with their command, section toggles in the sidecar, critical path in the Flow graph |
 | 07 | Dashboard Communication and Feedback | Attention-to-resolution loop, feedback kept in `user_feedback` across regeneration, decision detection, stale dashboard |
 
 ### Verification and Gates (08)

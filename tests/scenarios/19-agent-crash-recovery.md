@@ -30,7 +30,7 @@ Tasks 1 and 3 dispatched in parallel (no file conflicts, no dependencies between
 2. Task 1 status set to "Blocked"
 3. Task 1 notes updated: `[AGENT TIMEOUT]`
 4. Task 3 completes normally — its results are processed independently
-5. Dashboard regenerated showing Task 1 as Blocked, Task 3 as Finished
+5. Dashboard regenerated: the status legend counts Task 1 under Blocked and Task 3 under Finished
 6. User informed with specific guidance: which task timed out, what to check
 
 ### Pass criteria
@@ -133,7 +133,7 @@ implement-agent for Task 1 created 2 of 3 required files, then hit a blocking is
 2. Task 1 notes contain the blocker description
 3. Blocker flagged for human clarification (asked directly via conversation)
 4. Partial files remain on disk (not reverted — they represent real work)
-5. Dashboard attention section shows: blocked task, blocker reason
+5. Dashboard Needs-you card shows the blocked task and blocker reason as an "Also Needs You" row: the orchestrator writes the Blocked task's open question to sidecar `augment_rows[]` (`task_id` set) and regenerates. The script derives a Your Tasks row for a Blocked task only when its owner is human/both or its verification escalated (`rules/dashboard.md § "Sections"`)
 6. Next `/work` run does NOT re-dispatch Task 1 until blocker resolved
 
 ### Pass criteria

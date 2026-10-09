@@ -304,7 +304,7 @@ Returns: what was completed, files modified, status updates, recommendations, is
 **What /work does:**
 - Check `.claude/verification-result.json` for a valid passing result
 - Update spec `status` from `active` to `complete`
-- Update dashboard with completion summary
+- Regenerate the dashboard
 - Present final checkpoint to human
 - Offer project-level learning capture prompt (skippable) — if shared, append to `.claude/support/learnings/project-learnings.md`
 - Project complete (or loop back if issues)
@@ -340,7 +340,7 @@ Checkpoint types:
 When transitioning between phases:
 - Spec → Execute: "Specification complete. Ready to implement?"
 - **Phase N → Phase N+1** (within Execute): Surfaced as an Action Required item in the dashboard's "Needs you" card. The dashboard is read-only HTML, so the user approves the transition via CLI (`/work` prompts; reply to approve), and approval state is tracked in the `dashboard-state.json` `phase_gates` object (`status: "active" → "approved"`) so it won't re-trigger. After approval, a lightweight learning capture prompt is offered (skippable).
-- **Execute → Verify**: When all tasks are complete, the dashboard shows a "Verification Pending" item in Action Required, and the critical path displays "🤖 Phase verification → Done" instead of "All tasks complete!". Phase-level verification runs automatically on the next `/work`.
+- **Execute → Verify**: When all tasks are complete, the dashboard shows a "Verification Pending" item in Action Required. Phase-level verification runs automatically on the next `/work`.
 - Verify → Complete: "Verification passed. Ready to ship?"
 
 ### Spec Misalignment
@@ -520,15 +520,9 @@ Tasks can be marked `out_of_spec: true` in two ways:
 
 ### Dashboard Display
 
-Out-of-spec tasks appear in the Tasks section with a ⚠️ prefix:
+The dashboard has no per-task table, so out-of-spec tasks carry no marker of their own.
 
-```
-| ID | Title | Status | Owner |
-|----|-------|--------|-------|
-| 13 | ⚠️ Add unit tests for CI | Pending | claude |
-```
-
-Unapproved out-of-spec tasks also appear in "Action Required" → "Reviews" to prompt user action.
+Unapproved out-of-spec tasks appear in "Action Required" → "Reviews" to prompt user action.
 
 ---
 
@@ -541,7 +535,7 @@ Reference documentation for the environment builder system.
 **What you do:**
 - Review the dashboard for your next action
 - Click through to linked files when needed (review a document, configure something, test a feature)
-- Signal completion back through the dashboard (checkboxes, feedback sections)
+- Signal completion through the CLI (`/work complete {id}`, replies to `/work` prompts)
 - Update the spec when requirements change
 - Make decisions when Claude surfaces options
 

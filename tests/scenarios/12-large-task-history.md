@@ -12,8 +12,7 @@ Long-lived projects accumulate significant task history. Real projects have reac
   - 350 completed
   - 20 pending (across 2 phases)
   - 10 in_progress (5 with implement-agent, 5 with verify-agent)
-- `dashboard.md` is 2000+ lines
-- Dashboard was last regenerated with 370 tasks (10 new since then)
+- `dashboard.html` was last regenerated with 370 tasks (10 new since then)
 
 ## Trace 12A: /work focuses on active tasks
 
@@ -42,27 +41,27 @@ Long-lived projects accumulate significant task history. Real projects have reac
 
 ## Trace 12B: Dashboard generation at scale
 
-- **Path:** dashboard.md regeneration with 380 tasks
+- **Path:** `dashboard.html` regeneration with 380 tasks (`dashboard-render.py --html`)
 - Dashboard must show actionable information without becoming unwieldy
 
 ### Expected
 
-- Dashboard shows recent completions (last N), not full history of 350
-- Active tasks (in_progress, pending) are shown in detail
-- Completed task count is summarized, not listed individually
-- Dashboard length remains reasonable (not 2000+ lines)
+- Dashboard shows recent completions (the "Recent — last 7 days" card, at most 7 entries), not full history of 350
+- Active tasks (in_progress, pending) are shown as status counts and per-phase done/total; individually only in Needs-you rows and on the Flow graph, which above 15 incomplete tasks reduces to the critical path plus immediate neighbours
+- Completed task count is summarized (completion ring, status legend), not listed individually
+- Page size stays about that of a small project: there are no per-task rows to grow with task count
 
 ### Pass criteria
 
 - [ ] Dashboard generation doesn't degrade with task count
 - [ ] Completed tasks are summarized, not individually listed
-- [ ] Active tasks remain prominently displayed
-- [ ] Dashboard remains under a reasonable line count
+- [ ] Active work remains prominent (In Progress and Pending counts, the active phase's card, Needs-you rows)
+- [ ] Page size does not grow with the number of finished tasks
 
 ### Fail indicators
 
 - Dashboard lists all 350 completed tasks individually
-- Dashboard exceeds 200 lines due to task volume
+- Dashboard grows by a row per task
 - Active tasks are buried under completed task history
 - Dashboard regeneration takes excessive time/context
 
@@ -79,7 +78,7 @@ Long-lived projects accumulate significant task history. Real projects have reac
 - Archival is suggested (or triggered if automatic) when threshold is exceeded
 - Completed tasks are moved to `.claude/tasks/archive/`
 - Archived tasks are removed from active processing but preserved for reference
-- Dashboard is regenerated with only active tasks
+- Dashboard is regenerated; archived Finished tasks still count toward completion (status legend: `Finished (incl. N archived)`), so the totals don't drop
 
 ### Pass criteria
 
