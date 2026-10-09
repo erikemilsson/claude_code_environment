@@ -1,0 +1,70 @@
+{
+  "ref": "v5.14.4",
+  "ref_commit": "d0adfc0b42d237c13134521ebdb94973b690b133",
+  "dry_run": false,
+  "written": [
+    {
+      "path": ".claude/commands/audit-coherence.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/commands/health-check.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/support/reference/dashboard-regeneration.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/support/reference/decisions.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/support/reference/extension-patterns.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/support/reference/phase-decision-gates.md",
+      "status": "template_copy",
+      "mode": "100644"
+    }
+  ],
+  "mode_fixed": [],
+  "failed": [],
+  "version": {
+    "from": "5.14.3",
+    "to": "5.14.4",
+    "bumped": true
+  },
+  "manifest": {
+    "changed": false,
+    "sync_added": [],
+    "sync_dropped": [],
+    "lists_updated": false
+  },
+  "sidecar": {
+    "recorded": 88,
+    "dropped": 0,
+    "created": false,
+    "changed": true
+  },
+  "changed_paths": [
+    ".claude/.sync-state.json",
+    ".claude/commands/audit-coherence.md",
+    ".claude/commands/health-check.md",
+    ".claude/support/reference/dashboard-regeneration.md",
+    ".claude/support/reference/decisions.md",
+    ".claude/support/reference/extension-patterns.md",
+    ".claude/support/reference/phase-decision-gates.md",
+    ".claude/version.json"
+  ],
+  "remaining": [],
+  "warnings": [
+    "project is not a git work tree; uncommitted_sync skipped"
+  ]
+}
