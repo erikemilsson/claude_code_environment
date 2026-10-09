@@ -1,0 +1,11 @@
+error: claude dir not found: /nonexistent-xyz
+.usage: python3 -m unittest [-h] [--html] [--task-hash] [--tasks-dir TASKS_DIR]
+                           [--claude-dir CLAUDE_DIR] [--now NOW]
+error: exactly one of --html / --task-hash is required
+.error: tasks dir not found: /nonexistent-xyz
+.........warning: skipping unreadable task-bad.json: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)
+..........................................................................................................................................................................................................................................................................................................................................................s........................................................................................................................................
+----------------------------------------------------------------------
+Ran 494 tests in 91.820s
+
+OK (skipped=1)
