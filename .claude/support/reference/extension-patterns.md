@@ -162,9 +162,9 @@ When `/work` detects a checked box in "## Select an Option" and the decision's f
 
 Decisions appear in the dashboard:
 
-- **Decisions section:** `ID | Decision | Status | Selected` — decided entries show selected option name, pending entries link to doc
-- **Action Required → Decisions:** Pending decisions that block tasks appear here with links
-- **Blocked tasks:** Show decision IDs in their dependency column (in Tasks section)
+- **Decisions section:** a collapsed, searchable list. Each entry shows the id, title and a status badge and links to its record; a decided entry also shows the selected option when its record has a ticked box
+- **Needs you → Decisions:** every unresolved decision (`draft` or `proposed`) has a row linking to its record, whether or not a task depends on it; agent-recorded decisions awaiting ratification share one row
+- **Blocked tasks:** when the Flow graph is shown, an unresolved decision that an open task depends on is a node in it. A phase after the active one whose open tasks all wait on unresolved decisions reads "Blocked (DEC-NNN)" (the lowest id) in its phase-map tooltip
 
 ---
 

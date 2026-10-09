@@ -1,6 +1,6 @@
 # Template Architecture Map
 
-**Current as of:** v5.14.3
+**Current as of:** v5.14.4
 
 > The line above is machine-read by `scripts/pre-commit-hook.sh` — keep the exact `**Current as of:** v{X.Y.Z}` format. Bump it whenever this map is reconciled against a new template version.
 

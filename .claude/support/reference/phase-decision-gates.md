@@ -84,6 +84,11 @@ For target task(s), check `decision_dependencies`:
    "## Select an Option" section), or "approved"/"implemented" with no checked box:
      → Resolved. It does not block; ratification (/work ratify) is separate.
 
+   IF frontmatter status is "superseded" or "partially_superseded" (checked box or not):
+     → Resolved. It does not block. When the record has a `superseded_by` key and
+       status "superseded", print one line per decision per run and continue:
+       "ℹ {DEC-NNN} was superseded by {superseded_by}; Task(s) {ids} still list {DEC-NNN} in decision_dependencies (remove it, or depend on {superseded_by})."
+
    IF any decision is unresolved (record missing, or status "draft"/"proposed"
    with no checked box):
      📋 Decision {DEC-NNN}: "{title}" is unresolved and blocks {N} task(s).
@@ -165,6 +170,8 @@ For each decision-*.md file, read `related.tasks` array:
 ## Post-Decision Check
 
 **Reconsidered agent decision (both callers — `/work` Step 2b and `/iterate` Step 1a — with or without dependent tasks).** When the record just approved by a tick carries `decided_by: implement-agent` or `orchestrator` and the selection differs from what its related task built (the `**Selected:**` choice the agent wrote; note it before repopulating `## Decision`), offer to create a new task for the change. When that task is created, append its id to the record's frontmatter `related.tasks` (after the ids already there): on a reconsidered record `/review` reads the last id as the follow-up. The Finished task is not reset. The new task follows the creation contract (`task-schema.md § "Drift Prevention Fields"`): run `fingerprint.py --provenance` on the related task's `spec_section` for current hashes (don't copy that task's fingerprints, which may predate a spec edit); if the related task is `spec_unmapped`, so is the new one.
+
+A `superseded` or `partially_superseded` record gets no post-decision check; a task that was set to Blocked only for it is unblocked.
 
 When `/work` detects a resolved decision (status `recorded`, `approved` or `implemented`) that has dependent tasks:
 
