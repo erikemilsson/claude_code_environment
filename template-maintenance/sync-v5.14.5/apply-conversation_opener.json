@@ -1,0 +1,170 @@
+{
+  "ref": "v5.14.5",
+  "ref_commit": "0ff19f4f284edba11e8a7eb2724208ad8a8575f0",
+  "dry_run": false,
+  "written": [
+    {
+      "path": ".claude/commands/audit-coherence.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/commands/audit-ui.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/commands/breakdown.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/commands/work.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/rules/dashboard.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/rules/decisions.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/rules/spec-workflow.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/scripts/README.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/scripts/dashboard-render.py",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/scripts/fingerprint.py",
+      "status": "template_copy",
+      "mode": "100755"
+    },
+    {
+      "path": ".claude/scripts/tests/test_dashboard_render_html.py",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/scripts/tests/test_fingerprint.py",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/scripts/tests/test_validate_tasks.py",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/scripts/validate-tasks.py",
+      "status": "template_copy",
+      "mode": "100755"
+    },
+    {
+      "path": ".claude/support/reference/README.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/support/reference/audit-family-core.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/support/reference/audit-fix-workflow.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/support/reference/dashboard-regeneration.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/support/reference/extension-patterns.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/support/reference/parallel-execution.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/support/reference/task-schema.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/support/reference/work-procedures.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/support/reference/workflow.md",
+      "status": "template_copy",
+      "mode": "100644"
+    }
+  ],
+  "mode_fixed": [],
+  "failed": [],
+  "version": {
+    "from": "5.14.4",
+    "to": "5.14.5",
+    "bumped": true
+  },
+  "manifest": {
+    "changed": false,
+    "sync_added": [],
+    "sync_dropped": [],
+    "lists_updated": false
+  },
+  "sidecar": {
+    "recorded": 88,
+    "dropped": 0,
+    "created": false,
+    "changed": true
+  },
+  "changed_paths": [
+    ".claude/.sync-state.json",
+    ".claude/commands/audit-coherence.md",
+    ".claude/commands/audit-ui.md",
+    ".claude/commands/breakdown.md",
+    ".claude/commands/work.md",
+    ".claude/rules/dashboard.md",
+    ".claude/rules/decisions.md",
+    ".claude/rules/spec-workflow.md",
+    ".claude/scripts/README.md",
+    ".claude/scripts/dashboard-render.py",
+    ".claude/scripts/fingerprint.py",
+    ".claude/scripts/tests/test_dashboard_render_html.py",
+    ".claude/scripts/tests/test_fingerprint.py",
+    ".claude/scripts/tests/test_validate_tasks.py",
+    ".claude/scripts/validate-tasks.py",
+    ".claude/support/reference/README.md",
+    ".claude/support/reference/audit-family-core.md",
+    ".claude/support/reference/audit-fix-workflow.md",
+    ".claude/support/reference/dashboard-regeneration.md",
+    ".claude/support/reference/extension-patterns.md",
+    ".claude/support/reference/parallel-execution.md",
+    ".claude/support/reference/task-schema.md",
+    ".claude/support/reference/work-procedures.md",
+    ".claude/support/reference/workflow.md",
+    ".claude/version.json"
+  ],
+  "remaining": [],
+  "warnings": []
+}

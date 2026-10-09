@@ -1,0 +1,30 @@
+error: claude dir not found: /nonexistent-xyz
+.usage: python3 -m unittest [-h] [--html] [--task-hash] [--tasks-dir TASKS_DIR]
+                           [--claude-dir CLAUDE_DIR] [--now NOW]
+error: exactly one of --html / --task-hash is required
+.error: tasks dir not found: /nonexistent-xyz
+.........warning: skipping unreadable task-bad.json: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)
+....................................................................warning: task-2.json: decision_dependencies is not a list; reading as absent
+warning: task-2.json: dependencies is not a list; reading as absent
+warning: task-2.json: decision_dependencies is not a list; reading as absent
+warning: task-2.json: dependencies is not a list; reading as absent
+warning: task-2.json: decision_dependencies is not a list; reading as absent
+warning: task-2.json: dependencies is not a list; reading as absent
+.warning: task-2.json: dependencies is not a list; reading as absent
+warning: task-3.json: dependencies is not a list; reading as absent
+warning: task-2.json: dependencies is not a list; reading as absent
+warning: task-3.json: dependencies is not a list; reading as absent
+warning: task-2.json: dependencies is not a list; reading as absent
+warning: task-3.json: dependencies is not a list; reading as absent
+warning: task-2.json: decision_dependencies is not a list; reading as absent
+warning: task-3.json: decision_dependencies is not a list; reading as absent
+warning: task-2.json: decision_dependencies is not a list; reading as absent
+warning: task-3.json: decision_dependencies is not a list; reading as absent
+warning: task-2.json: decision_dependencies is not a list; reading as absent
+warning: task-3.json: decision_dependencies is not a list; reading as absent
+......................................................................................................................................................................................................................................................................................................s.........................................................................................................
+----------------------------------------------------------------------
+Ran 480 tests in 97.687s
+
+OK (skipped=1)
+exit 0
