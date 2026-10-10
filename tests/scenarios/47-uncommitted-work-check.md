@@ -10,7 +10,7 @@ Conceptual trace test for v5.10.0. `/work` Step 0e counts a Finished task only w
 
 ## Trace A — the styler case: same-day commit, unrelated dirty files → silent
 
-Command path: `commands/work.md § "Step 0e: Uncommitted-Work Check (FB-088)"`.
+Command path: `commands/work.md § "Step 0e: Uncommitted-Work Check"`.
 
 State: the last commit is from 2026-10-01 16:00. Tasks 1–4 finished on 2026-10-01, and their files (`src/look/a.ts` to `src/look/d.ts`, one each) were committed in it. The working tree holds three changes no task lists: `.claude/skills/one/SKILL.md`, `.claude/skills/two/SKILL.md` and `.claude/skills/three/SKILL.md` deleted by an uncommitted template sync. They are tracked, so they appear in MODIFIED.
 

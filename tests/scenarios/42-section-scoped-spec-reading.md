@@ -1,4 +1,4 @@
-# Scenario 42 — Section-scoped spec reading (DEC-021)
+# Scenario 42 — Section-scoped spec reading
 
 Conceptual trace test for the Option 2 spec-scale implementation: the generated section index, the scoped-read discipline, index freshness, and the additive `--depth 3` companion. Verifies the convention preserves the single-spec invariant and never affects drift correctness.
 

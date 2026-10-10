@@ -14,7 +14,7 @@ Determine the current active phase by walking phases in ascending order:
 
    Gate state lives in the sidecar `dashboard-state.json` `phase_gates` object,
    keyed by transition (e.g. "1→2"); the dashboard is read-only HTML, so the
-   user approves via CLI (not an in-file checkbox) — DEC-024.
+   user approves via CLI (not an in-file checkbox).
 
    FOR each phase P (ascending):
      IF all tasks in phase P are "Finished":
@@ -224,7 +224,7 @@ IF inflection_point: true:
   │    └─ Do NOT proceed. Wait for user to run `/iterate`.
 ```
 
-**No-op scan rationale (FB-078):** `inflection_point` declares "the option space was spec-shaping at creation"; the chosen option may still turn out to be a close/defer/no-op selection with no spec consequences. The 4-marker scan catches the common authoring pattern ("Drop this question — no spec impact") without requiring a schema change. The contradicting-phrase guard prevents false-positives on "no spec impact NOW but v2 will need it" prose. If this heuristic accumulates ≥3 false-negatives across projects within 6 months, escalate to Option 2 (per-option `spec_impact: true | false | unclear` schema field) — see `template-maintenance/feedback.md § FB-078`.
+**No-op scan rationale:** `inflection_point` declares "the option space was spec-shaping at creation"; the chosen option may still turn out to be a close/defer/no-op selection with no spec consequences. The 4-marker scan catches the common authoring pattern ("Drop this question — no spec impact") without requiring a schema change. The contradicting-phrase guard prevents false-positives on "no spec impact NOW but v2 will need it" prose. If this heuristic accumulates ≥3 false-negatives across projects within 6 months, escalate to Option 2 (per-option `spec_impact: true | false | unclear` schema field).
 
 **Session resilience:** The `spec_revised` field is the durable checkpoint. Across session boundaries, `/work` re-reads the decision record and checks this field — no conversation state needed.
 

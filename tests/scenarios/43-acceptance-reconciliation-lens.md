@@ -48,7 +48,7 @@ State: Phase 3 renders 4 boxes; the latest `verification-result.json` is a **par
 
 ## Trace D — authority doctrine (A): dashboard is the status surface, not the inline boxes
 
-Command path: `rules/spec-workflow.md § "Acceptance-criteria authority (DEC-022)"` + `commands/health-check.md` Part 1 acceptance-status note + `.claude/CLAUDE.md` Critical Invariant.
+Command path: `rules/spec-workflow.md § "Acceptance-criteria authority"` + `commands/health-check.md` Part 1 acceptance-status note + `.claude/CLAUDE.md` Critical Invariant.
 
 State: Phase 2 verified PASS (`criteria[]` 7/7); spec Phase 2 inline boxes still `- [ ]`.
 

@@ -26,11 +26,11 @@ Procedure for breaking a spec into granular tasks. Run as `/work` Step 4 "If Dec
    - `spec_section` — Originating section heading (e.g., "## Authentication")
    - `section_fingerprint` — Hash of specific section computed in step 6
    - `section_snapshot_ref` — Snapshot filename (e.g., "spec_v1_decomposed.md")
-   - `spec_subsection` + `subsection_fingerprint` *(optional, DEC-021)* — when a task's work is scoped to a single `### ` subsection of a **large** `## ` section (consult the section index `char_count` from `fingerprint.py --index`; "large" = big enough that a one-line edit elsewhere in it would needlessly re-flag this task), record the `### ` heading + its hash (`fingerprint.py --sections --depth 3`). Lets drift detection spare this task when a *different* subsection of the same `## ` section changes. Skip for tasks in small sections or tasks that span a whole section — they use `## `-level drift.
+   - `spec_subsection` + `subsection_fingerprint` *(optional)* — when a task's work is scoped to a single `### ` subsection of a **large** `## ` section (consult the section index `char_count` from `fingerprint.py --index`; "large" = big enough that a one-line edit elsewhere in it would needlessly re-flag this task), record the `### ` heading + its hash (`fingerprint.py --sections --depth 3`). Lets drift detection spare this task when a *different* subsection of the same `## ` section changes. Skip for tasks in small sections or tasks that span a whole section — they use `## `-level drift.
    - **Important:** Create all task JSON files before regenerating the dashboard. Every task must have a `task-*.json` file — the dashboard is generated from these files, never the other way around.
    - **Script route:** `python3 .claude/scripts/fingerprint.py --provenance .claude --section "<heading>"` prints `spec_version`, `spec_fingerprint`, `spec_section` and `section_fingerprint` for one section, ready to merge into each of its tasks (creation contract: `task-schema.md § "Drift Prevention Fields"`). `--spec` / `--sections` print the same hashes for the whole spec in one call.
    - **No single section:** a work item that maps to no single section (cross-cutting setup, a repo-wide sweep) gets `spec_unmapped: true` in place of `spec_section` + `section_fingerprint`; it keeps `spec_version`.
-   - **`.claude/`-boundary split:** when a work item spans both `.claude/` paths and regular project paths, split it into separate tasks (or annotate it) — subagents cannot write `.claude/` (DEC-004), so the `.claude/` portion is orchestrator-implemented inline with a read-only verify-agent pass. Declaring this at decomposition prevents mid-dispatch correction (observed in 3 downstream sessions).
+   - **`.claude/`-boundary split:** when a work item spans both `.claude/` paths and regular project paths, split it into separate tasks (or annotate it) — subagents cannot write `.claude/`, so the `.claude/` portion is orchestrator-implemented inline with a read-only verify-agent pass. Declaring this at decomposition prevents mid-dispatch correction (observed in 3 downstream sessions).
    - **After creating task JSONs:** run the Decomposition Pre-Pass Validation (below) to catch declared-path drift and under-counted `files_affected`, and the Test-Harness Awareness check (below) to propose scenario-authoring subtasks for runtime-shaped tasks — both run before tasks ship to `/work` Step 2c.
 
 9. **Map dependencies** — What must complete before what.
@@ -60,7 +60,7 @@ Use a fuzzy-match (e.g., `Glob` for the basename) to suggest the closest existin
 
 ### Leg 2: Ripple Inference
 
-**Start from what the change invalidates, not what it edits** (FB-113). For each task, name the thing it changes (a field, column, type, function signature, threshold, file path, documented behaviour), then search for every file that reads, restates, or tests it: code, tests and fixtures, schema docs, SQL/DAX/notebooks, architecture docs, config. Search with Grep, or `rg --hidden` via Bash where there's no Grep tool; don't infer the list from the task text. What the search finds are candidates for `files_affected`.
+**Start from what the change invalidates, not what it edits**. For each task, name the thing it changes (a field, column, type, function signature, threshold, file path, documented behaviour), then search for every file that reads, restates, or tests it: code, tests and fixtures, schema docs, SQL/DAX/notebooks, architecture docs, config. Search with Grep, or `rg --hidden` via Bash where there's no Grep tool; don't infer the list from the task text. What the search finds are candidates for `files_affected`.
 
 The heuristics below are recurring shapes of that search, worked out from downstream friction. They're examples, not the boundary:
 
@@ -297,7 +297,7 @@ If the empirical step is a single user action with no iteration (e.g., "paste on
 
 ### Why this shape
 
-The 3-value `owner` enum conflates "who is responsible" with "who executes." For most tasks these match. Research spikes split them: methodology is Claude-shaped (author + self-verify), the empirical loop is human-shaped (only the human can run it), the analysis is Claude-shaped again. Decomposing surfaces the human loop as a first-class dashboard artifact (TXXXb appears in "Your Tasks") instead of hiding it inside a Claude-owned umbrella, and routes each sub-task to its native verification path. Pattern origin: styler `DEC-082` Option ε.
+The 3-value `owner` enum conflates "who is responsible" with "who executes." For most tasks these match. Research spikes split them: methodology is Claude-shaped (author + self-verify), the empirical loop is human-shaped (only the human can run it), the analysis is Claude-shaped again. Decomposing surfaces the human loop as a first-class dashboard artifact (TXXXb appears in "Your Tasks") instead of hiding it inside a Claude-owned umbrella, and routes each sub-task to its native verification path.
 
 ---
 

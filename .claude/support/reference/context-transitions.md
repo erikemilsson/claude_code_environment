@@ -120,7 +120,7 @@ Array of objects, one per task actively being worked on at wind-down. Usually on
 | `agent` | String | Yes | `"implement"`, `"verify"`, or `"coordinator"`. |
 | `agent_step` | String | Yes | Where in the agent workflow. Reference step names from agent definitions (e.g., `"Step 4 (implementation)"`, `"Step T3 (spec alignment)"`). |
 | `partial` | Boolean | Yes | Whether work is incomplete. |
-| `partial_notes` | String or Object | No | What was done and what remains. Accepts (a) a string in the Completion Notes Contract style (current shape, used for `/work pause`-triggered wind-downs), OR (b) a `partial_completion` envelope object per DEC-010 Option C for usage-limit-triggered graceful cuts. The object shape: `{ completed_subtargets: [], remaining_subtargets: [], resume_instructions: "", confidence: "high\|moderate\|low" }`. Old string-form handoffs continue to parse — the union is additive. Only when `partial: true`. |
+| `partial_notes` | String or Object | No | What was done and what remains. Accepts (a) a string in the Completion Notes Contract style (current shape, used for `/work pause`-triggered wind-downs), OR (b) a `partial_completion` envelope object for usage-limit-triggered graceful cuts. The object shape: `{ completed_subtargets: [], remaining_subtargets: [], resume_instructions: "", confidence: "high\|moderate\|low" }`. Old string-form handoffs continue to parse — the union is additive. Only when `partial: true`. |
 | `files_modified_this_session` | Array | No | Files actually touched this session. Supplements `files_affected` on task JSON. |
 | `ready_for_verify` | Boolean | Yes | Whether implementation is complete enough to spawn verify-agent. |
 
@@ -186,7 +186,7 @@ Per-field caps:
 | Field | Bound |
 |-------|-------|
 | `position.phase_context` | 1–2 sentences (existing rule) |
-| `active_work[].partial_notes` | ≤ ~6 sentences (string form) or the DEC-010 envelope |
+| `active_work[].partial_notes` | ≤ ~6 sentences (string form) or the `partial_completion` envelope |
 | `open_question_refs` | pointers only — never question text + discussion |
 | `session_knowledge` | ≤ ~10 bullets, ≤ ~25 words each |
 | `recovery_action` | ≤ ~3 sentences |
@@ -218,7 +218,7 @@ The graceful, preferred path. Claude has full conversation context and can wind 
    - If at Step 5 (running checks): let a running check finish, skip the rest (name the skipped checks in notes), and return the structured report with `implementation_status: "partial"`
    - If at Step 6 (return report): complete the report — orchestrator writes state from it
    - If verify-agent is running: let it reach its own turn budget wind-down, or return an empty report with `result: null`
-3. The orchestrator prepends `"[PARTIAL] " + report.notes` to the task's `notes`, which are newest first (the agent returns its notes without the tag and never writes task JSON, DEC-004):
+3. The orchestrator prepends `"[PARTIAL] " + report.notes` to the task's `notes`, which are newest first (the agent returns its notes without the tag and never writes task JSON):
    ```
    [PARTIAL] Completed column mapping and type coercion. Aggregation pipeline not started. {existing notes}
    ```
@@ -331,7 +331,7 @@ When implement-agent receives a wind-down signal (via `/work pause`):
    - Key decisions made during this partial implementation
    - What remains to be done
    - Any gotchas or context the next session needs
-4. **Don't write task JSON** (DEC-004). The orchestrator keeps the status "In Progress", prepends `"[PARTIAL] " + report.notes` to the task's existing `notes`, and updates `updated_date`.
+4. **Don't write task JSON.** The orchestrator keeps the status "In Progress", prepends `"[PARTIAL] " + report.notes` to the task's existing `notes`, and updates `updated_date`.
 5. **Return control** to `/work` coordinator with `implementation_status: "partial"`, for handoff file creation
 
 ### Verify-Agent Wind-Down
@@ -408,7 +408,7 @@ After writing the handoff file but before ending the session, generate an intera
 
 After writing both the handoff file and interaction assessment, compile the session export:
 
-1. Read `.claude/support/workspace/.session-log.jsonl` (Track 1 friction markers, if any exist), plus each `.pending-markers.jsonl` entry it lacks (deduped on Step 0d's key, `work-recovery.md § "Friction-Marker Catchup"` step 3). The buffer can hold markers whose session-log write never landed (DEC-011); folding them in is what makes clearing it at step 7 lossless (FB-120).
+1. Read `.claude/support/workspace/.session-log.jsonl` (Track 1 friction markers, if any exist), plus each `.pending-markers.jsonl` entry it lacks (deduped on Step 0d's key, `work-recovery.md § "Friction-Marker Catchup"` step 3). The buffer can hold markers whose session-log write never landed; folding them in is what makes clearing it at step 7 lossless.
 2. Read `.claude/support/workspace/.interaction-assessment.json` (Track 2, just written above)
 3. Read `.claude/version.json` for template version
 4. Compile into a unified export:
@@ -430,15 +430,15 @@ After writing both the handoff file and interaction assessment, compile the sess
 }
 ```
 
-5. Write to `.claude/support/workspace/.session-export-YYYY-MM-DD-HHMM.json` (minute-granularity timestamp; same-day pauses do not collide per FB-079)
-6. If `template_inbox_path` is configured in `.claude/version.json`, copy the export to the inbox by invoking the deterministic helper (FB-109):
+5. Write to `.claude/support/workspace/.session-export-YYYY-MM-DD-HHMM.json` (minute-granularity timestamp; same-day pauses do not collide)
+6. If `template_inbox_path` is configured in `.claude/version.json`, copy the export to the inbox by invoking the deterministic helper:
    ```bash
    python3 .claude/scripts/persist-session-export.py --source .claude/support/workspace/.session-export-YYYY-MM-DD-HHMM.json
    ```
    The script reads `template_inbox_path` from `.claude/version.json`, derives `{project-slug}` from the export's `source_project` field (kebab-case), and writes the inbox copy as `{project-slug}-session-export-YYYY-MM-DD-HHMM.json`. **Always use the script — never `cp` the dot-prefixed working filename to the inbox verbatim.** Dot-files are invisible to plain `ls` in the template inbox (19 exports silently accumulated unseen before this was caught, 2026-06-11), and the rename rule was still being violated months after its v4.21.2 prose patch because prose under end-of-session context pressure is unreliable — 4 of 7 dot-prefixed exports found on 2026-08-12 postdate the rule. A script cannot forget to rename; `cp` can. The script enforces the never-dot-prefixed invariant structurally. The same rename rule applies to every inbox copy — Step 0f recovery exports (pass `--suffix recovered`) and PreCompact markers-only exports included.
-7. Clean up: delete `.session-log.jsonl`, `.pending-markers.jsonl` and `.interaction-assessment.json` (data is now in the export; a leftover pending buffer is re-imported by the next Step 0d against an empty log and exported again, FB-120). Delete the step 5 working copy too when step 6 ran and the script exited `0` printing `"copied": true` (otherwise one piles up per pause); keep it when no inbox is configured or the copy failed — it is then the only copy.
+7. Clean up: delete `.session-log.jsonl`, `.pending-markers.jsonl` and `.interaction-assessment.json` (data is now in the export; a leftover pending buffer is re-imported by the next Step 0d against an empty log and exported again). Delete the step 5 working copy too when step 6 ran and the script exited `0` printing `"copied": true` (otherwise one piles up per pause); keep it when no inbox is configured or the copy failed — it is then the only copy.
 
-**Interrupted-pause recovery (FB-089):** if `/work pause` is interrupted between writing `.interaction-assessment.json` and step 7 cleanup (usage limit, Ctrl+C, harness crash), the stale file persists into the next session. The next `/work` invocation's Step 0f compiles a recovered export from the orphaned files (Track 1 + Track 2), copies to inbox if configured, then deletes the stale files. See `work-recovery.md § "Stale Track 2 Recovery"` (triggered by work.md Step 0f).
+**Interrupted-pause recovery:** if `/work pause` is interrupted between writing `.interaction-assessment.json` and step 7 cleanup (usage limit, Ctrl+C, harness crash), the stale file persists into the next session. The next `/work` invocation's Step 0f compiles a recovered export from the orphaned files (Track 1 + Track 2), copies to inbox if configured, then deletes the stale files. See `work-recovery.md § "Stale Track 2 Recovery"` (triggered by work.md Step 0f).
 
 **If `/work pause` is not run** (PreCompact hook fires instead): The hook compiles a markers-only export (`"export_quality": "markers_only"`, `"claude_assessment": null`) from whatever Track 1 markers exist on disk. See § "Path B: PreCompact Hook" above.
 

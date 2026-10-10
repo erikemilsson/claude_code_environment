@@ -1,6 +1,6 @@
-# Spec Merge Queue (DEC-023)
+# Spec Merge Queue
 
-The **re-entry transport** for the spec-shaping workflow. When `/grill`, `/shakedown`, or `/feedback` surface a finding in one conversation that belongs in a vision or the spec, the finding is appended here so it is **surfaced on return** instead of being re-stated from memory. This is the mechanism that fixes the "I take an excursion, then can't get the output back into the flow" friction (DEC-023 § Background).
+The **re-entry transport** for the spec-shaping workflow. When `/grill`, `/shakedown`, or `/feedback` surface a finding in one conversation that belongs in a vision or the spec, the finding is appended here so it is **surfaced on return** instead of being re-stated from memory. This is the mechanism that fixes the "I take an excursion, then can't get the output back into the flow" friction.
 
 This is a sibling register to `.claude/support/friction.jsonl` (see `friction-register.md`) — same JSONL-append discipline, different purpose: friction tracks *template/coherence* signals; the merge queue tracks *findings to fold into a vision or the spec*.
 
@@ -28,13 +28,13 @@ One object per line:
 |---|---|---|
 | `id` | string | `MQ-NNN`, zero-padded, monotonic. Collision-safe: `max(existing MQ ids) + 1` (see Write protocol). |
 | `source` | enum | `grill` \| `shakedown` \| `feedback` — which command produced it. |
-| `target` | enum | `vision` \| `spec` — the altitude the finding belongs to (DEC-023 "the target sets the altitude"). |
+| `target` | enum | `vision` \| `spec` — the altitude the finding belongs to ("the target sets the altitude"). |
 | `target_ref` | string | where it lands: a vision path + fork id (`vision/<slug>.md#F3`) or a spec section (`spec_v{N} § 12.4`). |
 | `origin_ref` | string | where it came from: a shakedown corpus + entry (`shakedowns/<slug>-YYYY-MM-DD.md#R-07`), a `CONTEXT.md` term, or an `FB-NNN`. |
 | `kind` | enum | `gap` (a ⚠ capability gap) \| `term` (a sharpened glossary term) \| `decision` (a fork needing `/research`) \| `delta` (a drafted spec/vision change ready to apply). |
 | `summary` | string | one line — what the finding is, human-readable for the re-entry prompt. |
-| `drafted_delta` | string \| null | for `kind: delta` — the proposed text (a *proposal*; never written to spec/vision directly — DEC-016). |
-| `needs_impact_assessment` | bool | `true` when a mature-project feature delta must route through `/feedback`'s impact assessment before `/iterate` (DEC-023 G2). `false` for initial-spec / small refinements. |
+| `drafted_delta` | string \| null | for `kind: delta` — the proposed text (a *proposal*; never written to spec/vision directly). |
+| `needs_impact_assessment` | bool | `true` when a mature-project feature delta must route through `/feedback`'s impact assessment before `/iterate`. `false` for initial-spec / small refinements. |
 | `status` | enum | `open` → `merged` \| `dismissed`. |
 | `created` | string | ISO date (pass the date in; do not call `Date.now()` in scripts). |
 
@@ -45,9 +45,9 @@ Example:
 
 ## Write protocol (producers)
 
-`/grill`, `/shakedown`, `/feedback` are **main-thread, user-driven commands** — they may write `.claude/` (unlike subagents, which cannot per DEC-004). The producing command:
+`/grill`, `/shakedown`, `/feedback` are **main-thread, user-driven commands** — they may write `.claude/` (unlike subagents, which cannot). The producing command:
 
-1. Computes `id = MQ-` + zero-padded `(max existing MQ-NNN in the file) + 1` (empty/missing file → `MQ-001`). A future helper `persist-merge-item.py` may mechanize this collision-safe step (mirrors `persist-friction.py`, FB-098); until then it is a prose step the orchestrator performs.
+1. Computes `id = MQ-` + zero-padded `(max existing MQ-NNN in the file) + 1` (empty/missing file → `MQ-001`). A future helper `persist-merge-item.py` may mechanize this collision-safe step (mirrors `persist-friction.py`); until then it is a prose step the orchestrator performs.
 2. Appends one line per finding with `status: open`.
 3. Skips the queue entirely when folding directly into an in-session vision fork-tracker (see the composition table above).
 
@@ -62,9 +62,9 @@ Append-only: never rewrite prior lines except the status update below.
 > *Fold in? [Y] all · [R] review each · [S] skip*
 
 On resolution:
-- **Folded in** → set `status: merged` (the change lands via `/iterate`'s normal propose-approve-apply for spec, or an in-place vision edit for `target: vision` per the DEC-016 vision carve-out).
+- **Folded in** → set `status: merged` (the change lands via `/iterate`'s normal propose-approve-apply for spec, or an in-place vision edit for `target: vision` per the vision carve-out).
 - **Declined** → set `status: dismissed`.
-- A `needs_impact_assessment: true` item is **not** applied by `/iterate` directly — it is routed to `/feedback` for impact assessment first (DEC-023 G2), then returns as an ordinary item once assessed.
+- A `needs_impact_assessment: true` item is **not** applied by `/iterate` directly — it is routed to `/feedback` for impact assessment first, then returns as an ordinary item once assessed.
 
 A vision session (developing a vision doc) may likewise drain `target: vision` items for that doc and fold them into its fork-tracker.
 
@@ -82,4 +82,3 @@ open ──fold──▶ merged
 - `.claude/support/reference/friction-register.md` — sibling JSONL register (template/coherence signals).
 - `.claude/rules/spec-workflow.md § "Vision Documents"` — the vision lifecycle + target-awareness this transport serves.
 - `.claude/vision/_feature-vision-template.md` — the in-doc Open-forks tracker the queue composes with.
-- `decisions/decision-023-vision-hub-and-spec-shaping-workflow.md` — the decision establishing this transport (F1, G2, G4).

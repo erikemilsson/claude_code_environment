@@ -2,7 +2,7 @@
 
 The full contract behind `rules/agents.md § "Negative Findings Require a Positive Control"`. Lazy, not auto-loaded. **Read this before persisting an absence claim, closing a finding with an absence sweep, or mutation-testing a guard.**
 
-Origin: styler FR-040 (2026-06-10), where a silent grep failure became a false "engine dormant" finding that reached the handoff, dashboard and memory. FB-114 widened the rule after three projects showed its mechanism defeated: controls that returned nothing, a mandated `Grep` tool that wasn't there, and result sets that didn't match the claim.
+Origin: styler FR-040 (2026-06-10), where a silent grep failure became a false "engine dormant" finding that reached the handoff, dashboard and memory. The rule was widened after three projects showed its mechanism defeated: controls that returned nothing, a mandated `Grep` tool that wasn't there, and result sets that didn't match the claim.
 
 ## When it applies
 
@@ -42,7 +42,7 @@ for p in 'legacyScoreFormat' 'ScorePill'; do printf '%s: ' "$p"; rg -uu -l -g '!
 - **No truncation.** No `| head`, `| tail` or `--max-count` on an absence or completeness probe: count first (`rg -c`, `| wc -l`), then page.
 - **An enumeration you checked is a sample, not the population.** "The 12 files I read are clean" doesn't show that no file has it; run the probe over the whole root.
 - **For whole-file absence** ("no test covers X", "no doc still describes Y"), enumerate and classify: list every candidate file (`find`, or `rg --files -uu -g '<glob>'`) and classify each one, rather than trusting a single pattern match.
-- **Search by subject, not the old literal.** A guessed vocabulary under-matches: task-062's sweep for `tasks|tests|measures|checks|tables` missed a reference worded with `entries`. Search for what the claim is about (IDs, entity or column names, the figure). For closure sweeps see `agents/verify-agent.md` Step T2c item 4 (FB-115).
+- **Search by subject, not the old literal.** A guessed vocabulary under-matches: task-062's sweep for `tasks|tests|measures|checks|tables` missed a reference worded with `entries`. Search for what the claim is about (IDs, entity or column names, the figure). For closure sweeps see `agents/verify-agent.md` Step T2c item 4.
 
 ## Historical claims
 
@@ -79,6 +79,6 @@ Mutating a file to show a guard fails is safe only with a byte-exact restore:
 ## See also
 
 - `rules/agents.md § "Negative Findings Require a Positive Control"`: the always-loaded rule this expands.
-- `rules/feature-retirement.md § "Pre-Retirement Engine-Consumer Audit"`: *which* name variants to search before a "no consumer" claim (FB-084). This doc covers whether the probe works.
-- `agents/verify-agent.md` Step T2c item 4: closure sweeps by subject (FB-115).
+- `rules/feature-retirement.md § "Pre-Retirement Engine-Consumer Audit"`: *which* name variants to search before a "no consumer" claim. This doc covers whether the probe works.
+- `agents/verify-agent.md` Step T2c item 4: closure sweeps by subject.
 - `support/reference/claude-code-authoring.md § "Search tools: Grep/Glob may be absent, grep and rg skip files"`: the platform facts, for authors.

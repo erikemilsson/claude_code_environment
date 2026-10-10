@@ -184,7 +184,7 @@ By separating concerns:
 **The build workflow:**
 1. `/work` orchestrator sets the next pending task to "In Progress" and dispatches implement-agent
 2. implement-agent: build, run existing checks, return structured report
-3. Orchestrator writes task status "Awaiting Verification" from the report and dispatches verify-agent as a separate subagent (no implementation memory, see DEC-004)
+3. Orchestrator writes task status "Awaiting Verification" from the report and dispatches verify-agent as a separate subagent (no implementation memory)
 4. verify-agent (separate context): verify files, spec alignment, quality, integration boundaries, return structured verification report
 5. Orchestrator writes `task_verification` from the report. If pass: status → "Finished", regenerate dashboard, back to step 1 for next task
 6. If verification fails: orchestrator sets status → "In Progress", back to step 1 (implement-agent fixes)
@@ -575,7 +575,7 @@ A file the template retires (ships it as a `sync` file or with exactly this cont
 
 Template sync (`/health-check` Part 5) classifies each `sync` file by the template's own history (`sync-check.py`). A file whose content equals any template version of its path is an unchanged template copy and updates with the default `[A]` answer. A file that matches no template version is locally modified and is overwritten only when you include its row. `sync-apply.py` writes the included files, the version fields in `version.json`, the local manifest lists and the sync-state sidecar. A project that isn't a git repository can sync too: the check runs against a temporary clone of the template, and there is no commit offer.
 
-**settings.json / settings.local.json** — `settings.json` is template-owned (`sync`): the base `permissions.allow` and the DEC-016 `permissions.ask` guardrails, so the template works the same way for everyone. `settings.local.json` is yours (`ignore`): extra permissions, hooks, env vars. Claude Code merges both.
+**settings.json / settings.local.json** — `settings.json` is template-owned (`sync`): the base `permissions.allow` and the `permissions.ask` guardrails, so the template works the same way for everyone. `settings.local.json` is yours (`ignore`): extra permissions, hooks, env vars. Claude Code merges both.
 
 ### Project Structure
 

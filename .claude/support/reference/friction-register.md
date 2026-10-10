@@ -78,11 +78,11 @@ For each entry in `report.friction_markers`:
 1. **Append to `.session-log.jsonl`** (existing behavior, unchanged — see `commands/work.md` § "Append friction markers"). All friction_markers go here as the canonical session log.
 2. **If `kind` is one of {`vocab_drift`, `path_drift`, `design_contradiction`, `terminology_mismatch`, `spec_implementation_gap`}:** ALSO append to `.claude/support/friction.jsonl` as the audit register. Assign a new `FR-NNN` id (max existing id + 1, starting at FR-001), set `status: open`, set `captured` to current ISO timestamp, set `captured_in.agent` from the report context.
 
-**Atomicity:** Both writes happen synchronously in the same orchestrator step. If `friction.jsonl` doesn't exist, create it on first write. Use the same dual-write reliability pattern that DEC-011 Option ABp established for `.session-log.jsonl` (write to `.pending-markers.jsonl` first, then canonical, both before next sync point).
+**Atomicity:** Both writes happen synchronously in the same orchestrator step. If `friction.jsonl` doesn't exist, create it on first write. Use the same dual-write reliability pattern used for `.session-log.jsonl` (write to `.pending-markers.jsonl` first, then canonical, both before next sync point).
 
 **Existing template-only kinds** (`workflow_deviation`, `informal_decision`, `scope_creep`, `user_feedback_signal`, `template_gap`, `verification_gap`) continue to write only to `.session-log.jsonl`. They are not audit-coherence signal — they're for orchestrator self-improvement.
 
-**`verification_gap` sub-uses:** the `verification_gap` kind covers gaps in verify-agent's verification capability AND `files_affected` declared-vs-actual drift after multi-file dispatch (per FB-086, shipped v4.8.0; see `verify-agent.md § Step T2b step 4b`). The latter feeds the orchestrator's auto-update of declared `files_affected` (see `commands/work.md § "After verify-agent returns" step 8`).
+**`verification_gap` sub-uses:** the `verification_gap` kind covers gaps in verify-agent's verification capability AND `files_affected` declared-vs-actual drift after multi-file dispatch (shipped v4.8.0; see `verify-agent.md § Step T2b step 4b`). The latter feeds the orchestrator's auto-update of declared `files_affected` (see `commands/work.md § "After verify-agent returns" step 8`).
 
 ---
 

@@ -31,7 +31,7 @@ The rule: **never modify template-owned files** (`.claude/CLAUDE.md`, `.claude/r
 - **Archive locations:** `.claude/rules/archiving.md` — where resolved work goes (decisions to `.archive/`, feedback to `archive.md`, etc.).
 - **Workspace conventions:** `.claude/rules/archiving.md § "User-Facing Documents"` — how `docs/` vs `.claude/support/workspace/` differ.
 - **Sync category source of truth:** `.claude/sync-manifest.json` — the file-level enumeration of `sync` / `customize` / `ignore` categories.
-- **Settings layering:** `.claude/CLAUDE.md § "Critical Invariants"` — `.claude/settings.json` is template-owned (base `permissions.allow` + base `permissions.ask` per DEC-016); user additions go in `.claude/settings.local.json`.
+- **Settings layering:** `.claude/CLAUDE.md § "Critical Invariants"` — `.claude/settings.json` is template-owned (base `permissions.allow` + base `permissions.ask`); user additions go in `.claude/settings.local.json`.
 
 ## Examples — right vs wrong placement
 
@@ -86,11 +86,11 @@ Before recommending the sync, enumerate the project's local additions to any of 
 
 **Routing the findings:**
 
-- **Generically-applicable additions** (rule clarifications, agent guidance, command refinements that any project could benefit from) → recommend **project→template promotion first** (FB-002/FB-003-style: capture as feedback in the template repo, ship via `/feedback review`, then sync). The promoted content lands in the template; the subsequent sync becomes a no-op convergence rather than a conflict.
+- **Generically-applicable additions** (rule clarifications, agent guidance, command refinements that any project could benefit from) → recommend **project→template promotion first** (capture as feedback in the template repo, ship via `/feedback review`, then sync). The promoted content lands in the template; the subsequent sync becomes a no-op convergence rather than a conflict.
 - **Project-specific additions** (domain-specific rules, vocabulary, behaviors that don't generalize) → recommend **migration to a project-owned location first** — per the canonical map at the top of this document (rule imports → root `./CLAUDE.md`; project rules → `.claude/rules/project-*.md` gitignored; etc.).
 
 Either way, surface the boundary check at suggestion time, not at sync time. Catching the violation at sync exit (after the user has already integrated local additions into a template-owned file) means manual reconciliation is the only path forward. Catching it upstream means clean ship paths.
 
-**Why behavioral, not permission-layer:** the sync layer can structurally detect "local additions to template-owned file" at sync time (FB-059 / FB-060 structural fix, not yet shipped — see `template-maintenance/feedback.md` § FB-059 + FB-060). This rule reduces the *frequency* of the violation by preventing the upstream condition. Both layers compound.
+**Why behavioral, not permission-layer:** the sync layer can structurally detect "local additions to template-owned file" at sync time (structural fix, not yet shipped). This rule reduces the *frequency* of the violation by preventing the upstream condition. Both layers compound.
 
 *(Moved from `.claude/rules/agents.md` in v4.16.0; the rules file keeps a trigger stub under the same section name.)*

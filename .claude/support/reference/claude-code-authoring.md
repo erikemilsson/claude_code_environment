@@ -35,7 +35,7 @@ description: "My skill: does the thing"
 ---
 ```
 
-The em-dash convention is the empirically-converged pattern across the template's 5+ SKILL.md files. Source: FB-082 (flirty-gym 2026-05-20, surfaced when verify-agent's PyYAML check failed on initial skill authoring; convergence on em-dash documented after T12 retry).
+The em-dash convention is the empirically-converged pattern across the template's 5+ SKILL.md files. Source: flirty-gym 2026-05-20 (surfaced when verify-agent's PyYAML check failed on initial skill authoring; convergence on em-dash documented after T12 retry).
 
 ### Other ambiguous-mapping-value tokens
 
@@ -71,7 +71,7 @@ Two further `model:` details from the docs: a value excluded by the organization
 `effort:` applies *"when this skill is active"* and overrides the session effort level. The docs do **not** say whether that ends with the turn the way `model:` does, so don't design a multi-turn skill around `effort:` continuity either.
 
 **Implications for spec authoring:**
-- Don't write spec text describing runtime model-switching as a feature of a multi-turn skill (this premise survived flirty-gym's spec authoring + task decomposition and only failed at implementation — see FB-083)
+- Don't write spec text describing runtime model-switching as a feature of a multi-turn skill (this premise survived flirty-gym's spec authoring + task decomposition and only failed at implementation)
 - For multi-turn flows requiring a specific model, the session model must be set by the user (CLI flag, `/model` slash command, settings file) — not by skill frontmatter
 
 ### `disable-model-invocation: true`
@@ -80,7 +80,7 @@ Prevents the model from autonomously invoking the skill via the `Skill` tool. Us
 
 Two further effects: the skill also cannot be **preloaded into subagents** (via an agent definition's `skills` field), and, as of Claude Code v2.1.196, it **does not run when a scheduled task fires with the skill as its prompt**. For this template, that means the gated commands below can't be the prompt of a `/schedule` or `/loop` routine.
 
-**Template-shipped gated commands** (FB-071, plus FB-070's `/zoom-out`): `/breakdown`, `/research`, `/iterate`, `/work`, `/feedback`, `/zoom-out`. Selection criteria and trade-offs (moved here from `rules/agents.md` 2026-09-27 to keep the auto-loaded rules lean):
+**Template-shipped gated commands**: `/breakdown`, `/research`, `/iterate`, `/work`, `/feedback`, `/zoom-out`. Selection criteria and trade-offs (moved here from `rules/agents.md` 2026-09-27 to keep the auto-loaded rules lean):
 
 **Selection criteria:**
 - **Gate**: substantive writes, irreversible state transitions, ledger changes, expensive/long-running flows where autonomous fire is a foot-gun.
@@ -88,7 +88,7 @@ Two further effects: the skill also cannot be **preloaded into subagents** (via 
 
 **Sub-mode coupling.** `disable-model-invocation` is per-file. Multi-mode commands (`/iterate`, `/work`, `/feedback`) gate as a whole — the model can no longer ambient-invoke their read-only sub-modes (`/work` no-args, `/iterate` no-args, `/feedback [text]` capture, `/feedback list`) either. Acceptable because user-typed slash invocation continues to work for all sub-modes, and the model can still surface suggestions in conversation. Future refactor option: split multi-mode files (e.g., `work-complete.md` separate from `work.md`) if the coupling produces observed friction.
 
-**Defense-in-depth.** Upstream of DEC-005 (permission-layer auto mode) and DEC-016 (spec/decision/vision Edit/Write ask). DEC-005 catches tool calls the model shouldn't make; DEC-016 catches writes to protected paths; this gate prevents the model's *decision* to fire the command in the first place. All three layers compound.
+**Defense-in-depth.** Upstream of the permission layer (auto mode) and the spec/decision/vision Edit/Write ask. The permission layer catches tool calls the model shouldn't make; the Edit/Write ask catches writes to protected paths; this gate prevents the model's *decision* to fire the command in the first place. All three layers compound.
 
 
 ### `context: fork` + `agent:` pattern
@@ -136,7 +136,7 @@ Only the *instructions* persist, not the permissions: the `allowed-tools` grant 
 
 Load-bearing constraints for spec and task authors. Full rules in `rules/agents.md § "State Ownership"` and `§ "Tool Preferences"`. The facts here are the ones spec/skill/agent authors most frequently violate.
 
-### No `.claude/` writes (DEC-004)
+### No `.claude/` writes
 
 Subagents are sandboxed from writing to `.claude/` paths. This is a hard Claude Code harness constraint, not a template convention. Spec authors must NOT specify subagent workflows that include writing task JSON, dashboard, decision records, friction.jsonl, or any other `.claude/` state. Subagents return structured reports; the orchestrator performs the writes.
 
@@ -144,7 +144,7 @@ Subagents are sandboxed from writing to `.claude/` paths. This is a hard Claude 
 
 **Platform fact (docs-verified 2026-09-25):** a subagent *can* spawn subagents of its own, by default up to **three layers** below the main conversation, configurable with `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH`. At the depth limit, Claude Code withholds the `Agent` tool (a fork keeps it in its tool list, but calling it errors). Older harnesses did not allow nesting at all.
 
-**Template convention: don't rely on it.** The orchestrator (`/work` or a top-level slash command) still performs all dispatch. Two reasons: portability to downstream projects on older harnesses, and the state-ownership model (only the orchestrator writes `.claude/`, so results must come back to it anyway). Spec authors should not specify nested-dispatch workflows unless a project deliberately pins a harness that supports them. `rules/agents.md § "Tool Preferences"` states the same convention (FB-121).
+**Template convention: don't rely on it.** The orchestrator (`/work` or a top-level slash command) still performs all dispatch. Two reasons: portability to downstream projects on older harnesses, and the state-ownership model (only the orchestrator writes `.claude/`, so results must come back to it anyway). Spec authors should not specify nested-dispatch workflows unless a project deliberately pins a harness that supports them. `rules/agents.md § "Tool Preferences"` states the same convention.
 
 ### Permission rules and modes in subagents
 
@@ -192,7 +192,7 @@ Per `rules/agents.md § "Dispatch Convention"`: the dispatch sites (`commands/wo
 
 ### Search tools: Grep/Glob may be absent, grep and rg skip files
 
-**Harness-observed (2026-10, auto mode):** the harness provides no `Grep` or `Glob` tool, loaded or deferred (`ToolSearch` `select:Grep,Glob` matches nothing), and its system prompt directs search through Bash. Sessions in three projects, subagents included, ran without them (FB-114). Text that names Grep or Glob must still work through Bash; `rules/agents.md § "Tool Preferences"` maps it.
+**Harness-observed (2026-10, auto mode):** the harness provides no `Grep` or `Glob` tool, loaded or deferred (`ToolSearch` `select:Grep,Glob` matches nothing), and its system prompt directs search through Bash. Sessions in three projects, subagents included, ran without them. Text that names Grep or Glob must still work through Bash; `rules/agents.md § "Tool Preferences"` maps it.
 
 In the Bash tool, `grep`, `rg` and `find` are shell functions from `~/.claude/shell-snapshots/` that run tools embedded in the Claude Code binary (`type grep` shows this):
 

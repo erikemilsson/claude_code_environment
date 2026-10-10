@@ -892,6 +892,8 @@ Tags: work, scripts, routing, FB-011-family, context-size
 
 (aj) **From the v5.14.5 build and review, not built (user decisions 2026-10-09).** Fields the dashboard does not render: `conflict_note`, task `priority`, approved out-of-spec tasks, an audit finding's kind (docs now say so). Custom phase-gate conditions (`### Gate Conditions` in a spec): no shipped file says how the user marks one met. `work.md` § "If Verifying (Per-Task)" (no regen on a fail with a retry) and `work-procedures.md` "After verify-agent returns (per-task mode)" step 9 (sequential mode regenerates) disagree; scenarios 07A and 16A are left as written until it is settled against real sessions. A timed-out Blocked task owned by Claude has no script row and no explicit augment-row sentence. A Broken Down parent is in the phase total but not the status legend. `notes: null` on a criterion renders "— None". The `--baseline --write` guard in `fingerprint.py` has no test (unreachable from files).
 
+(ak) **`/work complete` is never typed (2026-10-10, user decision).** 0 invocations in the 42 downstream sessions on disk (PortfolioWebsite 29, styler 10, OEMMatInsightBI 3); tasks finish through the `/work` loop. Candidate for a retirement review at the next harvest; no change now. Its stub in `work.md` and § "Task Completion" in `work-procedures.md` are otherwise unexercised.
+
 Tags: residuals, dashboard, DEC-024, audit-wording, session-export, hooks, dispatch, health-check, decisions
 
 ## FB-128: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
@@ -934,10 +936,19 @@ Tags: residuals, dashboard, DEC-024, audit-wording, session-export, hooks, dispa
 
 ## FB-137: Template-internal ids in shipped files don't resolve downstream
 
-**Status:** open — measure first, then design. Logged 2026-10-10 from `/checkup prompt-audit` (finding 7; user decision 3a).
+**Status:** shipped v5.14.7 (2026-10-10); keep until a harvest shows a project numbering straight through and no template ids appearing in new project state, then archive. Logged 2026-10-10 from `/checkup prompt-audit` (finding 7).
 
 **Observation.** Shipped commands, agents and rules cite the template's own records by id: about 140 `DEC-NNN`, 70 `FB-NNN` and 90 incident or version markers across `.claude/CLAUDE.md`, `rules/`, `commands/` and `agents/` (densest in `health-check.md`, `feedback.md`, `work.md`, `audit-coherence.md`); four `/work` reference files add 33 more; the rest of `support/reference/` is not yet counted. Root `decisions/` and `template-maintenance/` don't ship, so a project session can't open them, and `DEC-NNN` in a project names that project's own decision records (same for `FB-NNN` and the project's feedback queue).
 
 **Not known.** Whether any downstream session has misread a template id as a project record or gone looking for one. Some ids are useful search anchors for template maintenance.
 
 **Next.** Mine downstream transcripts for reads or greps of a template `DEC-`/`FB-` id; count ids per file including `support/reference/`; then choose between stripping, moving rationale pointers to a non-loading footer, or a distinct prefix for template ids.
+
+**Measured 2026-10-10** (transcripts on disk: PortfolioWebsite 29, styler 10, OEMMatInsightBI 3 sessions; read-only):
+- PortfolioWebsite's decision ids are 1, 2, 3, 6, 7, 8, 9, 12, 14, 15, 18, 20, 25–37. The gaps (4, 5, 10, 11, 13, 16, 17, 19, 21–24) are exactly the template `DEC-` ids cited in shipped files. Session `e86bcb81` (2026-09-10) says why: "DEC-010 is already taken — by a *template* decision, not a project one. That's why this project skipped 004 and 005 … Using DEC-012".
+- That project's sessions also wrote template ids into project state (task notes, handoff, known-issues, commit messages): DEC-016 28 times, FB-103 16, DEC-004 11.
+- No session tried to open a template record by id (0 lookups). styler and OEMMatInsightBI number through the template ids without comment.
+
+**Same mining, prompt-audit finding 5 (emphasis on `work.md` gates):** of `/work` sessions that dispatched agents, the `work-procedures.md` body was read before the second dispatch in 14 of 15 on Opus 5.5 and 7 of 12 on Opus 5 (1 late, 4 never). A partial `grep`/`awk` read counts as a read. `/work complete` was typed in 0 of 42 sessions. Across the 9 projects' 232 decision records none is ticked but still `draft`/`proposed`; both `complete` specs have a passing phase result.
+
+**Left after v5.14.7 (user decision 2026-10-10), for the pass over the rest of `support/reference/`:** four `template-maintenance/audit-command-family-proposal.md` pointers (`audit-fix-workflow.md:5`, `audit-family-core.md:168`, `audit-ui.md:14`, `audit-coherence.md:12`); "a future DEC" and "telemetry gate" wording in the audit reference files; ids in scripts, tests and `support/feedback/archive.md`.

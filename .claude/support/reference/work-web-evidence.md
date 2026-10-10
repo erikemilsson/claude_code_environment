@@ -10,7 +10,7 @@ Orchestrator-level browser checks for web-UI work (same applies-when detection a
 
 1. Ensure Playwright MCP tools are loaded (ToolSearch if absent) and a dev server is available (starting one for verification is sanctioned; respect-prior-kills applies).
 2. Execute `report.empirical_assertions[]` (named by verify-agent per `verify-agent.md § Step T4b` item 5; if absent, default to HTTP status + console-error scan per affected route). Use `browser_evaluate` targeted queries — never full-tree snapshots on long pages.
-3. **Client-bundle check (FB-076 mitigation 1):** if the task touched client-marked files (`'use client'` or framework equivalent) and root `./CLAUDE.md` declares a build command (§ Verification Hooks), run the production build; record as a `build`-type evidence entry.
+3. **Client-bundle check:** if the task touched client-marked files (`'use client'` or framework equivalent) and root `./CLAUDE.md` declares a build command (§ Verification Hooks), run the production build; record as a `build`-type evidence entry.
 4. Record each outcome into `task_verification.evidence[]` (schema: `task-schema.md § "Evidence Sub-field"`).
 5. Any failing assertion → treat the verification as `fail`: route through the normal fail path with the failing evidence appended to `issues[]`. All passing → proceed to the persistence protocol with `evidence[]` included.
 

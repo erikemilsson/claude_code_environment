@@ -141,7 +141,7 @@ Variant, a task that must run the build to be implemented: Task 29 "Switch the b
 
 ## Trace F — a larger task after a zero-token return is not implemented inline
 
-Command path: `work-procedures.md`: "After implement-agent returns", "Zero-token return — platform limit cutoff (FB-103)" → `rules/agents.md § "Dispatch Invariants vs Efficiency Defaults"` → "Residue check".
+Command path: `work-procedures.md`: "After implement-agent returns", "Zero-token return — platform limit cutoff" → `rules/agents.md § "Dispatch Invariants vs Efficiency Defaults"` → "Residue check".
 
 State: Task 26 "Rebuild the trend chart on the aggregated series" (difficulty 5, six files in `files_affected`), In Progress. Its implement-agent returns `subagent_tokens: 0` and no report: a usage limit cut it off.
 

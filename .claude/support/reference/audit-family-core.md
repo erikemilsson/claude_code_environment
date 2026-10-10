@@ -58,13 +58,13 @@ The existing `/feedback review` → `/iterate` flow is unchanged — the audit j
 
 ---
 
-## Fix mode (canonical — bundle-eligible only, DEC-013 Option C)
+## Fix mode (canonical — bundle-eligible only)
 
 `{CMD} fix {audit-ts} {P}-{ID}` (and `{CMD} fix latest {P}-{ID}` — `latest` resolves to the newest `{DIR-GLOB}` dir by `ran_at`).
 
 Available only for findings with `kind: bundle-eligible`. Other kinds (`fix-eligible`, `decision`, `design`) require manual review or `/iterate` routing — kind-availability table in `audit-fix-workflow.md § "Per-kind action availability"`.
 
-**Mechanism — canonical reference:** `audit-fix-workflow.md § "Action protocol — Stage 6 (Option C per DEC-013)"` / `"[Fix it] — inline apply (bundle-eligible only)"`. In short:
+**Mechanism — canonical reference:** `audit-fix-workflow.md § "Action protocol — Stage 6 (Option C)"` / `"[Fix it] — inline apply (bundle-eligible only)"`. In short:
 
 1. Read finding from the audit's `digest.json` + `findings.md#{P}-{ID}`
 2. Verify kind is `bundle-eligible` (refuse with kind-specific message otherwise)
@@ -74,13 +74,13 @@ Available only for findings with `kind: bundle-eligible`. Other kinds (`fix-elig
 6. Show concrete change + ask single approval
 7. On approval: apply, single commit `audit-fix: {P}-{ID} — {summary}`, update `digest.json` + `friction.jsonl`
 
-**After any [Fix it] that removes a dependency or deletes source files:** run the test suite — transitive consumers via dynamic require / `importlib.import_module` / string-keyed imports aren't statically detectable (DEC-013 Q3; pairs with `transitive_consumer_risk` below).
+**After any [Fix it] that removes a dependency or deletes source files:** run the test suite — transitive consumers via dynamic require / `importlib.import_module` / string-keyed imports aren't statically detectable (pairs with `transitive_consumer_risk` below).
 
 ---
 
 ## Triage mode (canonical)
 
-`{CMD} triage [audit-ts]` — interactive walker through the audit's pending findings. The preferred entry point when an audit has multiple pending findings; it removes the need to re-specify finding ids and the audit name in the CLI (FB-006 sub-issues 1+2).
+`{CMD} triage [audit-ts]` — interactive walker through the audit's pending findings. The preferred entry point when an audit has multiple pending findings; it removes the need to re-specify finding ids and the audit name in the CLI.
 
 **Default for `audit-ts`:** `latest` — newest `{DIR-GLOB}` dir by `ran_at` (same resolution as Fix mode). The explicit `latest` keyword is equivalent to the no-arg form.
 
@@ -107,7 +107,7 @@ Mirrors `audit-fix-workflow.md § "Per-kind action availability"`:
 | Finding kind | Actions prompt |
 |--------------|----------------|
 | `bundle-eligible` | `[F]ix it · [P]romote to FB · [D]ismiss · [S]kip · [Q]uit` |
-| `fix-eligible` | `[P]romote to FB · [D]ismiss · [S]kip · [Q]uit` (no `[F]ix it` — deferred per DEC-013) |
+| `fix-eligible` | `[P]romote to FB · [D]ismiss · [S]kip · [Q]uit` (no `[F]ix it` — deferred) |
 | `decision` | `[P]romote to FB · [D]ismiss · [S]kip · [Q]uit` (no `[F]ix it` — routes via `/iterate`) |
 | `design` | `[P]romote to FB · [D]ismiss · [S]kip · [Q]uit` (no `[F]ix it` — promote → `/research`) |
 
@@ -141,7 +141,7 @@ A plain-English one-line summary suitable for at-a-glance dashboard triage. Deri
 
 ### Classify `kind` per cluster
 
-(DEC-013 Option C is an action layer — `bundle-eligible` classification triggers actual inline-apply at Fix-it time, so be conservative.)
+(`[Fix it]` is an action layer — `bundle-eligible` classification triggers actual inline-apply at Fix-it time, so be conservative.)
 
 - **HARD RULE FIRST.** If `files_to_touch` includes ANY of `.claude/spec_v*.md`, `.claude/support/decisions/decision-*.md`, `.claude/vision/**/*.md` → `kind: decision` (always; no exceptions — Component 6 hard exclusion). Set `iterate_routing.reason: "spec/decision/vision file modification — read-only outside /iterate"`.
 - If `suggested_kind` is `design` from any contributing lens → `kind: design`. No [Fix it]; promote to FB only.
@@ -151,10 +151,10 @@ A plain-English one-line summary suitable for at-a-glance dashboard triage. Deri
   c. Reversible: text edit, dep removal, dead-link removal, deletion of clearly-orphaned files
   d. No new judgment: the fix's content is already present somewhere authoritative (the audit syncs, it doesn't decide)
   e. Bounded scope: ≤3 files
-  f. **Orphan-removal special case (DEC-013 Q3):** orphan-dependency removal and orphan-source-file deletion still classify bundle-eligible (the canonical case) but set `bundle_eligibility.transitive_consumer_risk: true` so the action layer warns the user to run tests after apply — dynamic require / `importlib.import_module` / string-keyed import patterns aren't statically detectable.
+  f. **Orphan-removal special case:** orphan-dependency removal and orphan-source-file deletion still classify bundle-eligible (the canonical case) but set `bundle_eligibility.transitive_consumer_risk: true` so the action layer warns the user to run tests after apply — dynamic require / `importlib.import_module` / string-keyed import patterns aren't statically detectable.
   g. **When in doubt → fix-eligible, not bundle-eligible.** The action layer's at-apply re-read invariant cannot catch semantic mismatches created at synthesis time. Conservative classification here is the load-bearing safety property.
   Set on bundle-eligible items: `bundle_eligibility.source_confirmed: true`, `reversible: true`, `files_count: {N}`, `touches_spec_or_decisions: false`, `transitive_consumer_risk: {bool}`.
-- Otherwise (implementation-only but failing ANY bundle criterion, >3 files, or ambiguous fix) → `kind: fix-eligible`. No `[Fix it]` for this kind until a future DEC expands inline-apply per DEC-013's telemetry gate.
+- Otherwise (implementation-only but failing ANY bundle criterion, >3 files, or ambiguous fix) → `kind: fix-eligible`. No `[Fix it]` for this kind until a future DEC expands inline-apply per the telemetry gate.
 
 ### Hard-rule sanity check (before returning)
 
@@ -230,7 +230,7 @@ Notes:
 - `viewport` — `/audit-ui` only; omit for audits without a viewport concept.
 - `status` per item: `pending` | `resolved` | `dismissed` | `promoted` | `escalated_to_iterate` | `escalated_to_work`. Updated atomically by Fix it / Promote / Dismiss.
 - UI audit items additionally carry `effort` (`S|M|L`) and `impact` (`S|M|L`); annotation objects may carry `page` instead of `source_anchors` where the surface is a route.
-- `description` vs `title` (v3.18.0, FB-006): `title` = terse cluster identifier; `description` = self-contained dashboard sentence. Older digests without `description` render `title` (back-compat).
+- `description` vs `title` (v3.18.0): `title` = terse cluster identifier; `description` = self-contained dashboard sentence. Older digests without `description` render `title` (back-compat).
 
 ## See Also
 

@@ -212,8 +212,8 @@ When Step 2c produces a parallel batch of **3 or more tasks**, confirm with the 
 
 ### Pre-flight checks (before presenting the prompt; apply to 2-batches too)
 
-- **Working-tree re-check (FB-104):** run `git status` immediately before dispatch — not only at Step 0e session start. A concurrent session (or the user) may have changed the tree since; if unexpected modifications appear, surface them and re-run the conflict assessment before spawning. This is also the moment to take the batch's residue baseline (`work.md § "Before Any Dispatch"`: git status, root listing, listening ports). (Observed downstream: a concurrent retirement broke the tree — dangling imports — while a batch's agents were mid-flight.)
-- **Session-budget awareness (FB-103):** parallel long-running agents multiply exposure to a platform usage/session limit — a cutoff kills ALL in-flight agents with zero-token returns and partial on-disk state (recovery: `work-procedures.md § "After implement-agent returns"`, zero-token branch). If the session has already consumed heavy budget (long conversation, prior limit warnings), prefer sequential or a smaller batch. **Post-limit dispatch rule:** after one limit hit in a session, three things wait for the user's explicit go-ahead: (a) dispatching two or more agents at once, or adding an agent while another is running; (b) anything more from the current batch or its queue, even when nothing is running; (c) dispatching the cut-off job again, whole or its remainder (that implementation, or that verification). One agent at a time on anything else doesn't wait: the zero-token recovery's confirm-only implement-agent, a verify-agent for work that is complete on disk, the next sequential task. The follow-up batch is likely to be cut too (observed: an immediate second parallel batch was also lost).
+- **Working-tree re-check:** run `git status` immediately before dispatch — not only at Step 0e session start. A concurrent session (or the user) may have changed the tree since; if unexpected modifications appear, surface them and re-run the conflict assessment before spawning. This is also the moment to take the batch's residue baseline (`work.md § "Before Any Dispatch"`: git status, root listing, listening ports). (Observed downstream: a concurrent retirement broke the tree — dangling imports — while a batch's agents were mid-flight.)
+- **Session-budget awareness:** parallel long-running agents multiply exposure to a platform usage/session limit — a cutoff kills ALL in-flight agents with zero-token returns and partial on-disk state (recovery: `work-procedures.md § "After implement-agent returns"`, zero-token branch). If the session has already consumed heavy budget (long conversation, prior limit warnings), prefer sequential or a smaller batch. **Post-limit dispatch rule:** after one limit hit in a session, three things wait for the user's explicit go-ahead: (a) dispatching two or more agents at once, or adding an agent while another is running; (b) anything more from the current batch or its queue, even when nothing is running; (c) dispatching the cut-off job again, whole or its remainder (that implementation, or that verification). One agent at a time on anything else doesn't wait: the zero-token recovery's confirm-only implement-agent, a verify-agent for work that is complete on disk, the next sequential task. The follow-up batch is likely to be cut too (observed: an immediate second parallel batch was also lost).
 
 ### Format
 
@@ -293,14 +293,14 @@ During parallel execution, strict write ownership prevents file corruption. The 
 
 | Writer | May write to | Must NOT write to |
 |--------|-------------|-------------------|
-| Each parallel agent | Nothing — agents return structured reports only (harness prohibits subagent writes to `.claude/`, per DEC-004) | Any `.claude/` path |
+| Each parallel agent | Nothing — agents return structured reports only (harness prohibits subagent writes to `.claude/`) | Any `.claude/` path |
 | `/work` orchestrator | All task JSONs, parent task JSONs, decision records, dashboard.html, verification-result.json, dashboard-state.json, session-log.jsonl, fix-task JSON files | Nothing — orchestrator is the sole writer in this architecture |
 
 The orchestrator performs all writes: it sets `conflict_note` fields before dispatch, consumes each agent's return report to persist task-JSON state, performs parent auto-completion, and regenerates the dashboard at batch end.
 
 **Key invariants:**
 - **Single writer:** The orchestrator is the only writer for all `.claude/` state (task JSON, dashboard, verification-result.json, session-log.jsonl). Agents return structured reports; all persistence is mediated.
-- **`.claude/`-path tasks never batch:** a task whose `files_affected` includes `.claude/` paths is orchestrator-authored inline (DEC-004) and cannot join an agent-dispatch batch; split mixed tasks at decomposition (`decomposition.md § Procedure` step 8, `.claude/`-boundary split).
+- **`.claude/`-path tasks never batch:** a task whose `files_affected` includes `.claude/` paths is orchestrator-authored inline and cannot join an agent-dispatch batch; split mixed tasks at decomposition (`decomposition.md § Procedure` step 8, `.claude/`-boundary split).
 - **Sequential result processing:** When several completion notifications arrive together, the orchestrator processes them one at a time (the `For each completed agent` loop is sequential). This naturally serializes task-JSON writes, parent auto-completion, and friction-marker appends — no race conditions possible since there's only one writer.
 - **Verify-agent dispatch per implement-agent:** After each implement-agent report is processed, the orchestrator dispatches that task's verify-agent. Verify-agents can run concurrent with subsequent implement-agents, preserving pipeline throughput. The one exception is exclusive verifications (browser or build), which take turns (§ "Single-Instance Resources").
 
@@ -310,7 +310,7 @@ Use Claude Code's `Agent` tool to spawn one agent per task. **Always set `model:
 - The task JSON to execute
 - Instructions to read `.claude/agents/implement-agent.md`
 - Instructions to follow Steps 1-6 (understand, implement, run existing checks, return structured report)
-- **Sibling files (FB-113):** the `files_affected` of every other task in the batch, with the instruction: "Don't edit these files; they belong to parallel tasks. If your change requires one, report it in `issues_discovered` with `suggested_action: 'stop and report'`." Files outside the whole batch's declared scope may be edited and reported, per implement-agent Step 2
+- **Sibling files:** the `files_affected` of every other task in the batch, with the instruction: "Don't edit these files; they belong to parallel tasks. If your change requires one, report it in `issues_discovered` with `suggested_action: 'stop and report'`." Files outside the whole batch's declared scope may be edited and reported, per implement-agent Step 2
 - **The "Before Any Dispatch" lines** (`work.md § "Before Any Dispatch"`, the one place they are worded): the evidence-directory line, naming this agent's own `{scratch}/agent-{task_id}-implement-{n}/`, which also asks for `servers_started`; and the brief-claims line. Every agent in the batch gets its own directory, and so does each verify dispatch (step 4), so one agent's cleanup can't delete another's evidence
 - **The no-browser and no-production-build lines** (§ "Single-Instance Resources"), on every implement brief
 - **Held decisions:** if the task has `decisions_pending` (a fix round or resume), its entries: the agent restates the set, amended as needed, in its report
@@ -339,7 +339,7 @@ WHILE active_agents, active_verifiers or exclusive_verify_queue is non-empty:
     2. Apply "After implement-agent returns" protocol from work.md § State Persistence Protocol:
        - Status transition on task JSON per implementation_status
        - Dual-write friction_markers to .pending-markers.jsonl AND .session-log.jsonl
-         immediately upon agent return (per DEC-011 Option ABp — do NOT defer or batch)
+         immediately upon agent return (do NOT defer or batch)
        - Hold decisions_to_record in the task's decisions_pending (no decision file yet)
     3. If implementation_status == "completed":
        IF the task's verification is exclusive AND the queue is busy:
@@ -381,12 +381,12 @@ WHILE active_agents, active_verifiers or exclusive_verify_queue is non-empty:
        - Transition status (Finished / In Progress retry / Blocked escalate)
        - On pass: persist decisions_pending as one `recorded` decision record ("Persist
          decisions"); the id is assigned here, so tasks in a batch can't pick the same one
-       - Dual-write friction_markers (per DEC-011 Option ABp — see work.md § State Persistence Protocol step 2)
+       - Dual-write friction_markers (see work.md § State Persistence Protocol step 2)
        - Check parent auto-completion
        - No valid report → ask once for it (no increment; it stays in active_verifiers); a
          second invalid return → protocol step 5. Infrastructure termination (usage limit /
          HTTP 429 / zero-token return / API or harness error) or a stop the user asked for is
-         an interruption (FB-120): no increment, task stays "Awaiting Verification"
+         an interruption: no increment, task stays "Awaiting Verification"
     3. Remove verify-agent from active_verifiers (unless it was re-asked above)
     4. If it was marked `exclusive` (a verification or a delta re-check) and it left
        active_verifiers: run the head of exclusive_verify_queue (a `verify` entry is
@@ -403,8 +403,8 @@ WHILE active_agents, active_verifiers or exclusive_verify_queue is non-empty:
      otherwise: no second ask, no "[VERIFICATION TIMEOUT]", no Blocked — then steps 3-5. The
      fresh verify-agent follows § "Single-Instance Resources", "Fresh verifier after a delta".)
     1. Infrastructure termination (usage limit / HTTP 429 / zero-token return / API or harness error) or a stop the user asked for is an interruption, not a timeout:
-       - Implement-agent: follow work-procedures.md "Zero-token return — platform limit cutoff (FB-103)"
-       - Verify-agent: no increment, task stays "Awaiting Verification" (FB-120); apply that
+       - Implement-agent: follow work-procedures.md "Zero-token return — platform limit cutoff"
+       - Verify-agent: no increment, task stays "Awaiting Verification"; apply that
          bullet's post-limit dispatch rule before re-dispatching
     2. Any other failure:
        - Implement-agent: if task still "In Progress", set to "Blocked" with

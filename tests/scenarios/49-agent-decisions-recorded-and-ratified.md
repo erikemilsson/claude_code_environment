@@ -82,7 +82,7 @@ Variant, `/work complete 14` finishes the task instead of a verifier pass: the s
 
 Variant, a second task (Task 16) passes with held choices: DEC-007 is written the same way. The card still has **one** row: `2 agent decisions await ratification: DEC-006, DEC-007 — run /work ratify all (or /work ratify DEC-NNN)`. With ten `recorded` records the row lists eight ids, then `+2 more`.
 
-Variant, a project file cites a template decision: a task note says the layout follows `template DEC-024`. A bare `DEC-006` in the same project means the project's record (`decisions.md`, "Numbering namespace").
+Variant, numbering: the next record takes the number after the project's own highest existing record (`decisions.md`, "Numbering namespace"). Shipped instruction files cite no template decision ids, so a bare `DEC-006` in them or in project files is the project's record.
 
 **Expected:** the record exists only once the work is verified, says who decided, and waits for the user without stopping anything.
 
@@ -106,7 +106,7 @@ State: DEC-003 was written by an older version as agent-approved, and `/health-c
 
 ## Trace E — `/work ratify all`
 
-Command path: `commands/work.md` (sub-mode `/work ratify`) → `rules/spec-workflow.md § "Direct edits to spec, decision, and vision files (DEC-016)"` (infrastructure operations) → dashboard regen.
+Command path: `commands/work.md` (sub-mode `/work ratify`) → `rules/spec-workflow.md § "Direct edits to spec, decision, and vision files"` (infrastructure operations) → dashboard regen.
 
 State: DEC-006 and DEC-007 are `recorded` (`decided_by: implement-agent`, `decided: 2026-10-06`). Today is 2026-10-07.
 

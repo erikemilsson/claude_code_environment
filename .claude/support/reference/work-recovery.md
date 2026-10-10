@@ -6,7 +6,7 @@ Conditional `/work` procedures that run only when a prior session left something
 
 ## Friction-Marker Catchup (Step 0d)
 
-Reconcile any friction markers persisted to the transient pending buffer in a prior session that never reached the canonical log (DEC-011 Option ABp). Runs once per `/work` invocation, before any agent dispatch.
+Reconcile any friction markers persisted to the transient pending buffer in a prior session that never reached the canonical log. Runs once per `/work` invocation, before any agent dispatch.
 
 **Procedure:**
 
@@ -32,7 +32,7 @@ Recover from a prior session's interrupted `/work pause` that left `.claude/supp
 
 1. If `.claude/support/workspace/.interaction-assessment.json` does not exist, this step is a no-op — proceed to Step 1.
 2. Read the file. If invalid JSON, surface inline `Step 0f: Stale Track 2 capture malformed — discarded.`, delete, proceed to Step 1.
-3. Read `.claude/support/workspace/.session-log.jsonl` if present (Track 1 markers also orphaned from same interrupted pause), plus each `.pending-markers.jsonl` entry it lacks, deduped on the Step 0d key above (normally none, since Step 0d ran first; folding covers a failed catchup, so step 9 can clear the buffer losslessly, FB-120).
+3. Read `.claude/support/workspace/.session-log.jsonl` if present (Track 1 markers also orphaned from same interrupted pause), plus each `.pending-markers.jsonl` entry it lacks, deduped on the Step 0d key above (normally none, since Step 0d ran first; folding covers a failed catchup, so step 9 can clear the buffer losslessly).
 4. Read `.claude/version.json` for `template_version` + `template_inbox_path`.
 5. Compile a recovered export matching `/work pause § Session Export` shape:
    ```json
@@ -51,9 +51,9 @@ Recover from a prior session's interrupted `/work pause` that left `.claude/supp
      "export_quality": "recovered"
    }
    ```
-6. Compute timestamp `YYYY-MM-DD-HHMM` (minute-granular per FB-079).
+6. Compute timestamp `YYYY-MM-DD-HHMM` (minute-granular).
 7. Write the recovered export to `.claude/support/workspace/.session-export-{timestamp}-recovered.json`.
-8. If `template_inbox_path` is configured, copy the export to the inbox via the deterministic helper (FB-109) — pass `--suffix recovered` so the inbox copy carries the `-recovered` marker:
+8. If `template_inbox_path` is configured, copy the export to the inbox via the deterministic helper — pass `--suffix recovered` so the inbox copy carries the `-recovered` marker:
    ```bash
    python3 .claude/scripts/persist-session-export.py --source .claude/support/workspace/.session-export-{timestamp}-recovered.json --suffix recovered
    ```
@@ -70,9 +70,9 @@ Recover from a prior session's interrupted `/work pause` that left `.claude/supp
 
 **`.session-log.jsonl` standalone case:** if Track 2 is absent but Track 1 markers exist, Step 0f does NOT trigger recovery — Step 0d's catchup already handles the pending-buffer half, and the PreCompact hook is the canonical disposal mechanism for orphan logs.
 
-## Resume-Pending Dispatch (DEC-010)
+## Resume-Pending Dispatch
 
-**Resume-pending check (per DEC-010):** if the selected task JSON has a `partial_completion` field from a previous dispatch:
+**Resume-pending check:** if the selected task JSON has a `partial_completion` field from a previous dispatch:
 
 1. Read the envelope's `completed_subtargets`, `remaining_subtargets`, `resume_instructions`, `confidence`
 2. Run a git-diff audit on the task's declared `files_affected`:
