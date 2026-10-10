@@ -929,3 +929,15 @@ Tags: residuals, dashboard, DEC-024, audit-wording, session-export, hooks, dispa
 ## FB-136: [PROMOTED — moved to `template-maintenance/feedback-archive.md`]
 
 **Status:** promoted 2026-10-06 — shipped v5.12.0 (classification by template blob history, `sync-apply.py`, manifest lists, sidecar gitignore row, non-git sync path). See archive for full entry.
+
+---
+
+## FB-137: Template-internal ids in shipped files don't resolve downstream
+
+**Status:** open — measure first, then design. Logged 2026-10-10 from `/checkup prompt-audit` (finding 7; user decision 3a).
+
+**Observation.** Shipped commands, agents and rules cite the template's own records by id: about 140 `DEC-NNN`, 70 `FB-NNN` and 90 incident or version markers across `.claude/CLAUDE.md`, `rules/`, `commands/` and `agents/` (densest in `health-check.md`, `feedback.md`, `work.md`, `audit-coherence.md`); four `/work` reference files add 33 more; the rest of `support/reference/` is not yet counted. Root `decisions/` and `template-maintenance/` don't ship, so a project session can't open them, and `DEC-NNN` in a project names that project's own decision records (same for `FB-NNN` and the project's feedback queue).
+
+**Not known.** Whether any downstream session has misread a template id as a project record or gone looking for one. Some ids are useful search anchors for template maintenance.
+
+**Next.** Mine downstream transcripts for reads or greps of a template `DEC-`/`FB-` id; count ids per file including `support/reference/`; then choose between stripping, moving rationale pointers to a non-loading footer, or a distinct prefix for template ids.

@@ -160,7 +160,7 @@ A sequential run needs none of this: one agent at a time holds both resources.
 
 When a parallel batch contains two or more tasks that share test scaffolding (allowlists, fixtures, expected-violation arrays) where one task writes the scaffolding and another drains it, the orchestrator must compose a single shared briefing block both agents receive verbatim. Without this, the dispatched briefs can contradict each other on file boundaries.
 
-**Observed gap (styler Phase 20 batch 13, 2026-04-27):** Task A's brief said "do not touch `registry-consistency.test.ts`" (B's territory). Task B's actual implementation wrote a failing-test assertion in that file requiring A to drain it. Result: A was forced to violate its own brief to keep `npm test` green. Friction marker logged.
+**Example:** Task A's brief says "do not touch `registry-consistency.test.ts`" (B's territory). Task B's implementation writes a failing-test assertion in that file that A must drain, so A has to violate its own brief to keep the test suite green.
 
 ### Detection
 

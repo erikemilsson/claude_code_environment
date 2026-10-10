@@ -1,6 +1,6 @@
 {
-  "template_version": "5.14.5",
-  "template_release_date": "2026-10-09",
+  "template_version": "5.14.6",
+  "template_release_date": "2026-10-10",
   "template_repo": "https://github.com/erikemilsson/claude_code_environment",
   "project_version": "0.1.0",
   "project_initialized": "",

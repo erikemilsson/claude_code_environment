@@ -48,7 +48,7 @@ State: auto-detect mode (`/work` with no arguments). The only unfinished tasks a
 
 1. Step 1b: `## Billing` under `drifted` (Task 6 Finished, Task 4 Pending), `unreconciled_sections: 1`.
 2. Drift Reconciliation now runs before Step 1d, so the `## Billing` prompt comes first. Before v5.9.0, Step 1d's fast exit returned first with "No Claude-actionable work", and the drift was never shown.
-3. Step 1d is evaluated after the user's pick. Its new precondition is `No unreconciled spec drift (Drift Reconciliation, which now runs before Step 1d, leaves unreconciled_sections at 0)`:
+3. Step 1d is evaluated after the user's pick. Its new precondition is `No unreconciled spec drift (Drift Reconciliation runs before Step 1d and leaves unreconciled_sections at 0)`:
    - `[K]`: fingerprints refreshed, notes written, no task becomes actionable → `unreconciled_sections` is 0 → FAST EXIT. Task 4 is listed under `Your next actions:`, Task 5 under `Blockers:`.
    - `[S]`: a deferral is recorded and `## Billing` becomes `deferred: true` → `unreconciled_sections` is 0 → FAST EXIT, as for `[K]`. Only `drift-deferrals.json` was written, which still counts as drift reconciliation applied, so the dashboard is regenerated and shows a deferral instead of a changed section.
    - `[V]`: Task 6 goes to Awaiting Verification for a verify-agent re-check. Verification takes priority (Step 1d's "no Awaiting Verification" precondition), so no fast exit fires while the re-check is outstanding.

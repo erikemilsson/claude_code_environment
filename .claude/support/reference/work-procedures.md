@@ -1,6 +1,6 @@
 # /work Procedures
 
-Deferred procedures extracted verbatim from `commands/work.md` in v4.18.0 (Plan 2 P3 — the orchestrator file had grown past reliable single-pass size; ~20 ship-log patches trace to prose procedures skipped under load). `work.md` keeps STOP-gated stubs under the same section names; this file is the canonical body. Read the section the stub names AT the moment the stub fires — once read, it stays in context for the session.
+Procedures `/work` loads on demand. `commands/work.md` keeps a stub under the same section name for each; this file is the canonical body. Read the section a stub names when that stub fires; once read, it stays in context for the session.
 
 ## State Persistence Protocol
 
