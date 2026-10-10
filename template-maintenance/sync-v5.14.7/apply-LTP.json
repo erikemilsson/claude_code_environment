@@ -1,0 +1,310 @@
+{
+  "ref": "v5.14.7",
+  "ref_commit": "af08dbe70b3daf3a38229fe77d75c0dbf0fe67eb",
+  "dry_run": false,
+  "written": [
+    {
+      "path": ".claude/CLAUDE.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/agents/implement-agent.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/agents/research-agent.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/agents/verify-agent.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/commands/audit-coherence.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/commands/audit-ui.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/commands/diagnose.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/commands/feedback.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/commands/grill.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/commands/health-check.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/commands/iterate.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/commands/research.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/commands/shakedown.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/commands/work.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/commands/zoom-out.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/rules/agents.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/rules/dashboard.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/rules/feature-retirement.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/rules/session-management.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/rules/spec-workflow.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/scripts/README.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/support/reference/audit-family-core.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/support/reference/audit-fix-workflow.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/support/reference/claude-code-authoring.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/support/reference/context-transitions.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/support/reference/dashboard-regeneration.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/support/reference/decisions.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/support/reference/decomposition.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/support/reference/drift-reconciliation.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/support/reference/extension-hooks.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/support/reference/extension-patterns.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/support/reference/friction-register.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/support/reference/merge-queue.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/support/reference/negative-findings.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/support/reference/parallel-execution.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/support/reference/paths.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/support/reference/phase-decision-gates.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/support/reference/shared-definitions.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/support/reference/task-schema.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/support/reference/work-procedures.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/support/reference/work-recovery.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/support/reference/work-web-evidence.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/support/reference/workflow.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/support/shakedowns/README.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/vision/README.md",
+      "status": "template_copy",
+      "mode": "100644"
+    },
+    {
+      "path": ".claude/vision/_feature-vision-template.md",
+      "status": "template_copy",
+      "mode": "100644"
+    }
+  ],
+  "mode_fixed": [],
+  "failed": [],
+  "version": {
+    "from": "5.14.6",
+    "to": "5.14.7",
+    "bumped": true
+  },
+  "manifest": {
+    "changed": false,
+    "sync_added": [],
+    "sync_dropped": [],
+    "lists_updated": false
+  },
+  "sidecar": {
+    "recorded": 88,
+    "dropped": 0,
+    "created": false,
+    "changed": true
+  },
+  "changed_paths": [
+    ".claude/.sync-state.json",
+    ".claude/CLAUDE.md",
+    ".claude/agents/implement-agent.md",
+    ".claude/agents/research-agent.md",
+    ".claude/agents/verify-agent.md",
+    ".claude/commands/audit-coherence.md",
+    ".claude/commands/audit-ui.md",
+    ".claude/commands/diagnose.md",
+    ".claude/commands/feedback.md",
+    ".claude/commands/grill.md",
+    ".claude/commands/health-check.md",
+    ".claude/commands/iterate.md",
+    ".claude/commands/research.md",
+    ".claude/commands/shakedown.md",
+    ".claude/commands/work.md",
+    ".claude/commands/zoom-out.md",
+    ".claude/rules/agents.md",
+    ".claude/rules/dashboard.md",
+    ".claude/rules/feature-retirement.md",
+    ".claude/rules/session-management.md",
+    ".claude/rules/spec-workflow.md",
+    ".claude/scripts/README.md",
+    ".claude/support/reference/audit-family-core.md",
+    ".claude/support/reference/audit-fix-workflow.md",
+    ".claude/support/reference/claude-code-authoring.md",
+    ".claude/support/reference/context-transitions.md",
+    ".claude/support/reference/dashboard-regeneration.md",
+    ".claude/support/reference/decisions.md",
+    ".claude/support/reference/decomposition.md",
+    ".claude/support/reference/drift-reconciliation.md",
+    ".claude/support/reference/extension-hooks.md",
+    ".claude/support/reference/extension-patterns.md",
+    ".claude/support/reference/friction-register.md",
+    ".claude/support/reference/merge-queue.md",
+    ".claude/support/reference/negative-findings.md",
+    ".claude/support/reference/parallel-execution.md",
+    ".claude/support/reference/paths.md",
+    ".claude/support/reference/phase-decision-gates.md",
+    ".claude/support/reference/shared-definitions.md",
+    ".claude/support/reference/task-schema.md",
+    ".claude/support/reference/work-procedures.md",
+    ".claude/support/reference/work-recovery.md",
+    ".claude/support/reference/work-web-evidence.md",
+    ".claude/support/reference/workflow.md",
+    ".claude/support/shakedowns/README.md",
+    ".claude/version.json",
+    ".claude/vision/README.md",
+    ".claude/vision/_feature-vision-template.md"
+  ],
+  "remaining": [],
+  "warnings": [
+    "project is not a git work tree; uncommitted_sync skipped"
+  ]
+}
