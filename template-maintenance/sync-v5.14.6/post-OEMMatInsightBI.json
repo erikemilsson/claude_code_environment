@@ -1,0 +1,955 @@
+{
+  "ref": "v5.14.6",
+  "ref_commit": "1ab50d0b1aa9ce3fe755b048b66f69caa4f9835f",
+  "upstream_version": "5.14.6",
+  "local_version": "5.14.6",
+  "git": true,
+  "patterns": {
+    "compare": [
+      ".claude/CLAUDE.md",
+      ".claude/settings.json",
+      ".claude/commands/*.md",
+      ".claude/agents/*.md",
+      ".claude/scripts/*.py",
+      ".claude/scripts/README.md",
+      ".claude/scripts/tests/*.py",
+      ".claude/rules/task-management.md",
+      ".claude/rules/spec-workflow.md",
+      ".claude/rules/decisions.md",
+      ".claude/rules/dashboard.md",
+      ".claude/rules/agents.md",
+      ".claude/rules/archiving.md",
+      ".claude/rules/session-management.md",
+      ".claude/rules/feature-retirement.md",
+      ".claude/support/reference/shared-definitions.md",
+      ".claude/support/reference/task-schema.md",
+      ".claude/support/reference/workflow.md",
+      ".claude/support/reference/spec-checklist.md",
+      ".claude/support/reference/decisions.md",
+      ".claude/support/reference/extension-patterns.md",
+      ".claude/support/reference/dashboard-regeneration.md",
+      ".claude/support/reference/drift-reconciliation.md",
+      ".claude/support/reference/friction-register.md",
+      ".claude/support/reference/merge-queue.md",
+      ".claude/support/reference/claude-code-authoring.md",
+      ".claude/support/reference/audit-fix-workflow.md",
+      ".claude/support/reference/parallel-execution.md",
+      ".claude/support/reference/session-recovery.md",
+      ".claude/support/reference/context-transitions.md",
+      ".claude/support/reference/phase-decision-gates.md",
+      ".claude/support/reference/decomposition.md",
+      ".claude/support/reference/inline-command-pattern.md",
+      ".claude/support/reference/paths.md",
+      ".claude/support/reference/setup-checklist.md",
+      ".claude/support/reference/automation.md",
+      ".claude/support/reference/known-issues.md",
+      ".claude/support/reference/extension-hooks.md",
+      ".claude/support/reference/mcp-patterns.md",
+      ".claude/support/reference/negative-findings.md",
+      ".claude/support/reference/audit-family-core.md",
+      ".claude/support/reference/work-procedures.md",
+      ".claude/support/reference/work-recovery.md",
+      ".claude/support/reference/work-user-flows.md",
+      ".claude/support/reference/work-web-evidence.md",
+      ".claude/support/reference/desktop-project-prompt.md",
+      ".claude/support/reference/root-claude-md-template.md",
+      ".claude/support/reference/README.md",
+      ".claude/support/learnings/README.md",
+      ".claude/support/workspace/README.md",
+      ".claude/support/previous_specifications/README.md",
+      ".claude/vision/README.md",
+      ".claude/vision/_feature-vision-template.md",
+      ".claude/support/feedback/README.md",
+      ".claude/support/retired/README.md",
+      ".claude/support/shakedowns/README.md",
+      ".claude/hooks/pre-compact-handoff.sh"
+    ],
+    "project_added": [],
+    "retired": []
+  },
+  "retired_files": [],
+  "uncommitted_sync": [
+    {
+      "path": ".claude/CLAUDE.md",
+      "change": "modified"
+    },
+    {
+      "path": ".claude/agents/implement-agent.md",
+      "change": "modified"
+    },
+    {
+      "path": ".claude/agents/research-agent.md",
+      "change": "modified"
+    },
+    {
+      "path": ".claude/agents/verify-agent.md",
+      "change": "modified"
+    },
+    {
+      "path": ".claude/commands/audit-ui.md",
+      "change": "modified"
+    },
+    {
+      "path": ".claude/commands/work.md",
+      "change": "modified"
+    },
+    {
+      "path": ".claude/rules/agents.md",
+      "change": "modified"
+    },
+    {
+      "path": ".claude/rules/dashboard.md",
+      "change": "modified"
+    },
+    {
+      "path": ".claude/rules/session-management.md",
+      "change": "modified"
+    },
+    {
+      "path": ".claude/rules/task-management.md",
+      "change": "modified"
+    },
+    {
+      "path": ".claude/support/reference/shared-definitions.md",
+      "change": "modified"
+    }
+  ],
+  "history_complete": true,
+  "files": [
+    {
+      "path": ".claude/CLAUDE.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/agents/implement-agent.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/agents/research-agent.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/agents/verify-agent.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/commands/audit-coherence.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/commands/audit-ui.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/commands/breakdown.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/commands/diagnose.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/commands/feedback.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/commands/grill.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/commands/health-check.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/commands/iterate.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/commands/research.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/commands/review.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/commands/shakedown.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/commands/status.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/commands/work.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/commands/zoom-out.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/hooks/pre-compact-handoff.sh",
+      "status": "up_to_date",
+      "mode": "100755",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/rules/agents.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/rules/archiving.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/rules/dashboard.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/rules/decisions.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/rules/feature-retirement.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/rules/session-management.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/rules/spec-workflow.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/rules/task-management.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/scripts/README.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/scripts/dashboard-render.py",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/scripts/fingerprint.py",
+      "status": "up_to_date",
+      "mode": "100755",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/scripts/persist-friction.py",
+      "status": "up_to_date",
+      "mode": "100755",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/scripts/persist-session-export.py",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/scripts/sync-apply.py",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/scripts/sync-check.py",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/scripts/tests/__init__.py",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/scripts/tests/test_dashboard_render.py",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/scripts/tests/test_dashboard_render_html.py",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/scripts/tests/test_fingerprint.py",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/scripts/tests/test_persist_friction.py",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/scripts/tests/test_persist_session_export.py",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/scripts/tests/test_pre_compact_hook.py",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/scripts/tests/test_python_floor.py",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/scripts/tests/test_sync_apply.py",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/scripts/tests/test_sync_check.py",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/scripts/tests/test_validate_tasks.py",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/scripts/validate-tasks.py",
+      "status": "up_to_date",
+      "mode": "100755",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/settings.json",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/support/feedback/README.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/support/learnings/README.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/support/previous_specifications/README.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/support/reference/README.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/support/reference/audit-family-core.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/support/reference/audit-fix-workflow.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/support/reference/automation.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/support/reference/claude-code-authoring.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/support/reference/context-transitions.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/support/reference/dashboard-regeneration.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/support/reference/decisions.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/support/reference/decomposition.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/support/reference/desktop-project-prompt.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/support/reference/drift-reconciliation.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/support/reference/extension-hooks.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/support/reference/extension-patterns.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/support/reference/friction-register.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/support/reference/inline-command-pattern.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/support/reference/known-issues.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/support/reference/mcp-patterns.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/support/reference/merge-queue.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/support/reference/negative-findings.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/support/reference/parallel-execution.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/support/reference/paths.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/support/reference/phase-decision-gates.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/support/reference/root-claude-md-template.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/support/reference/session-recovery.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/support/reference/setup-checklist.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/support/reference/shared-definitions.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/support/reference/spec-checklist.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/support/reference/task-schema.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/support/reference/work-procedures.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/support/reference/work-recovery.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/support/reference/work-user-flows.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/support/reference/work-web-evidence.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/support/reference/workflow.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/support/retired/README.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/support/shakedowns/README.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/support/workspace/README.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/vision/README.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    },
+    {
+      "path": ".claude/vision/_feature-vision-template.md",
+      "status": "up_to_date",
+      "mode": "100644",
+      "mode_matches": true,
+      "version": null,
+      "basis": null,
+      "shared_lines": null
+    }
+  ],
+  "manifest": {
+    "customize": {
+      "add": [],
+      "drop": [],
+      "list": [
+        ".claude/README.md",
+        "README.md",
+        ".claude/support/documents/README.md"
+      ]
+    },
+    "ignore": {
+      "add": [],
+      "drop": [],
+      "list": [
+        ".claude/rules/project-*.md",
+        ".claude/tasks/*.json",
+        ".claude/dashboard.html",
+        ".claude/verification-result.json",
+        ".claude/version.json",
+        ".claude/sync-manifest.json",
+        ".claude/.sync-state.json",
+        ".claude/support/decisions/decision-*.md",
+        ".claude/support/decisions/.archive/*",
+        ".claude/support/learnings/*",
+        ".claude/support/previous_specifications/*.md",
+        ".claude/vision/*.md",
+        ".claude/dashboard-state.json",
+        ".claude/tasks/.last-clean-exit.json",
+        ".claude/tasks/.handoff.json",
+        ".claude/support/feedback/feedback.md",
+        ".claude/support/feedback/archive.md",
+        ".claude/support/reference/project-*.md",
+        ".claude/settings.local.json",
+        ".claude/spec_v*.md"
+      ]
+    }
+  },
+  "sidecar": {
+    "exists": true,
+    "gitignored": true,
+    "tracked": false
+  },
+  "warnings": []
+}
